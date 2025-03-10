@@ -1,0 +1,167 @@
+[
+  {
+    "chunk_id": "custom-lib-8-1-a",
+    "course_id": "custom-library",
+    "course_title": "Build a Custom Library",
+    "lecture_id": "custom-library-8-1",
+    "lecture_title": "8.1 - The npm link command",
+    "text": "The npm link command solves one of the most frustrating problems when building a custom library locally: how do you test your library in another project without publishing it to the npm registry first? npm link creates a global symlink from your library package to your global node_modules. Then in your consuming project, you run npm link package-name to create a local symlink pointing to that global one. This lets you develop and test your library as if it were installed from npm, but every change you make to the library source is immediately reflected in the consuming project.",
+    "start_time": 87,
+    "end_time": 160,
+    "embedding": []
+  },
+  {
+    "chunk_id": "custom-lib-8-1-b",
+    "course_id": "custom-library",
+    "course_title": "Build a Custom Library",
+    "lecture_id": "custom-library-8-1",
+    "lecture_title": "8.1 - The npm link command",
+    "text": "The common mistake developers make with npm link is forgetting it is a two-step process. First you run npm link inside your library directory. This registers the package globally. Then you navigate to the project that needs to consume it and run npm link your-package-name. Without both steps the symlink does not exist in your consuming project. Another common pitfall: if you are using TypeScript, make sure you rebuild the library after every change or run the compiler in watch mode. Otherwise your consuming project imports stale compiled output and you will be debugging changes that do not exist.",
+    "start_time": 161,
+    "end_time": 230,
+    "embedding": []
+  },
+  {
+    "chunk_id": "custom-lib-8-1-c",
+    "course_id": "custom-library",
+    "course_title": "Build a Custom Library",
+    "lecture_id": "custom-library-8-1",
+    "lecture_title": "8.1 - The npm link command",
+    "text": "npm link matters because without it you would have to publish a new version to npm every single time you want to test a change in a real project. This breaks your development flow completely. Even with a private registry you would still need to bump the version and push on every iteration. With npm link you can iterate on your library and the consuming app simultaneously with zero publish overhead. It is essential for any local library development workflow and saves hours of wasted time during the build and test cycle.",
+    "start_time": 231,
+    "end_time": 280,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-4-1-a",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-4-1",
+    "lecture_title": "4.1 - Prototype Inheritance",
+    "text": "Prototype inheritance is the mechanism by which objects in JavaScript inherit properties and methods from other objects. Every JavaScript object has an internal link to another object called its prototype, accessible as __proto__. When you access a property on an object and JavaScript cannot find it directly on that object, it walks up the prototype chain automatically until it either finds the property or reaches null at the top of the chain. This prototype lookup is invisible to you but happens on every single property access.",
+    "start_time": 45,
+    "end_time": 120,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-4-1-b",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-4-1",
+    "lecture_title": "4.1 - Prototype Inheritance",
+    "text": "Think of prototype inheritance as a delegation chain, not a copy. If object A has object B as its prototype, and you look for a method on A that does not exist there, JavaScript automatically delegates the lookup to B. This chain continues all the way up to Object.prototype which is the root. The key insight is that objects do not copy properties from their prototype. They delegate lookups to it at runtime. This delegation model is what makes prototype inheritance both powerful and memory-efficient. All instances share one copy of inherited methods rather than each having their own copy.",
+    "start_time": 121,
+    "end_time": 195,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-4-1-c",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-4-1",
+    "lecture_title": "4.1 - Prototype Inheritance",
+    "text": "When you use the class syntax in modern JavaScript it is still prototype-based inheritance under the hood. The class keyword is purely syntactic sugar. When you write class Dog extends Animal, JavaScript sets up the prototype chain so that Dog.prototype has Animal.prototype as its prototype. The instanceof operator also relies on this chain to check if an object was derived from a particular constructor function. Understanding the prototype chain helps you debug unexpected behavior when properties seem to appear from nowhere or when you accidentally shadow a prototype method.",
+    "start_time": 196,
+    "end_time": 260,
+    "embedding": []
+  },
+  {
+    "chunk_id": "web-apis-2-2-a",
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "lecture_id": "web-apis-2-2",
+    "lecture_title": "2.2 - WebSocket Handshake",
+    "text": "A WebSocket connection begins with something called the handshake, and it starts as a regular HTTP request. The browser sends a GET request to the server but includes a special header: Upgrade: websocket. It also includes a Sec-WebSocket-Key header which is a randomly generated base64-encoded value. The browser is essentially asking the server to upgrade this HTTP connection to a persistent WebSocket connection. This is why WebSocket URLs start with ws:// or wss:// but the initial handshake itself travels over HTTP.",
+    "start_time": 91,
+    "end_time": 165,
+    "embedding": []
+  },
+  {
+    "chunk_id": "web-apis-2-2-b",
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "lecture_id": "web-apis-2-2",
+    "lecture_title": "2.2 - WebSocket Handshake",
+    "text": "When the server receives the upgrade request it responds with HTTP 101 Switching Protocols. It takes the client's Sec-WebSocket-Key, concatenates a fixed GUID string to it, hashes the result with SHA-1, and base64 encodes it. This becomes the Sec-WebSocket-Accept response header. The client verifies this value to confirm it is talking to a genuine WebSocket server and not a misconfigured proxy. Once the 101 response is received, the HTTP connection is upgraded and both sides can now send frames in either direction at any time without the request-response overhead of HTTP.",
+    "start_time": 166,
+    "end_time": 240,
+    "embedding": []
+  },
+  {
+    "chunk_id": "web-apis-2-2-c",
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "lecture_id": "web-apis-2-2",
+    "lecture_title": "2.2 - WebSocket Handshake",
+    "text": "After the WebSocket handshake completes, the connection becomes a full-duplex channel. Unlike HTTP where the client must always initiate a request, with WebSocket the server can push data to the client at any time. Data is sent in frames rather than complete HTTP messages, which makes it much more efficient for real-time applications like chat, live dashboards, or collaborative editing. The connection stays open until either side explicitly closes it with a close frame, or the network drops.",
+    "start_time": 241,
+    "end_time": 300,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-5-1-a",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-5-1",
+    "lecture_title": "5.1 - V8 Engine and Hidden Classes",
+    "text": "V8, the JavaScript engine inside Node.js and Chrome, uses hidden classes to optimize property access on objects. When you create an object and add properties to it, V8 creates an internal hidden class that describes the shape of that object. Hidden classes are similar to structs in C. Every time you add a new property to an object V8 creates a new hidden class and transitions the object to it. This is how V8 avoids the overhead of a hash table lookup on every property access and can instead use fast fixed-offset memory access.",
+    "start_time": 30,
+    "end_time": 110,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-5-1-b",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-5-1",
+    "lecture_title": "5.1 - V8 Engine and Hidden Classes",
+    "text": "The critical thing to understand about V8 hidden classes is that two objects that look identical to you can end up with completely different hidden classes if you add properties in a different order. If you create object A and add x then y, and create object B and add y then x, V8 sees them as different shapes and cannot optimize them the same way. This also means dynamically adding properties after object construction, especially in conditionals or loops, causes hidden class transitions that hurt performance significantly in hot code paths.",
+    "start_time": 111,
+    "end_time": 185,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-5-1-c",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-5-1",
+    "lecture_title": "5.1 - V8 Engine and Hidden Classes",
+    "text": "To write V8-friendly code, always initialize all object properties in the constructor in the same order every time. Never add new properties to an object after construction if you can avoid it. Avoid delete operator on properties as it forces V8 to switch to a slower dictionary mode. Prefer setting a property to null instead of deleting it. When you follow these patterns V8 can share hidden classes across all instances of the same constructor, leading to significant speedups through inline caching and JIT compilation.",
+    "start_time": 186,
+    "end_time": 255,
+    "embedding": []
+  },
+  {
+    "chunk_id": "react-perf-3-2-a",
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "lecture_id": "react-perf-3-2",
+    "lecture_title": "3.2 - Memoization and Computed State",
+    "text": "Memoization is an optimization technique where you cache the result of an expensive computation and return the cached result when the same inputs occur again instead of recomputing. In React, useMemo lets you memoize the result of a computation and only recompute it when its dependencies change. This is particularly valuable for computed state that derives from props or other state values and would otherwise be recalculated on every render even when the inputs have not changed.",
+    "start_time": 60,
+    "end_time": 140,
+    "embedding": []
+  },
+  {
+    "chunk_id": "react-perf-3-2-b",
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "lecture_id": "react-perf-3-2",
+    "lecture_title": "3.2 - Memoization and Computed State",
+    "text": "useMemo and useCallback are both memoization hooks but they serve different purposes. useMemo memoizes a computed value while useCallback memoizes a function reference. You need useCallback when you pass callbacks to child components that are themselves wrapped in React.memo, because without memoizing the callback the child still re-renders since it receives a new function reference on every parent render. The combination of React.memo on the child component and useCallback on the parent's callback prop is the complete pattern for preventing unnecessary child renders.",
+    "start_time": 141,
+    "end_time": 215,
+    "embedding": []
+  },
+  {
+    "chunk_id": "react-perf-3-2-c",
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "lecture_id": "react-perf-3-2",
+    "lecture_title": "3.2 - Memoization and Computed State",
+    "text": "Memoization helps computed state because it prevents redundant work during renders. If you have a filtered and sorted list derived from a large array of items, and the filter or sort criteria have not changed, there is no reason to redo that work. Without useMemo the filter and sort run on every render even when unrelated state updates trigger a re-render. With useMemo the computation is skipped entirely if the dependencies have not changed. The main pitfall is over-memoizing: adding useMemo everywhere without profiling first adds overhead from the dependency comparison that can actually be slower than just recomputing.",
+    "start_time": 216,
+    "end_time": 290,
+    "embedding": []
+  }
+]
