@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import AsyncIterator, List, Tuple
 
 from app.models import SearchResult
 from app.prompts import SYSTEM_PROMPT
@@ -19,11 +19,44 @@ class AnswerGenerator:
         else:
             print("AnswerGenerator: no OPENAI_API_KEY, using local fallback")
 
+    @property
+    def model_name(self) -> str:
+        return "text-embedding-3-small + gpt-4.1-mini" if self.client else "local-fallback"
+
     async def generate(self, question: str, results: List[SearchResult]) -> Tuple[str, str]:
         context = self._build_context(results)
         if self.client:
             return await self._openai_generate(question, context)
         return self._local_generate(question, results), "local-fallback"
+
+    async def generate_stream(
+        self, question: str, results: List[SearchResult]
+    ) -> AsyncIterator[str]:
+        """Yield answer tokens as they are produced."""
+        context = self._build_context(results)
+        if self.client:
+            stream = await self.client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": f"Educational context:\n\n{context}\n\nStudent question: {question}",
+                    },
+                ],
+                temperature=0.3,
+                max_tokens=800,
+                stream=True,
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        else:
+            # Local fallback: emit the excerpt word-by-word so the UI still streams.
+            text = self._local_generate(question, results)
+            for word in text.split(" "):
+                yield word + " "
 
     def _build_context(self, results: List[SearchResult]) -> str:
         parts = []

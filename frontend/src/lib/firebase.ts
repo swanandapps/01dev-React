@@ -60,4 +60,20 @@ export async function FBgetLoggedUserandStoreHistory(uid: string) {
   return null;
 }
 
+export async function FBgetChatHistory(uid: string): Promise<unknown[]> {
+  const ref = doc(db, "chatHistories", uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const data = snap.data();
+    return Array.isArray(data.messages) ? data.messages : [];
+  }
+  return [];
+}
+
+export async function FBsaveChatHistory(uid: string, messages: unknown[]) {
+  const ref = doc(db, "chatHistories", uid);
+  // Cap to the last 60 turns so the doc stays well under Firestore's 1MB limit.
+  await setDoc(ref, { messages: messages.slice(-60), updatedAt: new Date().toISOString() });
+}
+
 export { onAuthStateChanged, signInWithPopup, signOut };

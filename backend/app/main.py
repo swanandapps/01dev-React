@@ -10,11 +10,12 @@ import os
 import razorpay
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.models import AskRequest, AskResponse, Course
 from app.services.vector_store import vector_store
-from app.services.rag_service import ask
+from app.services.rag_service import ask, ask_stream
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -56,6 +57,19 @@ async def get_courses():
 @app.post("/api/ai/ask", response_model=AskResponse)
 async def ask_question(request: AskRequest):
     return await ask(request)
+
+
+@app.post("/api/ai/ask/stream")
+async def ask_question_stream(request: AskRequest):
+    return StreamingResponse(
+        ask_stream(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # disable proxy buffering so tokens flush immediately
+        },
+    )
 
 
 @app.post("/api/paymentRZ")

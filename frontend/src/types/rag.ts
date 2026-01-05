@@ -23,6 +23,7 @@ export interface ChatMessage {
   content: string;
   sources?: RagSourceCard[];
   insufficient_context?: boolean;
+  streaming?: boolean;
   timestamp: Date;
 }
 
