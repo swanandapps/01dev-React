@@ -19,6 +19,7 @@ import BlogsPage from "./pages/BlogsPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import MapsPage from "./pages/MapsPage";
 import AskPage from "./pages/AskPage";
+import LearnPage from "./pages/LearnPage";
 
 function AppInner() {
   const {
@@ -83,6 +84,7 @@ function AppInner() {
       <Route path="/blogs/:id" element={<BlogDetailPage />} />
       <Route path="/maps" element={<MapsPage />} />
       <Route path="/ask" element={<AskPage />} />
+      <Route path="/learn" element={<LearnPage />} />
     </Routes>
   );
 }

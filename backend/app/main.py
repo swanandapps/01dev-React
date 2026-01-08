@@ -13,9 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.models import AskRequest, AskResponse, Course
+from app.models import AskRequest, AskResponse, Course, LectureInfo
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
+from app.services import study_guide_service
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -52,6 +53,24 @@ async def health():
 @app.get("/api/courses", response_model=list[Course])
 async def get_courses():
     return vector_store.get_all_courses()
+
+
+@app.get("/api/lectures", response_model=list[LectureInfo])
+async def get_lectures():
+    """Lectures that have transcripts — the set AI features are scoped to."""
+    return vector_store.list_lectures()
+
+
+@app.get("/api/ai/study-guide/{lecture_id}")
+async def study_guide_status(lecture_id: str):
+    return await study_guide_service.get_status(lecture_id)
+
+
+@app.post("/api/ai/study-guide/{lecture_id}/generate")
+async def study_guide_generate(lecture_id: str):
+    if not vector_store.get_lecture_meta(lecture_id):
+        raise HTTPException(status_code=404, detail="Unknown lecture")
+    return await study_guide_service.ensure_generated(lecture_id)
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)

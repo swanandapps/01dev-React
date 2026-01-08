@@ -1,7 +1,7 @@
 import json
 import math
 import os
-from typing import List
+from typing import List, Optional
 
 from app.models import TranscriptChunk, SearchResult
 from app.services.embeddings import embedding_service
@@ -112,6 +112,38 @@ class InMemoryVectorStore:
             results.append(SearchResult(chunk=self.chunks[i], score=score))
 
         return results
+
+    def list_lectures(self) -> List[dict]:
+        """Distinct lectures that have transcripts, in seed order."""
+        seen: dict = {}
+        for chunk in self.chunks:
+            if chunk.lecture_id not in seen:
+                seen[chunk.lecture_id] = {
+                    "lecture_id": chunk.lecture_id,
+                    "lecture_title": chunk.lecture_title,
+                    "course_id": chunk.course_id,
+                    "course_title": chunk.course_title,
+                }
+        return list(seen.values())
+
+    def get_lecture_chunks(self, lecture_id: str) -> List[TranscriptChunk]:
+        return [c for c in self.chunks if c.lecture_id == lecture_id]
+
+    def get_lecture_transcript(self, lecture_id: str) -> str:
+        """Full lecture text, chunks concatenated in time order."""
+        chunks = sorted(self.get_lecture_chunks(lecture_id), key=lambda c: c.start_time)
+        return "\n\n".join(c.text for c in chunks)
+
+    def get_lecture_meta(self, lecture_id: str) -> Optional[dict]:
+        for chunk in self.chunks:
+            if chunk.lecture_id == lecture_id:
+                return {
+                    "lecture_id": chunk.lecture_id,
+                    "lecture_title": chunk.lecture_title,
+                    "course_id": chunk.course_id,
+                    "course_title": chunk.course_title,
+                }
+        return None
 
     def get_all_courses(self):
         seen: dict = {}

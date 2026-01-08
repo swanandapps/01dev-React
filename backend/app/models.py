@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class TranscriptChunk(BaseModel):
@@ -46,3 +46,41 @@ class Course(BaseModel):
     course_id: str
     title: str
     lecture_count: int
+
+
+class LectureInfo(BaseModel):
+    lecture_id: str
+    lecture_title: str
+    course_id: str
+    course_title: str
+
+
+# ---- Feature 2: Study guides ----
+
+class KeyConcept(BaseModel):
+    name: str
+    description: str
+
+
+class PracticeQA(BaseModel):
+    question: str
+    answer: str
+
+
+class StudyGuide(BaseModel):
+    lecture_id: str
+    course_id: str
+    lecture_title: str
+    course_title: str
+    key_concepts: List[KeyConcept]
+    summary: str
+    practice_questions: List[PracticeQA]
+    misconceptions: List[str]
+    model: str
+    generated_at: str
+
+
+class StudyGuideStatus(BaseModel):
+    lecture_id: str
+    status: str  # "ready" | "generating" | "none"
+    guide: Optional[StudyGuide] = None
