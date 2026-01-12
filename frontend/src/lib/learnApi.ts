@@ -1,4 +1,4 @@
-import type { Lecture, StudyGuideStatus } from "../types/learn";
+import type { Lecture, StudyGuideStatus, QuestionStatus } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -21,4 +21,12 @@ export function getStudyGuide(lectureId: string): Promise<StudyGuideStatus> {
 
 export function generateStudyGuide(lectureId: string): Promise<StudyGuideStatus> {
   return getJson<StudyGuideStatus>(`/api/ai/study-guide/${lectureId}/generate`, { method: "POST" });
+}
+
+export function getQuestions(lectureId: string): Promise<QuestionStatus> {
+  return getJson<QuestionStatus>(`/api/ai/questions/${lectureId}`);
+}
+
+export function generateQuestions(lectureId: string): Promise<QuestionStatus> {
+  return getJson<QuestionStatus>(`/api/ai/questions/${lectureId}/generate`, { method: "POST" });
 }

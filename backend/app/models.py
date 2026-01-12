@@ -84,3 +84,25 @@ class StudyGuideStatus(BaseModel):
     lecture_id: str
     status: str  # "ready" | "generating" | "none"
     guide: Optional[StudyGuide] = None
+
+
+# ---- Feature 3: MCQ questions ----
+
+class MCQQuestion(BaseModel):
+    id: str
+    question: str
+    options: List[str]
+    correct_index: int
+    explanation: str
+    concept: str
+    difficulty: str  # "easy" | "medium" | "hard"
+
+
+class QuestionSet(BaseModel):
+    lecture_id: str
+    course_id: str
+    lecture_title: str
+    course_title: str
+    questions: List[MCQQuestion]
+    model: str
+    generated_at: str

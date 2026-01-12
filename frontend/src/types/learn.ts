@@ -32,3 +32,28 @@ export interface StudyGuideStatus {
   status: "ready" | "generating" | "none";
   guide: StudyGuide | null;
 }
+
+export interface MCQQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+  concept: string;
+  difficulty: "easy" | "medium" | "hard";
+}
+
+export interface QuestionSet {
+  lecture_id: string;
+  course_id: string;
+  lecture_title: string;
+  course_title: string;
+  questions: MCQQuestion[];
+  model: string;
+  generated_at: string;
+}
+
+export interface QuestionStatus {
+  status: "ready" | "generating" | "none";
+  questions: QuestionSet | null;
+}

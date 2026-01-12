@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, Sparkles, BookOpen, HelpCircle, AlertTriangle } from "lucide-react";
-import { getStudyGuide, generateStudyGuide } from "../../lib/learnApi";
+import { getStudyGuide, generateStudyGuide, generateQuestions } from "../../lib/learnApi";
 import type { Lecture, StudyGuide } from "../../types/learn";
 
 export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClose: () => void }) {
@@ -11,6 +11,10 @@ export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClos
 
   useEffect(() => {
     let cancelled = false;
+
+    // Lecture accessed → warm up practice questions in the background (Feature 3),
+    // so they're ready by the time the student wants to practice.
+    generateQuestions(lecture.lecture_id).catch(() => {});
 
     const poll = async () => {
       try {

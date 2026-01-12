@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from app.models import AskRequest, AskResponse, Course, LectureInfo
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
-from app.services import study_guide_service
+from app.services import study_guide_service, question_service
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -71,6 +71,18 @@ async def study_guide_generate(lecture_id: str):
     if not vector_store.get_lecture_meta(lecture_id):
         raise HTTPException(status_code=404, detail="Unknown lecture")
     return await study_guide_service.ensure_generated(lecture_id)
+
+
+@app.get("/api/ai/questions/{lecture_id}")
+async def questions_status(lecture_id: str):
+    return await question_service.get_status(lecture_id)
+
+
+@app.post("/api/ai/questions/{lecture_id}/generate")
+async def questions_generate(lecture_id: str):
+    if not vector_store.get_lecture_meta(lecture_id):
+        raise HTTPException(status_code=404, detail="Unknown lecture")
+    return await question_service.ensure_generated(lecture_id)
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)
