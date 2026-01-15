@@ -106,3 +106,39 @@ class QuestionSet(BaseModel):
     questions: List[MCQQuestion]
     model: str
     generated_at: str
+
+
+# ---- Feature 4: Quiz sessions ----
+
+class QuizAnswer(BaseModel):
+    question_id: str
+    concept: str
+    difficulty: str
+    correct: bool
+    time_taken_ms: int = 0
+
+
+class QuizSubmit(BaseModel):
+    user_id: str = "anonymous"
+    lecture_id: str
+    answers: List[QuizAnswer]
+
+
+class ConceptScore(BaseModel):
+    concept: str
+    attempts: int
+    correct: int
+    accuracy: float
+
+
+class QuizSession(BaseModel):
+    session_id: str
+    user_id: str
+    lecture_id: str
+    course_id: str
+    lecture_title: str
+    score: int
+    total: int
+    answers: List[QuizAnswer]
+    concept_breakdown: List[ConceptScore]
+    completed_at: str

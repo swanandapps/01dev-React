@@ -57,3 +57,37 @@ export interface QuestionStatus {
   status: "ready" | "generating" | "none";
   questions: QuestionSet | null;
 }
+
+export interface QuizAnswer {
+  question_id: string;
+  concept: string;
+  difficulty: string;
+  correct: boolean;
+  time_taken_ms: number;
+}
+
+export interface QuizSubmit {
+  user_id: string;
+  lecture_id: string;
+  answers: QuizAnswer[];
+}
+
+export interface ConceptScore {
+  concept: string;
+  attempts: number;
+  correct: number;
+  accuracy: number;
+}
+
+export interface QuizSession {
+  session_id: string;
+  user_id: string;
+  lecture_id: string;
+  course_id: string;
+  lecture_title: string;
+  score: number;
+  total: number;
+  answers: QuizAnswer[];
+  concept_breakdown: ConceptScore[];
+  completed_at: string;
+}

@@ -1,15 +1,24 @@
-import { useEffect, useState } from "react";
-import { BookOpen, Loader2, GraduationCap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Loader2, GraduationCap, Dumbbell } from "lucide-react";
 import Header from "../components/Home/Header";
 import { StudyGuideModal } from "../components/learn/StudyGuideModal";
-import { getLectures } from "../lib/learnApi";
+import { QuizModal } from "../components/learn/QuizModal";
+import { getLectures, getQuestions, generateQuestions } from "../lib/learnApi";
+import { useUserSessionStore } from "../store/userSession";
 import type { Lecture } from "../types/learn";
 
 export default function LearnPage() {
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
+  const [activeGuide, setActiveGuide] = useState<Lecture | null>(null);
+  const [activeQuiz, setActiveQuiz] = useState<Lecture | null>(null);
+  // lecture_id -> whether a question bank is ready
+  const [quizReady, setQuizReady] = useState<Record<string, boolean>>({});
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const currentuser = useUserSessionStore((s) => s.currentuser);
+  const userId = (currentuser?.uid as string) || "anonymous";
 
   useEffect(() => {
     getLectures()
@@ -17,6 +26,41 @@ export default function LearnPage() {
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Check which lectures already have a question bank (Practice button visibility).
+  useEffect(() => {
+    if (!lectures.length) return;
+    let cancelled = false;
+
+    const check = async () => {
+      const entries = await Promise.all(
+        lectures.map(async (l) => {
+          try {
+            const res = await getQuestions(l.lecture_id);
+            // Generate on first access so the Practice button can light up.
+            if (res.status === "none") generateQuestions(l.lecture_id).catch(() => {});
+            return [l.lecture_id, res.status === "ready"] as const;
+          } catch {
+            return [l.lecture_id, false] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      setQuizReady(Object.fromEntries(entries));
+      // Stop polling once every lecture is ready.
+      if (entries.every(([, ready]) => ready) && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+
+    check();
+    pollRef.current = setInterval(check, 4000);
+    return () => {
+      cancelled = true;
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [lectures]);
 
   // Group lectures by course for a tidy list.
   const byCourse = lectures.reduce<Record<string, Lecture[]>>((acc, l) => {
@@ -61,16 +105,32 @@ export default function LearnPage() {
                     {items.map((lec) => (
                       <div
                         key={lec.lecture_id}
-                        className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 hover:border-zinc-700 transition-colors"
+                        className="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 hover:border-zinc-700 transition-colors"
                       >
-                        <p className="text-sm text-zinc-200">{lec.lecture_title}</p>
-                        <button
-                          onClick={() => setActiveLecture(lec)}
-                          className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-indigo-200 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 rounded-lg px-3 py-1.5 transition-colors flex-shrink-0"
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          View Study Guide
-                        </button>
+                        <p className="text-sm text-zinc-200 min-w-0">{lec.lecture_title}</p>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => setActiveGuide(lec)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-indigo-200 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Study Guide
+                          </button>
+                          {quizReady[lec.lecture_id] ? (
+                            <button
+                              onClick={() => setActiveQuiz(lec)}
+                              className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                            >
+                              <Dumbbell className="w-3.5 h-3.5" />
+                              Practice
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs text-zinc-600 px-3 py-1.5">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              Prep…
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -81,8 +141,11 @@ export default function LearnPage() {
         </div>
       </div>
 
-      {activeLecture && (
-        <StudyGuideModal lecture={activeLecture} onClose={() => setActiveLecture(null)} />
+      {activeGuide && (
+        <StudyGuideModal lecture={activeGuide} onClose={() => setActiveGuide(null)} />
+      )}
+      {activeQuiz && (
+        <QuizModal lecture={activeQuiz} userId={userId} onClose={() => setActiveQuiz(null)} />
       )}
     </div>
   );

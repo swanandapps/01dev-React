@@ -1,4 +1,4 @@
-import type { Lecture, StudyGuideStatus, QuestionStatus } from "../types/learn";
+import type { Lecture, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -29,4 +29,16 @@ export function getQuestions(lectureId: string): Promise<QuestionStatus> {
 
 export function generateQuestions(lectureId: string): Promise<QuestionStatus> {
   return getJson<QuestionStatus>(`/api/ai/questions/${lectureId}/generate`, { method: "POST" });
+}
+
+export function saveQuizSession(submit: QuizSubmit): Promise<QuizSession> {
+  return getJson<QuizSession>("/api/ai/quiz-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(submit),
+  });
+}
+
+export function listQuizSessions(userId: string): Promise<QuizSession[]> {
+  return getJson<QuizSession[]>(`/api/ai/quiz-sessions?user_id=${encodeURIComponent(userId)}`);
 }
