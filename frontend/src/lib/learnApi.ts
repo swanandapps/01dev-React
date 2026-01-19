@@ -1,4 +1,6 @@
-import type { Lecture, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession } from "../types/learn";
+import type {
+  Lecture, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
+} from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -41,4 +43,25 @@ export function saveQuizSession(submit: QuizSubmit): Promise<QuizSession> {
 
 export function listQuizSessions(userId: string): Promise<QuizSession[]> {
   return getJson<QuizSession[]>(`/api/ai/quiz-sessions?user_id=${encodeURIComponent(userId)}`);
+}
+
+export function startAdaptive(userId: string, lectureId: string): Promise<AdaptiveResponse> {
+  return getJson<AdaptiveResponse>("/api/ai/adaptive/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, lecture_id: lectureId }),
+  });
+}
+
+export function answerAdaptive(body: {
+  session_id: string;
+  question_id: string;
+  concept: string;
+  correct: boolean;
+}): Promise<AdaptiveResponse> {
+  return getJson<AdaptiveResponse>("/api/ai/adaptive/answer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }

@@ -142,3 +142,17 @@ class QuizSession(BaseModel):
     answers: List[QuizAnswer]
     concept_breakdown: List[ConceptScore]
     completed_at: str
+
+
+# ---- Feature 5: Adaptive practice ----
+
+class AdaptiveStartRequest(BaseModel):
+    user_id: str = "anonymous"
+    lecture_id: str
+
+
+class AdaptiveAnswerRequest(BaseModel):
+    session_id: str
+    question_id: str
+    concept: str
+    correct: bool

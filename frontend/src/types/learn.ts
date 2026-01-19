@@ -91,3 +91,24 @@ export interface QuizSession {
   concept_breakdown: ConceptScore[];
   completed_at: string;
 }
+
+// Feature 5 — adaptive practice
+export interface ConceptMastery {
+  concept: string;
+  accuracy: number;
+  attempts: number;
+  mastered: boolean;
+}
+
+export interface AdaptiveSummary {
+  mastery: ConceptMastery[];
+  revisit: string[];
+}
+
+export interface AdaptiveResponse {
+  status: "preparing" | "active" | "done";
+  session_id?: string;
+  question?: MCQQuestion | null;
+  progress?: { answered: number; cap: number };
+  summary?: AdaptiveSummary | null;
+}

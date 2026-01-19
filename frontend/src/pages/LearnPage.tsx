@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Loader2, GraduationCap, Dumbbell } from "lucide-react";
+import { BookOpen, Loader2, GraduationCap, Dumbbell, Target } from "lucide-react";
 import Header from "../components/Home/Header";
 import { StudyGuideModal } from "../components/learn/StudyGuideModal";
 import { QuizModal } from "../components/learn/QuizModal";
+import { AdaptiveModal } from "../components/learn/AdaptiveModal";
 import { getLectures, getQuestions, generateQuestions } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
 import type { Lecture } from "../types/learn";
@@ -13,6 +14,7 @@ export default function LearnPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeGuide, setActiveGuide] = useState<Lecture | null>(null);
   const [activeQuiz, setActiveQuiz] = useState<Lecture | null>(null);
+  const [activeAdaptive, setActiveAdaptive] = useState<Lecture | null>(null);
   // lecture_id -> whether a question bank is ready
   const [quizReady, setQuizReady] = useState<Record<string, boolean>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -117,13 +119,22 @@ export default function LearnPage() {
                             Study Guide
                           </button>
                           {quizReady[lec.lecture_id] ? (
-                            <button
-                              onClick={() => setActiveQuiz(lec)}
-                              className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                            >
-                              <Dumbbell className="w-3.5 h-3.5" />
-                              Practice
-                            </button>
+                            <>
+                              <button
+                                onClick={() => setActiveQuiz(lec)}
+                                className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                              >
+                                <Dumbbell className="w-3.5 h-3.5" />
+                                Practice
+                              </button>
+                              <button
+                                onClick={() => setActiveAdaptive(lec)}
+                                className="flex items-center gap-1.5 text-xs font-medium text-violet-300 hover:text-violet-200 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                              >
+                                <Target className="w-3.5 h-3.5" />
+                                Adaptive
+                              </button>
+                            </>
                           ) : (
                             <span className="flex items-center gap-1.5 text-xs text-zinc-600 px-3 py-1.5">
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -146,6 +157,9 @@ export default function LearnPage() {
       )}
       {activeQuiz && (
         <QuizModal lecture={activeQuiz} userId={userId} onClose={() => setActiveQuiz(null)} />
+      )}
+      {activeAdaptive && (
+        <AdaptiveModal lecture={activeAdaptive} userId={userId} onClose={() => setActiveAdaptive(null)} />
       )}
     </div>
   );

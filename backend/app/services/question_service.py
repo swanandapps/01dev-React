@@ -38,6 +38,9 @@ Return a JSON object with EXACTLY this shape:
   ]
 }
 Produce EXACTLY 10 questions with this difficulty mix: 4 easy, 4 medium, 2 hard.
+Use only 3-5 distinct concept tags across all 10 questions, so that several
+questions share a concept (this powers adaptive practice — a concept needs
+multiple questions at different difficulties).
 Vary the position of the correct answer across questions."""
 
 

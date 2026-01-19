@@ -13,10 +13,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.models import AskRequest, AskResponse, Course, LectureInfo, QuizSubmit
+from app.models import (
+    AskRequest, AskResponse, Course, LectureInfo, QuizSubmit,
+    AdaptiveStartRequest, AdaptiveAnswerRequest,
+)
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
-from app.services import study_guide_service, question_service, quiz_service
+from app.services import study_guide_service, question_service, quiz_service, adaptive_service
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -93,6 +96,18 @@ async def save_quiz_session(submit: QuizSubmit):
 @app.get("/api/ai/quiz-sessions")
 async def list_quiz_sessions(user_id: str):
     return await quiz_service.list_sessions(user_id)
+
+
+@app.post("/api/ai/adaptive/start")
+async def adaptive_start(req: AdaptiveStartRequest):
+    if not vector_store.get_lecture_meta(req.lecture_id):
+        raise HTTPException(status_code=404, detail="Unknown lecture")
+    return await adaptive_service.start(req.user_id, req.lecture_id)
+
+
+@app.post("/api/ai/adaptive/answer")
+async def adaptive_answer(req: AdaptiveAnswerRequest):
+    return await adaptive_service.answer(req.session_id, req.question_id, req.correct, req.concept)
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)
