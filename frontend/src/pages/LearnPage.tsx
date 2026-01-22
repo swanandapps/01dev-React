@@ -4,7 +4,7 @@ import Header from "../components/Home/Header";
 import { StudyGuideModal } from "../components/learn/StudyGuideModal";
 import { QuizModal } from "../components/learn/QuizModal";
 import { AdaptiveModal } from "../components/learn/AdaptiveModal";
-import { getLectures, getQuestions, generateQuestions } from "../lib/learnApi";
+import { getLectures, getQuestions, generateQuestions, buildKnowledgeGraph } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
 import type { Lecture } from "../types/learn";
 
@@ -41,6 +41,8 @@ export default function LearnPage() {
             const res = await getQuestions(l.lecture_id);
             // Generate on first access so the Practice button can light up.
             if (res.status === "none") generateQuestions(l.lecture_id).catch(() => {});
+            // Build the (internal) knowledge graph in the background too.
+            if (res.status === "ready") buildKnowledgeGraph(l.lecture_id).catch(() => {});
             return [l.lecture_id, res.status === "ready"] as const;
           } catch {
             return [l.lecture_id, false] as const;

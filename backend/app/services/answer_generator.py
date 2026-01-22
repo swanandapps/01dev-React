@@ -23,17 +23,19 @@ class AnswerGenerator:
     def model_name(self) -> str:
         return "text-embedding-3-small + gpt-4.1-mini" if self.client else "local-fallback"
 
-    async def generate(self, question: str, results: List[SearchResult]) -> Tuple[str, str]:
-        context = self._build_context(results)
+    async def generate(
+        self, question: str, results: List[SearchResult], extra_context: str = ""
+    ) -> Tuple[str, str]:
+        context = self._build_context(results) + extra_context
         if self.client:
             return await self._openai_generate(question, context)
         return self._local_generate(question, results), "local-fallback"
 
     async def generate_stream(
-        self, question: str, results: List[SearchResult]
+        self, question: str, results: List[SearchResult], extra_context: str = ""
     ) -> AsyncIterator[str]:
         """Yield answer tokens as they are produced."""
-        context = self._build_context(results)
+        context = self._build_context(results) + extra_context
         if self.client:
             stream = await self.client.chat.completions.create(
                 model="gpt-4.1-mini",

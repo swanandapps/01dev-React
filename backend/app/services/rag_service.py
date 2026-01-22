@@ -5,6 +5,7 @@ from app.models import AskRequest, AskResponse, SourceCard
 from app.services.vector_store import vector_store
 from app.services.embeddings import embedding_service
 from app.services.answer_generator import answer_generator
+from app.services import knowledge_graph_service
 
 INSUFFICIENT_CONTEXT_ANSWER = (
     "The course content does not contain enough information to answer this question. "
@@ -24,7 +25,9 @@ async def ask(request: AskRequest) -> AskResponse:
             model="retrieval-only",
         )
 
-    answer, model_name = await answer_generator.generate(request.question, results)
+    answer, model_name = await answer_generator.generate(
+        request.question, results, await _graph_context(results)
+    )
 
     return AskResponse(
         answer=answer,
@@ -55,7 +58,8 @@ async def ask_stream(request: AskRequest) -> AsyncIterator[str]:
     })
 
     try:
-        async for token in answer_generator.generate_stream(request.question, results):
+        extra = await _graph_context(results)
+        async for token in answer_generator.generate_stream(request.question, results, extra):
             yield _sse({"type": "token", "value": token})
     except Exception as e:  # noqa: BLE001 — surface generation errors to the client
         yield _sse({"type": "error", "message": str(e)})
@@ -79,6 +83,31 @@ def _build_sources(results) -> list[SourceCard]:
         )
         for r in results
     ]
+
+
+async def _graph_context(results) -> str:
+    """
+    Feature 6 integration: enrich the answer with the knowledge graph of the
+    top-matched lecture — its concepts (with descriptions) and prerequisite
+    edges. No-op (empty string) when no graph has been built yet, so the live
+    RAG behaviour is unchanged until graphs exist.
+    """
+    try:
+        lecture_id = results[0].chunk.lecture_id
+        graph = await knowledge_graph_service.get_graph(lecture_id)
+        concepts = [c for c in graph["concepts"] if c.get("description")]
+        if not concepts:
+            return ""
+
+        lines = ["\n\n--- Concept map for this lecture (for grounding) ---"]
+        for c in concepts:
+            lines.append(f"• {c['name']}: {c['description']}")
+        prereqs = [r for r in graph["relationships"] if r.get("type") == "prerequisite_of"]
+        if prereqs:
+            lines.append("Prerequisites: " + "; ".join(f"{r['source']} → {r['target']}" for r in prereqs))
+        return "\n".join(lines)
+    except Exception:  # noqa: BLE001 — graph context is best-effort, never block answers
+        return ""
 
 
 def _sse(payload: dict) -> str:

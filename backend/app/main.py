@@ -19,7 +19,10 @@ from app.models import (
 )
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
-from app.services import study_guide_service, question_service, quiz_service, adaptive_service
+from app.services import (
+    study_guide_service, question_service, quiz_service, adaptive_service,
+    knowledge_graph_service,
+)
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -108,6 +111,18 @@ async def adaptive_start(req: AdaptiveStartRequest):
 @app.post("/api/ai/adaptive/answer")
 async def adaptive_answer(req: AdaptiveAnswerRequest):
     return await adaptive_service.answer(req.session_id, req.question_id, req.correct, req.concept)
+
+
+@app.get("/api/ai/knowledge-graph/{lecture_id}")
+async def knowledge_graph(lecture_id: str):
+    return await knowledge_graph_service.get_graph(lecture_id)
+
+
+@app.post("/api/ai/knowledge-graph/{lecture_id}/build")
+async def knowledge_graph_build(lecture_id: str):
+    if not vector_store.get_lecture_meta(lecture_id):
+        raise HTTPException(status_code=404, detail="Unknown lecture")
+    return await knowledge_graph_service.ensure_built(lecture_id)
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)

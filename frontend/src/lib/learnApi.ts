@@ -53,6 +53,11 @@ export function startAdaptive(userId: string, lectureId: string): Promise<Adapti
   });
 }
 
+// Feature 6 — knowledge graph is internal; we only trigger its build on access.
+export function buildKnowledgeGraph(lectureId: string): Promise<{ status: string }> {
+  return getJson<{ status: string }>(`/api/ai/knowledge-graph/${lectureId}/build`, { method: "POST" });
+}
+
 export function answerAdaptive(body: {
   session_id: string;
   question_id: string;

@@ -24,7 +24,7 @@ from typing import List, Optional
 
 from app.models import MCQQuestion
 from app.services.store import store
-from app.services import question_service
+from app.services import question_service, knowledge_graph_service
 
 PERF_COLLECTION = "concept_performance"
 SESSION_COLLECTION = "adaptive_sessions"
@@ -84,7 +84,7 @@ async def _question_bank(lecture_id: str) -> List[MCQQuestion]:
 
 
 async def _pick_next(
-    user_id: str, bank: List[MCQQuestion], answered_ids: List[str]
+    user_id: str, lecture_id: str, bank: List[MCQQuestion], answered_ids: List[str]
 ) -> Optional[MCQQuestion]:
     unanswered = [q for q in bank if q.id not in answered_ids]
     if not unanswered:
@@ -116,6 +116,16 @@ async def _pick_next(
 
     acc = perf[target]["accuracy"] if perf[target] else None
     want = _band_difficulty(acc)
+
+    # Feature 6 integration: don't serve a HARD question on a concept until its
+    # prerequisites are reasonably solid (>= 70% accuracy). Cap at medium otherwise.
+    if want == "hard":
+        prereqs = await knowledge_graph_service.get_prerequisites(lecture_id, target)
+        for pre in prereqs:
+            p = await _get_perf(user_id, pre)
+            if not p or p["attempts"] == 0 or p["accuracy"] < 0.7:
+                want = "medium"
+                break
 
     pool = [q for q in unanswered if q.concept == target]
     preferred = [q for q in pool if q.difficulty == want]
@@ -154,7 +164,7 @@ async def start(user_id: str, lecture_id: str) -> dict:
         return {"status": "preparing"}
 
     session_id = str(uuid.uuid4())
-    first = await _pick_next(user_id, bank, [])
+    first = await _pick_next(user_id, lecture_id, bank, [])
     session = {
         "session_id": session_id,
         "user_id": user_id,
@@ -187,7 +197,7 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
 
     # End conditions.
     ended = session["count"] >= MAX_QUESTIONS or await _all_concepts_mastered(user_id, bank)
-    nxt = None if ended else await _pick_next(user_id, bank, session["answered_ids"])
+    nxt = None if ended else await _pick_next(user_id, session["lecture_id"], bank, session["answered_ids"])
     if nxt is None:
         session["done"] = True
         await store.set(SESSION_COLLECTION, session_id, session)
