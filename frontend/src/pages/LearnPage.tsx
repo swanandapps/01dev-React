@@ -4,6 +4,7 @@ import Header from "../components/Home/Header";
 import { StudyGuideModal } from "../components/learn/StudyGuideModal";
 import { QuizModal } from "../components/learn/QuizModal";
 import { AdaptiveModal } from "../components/learn/AdaptiveModal";
+import { RecommendationsCard } from "../components/learn/RecommendationsCard";
 import { getLectures, getQuestions, generateQuestions, buildKnowledgeGraph } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
 import type { Lecture } from "../types/learn";
@@ -100,8 +101,14 @@ export default function LearnPage() {
             </p>
           )}
 
+          {!loading && !error && lectures.length > 0 && (
+            <div className="mt-6">
+              <RecommendationsCard userId={userId} lectures={lectures} onPick={setActiveGuide} />
+            </div>
+          )}
+
           {!loading && !error && (
-            <div className="mt-6 space-y-8">
+            <div className="mt-2 space-y-8">
               {Object.entries(byCourse).map(([course, items]) => (
                 <section key={course}>
                   <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">{course}</h2>

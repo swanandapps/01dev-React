@@ -21,7 +21,7 @@ from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
-    knowledge_graph_service,
+    knowledge_graph_service, recommendation_service,
 )
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -93,7 +93,10 @@ async def questions_generate(lecture_id: str):
 
 @app.post("/api/ai/quiz-session")
 async def save_quiz_session(submit: QuizSubmit):
-    return await quiz_service.save_session(submit)
+    session = await quiz_service.save_session(submit)
+    # Completing a quiz changes performance → invalidate cached recommendations.
+    await recommendation_service.invalidate(submit.user_id)
+    return session
 
 
 @app.get("/api/ai/quiz-sessions")
@@ -123,6 +126,11 @@ async def knowledge_graph_build(lecture_id: str):
     if not vector_store.get_lecture_meta(lecture_id):
         raise HTTPException(status_code=404, detail="Unknown lecture")
     return await knowledge_graph_service.ensure_built(lecture_id)
+
+
+@app.get("/api/ai/recommendations")
+async def recommendations(user_id: str):
+    return await recommendation_service.get_recommendations(user_id)
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)

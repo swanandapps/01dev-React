@@ -1,5 +1,6 @@
 import type {
   Lecture, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
+  RecommendationsResponse,
 } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
@@ -51,6 +52,10 @@ export function startAdaptive(userId: string, lectureId: string): Promise<Adapti
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ user_id: userId, lecture_id: lectureId }),
   });
+}
+
+export function getRecommendations(userId: string): Promise<RecommendationsResponse> {
+  return getJson<RecommendationsResponse>(`/api/ai/recommendations?user_id=${encodeURIComponent(userId)}`);
 }
 
 // Feature 6 — knowledge graph is internal; we only trigger its build on access.

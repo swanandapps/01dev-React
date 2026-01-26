@@ -112,3 +112,18 @@ export interface AdaptiveResponse {
   progress?: { answered: number; cap: number };
   summary?: AdaptiveSummary | null;
 }
+
+// Feature 7 — recommendations
+export interface Recommendation {
+  lecture_id: string;
+  lecture_title: string;
+  course_title: string;
+  reason: string;
+}
+
+export interface RecommendationsResponse {
+  user_id: string;
+  recommendations: Recommendation[];
+  generated_at: string;
+  cached: boolean;
+}
