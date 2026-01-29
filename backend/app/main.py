@@ -14,7 +14,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.models import (
-    AskRequest, AskResponse, Course, LectureInfo, QuizSubmit,
+    AskRequest, AskResponse, Course, QuizSubmit,
     AdaptiveStartRequest, AdaptiveAnswerRequest,
 )
 from app.services.vector_store import vector_store
@@ -61,34 +61,31 @@ async def get_courses():
     return vector_store.get_all_courses()
 
 
-@app.get("/api/lectures", response_model=list[LectureInfo])
-async def get_lectures():
-    """Lectures that have transcripts — the set AI features are scoped to."""
-    return vector_store.list_lectures()
+def _require_course(course_id: str):
+    if not vector_store.get_course_meta(course_id):
+        raise HTTPException(status_code=404, detail="Unknown course")
 
 
-@app.get("/api/ai/study-guide/{lecture_id}")
-async def study_guide_status(lecture_id: str):
-    return await study_guide_service.get_status(lecture_id)
+@app.get("/api/ai/study-guide/{course_id}")
+async def study_guide_status(course_id: str):
+    return await study_guide_service.get_status(course_id)
 
 
-@app.post("/api/ai/study-guide/{lecture_id}/generate")
-async def study_guide_generate(lecture_id: str):
-    if not vector_store.get_lecture_meta(lecture_id):
-        raise HTTPException(status_code=404, detail="Unknown lecture")
-    return await study_guide_service.ensure_generated(lecture_id)
+@app.post("/api/ai/study-guide/{course_id}/generate")
+async def study_guide_generate(course_id: str):
+    _require_course(course_id)
+    return await study_guide_service.ensure_generated(course_id)
 
 
-@app.get("/api/ai/questions/{lecture_id}")
-async def questions_status(lecture_id: str):
-    return await question_service.get_status(lecture_id)
+@app.get("/api/ai/questions/{course_id}")
+async def questions_status(course_id: str):
+    return await question_service.get_status(course_id)
 
 
-@app.post("/api/ai/questions/{lecture_id}/generate")
-async def questions_generate(lecture_id: str):
-    if not vector_store.get_lecture_meta(lecture_id):
-        raise HTTPException(status_code=404, detail="Unknown lecture")
-    return await question_service.ensure_generated(lecture_id)
+@app.post("/api/ai/questions/{course_id}/generate")
+async def questions_generate(course_id: str):
+    _require_course(course_id)
+    return await question_service.ensure_generated(course_id)
 
 
 @app.post("/api/ai/quiz-session")
@@ -106,9 +103,8 @@ async def list_quiz_sessions(user_id: str):
 
 @app.post("/api/ai/adaptive/start")
 async def adaptive_start(req: AdaptiveStartRequest):
-    if not vector_store.get_lecture_meta(req.lecture_id):
-        raise HTTPException(status_code=404, detail="Unknown lecture")
-    return await adaptive_service.start(req.user_id, req.lecture_id)
+    _require_course(req.course_id)
+    return await adaptive_service.start(req.user_id, req.course_id)
 
 
 @app.post("/api/ai/adaptive/answer")
@@ -116,16 +112,15 @@ async def adaptive_answer(req: AdaptiveAnswerRequest):
     return await adaptive_service.answer(req.session_id, req.question_id, req.correct, req.concept)
 
 
-@app.get("/api/ai/knowledge-graph/{lecture_id}")
-async def knowledge_graph(lecture_id: str):
-    return await knowledge_graph_service.get_graph(lecture_id)
+@app.get("/api/ai/knowledge-graph/{course_id}")
+async def knowledge_graph(course_id: str):
+    return await knowledge_graph_service.get_graph(course_id)
 
 
-@app.post("/api/ai/knowledge-graph/{lecture_id}/build")
-async def knowledge_graph_build(lecture_id: str):
-    if not vector_store.get_lecture_meta(lecture_id):
-        raise HTTPException(status_code=404, detail="Unknown lecture")
-    return await knowledge_graph_service.ensure_built(lecture_id)
+@app.post("/api/ai/knowledge-graph/{course_id}/build")
+async def knowledge_graph_build(course_id: str):
+    _require_course(course_id)
+    return await knowledge_graph_service.ensure_built(course_id)
 
 
 @app.get("/api/ai/recommendations")

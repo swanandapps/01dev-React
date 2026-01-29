@@ -1,5 +1,5 @@
 import type {
-  Lecture, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
+  Course, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
   RecommendationsResponse,
 } from "../types/learn";
 
@@ -14,24 +14,24 @@ async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export function getLectures(): Promise<Lecture[]> {
-  return getJson<Lecture[]>("/api/lectures");
+export function getCourses(): Promise<Course[]> {
+  return getJson<Course[]>("/api/courses");
 }
 
-export function getStudyGuide(lectureId: string): Promise<StudyGuideStatus> {
-  return getJson<StudyGuideStatus>(`/api/ai/study-guide/${lectureId}`);
+export function getStudyGuide(courseId: string): Promise<StudyGuideStatus> {
+  return getJson<StudyGuideStatus>(`/api/ai/study-guide/${courseId}`);
 }
 
-export function generateStudyGuide(lectureId: string): Promise<StudyGuideStatus> {
-  return getJson<StudyGuideStatus>(`/api/ai/study-guide/${lectureId}/generate`, { method: "POST" });
+export function generateStudyGuide(courseId: string): Promise<StudyGuideStatus> {
+  return getJson<StudyGuideStatus>(`/api/ai/study-guide/${courseId}/generate`, { method: "POST" });
 }
 
-export function getQuestions(lectureId: string): Promise<QuestionStatus> {
-  return getJson<QuestionStatus>(`/api/ai/questions/${lectureId}`);
+export function getQuestions(courseId: string): Promise<QuestionStatus> {
+  return getJson<QuestionStatus>(`/api/ai/questions/${courseId}`);
 }
 
-export function generateQuestions(lectureId: string): Promise<QuestionStatus> {
-  return getJson<QuestionStatus>(`/api/ai/questions/${lectureId}/generate`, { method: "POST" });
+export function generateQuestions(courseId: string): Promise<QuestionStatus> {
+  return getJson<QuestionStatus>(`/api/ai/questions/${courseId}/generate`, { method: "POST" });
 }
 
 export function saveQuizSession(submit: QuizSubmit): Promise<QuizSession> {
@@ -46,21 +46,21 @@ export function listQuizSessions(userId: string): Promise<QuizSession[]> {
   return getJson<QuizSession[]>(`/api/ai/quiz-sessions?user_id=${encodeURIComponent(userId)}`);
 }
 
-export function startAdaptive(userId: string, lectureId: string): Promise<AdaptiveResponse> {
-  return getJson<AdaptiveResponse>("/api/ai/adaptive/start", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, lecture_id: lectureId }),
-  });
-}
-
 export function getRecommendations(userId: string): Promise<RecommendationsResponse> {
   return getJson<RecommendationsResponse>(`/api/ai/recommendations?user_id=${encodeURIComponent(userId)}`);
 }
 
-// Feature 6 — knowledge graph is internal; we only trigger its build on access.
-export function buildKnowledgeGraph(lectureId: string): Promise<{ status: string }> {
-  return getJson<{ status: string }>(`/api/ai/knowledge-graph/${lectureId}/build`, { method: "POST" });
+// Knowledge graph is internal; we only trigger its build on access.
+export function buildKnowledgeGraph(courseId: string): Promise<{ status: string }> {
+  return getJson<{ status: string }>(`/api/ai/knowledge-graph/${courseId}/build`, { method: "POST" });
+}
+
+export function startAdaptive(userId: string, courseId: string): Promise<AdaptiveResponse> {
+  return getJson<AdaptiveResponse>("/api/ai/adaptive/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, course_id: courseId }),
+  });
 }
 
 export function answerAdaptive(body: {

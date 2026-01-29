@@ -33,15 +33,14 @@ def _concept_breakdown(answers) -> List[ConceptScore]:
 
 
 async def save_session(submit: QuizSubmit) -> QuizSession:
-    meta = vector_store.get_lecture_meta(submit.lecture_id) or {}
+    meta = vector_store.get_course_meta(submit.course_id) or {}
     score = sum(1 for a in submit.answers if a.correct)
 
     session = QuizSession(
         session_id=str(uuid.uuid4()),
         user_id=submit.user_id,
-        lecture_id=submit.lecture_id,
-        course_id=meta.get("course_id", ""),
-        lecture_title=meta.get("lecture_title", submit.lecture_id),
+        course_id=submit.course_id,
+        course_title=meta.get("course_title", submit.course_id),
         score=score,
         total=len(submit.answers),
         answers=submit.answers,

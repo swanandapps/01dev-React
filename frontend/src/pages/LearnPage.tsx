@@ -5,18 +5,17 @@ import { StudyGuideModal } from "../components/learn/StudyGuideModal";
 import { QuizModal } from "../components/learn/QuizModal";
 import { AdaptiveModal } from "../components/learn/AdaptiveModal";
 import { RecommendationsCard } from "../components/learn/RecommendationsCard";
-import { getLectures, getQuestions, generateQuestions, buildKnowledgeGraph } from "../lib/learnApi";
+import { getCourses, getQuestions, generateQuestions, buildKnowledgeGraph } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
-import type { Lecture } from "../types/learn";
+import type { Course } from "../types/learn";
 
 export default function LearnPage() {
-  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeGuide, setActiveGuide] = useState<Lecture | null>(null);
-  const [activeQuiz, setActiveQuiz] = useState<Lecture | null>(null);
-  const [activeAdaptive, setActiveAdaptive] = useState<Lecture | null>(null);
-  // lecture_id -> whether a question bank is ready
+  const [activeGuide, setActiveGuide] = useState<Course | null>(null);
+  const [activeQuiz, setActiveQuiz] = useState<Course | null>(null);
+  const [activeAdaptive, setActiveAdaptive] = useState<Course | null>(null);
   const [quizReady, setQuizReady] = useState<Record<string, boolean>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -24,35 +23,32 @@ export default function LearnPage() {
   const userId = (currentuser?.uid as string) || "anonymous";
 
   useEffect(() => {
-    getLectures()
-      .then(setLectures)
+    getCourses()
+      .then(setCourses)
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false));
   }, []);
 
-  // Check which lectures already have a question bank (Practice button visibility).
+  // Check which courses already have a question bank (Practice button visibility).
   useEffect(() => {
-    if (!lectures.length) return;
+    if (!courses.length) return;
     let cancelled = false;
 
     const check = async () => {
       const entries = await Promise.all(
-        lectures.map(async (l) => {
+        courses.map(async (c) => {
           try {
-            const res = await getQuestions(l.lecture_id);
-            // Generate on first access so the Practice button can light up.
-            if (res.status === "none") generateQuestions(l.lecture_id).catch(() => {});
-            // Build the (internal) knowledge graph in the background too.
-            if (res.status === "ready") buildKnowledgeGraph(l.lecture_id).catch(() => {});
-            return [l.lecture_id, res.status === "ready"] as const;
+            const res = await getQuestions(c.course_id);
+            if (res.status === "none") generateQuestions(c.course_id).catch(() => {});
+            if (res.status === "ready") buildKnowledgeGraph(c.course_id).catch(() => {});
+            return [c.course_id, res.status === "ready"] as const;
           } catch {
-            return [l.lecture_id, false] as const;
+            return [c.course_id, false] as const;
           }
         }),
       );
       if (cancelled) return;
       setQuizReady(Object.fromEntries(entries));
-      // Stop polling once every lecture is ready.
       if (entries.every(([, ready]) => ready) && pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
@@ -65,13 +61,7 @@ export default function LearnPage() {
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [lectures]);
-
-  // Group lectures by course for a tidy list.
-  const byCourse = lectures.reduce<Record<string, Lecture[]>>((acc, l) => {
-    (acc[l.course_title] ??= []).push(l);
-    return acc;
-  }, {});
+  }, [courses]);
 
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
@@ -84,91 +74,85 @@ export default function LearnPage() {
             </div>
             <div>
               <h1 className="text-xl font-semibold text-zinc-100">Learn</h1>
-              <p className="text-sm text-zinc-500">AI study tools for lectures with transcripts</p>
+              <p className="text-sm text-zinc-500">AI study tools for each course</p>
             </div>
           </div>
 
           {loading && (
             <div className="flex items-center gap-2 text-zinc-400 py-16 justify-center">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Loading lectures…</span>
+              <span className="text-sm">Loading courses…</span>
             </div>
           )}
 
           {error && !loading && (
             <p className="text-sm text-amber-300 bg-amber-950/40 border border-amber-800/50 rounded-xl px-4 py-3 mt-6">
-              Couldn’t load lectures: {error}
+              Couldn’t load courses: {error}
             </p>
           )}
 
-          {!loading && !error && lectures.length > 0 && (
+          {!loading && !error && courses.length > 0 && (
             <div className="mt-6">
-              <RecommendationsCard userId={userId} lectures={lectures} onPick={setActiveGuide} />
+              <RecommendationsCard userId={userId} courses={courses} onPick={setActiveGuide} />
             </div>
           )}
 
           {!loading && !error && (
-            <div className="mt-2 space-y-8">
-              {Object.entries(byCourse).map(([course, items]) => (
-                <section key={course}>
-                  <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">{course}</h2>
-                  <div className="space-y-2">
-                    {items.map((lec) => (
-                      <div
-                        key={lec.lecture_id}
-                        className="flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 hover:border-zinc-700 transition-colors"
-                      >
-                        <p className="text-sm text-zinc-200 min-w-0">{lec.lecture_title}</p>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => setActiveGuide(lec)}
-                            className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-indigo-200 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                          >
-                            <BookOpen className="w-3.5 h-3.5" />
-                            Study Guide
-                          </button>
-                          {quizReady[lec.lecture_id] ? (
-                            <>
-                              <button
-                                onClick={() => setActiveQuiz(lec)}
-                                className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                              >
-                                <Dumbbell className="w-3.5 h-3.5" />
-                                Practice
-                              </button>
-                              <button
-                                onClick={() => setActiveAdaptive(lec)}
-                                className="flex items-center gap-1.5 text-xs font-medium text-violet-300 hover:text-violet-200 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                              >
-                                <Target className="w-3.5 h-3.5" />
-                                Adaptive
-                              </button>
-                            </>
-                          ) : (
-                            <span className="flex items-center gap-1.5 text-xs text-zinc-600 px-3 py-1.5">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              Prep…
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+            <div className="space-y-3">
+              {courses.map((course) => (
+                <div
+                  key={course.course_id}
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-100">{course.title}</p>
+                      <p className="text-xs text-zinc-500">{course.lecture_count} lecture{course.lecture_count === 1 ? "" : "s"}</p>
+                    </div>
                   </div>
-                </section>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setActiveGuide(course)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-indigo-200 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Study Guide
+                    </button>
+                    {quizReady[course.course_id] ? (
+                      <>
+                        <button
+                          onClick={() => setActiveQuiz(course)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                        >
+                          <Dumbbell className="w-3.5 h-3.5" />
+                          Practice
+                        </button>
+                        <button
+                          onClick={() => setActiveAdaptive(course)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-violet-300 hover:text-violet-200 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 rounded-lg px-3 py-1.5 transition-colors"
+                        >
+                          <Target className="w-3.5 h-3.5" />
+                          Adaptive
+                        </button>
+                      </>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-xs text-zinc-600 px-3 py-1.5">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Preparing practice…
+                      </span>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {activeGuide && (
-        <StudyGuideModal lecture={activeGuide} onClose={() => setActiveGuide(null)} />
-      )}
-      {activeQuiz && (
-        <QuizModal lecture={activeQuiz} userId={userId} onClose={() => setActiveQuiz(null)} />
-      )}
+      {activeGuide && <StudyGuideModal course={activeGuide} onClose={() => setActiveGuide(null)} />}
+      {activeQuiz && <QuizModal course={activeQuiz} userId={userId} onClose={() => setActiveQuiz(null)} />}
       {activeAdaptive && (
-        <AdaptiveModal lecture={activeAdaptive} userId={userId} onClose={() => setActiveAdaptive(null)} />
+        <AdaptiveModal course={activeAdaptive} userId={userId} onClose={() => setActiveAdaptive(null)} />
       )}
     </div>
   );

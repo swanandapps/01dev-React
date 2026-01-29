@@ -134,6 +134,43 @@ class InMemoryVectorStore:
         chunks = sorted(self.get_lecture_chunks(lecture_id), key=lambda c: c.start_time)
         return "\n\n".join(c.text for c in chunks)
 
+    def get_course_lectures(self, course_id: str) -> List[dict]:
+        """Distinct lectures within a course, in time/seed order."""
+        seen: dict = {}
+        for chunk in self.chunks:
+            if chunk.course_id == course_id and chunk.lecture_id not in seen:
+                seen[chunk.lecture_id] = {
+                    "lecture_id": chunk.lecture_id,
+                    "lecture_title": chunk.lecture_title,
+                }
+        return list(seen.values())
+
+    def get_course_meta(self, course_id: str) -> Optional[dict]:
+        lectures = self.get_course_lectures(course_id)
+        if not lectures:
+            return None
+        title = next(c.course_title for c in self.chunks if c.course_id == course_id)
+        return {
+            "course_id": course_id,
+            "course_title": title,
+            "lecture_count": len(lectures),
+            "lectures": lectures,
+        }
+
+    def get_course_transcript(self, course_id: str) -> str:
+        """Whole-course transcript: every lecture's chunks, with lecture headers
+        so generation stays lecture-aware (concepts can reference a lecture)."""
+        chunks = [c for c in self.chunks if c.course_id == course_id]
+        chunks.sort(key=lambda c: (c.lecture_id, c.start_time))
+        parts: List[str] = []
+        current_lecture = None
+        for c in chunks:
+            if c.lecture_id != current_lecture:
+                current_lecture = c.lecture_id
+                parts.append(f"\n[Lecture: {c.lecture_title}]")
+            parts.append(c.text)
+        return "\n\n".join(parts).strip()
+
     def get_lecture_meta(self, lecture_id: str) -> Optional[dict]:
         for chunk in self.chunks:
             if chunk.lecture_id == lecture_id:

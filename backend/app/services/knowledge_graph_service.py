@@ -1,19 +1,19 @@
 """
-Feature 6 — Knowledge graph.
+Feature 6 — Knowledge graph (per course).
 
-A lightweight per-lecture concept graph: concept nodes (name + description) and
+A lightweight per-course concept graph: concept nodes (name + description) and
 typed relationships (prerequisite_of / part_of / related_to). It's not shown to
 students directly; it powers smarter RAG retrieval and prerequisite-aware
 adaptive practice.
 
-To keep it aligned with the rest of the system, the graph is built over the
-SAME concept tags the question bank uses (so per-concept performance and
-prerequisite gating line up), with descriptions and relationships grounded in
-the transcript via GPT.
+Because it spans the whole course, the graph can now express CROSS-LECTURE
+prerequisites (e.g. a concept from an early lecture is a prerequisite of a
+concept from a later one). It's built over the SAME concept tags the question
+bank uses so per-concept performance and prerequisite gating line up.
 
-Two collections (the "two tables" from the spec):
-  - concepts:              {lecture_id, name, description, course_id}
-  - concept_relationships: {lecture_id, source, target, type}
+Two collections:
+  - concepts:              {course_id, name, description}
+  - concept_relationships: {course_id, source, target, type}
 """
 
 import asyncio
@@ -30,10 +30,11 @@ REL_TYPES = {"prerequisite_of", "part_of", "related_to"}
 
 _in_progress: set[str] = set()
 
-SYSTEM_PROMPT = """You map the concept structure of a single lecture for the 0.1% Dev platform.
-You are given the lecture transcript and the list of concept tags used in its quiz.
-For EACH given concept, write a one-sentence description grounded in the transcript,
-and identify relationships BETWEEN the given concepts.
+SYSTEM_PROMPT = """You map the concept structure of a COURSE for the 0.1% Dev platform.
+You are given the course's lecture transcripts (sections marked [Lecture: ...]) and the
+list of concept tags used in its quiz. For EACH given concept, write a one-sentence
+description grounded in the transcripts, and identify relationships BETWEEN the concepts —
+including cross-lecture prerequisites.
 
 Return a JSON object with EXACTLY this shape:
 {
@@ -49,50 +50,49 @@ Relationship types (use only these):
 Only use the concept names provided. Keep relationships meaningful, not exhaustive."""
 
 
-def _concept_id(lecture_id: str, name: str) -> str:
-    return f"{lecture_id}::{name}"
+def _concept_id(course_id: str, name: str) -> str:
+    return f"{course_id}::{name}"
 
 
-async def get_graph(lecture_id: str) -> dict:
-    concepts = await store.query(CONCEPTS, "lecture_id", lecture_id)
-    rels = await store.query(RELATIONSHIPS, "lecture_id", lecture_id)
-    return {"lecture_id": lecture_id, "concepts": concepts, "relationships": rels}
+async def get_graph(course_id: str) -> dict:
+    concepts = await store.query(CONCEPTS, "course_id", course_id)
+    rels = await store.query(RELATIONSHIPS, "course_id", course_id)
+    return {"course_id": course_id, "concepts": concepts, "relationships": rels}
 
 
-async def has_graph(lecture_id: str) -> bool:
-    return len(await store.query(CONCEPTS, "lecture_id", lecture_id)) > 0
+async def has_graph(course_id: str) -> bool:
+    return len(await store.query(CONCEPTS, "course_id", course_id)) > 0
 
 
-async def ensure_built(lecture_id: str) -> dict:
-    if await has_graph(lecture_id):
+async def ensure_built(course_id: str) -> dict:
+    if await has_graph(course_id):
         return {"status": "ready"}
-    if lecture_id not in _in_progress:
-        _in_progress.add(lecture_id)
-        asyncio.create_task(_build(lecture_id))
+    if course_id not in _in_progress:
+        _in_progress.add(course_id)
+        asyncio.create_task(_build(course_id))
     return {"status": "generating"}
 
 
-async def get_prerequisites(lecture_id: str, concept: str) -> List[str]:
-    """Concepts that are a prerequisite_of `concept` in this lecture."""
-    rels = await store.query(RELATIONSHIPS, "lecture_id", lecture_id)
+async def get_prerequisites(course_id: str, concept: str) -> List[str]:
+    """Concepts that are a prerequisite_of `concept` in this course."""
+    rels = await store.query(RELATIONSHIPS, "course_id", course_id)
     return [r["source"] for r in rels if r.get("type") == "prerequisite_of" and r.get("target") == concept]
 
 
-async def _build(lecture_id: str) -> None:
+async def _build(course_id: str) -> None:
     try:
-        meta = vector_store.get_lecture_meta(lecture_id)
-        transcript = vector_store.get_lecture_transcript(lecture_id)
+        meta = vector_store.get_course_meta(course_id)
+        transcript = vector_store.get_course_transcript(course_id)
         if not meta or not transcript:
             return
 
         # Need the question concept tags to align the graph with tracked performance.
-        qdoc = await store.get("questions", lecture_id)
+        qdoc = await store.get("questions", course_id)
         if not qdoc:
-            await question_service.ensure_generated(lecture_id)
-            # Retry shortly once questions exist.
-            for _ in range(20):
+            await question_service.ensure_generated(course_id)
+            for _ in range(25):
                 await asyncio.sleep(2)
-                qdoc = await store.get("questions", lecture_id)
+                qdoc = await store.get("questions", course_id)
                 if qdoc:
                     break
         if not qdoc:
@@ -102,10 +102,10 @@ async def _build(lecture_id: str) -> None:
 
         data = await llm.generate_json(
             SYSTEM_PROMPT,
-            f"Lecture: {meta['lecture_title']} (course: {meta['course_title']})\n\n"
+            f"Course: {meta['course_title']}\n\n"
             f"Concept tags: {', '.join(concept_tags)}\n\n"
-            f"Transcript:\n{transcript}",
-            max_tokens=1200,
+            f"Transcripts:\n{transcript}",
+            max_tokens=1400,
         )
         if not data:
             return
@@ -116,13 +116,8 @@ async def _build(lecture_id: str) -> None:
         for name in concept_tags:
             await store.set(
                 CONCEPTS,
-                _concept_id(lecture_id, name),
-                {
-                    "lecture_id": lecture_id,
-                    "course_id": meta["course_id"],
-                    "name": name,
-                    "description": descriptions.get(name, ""),
-                },
+                _concept_id(course_id, name),
+                {"course_id": course_id, "name": name, "description": descriptions.get(name, "")},
             )
 
         for i, r in enumerate(data.get("relationships", [])):
@@ -130,10 +125,10 @@ async def _build(lecture_id: str) -> None:
             if src in valid and tgt in valid and src != tgt and typ in REL_TYPES:
                 await store.set(
                     RELATIONSHIPS,
-                    f"{lecture_id}::rel{i}",
-                    {"lecture_id": lecture_id, "source": src, "target": tgt, "type": typ},
+                    f"{course_id}::rel{i}",
+                    {"course_id": course_id, "source": src, "target": tgt, "type": typ},
                 )
     except Exception as e:  # noqa: BLE001
-        print(f"knowledge_graph: build failed for {lecture_id}: {e}")
+        print(f"knowledge_graph: build failed for {course_id}: {e}")
     finally:
-        _in_progress.discard(lecture_id)
+        _in_progress.discard(course_id)

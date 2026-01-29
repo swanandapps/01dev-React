@@ -93,8 +93,8 @@ async def _graph_context(results) -> str:
     RAG behaviour is unchanged until graphs exist.
     """
     try:
-        lecture_id = results[0].chunk.lecture_id
-        graph = await knowledge_graph_service.get_graph(lecture_id)
+        course_id = results[0].chunk.course_id
+        graph = await knowledge_graph_service.get_graph(course_id)
         concepts = [c for c in graph["concepts"] if c.get("description")]
         if not concepts:
             return ""

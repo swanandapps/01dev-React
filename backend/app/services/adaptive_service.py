@@ -76,15 +76,15 @@ def _band_difficulty(accuracy: Optional[float]) -> str:
     return "hard"
 
 
-async def _question_bank(lecture_id: str) -> List[MCQQuestion]:
-    doc = await store.get("questions", lecture_id)
+async def _question_bank(course_id: str) -> List[MCQQuestion]:
+    doc = await store.get("questions", course_id)
     if not doc:
         return []
     return [MCQQuestion(**q) for q in doc["questions"]]
 
 
 async def _pick_next(
-    user_id: str, lecture_id: str, bank: List[MCQQuestion], answered_ids: List[str]
+    user_id: str, course_id: str, bank: List[MCQQuestion], answered_ids: List[str]
 ) -> Optional[MCQQuestion]:
     unanswered = [q for q in bank if q.id not in answered_ids]
     if not unanswered:
@@ -120,7 +120,7 @@ async def _pick_next(
     # Feature 6 integration: don't serve a HARD question on a concept until its
     # prerequisites are reasonably solid (>= 70% accuracy). Cap at medium otherwise.
     if want == "hard":
-        prereqs = await knowledge_graph_service.get_prerequisites(lecture_id, target)
+        prereqs = await knowledge_graph_service.get_prerequisites(course_id, target)
         for pre in prereqs:
             p = await _get_perf(user_id, pre)
             if not p or p["attempts"] == 0 or p["accuracy"] < 0.7:
@@ -156,19 +156,19 @@ async def _mastery_summary(user_id: str, bank: List[MCQQuestion]) -> dict:
     return {"mastery": mastery, "revisit": revisit}
 
 
-async def start(user_id: str, lecture_id: str) -> dict:
-    bank = await _question_bank(lecture_id)
+async def start(user_id: str, course_id: str) -> dict:
+    bank = await _question_bank(course_id)
     if not bank:
         # Questions not generated yet — warm them up and tell the client to wait.
-        await question_service.ensure_generated(lecture_id)
+        await question_service.ensure_generated(course_id)
         return {"status": "preparing"}
 
     session_id = str(uuid.uuid4())
-    first = await _pick_next(user_id, lecture_id, bank, [])
+    first = await _pick_next(user_id, course_id, bank, [])
     session = {
         "session_id": session_id,
         "user_id": user_id,
-        "lecture_id": lecture_id,
+        "course_id": course_id,
         "answered_ids": [],
         "count": 0,
         "done": False,
@@ -189,7 +189,7 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
         return {"status": "done", "summary": None}
 
     user_id = session["user_id"]
-    bank = await _question_bank(session["lecture_id"])
+    bank = await _question_bank(session["course_id"])
 
     await _update_perf(user_id, concept, correct)
     session["answered_ids"].append(question_id)
@@ -197,7 +197,7 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
 
     # End conditions.
     ended = session["count"] >= MAX_QUESTIONS or await _all_concepts_mastered(user_id, bank)
-    nxt = None if ended else await _pick_next(user_id, session["lecture_id"], bank, session["answered_ids"])
+    nxt = None if ended else await _pick_next(user_id, session["course_id"], bank, session["answered_ids"])
     if nxt is None:
         session["done"] = True
         await store.set(SESSION_COLLECTION, session_id, session)

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, Check, XCircle, Target, RotateCcw } from "lucide-react";
 import { startAdaptive, answerAdaptive } from "../../lib/learnApi";
-import type { Lecture, MCQQuestion, AdaptiveSummary } from "../../types/learn";
+import type { Course, MCQQuestion, AdaptiveSummary } from "../../types/learn";
 
 const difficultyColor: Record<string, string> = {
   easy: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
@@ -10,11 +10,11 @@ const difficultyColor: Record<string, string> = {
 };
 
 export function AdaptiveModal({
-  lecture,
+  course,
   userId,
   onClose,
 }: {
-  lecture: Lecture;
+  course: Course;
   userId: string;
   onClose: () => void;
 }) {
@@ -31,7 +31,7 @@ export function AdaptiveModal({
     let cancelled = false;
     const begin = async () => {
       try {
-        const res = await startAdaptive(userId, lecture.lecture_id);
+        const res = await startAdaptive(userId, course.course_id);
         if (cancelled) return;
         if (res.status === "preparing") {
           pollRef.current = setTimeout(begin, 2500); // questions still generating
@@ -52,7 +52,7 @@ export function AdaptiveModal({
       cancelled = true;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, [lecture.lecture_id, userId]);
+  }, [course.course_id, userId]);
 
   const answered = selected !== null;
 
@@ -98,7 +98,7 @@ export function AdaptiveModal({
             <div>
               <h2 className="text-sm font-semibold text-zinc-100">Adaptive Practice</h2>
               <p className="text-xs text-zinc-500">
-                {finished ? lecture.lecture_title : `${lecture.lecture_title} · adapts to you`}
+                {finished ? course.title : `${course.title} · adapts to you`}
               </p>
             </div>
           </div>

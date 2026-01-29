@@ -1,10 +1,10 @@
 """
-Feature 3 — Question generation from a lecture.
+Feature 3 — Question generation (per course).
 
-One GPT call per lecture produces 10 MCQs (mix: 4 easy, 4 medium, 2 hard),
-each with 4 options, a correct index, a one-sentence explanation, a concept
-tag, and difficulty. Stored so the quiz (Feature 4) and adaptive layer
-(Feature 5) can reuse them. Generation runs in the background.
+One GPT call per course produces 12 MCQs drawn from across the course's lectures
+(mix: 5 easy, 5 medium, 2 hard), each with 4 options, a correct index, a
+one-sentence explanation, a concept tag, a difficulty, and the lecture it came
+from. Stored so the quiz (F4) and adaptive layer (F5) can reuse them.
 """
 
 import asyncio
@@ -21,8 +21,9 @@ COLLECTION = "questions"
 _in_progress: set[str] = set()
 
 SYSTEM_PROMPT = """You are an expert assessment designer for the 0.1% Dev learning platform.
-Given a single lecture transcript, write multiple-choice questions grounded ONLY in that transcript.
-Do not test facts that are not supported by the transcript.
+Given a course's lecture transcripts (each section marked with [Lecture: ...]), write
+multiple-choice questions grounded ONLY in those transcripts, spanning the whole course.
+Do not test facts that are not supported by the transcripts.
 
 Return a JSON object with EXACTLY this shape:
 {
@@ -33,48 +34,48 @@ Return a JSON object with EXACTLY this shape:
       "correct_index": 0,                         // 0-3, index of the correct option
       "explanation": "one sentence on why it's correct",
       "concept": "a short concept tag (2-4 words)",
-      "difficulty": "easy"                        // "easy" | "medium" | "hard"
+      "difficulty": "easy",                       // "easy" | "medium" | "hard"
+      "lecture": "the [Lecture: ...] title this question is from"
     }
   ]
 }
-Produce EXACTLY 10 questions with this difficulty mix: 4 easy, 4 medium, 2 hard.
-Use only 3-5 distinct concept tags across all 10 questions, so that several
-questions share a concept (this powers adaptive practice — a concept needs
-multiple questions at different difficulties).
-Vary the position of the correct answer across questions."""
+Produce EXACTLY 12 questions with this difficulty mix: 5 easy, 5 medium, 2 hard.
+Use 4-6 distinct concept tags across the questions (several questions share a concept)
+so adaptive practice has multiple questions per concept at different difficulties.
+Spread questions across the course's lectures. Vary the correct answer position."""
 
 
-async def get_status(lecture_id: str) -> dict:
-    doc = await store.get(COLLECTION, lecture_id)
+async def get_status(course_id: str) -> dict:
+    doc = await store.get(COLLECTION, course_id)
     if doc:
         return {"status": "ready", "questions": doc}
-    if lecture_id in _in_progress:
+    if course_id in _in_progress:
         return {"status": "generating", "questions": None}
     return {"status": "none", "questions": None}
 
 
-async def ensure_generated(lecture_id: str) -> dict:
-    existing = await store.get(COLLECTION, lecture_id)
+async def ensure_generated(course_id: str) -> dict:
+    existing = await store.get(COLLECTION, course_id)
     if existing:
         return {"status": "ready", "questions": existing}
-    if lecture_id not in _in_progress:
-        _in_progress.add(lecture_id)
-        asyncio.create_task(_generate(lecture_id))
+    if course_id not in _in_progress:
+        _in_progress.add(course_id)
+        asyncio.create_task(_generate(course_id))
     return {"status": "generating", "questions": None}
 
 
-async def _generate(lecture_id: str) -> None:
+async def _generate(course_id: str) -> None:
     try:
-        meta = vector_store.get_lecture_meta(lecture_id)
-        transcript = vector_store.get_lecture_transcript(lecture_id)
+        meta = vector_store.get_course_meta(course_id)
+        transcript = vector_store.get_course_transcript(course_id)
         if not meta or not transcript:
             return
 
         data = await llm.generate_json(
             SYSTEM_PROMPT,
-            f"Lecture: {meta['lecture_title']} (course: {meta['course_title']})\n\n"
-            f"Transcript:\n{transcript}",
-            max_tokens=2200,
+            f"Course: {meta['course_title']} ({meta['lecture_count']} lectures)\n\n"
+            f"Transcripts:\n{transcript}",
+            max_tokens=2600,
         )
         if not data or "questions" not in data:
             return
@@ -89,8 +90,7 @@ async def _generate(lecture_id: str) -> None:
             diff = q.get("difficulty", "medium")
             diff = diff if diff in ("easy", "medium", "hard") else "medium"
 
-            # Models tend to always place the correct answer first — shuffle so
-            # the correct option lands in a varied, non-gameable position.
+            # Shuffle so the correct answer isn't always first.
             correct_option = opts[ci]
             shuffled = opts[:]
             random.shuffle(shuffled)
@@ -98,13 +98,14 @@ async def _generate(lecture_id: str) -> None:
 
             questions.append(
                 MCQQuestion(
-                    id=f"{lecture_id}-q{i + 1}",
+                    id=f"{course_id}-q{i + 1}",
                     question=q.get("question", ""),
                     options=shuffled,
                     correct_index=ci,
                     explanation=q.get("explanation", ""),
                     concept=q.get("concept", "General"),
                     difficulty=diff,
+                    lecture=q.get("lecture", ""),
                 )
             )
 
@@ -112,16 +113,14 @@ async def _generate(lecture_id: str) -> None:
             return
 
         qset = QuestionSet(
-            lecture_id=lecture_id,
-            course_id=meta["course_id"],
-            lecture_title=meta["lecture_title"],
+            course_id=course_id,
             course_title=meta["course_title"],
             questions=questions,
             model=GEN_MODEL,
             generated_at=datetime.now(timezone.utc).isoformat(),
         )
-        await store.set(COLLECTION, lecture_id, qset.model_dump())
+        await store.set(COLLECTION, course_id, qset.model_dump())
     except Exception as e:  # noqa: BLE001
-        print(f"question_service: generation failed for {lecture_id}: {e}")
+        print(f"question_service: generation failed for {course_id}: {e}")
     finally:
-        _in_progress.discard(lecture_id)
+        _in_progress.discard(course_id)

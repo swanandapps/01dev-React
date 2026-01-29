@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, Check, XCircle, Trophy, RotateCcw } from "lucide-react";
 import { getQuestions, generateQuestions, saveQuizSession } from "../../lib/learnApi";
-import type { Lecture, MCQQuestion, QuizSession, QuizAnswer } from "../../types/learn";
+import type { Course, MCQQuestion, QuizSession, QuizAnswer } from "../../types/learn";
 
 const difficultyColor: Record<string, string> = {
   easy: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
@@ -10,11 +10,11 @@ const difficultyColor: Record<string, string> = {
 };
 
 export function QuizModal({
-  lecture,
+  course,
   userId,
   onClose,
 }: {
-  lecture: Lecture;
+  course: Course;
   userId: string;
   onClose: () => void;
 }) {
@@ -36,13 +36,13 @@ export function QuizModal({
     let cancelled = false;
     const poll = async () => {
       try {
-        const res = await getQuestions(lecture.lecture_id);
+        const res = await getQuestions(course.course_id);
         if (cancelled) return;
         if (res.status === "ready" && res.questions) {
           setQuestions(res.questions.questions);
           startedAt.current = Date.now();
         } else {
-          if (res.status === "none") await generateQuestions(lecture.lecture_id);
+          if (res.status === "none") await generateQuestions(course.course_id);
           pollRef.current = setTimeout(poll, 2500);
         }
       } catch (e) {
@@ -54,7 +54,7 @@ export function QuizModal({
       cancelled = true;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, [lecture.lecture_id]);
+  }, [course.course_id]);
 
   const current = questions?.[index];
   const answered = selected !== null;
@@ -71,6 +71,7 @@ export function QuizModal({
         difficulty: current.difficulty,
         correct,
         time_taken_ms: Date.now() - startedAt.current,
+        lecture: current.lecture,
       },
     ]);
   };
@@ -89,10 +90,8 @@ export function QuizModal({
     try {
       const saved = await saveQuizSession({
         user_id: userId,
-        lecture_id: lecture.lecture_id,
-        answers: [
-          ...answers,
-        ],
+        course_id: course.course_id,
+        answers,
       });
       setSession(saved);
     } catch {
@@ -113,7 +112,7 @@ export function QuizModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 flex-shrink-0">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-100">Practice — {lecture.lecture_title}</h2>
+            <h2 className="text-sm font-semibold text-zinc-100">Practice — {course.title}</h2>
             {questions && !finished && (
               <p className="text-xs text-zinc-500">Question {index + 1} of {questions.length}</p>
             )}

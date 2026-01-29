@@ -68,9 +68,7 @@ class PracticeQA(BaseModel):
 
 
 class StudyGuide(BaseModel):
-    lecture_id: str
     course_id: str
-    lecture_title: str
     course_title: str
     key_concepts: List[KeyConcept]
     summary: str
@@ -81,7 +79,7 @@ class StudyGuide(BaseModel):
 
 
 class StudyGuideStatus(BaseModel):
-    lecture_id: str
+    course_id: str
     status: str  # "ready" | "generating" | "none"
     guide: Optional[StudyGuide] = None
 
@@ -96,12 +94,11 @@ class MCQQuestion(BaseModel):
     explanation: str
     concept: str
     difficulty: str  # "easy" | "medium" | "hard"
+    lecture: str = ""  # lecture title this question came from (precision under a course)
 
 
 class QuestionSet(BaseModel):
-    lecture_id: str
     course_id: str
-    lecture_title: str
     course_title: str
     questions: List[MCQQuestion]
     model: str
@@ -116,11 +113,12 @@ class QuizAnswer(BaseModel):
     difficulty: str
     correct: bool
     time_taken_ms: int = 0
+    lecture: str = ""  # which lecture in the course (precision)
 
 
 class QuizSubmit(BaseModel):
     user_id: str = "anonymous"
-    lecture_id: str
+    course_id: str
     answers: List[QuizAnswer]
 
 
@@ -134,9 +132,8 @@ class ConceptScore(BaseModel):
 class QuizSession(BaseModel):
     session_id: str
     user_id: str
-    lecture_id: str
     course_id: str
-    lecture_title: str
+    course_title: str
     score: int
     total: int
     answers: List[QuizAnswer]
@@ -148,7 +145,7 @@ class QuizSession(BaseModel):
 
 class AdaptiveStartRequest(BaseModel):
     user_id: str = "anonymous"
-    lecture_id: str
+    course_id: str
 
 
 class AdaptiveAnswerRequest(BaseModel):

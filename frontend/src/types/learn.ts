@@ -1,8 +1,7 @@
-export interface Lecture {
-  lecture_id: string;
-  lecture_title: string;
+export interface Course {
   course_id: string;
-  course_title: string;
+  title: string;
+  lecture_count: number;
 }
 
 export interface KeyConcept {
@@ -16,9 +15,7 @@ export interface PracticeQA {
 }
 
 export interface StudyGuide {
-  lecture_id: string;
   course_id: string;
-  lecture_title: string;
   course_title: string;
   key_concepts: KeyConcept[];
   summary: string;
@@ -41,12 +38,11 @@ export interface MCQQuestion {
   explanation: string;
   concept: string;
   difficulty: "easy" | "medium" | "hard";
+  lecture: string;
 }
 
 export interface QuestionSet {
-  lecture_id: string;
   course_id: string;
-  lecture_title: string;
   course_title: string;
   questions: MCQQuestion[];
   model: string;
@@ -64,11 +60,12 @@ export interface QuizAnswer {
   difficulty: string;
   correct: boolean;
   time_taken_ms: number;
+  lecture: string;
 }
 
 export interface QuizSubmit {
   user_id: string;
-  lecture_id: string;
+  course_id: string;
   answers: QuizAnswer[];
 }
 
@@ -82,9 +79,8 @@ export interface ConceptScore {
 export interface QuizSession {
   session_id: string;
   user_id: string;
-  lecture_id: string;
   course_id: string;
-  lecture_title: string;
+  course_title: string;
   score: number;
   total: number;
   answers: QuizAnswer[];
@@ -92,7 +88,7 @@ export interface QuizSession {
   completed_at: string;
 }
 
-// Feature 5 — adaptive practice
+// Adaptive practice
 export interface ConceptMastery {
   concept: string;
   accuracy: number;
@@ -113,10 +109,9 @@ export interface AdaptiveResponse {
   summary?: AdaptiveSummary | null;
 }
 
-// Feature 7 — recommendations
+// Recommendations
 export interface Recommendation {
-  lecture_id: string;
-  lecture_title: string;
+  course_id: string;
   course_title: string;
   reason: string;
 }

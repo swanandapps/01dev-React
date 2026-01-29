@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Loader2, Sparkles, BookOpen, HelpCircle, AlertTriangle } from "lucide-react";
 import { getStudyGuide, generateStudyGuide, generateQuestions } from "../../lib/learnApi";
-import type { Lecture, StudyGuide } from "../../types/learn";
+import type { Course, StudyGuide } from "../../types/learn";
 
-export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClose: () => void }) {
+export function StudyGuideModal({ course, onClose }: { course: Course; onClose: () => void }) {
   const [guide, setGuide] = useState<StudyGuide | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,18 +14,18 @@ export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClos
 
     // Lecture accessed → warm up practice questions in the background (Feature 3),
     // so they're ready by the time the student wants to practice.
-    generateQuestions(lecture.lecture_id).catch(() => {});
+    generateQuestions(course.course_id).catch(() => {});
 
     const poll = async () => {
       try {
-        const res = await getStudyGuide(lecture.lecture_id);
+        const res = await getStudyGuide(course.course_id);
         if (cancelled) return;
         if (res.status === "ready" && res.guide) {
           setGuide(res.guide);
           setLoading(false);
         } else {
           // none -> kick off generation; generating -> keep polling
-          if (res.status === "none") await generateStudyGuide(lecture.lecture_id);
+          if (res.status === "none") await generateStudyGuide(course.course_id);
           pollRef.current = setTimeout(poll, 2500);
         }
       } catch (e) {
@@ -40,7 +40,7 @@ export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClos
       cancelled = true;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, [lecture.lecture_id]);
+  }, [course.course_id]);
 
   return (
     <div
@@ -59,7 +59,7 @@ export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClos
             </div>
             <div>
               <h2 className="text-sm font-semibold text-zinc-100">Study Guide</h2>
-              <p className="text-xs text-zinc-500">{lecture.lecture_title}</p>
+              <p className="text-xs text-zinc-500">{course.title}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200 transition-colors">
@@ -73,7 +73,7 @@ export function StudyGuideModal({ lecture, onClose }: { lecture: Lecture; onClos
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Loader2 className="w-8 h-8 text-indigo-400 animate-spin mb-4" />
               <p className="text-sm text-zinc-300">Generating your study guide…</p>
-              <p className="text-xs text-zinc-600 mt-1">Reading the lecture transcript — this takes a few seconds.</p>
+              <p className="text-xs text-zinc-600 mt-1">Reading the course material — this takes a few seconds.</p>
             </div>
           )}
 
