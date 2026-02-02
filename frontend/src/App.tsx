@@ -84,7 +84,7 @@ function AppInner() {
       <Route path="/blogs/:id" element={<BlogDetailPage />} />
       <Route path="/maps" element={<MapsPage />} />
       <Route path="/ask" element={<AskPage />} />
-      <Route path="/learn" element={<LearnPage />} />
+      <Route path="/dashboard" element={<LearnPage />} />
     </Routes>
   );
 }

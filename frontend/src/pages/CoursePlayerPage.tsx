@@ -1,21 +1,14 @@
 import { useParams, Navigate, useSearchParams } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { BookOpen, Dumbbell, Target, Sparkles } from "lucide-react";
 import Header from "../components/Home/Header";
 import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
-import { getCourses } from "../lib/learnApi";
-import { StudyGuideModal } from "../components/learn/StudyGuideModal";
-import { QuizModal } from "../components/learn/QuizModal";
-import { AdaptiveModal } from "../components/learn/AdaptiveModal";
-import type { Course } from "../types/learn";
 
 export default function CoursePlayerPage() {
   const { courseid } = useParams<{ courseid: string }>();
   const [searchParams] = useSearchParams();
-  const { isCourseBought, currentuser } = useUserSessionStore();
-  const userId = (currentuser?.uid as string) || "anonymous";
+  const { isCourseBought } = useUserSessionStore();
 
   const track = tracks.find((t) => t.id === Number(courseid));
   if (!track) return <Navigate to="/tracks" replace />;
@@ -31,15 +24,6 @@ export default function CoursePlayerPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekTarget = useRef<number | null>(null);
-
-  // AI Study Tools: match this course to a backend course (by title) that has transcripts.
-  const [aiCourse, setAiCourse] = useState<Course | null>(null);
-  const [aiTool, setAiTool] = useState<"guide" | "quiz" | "adaptive" | null>(null);
-  useEffect(() => {
-    getCourses()
-      .then((courses) => setAiCourse(courses.find((c) => c.title === track?.title) ?? null))
-      .catch(() => setAiCourse(null));
-  }, [track?.title]);
 
   const FREE_CHAPTERS = 0;
   const seekSeconds = parseInt(searchParams.get("t") || "0");
@@ -127,36 +111,6 @@ export default function CoursePlayerPage() {
             <p className="text-zinc-500 text-sm mt-1">
               {track.courseContent[activeChapter]?.name}
             </p>
-
-            {/* AI Study Tools — shown when this course has backend transcript content */}
-            {aiCourse && (
-              <div className="mt-5 border-t border-zinc-800 pt-4">
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">AI Study Tools</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => setAiTool("guide")}
-                    className="flex items-center gap-1.5 text-xs font-medium text-indigo-300 hover:text-indigo-200 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" /> Study Guide
-                  </button>
-                  <button
-                    onClick={() => setAiTool("quiz")}
-                    className="flex items-center gap-1.5 text-xs font-medium text-emerald-300 hover:text-emerald-200 bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                  >
-                    <Dumbbell className="w-3.5 h-3.5" /> Practice
-                  </button>
-                  <button
-                    onClick={() => setAiTool("adaptive")}
-                    className="flex items-center gap-1.5 text-xs font-medium text-violet-300 hover:text-violet-200 bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/30 rounded-lg px-3 py-1.5 transition-colors"
-                  >
-                    <Target className="w-3.5 h-3.5" /> Adaptive
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -203,16 +157,6 @@ export default function CoursePlayerPage() {
           ))}
         </div>
       </div>
-
-      {aiCourse && aiTool === "guide" && (
-        <StudyGuideModal course={aiCourse} onClose={() => setAiTool(null)} />
-      )}
-      {aiCourse && aiTool === "quiz" && (
-        <QuizModal course={aiCourse} userId={userId} onClose={() => setAiTool(null)} />
-      )}
-      {aiCourse && aiTool === "adaptive" && (
-        <AdaptiveModal course={aiCourse} userId={userId} onClose={() => setAiTool(null)} />
-      )}
     </div>
   );
 }

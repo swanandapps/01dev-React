@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { to: "/blogs", label: "Blogs", icon: FileText, exact: false },
   { to: "/research", label: "Research", icon: FlaskConical, exact: false },
   { to: "/maps", label: "Maps", icon: Map, exact: false },
-  { to: "/learn", label: "Learn", icon: GraduationCap, exact: false },
+  { to: "/dashboard", label: "Dashboard", icon: GraduationCap, exact: false },
 ];
 
 export default function Header() {
