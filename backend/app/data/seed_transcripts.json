@@ -163,5 +163,71 @@
     "start_time": 216,
     "end_time": 290,
     "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-6-1-a",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-6-1",
+    "lecture_title": "6.1 - The Event Loop and Microtasks",
+    "text": "JavaScript runs on a single thread, so it can only do one thing at a time. The event loop is the mechanism that lets it stay responsive despite that. There is a call stack where function calls are pushed and popped, and a task queue (the macrotask queue) where callbacks from things like setTimeout, I/O, and DOM events wait. The event loop has one simple rule: when the call stack is empty, take the next task from the queue and run it to completion. 'Run to completion' is key \u2014 a task is never interrupted halfway, which is why long synchronous work freezes the page.",
+    "start_time": 0,
+    "end_time": 75,
+    "embedding": []
+  },
+  {
+    "chunk_id": "js-deep-6-1-b",
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "lecture_id": "js-deep-6-1",
+    "lecture_title": "6.1 - The Event Loop and Microtasks",
+    "text": "Promises do not use the macrotask queue. They use a separate, higher-priority microtask queue. After every single task finishes and before the event loop picks up the next macrotask, it completely drains the microtask queue. This is why a resolved Promise's .then callback always runs before a setTimeout(fn, 0) scheduled at the same time \u2014 microtasks jump the line. The practical consequence: if you schedule microtasks that themselves schedule more microtasks, you can starve the macrotask queue and block rendering. await is just syntax over .then, so the code after an await also runs as a microtask.",
+    "start_time": 76,
+    "end_time": 150,
+    "embedding": []
+  },
+  {
+    "chunk_id": "web-apis-3-1-a",
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "lecture_id": "web-apis-3-1",
+    "lecture_title": "3.1 - Long-Polling vs WebSockets",
+    "text": "Before WebSockets, the common trick for real-time updates was long-polling. The client sends an HTTP request and the server deliberately holds it open instead of responding immediately. When data becomes available, the server responds, and the client instantly sends another request to wait again. It simulates a push, but every message still pays the full cost of an HTTP request and response \u2014 new headers, sometimes a new TCP connection \u2014 and there is always a gap between responses where the client is reconnecting.",
+    "start_time": 0,
+    "end_time": 70,
+    "embedding": []
+  },
+  {
+    "chunk_id": "web-apis-3-1-b",
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "lecture_id": "web-apis-3-1",
+    "lecture_title": "3.1 - Long-Polling vs WebSockets",
+    "text": "A WebSocket replaces all of that with a single long-lived, full-duplex TCP connection. After the initial HTTP Upgrade handshake, both sides can send frames at any time with only a few bytes of framing overhead \u2014 no repeated headers, no reconnect gap. This makes WebSockets dramatically more efficient for high-frequency, bidirectional traffic like chat, live cursors, or trading data. Long-polling still has its place: it is simpler, works through old proxies, and is fine for low-frequency updates where a dedicated connection per client would be wasteful.",
+    "start_time": 71,
+    "end_time": 145,
+    "embedding": []
+  },
+  {
+    "chunk_id": "react-perf-4-1-a",
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "lecture_id": "react-perf-4-1",
+    "lecture_title": "4.1 - React.memo and useCallback",
+    "text": "By default a React component re-renders whenever its parent re-renders, even if its props did not change. React.memo wraps a component and skips the re-render when its props are shallowly equal to the previous render. The catch is shallow equality: primitives compare by value, but objects, arrays, and functions compare by reference. If a parent creates a new function or object literal on every render and passes it as a prop, React.memo sees a brand-new reference each time and re-renders anyway, defeating the optimization.",
+    "start_time": 0,
+    "end_time": 72,
+    "embedding": []
+  },
+  {
+    "chunk_id": "react-perf-4-1-b",
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "lecture_id": "react-perf-4-1",
+    "lecture_title": "4.1 - React.memo and useCallback",
+    "text": "useCallback and useMemo exist to keep references stable across renders. useCallback returns the same function instance as long as its dependency array does not change, and useMemo does the same for a computed value. Wrapping a callback in useCallback before passing it to a React.memo child means the child actually sees a stable prop and can skip re-rendering. The rule of thumb: memoizing is only worth it when the child is expensive to render or the reference is consumed by a memoized child \u2014 wrapping everything adds overhead and dependency bugs for no benefit.",
+    "start_time": 73,
+    "end_time": 150,
+    "embedding": []
   }
 ]
