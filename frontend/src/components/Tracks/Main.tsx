@@ -1,8 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Sparkles } from "lucide-react";
 import { useUserSessionStore } from "../../store/userSession";
 import { db } from "../../lib/firebase";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { getCourses } from "../../lib/learnApi";
+import { CourseCompanion } from "../learn/CourseCompanion";
+import type { Course } from "../../types/learn";
 import type { Track } from "../../data/tracks";
 
 declare global {
@@ -21,6 +25,15 @@ export default function TracksMain({ track }: Props) {
     useUserSessionStore();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Match this catalog course to a backend course (by title) that has transcripts.
+  const userId = (currentuser?.uid as string) || "anonymous";
+  const [aiCourse, setAiCourse] = useState<Course | null>(null);
+  useEffect(() => {
+    getCourses()
+      .then((courses) => setAiCourse(courses.find((c) => c.title === track.title) ?? null))
+      .catch(() => setAiCourse(null));
+  }, [track.title]);
 
   const bought = isCourseBought(track.id);
   const price =
@@ -122,6 +135,20 @@ export default function TracksMain({ track }: Props) {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {aiCourse && (
+              <div className="mb-10 bg-gradient-to-br from-indigo-950/40 to-zinc-900 border border-indigo-500/20 rounded-2xl px-6 py-5">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <h2 className="text-base font-semibold text-zinc-100">Learn this course with AI</h2>
+                </div>
+                <p className="text-sm text-zinc-500 mb-4 leading-relaxed">
+                  An AI study companion for the whole course — a structured guide, a practice quiz,
+                  and adaptive practice that adjusts to how you're doing.
+                </p>
+                <CourseCompanion course={aiCourse} userId={userId} />
               </div>
             )}
 
