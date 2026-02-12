@@ -6,6 +6,26 @@ import { getCourses, getRecommendations, listQuizSessions } from "../lib/learnAp
 import { useUserSessionStore } from "../store/userSession";
 import type { Course, Recommendation, QuizSession } from "../types/learn";
 
+// Group sessions by course so a course shows once — with attempt count and the
+// latest result as a comparable percentage (adaptive runs vary in length).
+function groupProgressByCourse(sessions: QuizSession[]) {
+  const byCourse: Record<string, { course_id: string; title: string; attempts: number; latest: QuizSession; bestPct: number }> = {};
+  for (const s of sessions) {
+    const pct = s.score / Math.max(s.total, 1);
+    const g = byCourse[s.course_id];
+    if (!g) {
+      byCourse[s.course_id] = { course_id: s.course_id, title: s.course_title, attempts: 1, latest: s, bestPct: pct };
+    } else {
+      g.attempts += 1;
+      g.bestPct = Math.max(g.bestPct, pct);
+      if (s.completed_at > g.latest.completed_at) g.latest = s;
+    }
+  }
+  return Object.values(byCourse)
+    .map((g) => ({ ...g, latestPct: g.latest.score / Math.max(g.latest.total, 1) }))
+    .sort((a, b) => (b.latest.completed_at > a.latest.completed_at ? 1 : -1));
+}
+
 // Aggregate per-concept accuracy across all of a user's quiz sessions.
 function aggregateWeakConcepts(sessions: QuizSession[]) {
   const agg: Record<string, { attempts: number; correct: number }> = {};
@@ -109,30 +129,40 @@ export default function MyLearningPage() {
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {/* Recent sessions */}
+                    {/* One card per course: attempts + latest result as a % */}
                     <div className="space-y-2">
-                      {sessions.slice(0, 5).map((s) => (
-                        <div
-                          key={s.session_id}
-                          className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
-                        >
-                          <div>
-                            <p className="text-sm text-zinc-200">{s.course_title}</p>
-                            <p className="text-xs text-zinc-600">{new Date(s.completed_at).toLocaleDateString()}</p>
-                          </div>
-                          <span
-                            className={`text-sm font-semibold ${
-                              s.score / Math.max(s.total, 1) >= 0.8
-                                ? "text-emerald-400"
-                                : s.score / Math.max(s.total, 1) >= 0.5
-                                ? "text-amber-400"
-                                : "text-rose-400"
-                            }`}
+                      {groupProgressByCourse(sessions).map((cp) => {
+                        const pct = Math.round(cp.latestPct * 100);
+                        const c =
+                          cp.latestPct >= 0.8
+                            ? { text: "text-emerald-400", bar: "bg-emerald-500" }
+                            : cp.latestPct >= 0.5
+                            ? { text: "text-amber-400", bar: "bg-amber-500" }
+                            : { text: "text-rose-400", bar: "bg-rose-500" };
+                        return (
+                          <div
+                            key={cp.course_id}
+                            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
                           >
-                            {s.score}/{s.total}
-                          </span>
-                        </div>
-                      ))}
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="text-sm text-zinc-200">{cp.title}</p>
+                                <p className="text-xs text-zinc-600">
+                                  {cp.attempts} {cp.attempts === 1 ? "attempt" : "attempts"} · last{" "}
+                                  {new Date(cp.latest.completed_at).toLocaleDateString()}
+                                  {cp.attempts > 1 && cp.bestPct > cp.latestPct
+                                    ? ` · best ${Math.round(cp.bestPct * 100)}%`
+                                    : ""}
+                                </p>
+                              </div>
+                              <span className={`text-sm font-semibold ${c.text}`}>{pct}%</span>
+                            </div>
+                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                              <div className={`h-full ${c.bar}`} style={{ width: `${Math.max(pct, 3)}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Weak concepts */}
