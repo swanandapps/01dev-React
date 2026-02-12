@@ -122,3 +122,11 @@ export interface RecommendationsResponse {
   generated_at: string;
   cached: boolean;
 }
+
+// Per-course "how you're doing" insight
+export interface CourseInsight {
+  summary: string;
+  doing_well: string[];
+  improve: string[];
+  next_steps: string[];
+}

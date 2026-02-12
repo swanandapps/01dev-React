@@ -1,6 +1,6 @@
 import type {
   Course, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
-  RecommendationsResponse,
+  RecommendationsResponse, CourseInsight,
 } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
@@ -48,6 +48,57 @@ export function listQuizSessions(userId: string): Promise<QuizSession[]> {
 
 export function getRecommendations(userId: string): Promise<RecommendationsResponse> {
   return getJson<RecommendationsResponse>(`/api/ai/recommendations?user_id=${encodeURIComponent(userId)}`);
+}
+
+export function getCourseInsight(body: {
+  user_id: string;
+  course_id: string;
+  chat_questions: string[];
+  rewatched_lectures: string[];
+}): Promise<CourseInsight> {
+  return getJson<CourseInsight>("/api/ai/course-insight", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+// Read recent user questions from the saved RAG chat history (localStorage).
+export function readChatQuestions(limit = 8): string[] {
+  try {
+    const raw = localStorage.getItem("rag_chat_history");
+    if (!raw) return [];
+    return (JSON.parse(raw) as { role: string; content: string }[])
+      .filter((m) => m.role === "user" && m.content)
+      .map((m) => m.content)
+      .slice(-limit);
+  } catch {
+    return [];
+  }
+}
+
+// Read which lectures the student has replayed (view count >= 2) from localStorage.
+export function readRewatchedLectures(): string[] {
+  try {
+    const raw = localStorage.getItem("lecture_views");
+    if (!raw) return [];
+    const views = JSON.parse(raw) as Record<string, number>;
+    return Object.entries(views).filter(([, n]) => n >= 2).map(([title]) => title);
+  } catch {
+    return [];
+  }
+}
+
+// Increment a lecture's view count (used by the course player to detect rewatches).
+export function recordLectureView(lectureTitle: string): void {
+  if (!lectureTitle) return;
+  try {
+    const views = JSON.parse(localStorage.getItem("lecture_views") || "{}") as Record<string, number>;
+    views[lectureTitle] = (views[lectureTitle] || 0) + 1;
+    localStorage.setItem("lecture_views", JSON.stringify(views));
+  } catch {
+    /* ignore */
+  }
 }
 
 // Knowledge graph is internal; we only trigger its build on access.

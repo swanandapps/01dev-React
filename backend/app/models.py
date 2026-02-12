@@ -153,3 +153,10 @@ class AdaptiveAnswerRequest(BaseModel):
     question_id: str
     concept: str
     correct: bool
+
+
+class CourseInsightRequest(BaseModel):
+    user_id: str = "anonymous"
+    course_id: str
+    chat_questions: List[str] = []
+    rewatched_lectures: List[str] = []

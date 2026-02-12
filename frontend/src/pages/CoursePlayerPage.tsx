@@ -4,6 +4,7 @@ import Header from "../components/Home/Header";
 import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
+import { recordLectureView } from "../lib/learnApi";
 
 export default function CoursePlayerPage() {
   const { courseid } = useParams<{ courseid: string }>();
@@ -56,6 +57,8 @@ export default function CoursePlayerPage() {
       videoRef.current.load();
       videoRef.current.play().catch(() => {});
     }
+    // Track lecture opens so the course insight can detect rewatched lectures.
+    if (currentSub?.name) recordLectureView(currentSub.name);
   }, [activeChapter, activeSub]);
 
   useEffect(() => {

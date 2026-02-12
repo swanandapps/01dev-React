@@ -15,13 +15,13 @@ from pydantic import BaseModel
 
 from app.models import (
     AskRequest, AskResponse, Course, QuizSubmit,
-    AdaptiveStartRequest, AdaptiveAnswerRequest,
+    AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest,
 )
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
-    knowledge_graph_service, recommendation_service,
+    knowledge_graph_service, recommendation_service, course_insight_service,
 )
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -126,6 +126,15 @@ async def knowledge_graph_build(course_id: str):
 @app.get("/api/ai/recommendations")
 async def recommendations(user_id: str):
     return await recommendation_service.get_recommendations(user_id)
+
+
+@app.post("/api/ai/course-insight")
+async def course_insight(req: CourseInsightRequest):
+    if not vector_store.get_course_meta(req.course_id):
+        raise HTTPException(status_code=404, detail="Unknown course")
+    return await course_insight_service.generate(
+        req.user_id, req.course_id, req.chat_questions, req.rewatched_lectures
+    )
 
 
 @app.post("/api/ai/ask", response_model=AskResponse)

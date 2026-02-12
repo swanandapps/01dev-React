@@ -19,12 +19,14 @@ user so spaced repetition works across sessions, and feeds recommendations (F7).
 """
 
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from app.models import MCQQuestion
 from app.services.store import store
-from app.services import question_service, knowledge_graph_service
+from app.services.vector_store import vector_store
+from app.services import question_service, knowledge_graph_service, recommendation_service
 
 PERF_COLLECTION = "concept_performance"
 SESSION_COLLECTION = "adaptive_sessions"
@@ -170,6 +172,7 @@ async def start(user_id: str, course_id: str) -> dict:
         "user_id": user_id,
         "course_id": course_id,
         "answered_ids": [],
+        "answers": [],
         "count": 0,
         "done": False,
         "started_at": _now().isoformat(),
@@ -183,6 +186,48 @@ async def start(user_id: str, course_id: str) -> dict:
     }
 
 
+async def _record_quiz_session(session: dict) -> None:
+    """Persist a completed adaptive run as a quiz session so progress, the
+    dashboard, recommendations and course insights have history to work from."""
+    answers = session.get("answers", [])
+    if not answers:
+        return
+    meta = vector_store.get_course_meta(session["course_id"]) or {}
+
+    agg: dict = defaultdict(lambda: {"attempts": 0, "correct": 0})
+    for a in answers:
+        agg[a["concept"]]["attempts"] += 1
+        agg[a["concept"]]["correct"] += 1 if a["correct"] else 0
+    breakdown = [
+        {
+            "concept": c,
+            "attempts": v["attempts"],
+            "correct": v["correct"],
+            "accuracy": round(v["correct"] / v["attempts"], 3) if v["attempts"] else 0.0,
+        }
+        for c, v in agg.items()
+    ]
+    breakdown.sort(key=lambda c: c["accuracy"])
+
+    record = {
+        "session_id": session["session_id"],
+        "user_id": session["user_id"],
+        "course_id": session["course_id"],
+        "course_title": meta.get("course_title", session["course_id"]),
+        "score": sum(1 for a in answers if a["correct"]),
+        "total": len(answers),
+        "answers": [
+            {"question_id": a["question_id"], "concept": a["concept"], "difficulty": "",
+             "correct": a["correct"], "time_taken_ms": 0, "lecture": ""}
+            for a in answers
+        ],
+        "concept_breakdown": breakdown,
+        "completed_at": _now().isoformat(),
+    }
+    await store.set("quiz_sessions", session["session_id"], record)
+    await recommendation_service.invalidate(session["user_id"])
+
+
 async def answer(session_id: str, question_id: str, correct: bool, concept: str) -> dict:
     session = await store.get(SESSION_COLLECTION, session_id)
     if not session or session.get("done"):
@@ -193,6 +238,7 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
 
     await _update_perf(user_id, concept, correct)
     session["answered_ids"].append(question_id)
+    session["answers"].append({"question_id": question_id, "concept": concept, "correct": correct})
     session["count"] += 1
 
     # End conditions.
@@ -201,6 +247,7 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
     if nxt is None:
         session["done"] = True
         await store.set(SESSION_COLLECTION, session_id, session)
+        await _record_quiz_session(session)
         return {"status": "done", "summary": await _mastery_summary(user_id, bank)}
 
     await store.set(SESSION_COLLECTION, session_id, session)
