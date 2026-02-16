@@ -117,6 +117,13 @@ async def knowledge_graph(course_id: str):
     return await knowledge_graph_service.get_graph(course_id)
 
 
+@app.get("/api/ai/concept-map/{course_id}")
+async def concept_map(course_id: str, user_id: str = "anonymous"):
+    if not vector_store.get_course_meta(course_id):
+        raise HTTPException(status_code=404, detail="Unknown course")
+    return await knowledge_graph_service.get_concept_map(course_id, user_id)
+
+
 @app.post("/api/ai/knowledge-graph/{course_id}/build")
 async def knowledge_graph_build(course_id: str):
     _require_course(course_id)
