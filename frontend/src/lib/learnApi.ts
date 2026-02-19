@@ -110,6 +110,43 @@ export function getConceptMap(courseId: string, userId: string): Promise<Concept
   return getJson<ConceptMap>(`/api/ai/concept-map/${courseId}?user_id=${encodeURIComponent(userId)}`);
 }
 
+// Stream a tutor reply over SSE. Resolves when the stream ends.
+export async function streamTutor(
+  body: { user_id: string; course_id: string; messages: { role: string; content: string }[] },
+  cb: { onToken: (t: string) => void; onDone: () => void; onError: (e: Error) => void },
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    throw new Error(`Backend error ${res.status}`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split("\n\n");
+      buf = parts.pop() ?? "";
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith("data:")) continue;
+        const msg = JSON.parse(line.slice(5).trim());
+        if (msg.type === "token") cb.onToken(msg.value);
+        else if (msg.type === "done") cb.onDone();
+        else if (msg.type === "error") cb.onError(new Error(msg.message));
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function startAdaptive(userId: string, courseId: string): Promise<AdaptiveResponse> {
   return getJson<AdaptiveResponse>("/api/ai/adaptive/start", {
     method: "POST",

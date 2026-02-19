@@ -15,13 +15,14 @@ from pydantic import BaseModel
 
 from app.models import (
     AskRequest, AskResponse, Course, QuizSubmit,
-    AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest,
+    AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest, TutorRequest,
 )
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
     knowledge_graph_service, recommendation_service, course_insight_service,
+    tutor_service,
 )
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -141,6 +142,16 @@ async def course_insight(req: CourseInsightRequest):
         raise HTTPException(status_code=404, detail="Unknown course")
     return await course_insight_service.generate(
         req.user_id, req.course_id, req.chat_questions, req.rewatched_lectures
+    )
+
+
+@app.post("/api/ai/tutor/stream")
+async def tutor_stream_endpoint(req: TutorRequest):
+    messages = [{"role": m.role, "content": m.content} for m in req.messages]
+    return StreamingResponse(
+        tutor_service.tutor_stream(req.user_id, req.course_id, messages),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )
 
 

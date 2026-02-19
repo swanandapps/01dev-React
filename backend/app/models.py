@@ -160,3 +160,14 @@ class CourseInsightRequest(BaseModel):
     course_id: str
     chat_questions: List[str] = []
     rewatched_lectures: List[str] = []
+
+
+class TutorTurn(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class TutorRequest(BaseModel):
+    user_id: str = "anonymous"
+    course_id: str
+    messages: List[TutorTurn]
