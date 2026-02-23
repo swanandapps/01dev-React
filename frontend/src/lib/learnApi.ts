@@ -1,6 +1,6 @@
 import type {
   Course, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
-  RecommendationsResponse, CourseInsight, ConceptMap,
+  RecommendationsResponse, CourseInsight,
 } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
@@ -104,10 +104,6 @@ export function recordLectureView(lectureTitle: string): void {
 // Knowledge graph is internal; we only trigger its build on access.
 export function buildKnowledgeGraph(courseId: string): Promise<{ status: string }> {
   return getJson<{ status: string }>(`/api/ai/knowledge-graph/${courseId}/build`, { method: "POST" });
-}
-
-export function getConceptMap(courseId: string, userId: string): Promise<ConceptMap> {
-  return getJson<ConceptMap>(`/api/ai/concept-map/${courseId}?user_id=${encodeURIComponent(userId)}`);
 }
 
 // Stream a tutor reply over SSE. Resolves when the stream ends.

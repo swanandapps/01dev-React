@@ -131,26 +131,3 @@ export interface CourseInsight {
   next_steps: string[];
 }
 
-// Interactive concept map
-export type MasteryLevel = "mastered" | "learning" | "weak" | "new";
-
-export interface ConceptNode {
-  name: string;
-  description: string;
-  attempts: number;
-  accuracy: number;
-  level: MasteryLevel;
-}
-
-export interface ConceptEdge {
-  source: string;
-  target: string;
-  type: "prerequisite_of" | "part_of" | "related_to";
-}
-
-export interface ConceptMap {
-  course_id: string;
-  course_title: string;
-  concepts: ConceptNode[];
-  relationships: ConceptEdge[];
-}

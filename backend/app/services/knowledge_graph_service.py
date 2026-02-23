@@ -79,48 +79,6 @@ async def get_prerequisites(course_id: str, concept: str) -> List[str]:
     return [r["source"] for r in rels if r.get("type") == "prerequisite_of" and r.get("target") == concept]
 
 
-def _mastery_level(attempts: int, accuracy: float) -> str:
-    if attempts == 0:
-        return "new"
-    if accuracy >= 0.8:
-        return "mastered"
-    if accuracy >= 0.5:
-        return "learning"
-    return "weak"
-
-
-async def get_concept_map(course_id: str, user_id: str) -> dict:
-    """The course graph with the student's per-concept mastery overlaid — the
-    payload for the interactive concept map."""
-    from app.services.vector_store import vector_store
-
-    graph = await get_graph(course_id)
-    meta = vector_store.get_course_meta(course_id) or {}
-
-    perf_all = await store.query("concept_performance", "user_id", user_id)
-    perf = {p["concept"]: p for p in perf_all}
-
-    concepts = []
-    for c in graph["concepts"]:
-        p = perf.get(c["name"], {})
-        attempts = p.get("attempts", 0)
-        accuracy = p.get("accuracy", 0.0)
-        concepts.append({
-            "name": c["name"],
-            "description": c.get("description", ""),
-            "attempts": attempts,
-            "accuracy": accuracy,
-            "level": _mastery_level(attempts, accuracy),
-        })
-
-    return {
-        "course_id": course_id,
-        "course_title": meta.get("course_title", course_id),
-        "concepts": concepts,
-        "relationships": graph["relationships"],
-    }
-
-
 async def _build(course_id: str) -> None:
     try:
         meta = vector_store.get_course_meta(course_id)
