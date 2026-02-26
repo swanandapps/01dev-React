@@ -14,10 +14,9 @@ import CourseDetailsPage from "./pages/CourseDetailsPage";
 import CoursePlayerPage from "./pages/CoursePlayerPage";
 import SignInPage from "./pages/SignInPage";
 import ProfilePage from "./pages/ProfilePage";
-import ResearchPage from "./pages/ResearchPage";
 import BlogsPage from "./pages/BlogsPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
-import MapsPage from "./pages/MapsPage";
+import RoadmapPage from "./pages/RoadmapPage";
 import AskPage from "./pages/AskPage";
 import LearnPage from "./pages/LearnPage";
 
@@ -79,10 +78,9 @@ function AppInner() {
       <Route path="/course/:courseid" element={<CoursePlayerPage />} />
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/research" element={<ResearchPage />} />
       <Route path="/blogs" element={<BlogsPage />} />
       <Route path="/blogs/:id" element={<BlogDetailPage />} />
-      <Route path="/maps" element={<MapsPage />} />
+      <Route path="/roadmap" element={<RoadmapPage />} />
       <Route path="/ask" element={<AskPage />} />
       <Route path="/dashboard" element={<LearnPage />} />
     </Routes>
