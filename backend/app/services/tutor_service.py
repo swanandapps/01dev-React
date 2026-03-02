@@ -46,15 +46,22 @@ async def _course_context(course_id: str, query: str) -> str:
     )
 
 
-def _system_prompt(course_title: str, weak: List[str], context: str) -> str:
+def _system_prompt(course_title: str, weak: List[str], context: str, lecture: str) -> str:
     weak_line = (
         f"This student is currently weak on: {', '.join(weak)}. Gently steer toward these when relevant."
         if weak
         else "You don't have performance data for this student yet."
     )
+    watching_line = (
+        f'The student is RIGHT NOW watching the lecture "{lecture}". If their question seems to be about '
+        f"what they're watching (e.g. \"what does this mean\", \"I'm confused here\"), assume it's about this lecture."
+        if lecture
+        else ""
+    )
     return f"""You are a patient, encouraging Socratic AI tutor for the course "{course_title}" on the 0.1% Dev platform.
 
 {weak_line}
+{watching_line}
 
 Teaching style:
 - Prefer guiding questions over handing over answers. When the student is stuck, give a small hint first, then explain.
@@ -66,7 +73,9 @@ Course material (for grounding):
 {context}"""
 
 
-async def tutor_stream(user_id: str, course_id: str, messages: List[dict]) -> AsyncIterator[str]:
+async def tutor_stream(
+    user_id: str, course_id: str, messages: List[dict], lecture: str = ""
+) -> AsyncIterator[str]:
     meta = vector_store.get_course_meta(course_id)
     if not meta:
         yield _sse({"type": "error", "message": "Unknown course"})
@@ -74,8 +83,9 @@ async def tutor_stream(user_id: str, course_id: str, messages: List[dict]) -> As
 
     last_user = next((m["content"] for m in reversed(messages) if m.get("role") == "user"), "")
     weak = await _weak_concepts(user_id, course_id)
-    context = await _course_context(course_id, last_user)
-    system = _system_prompt(meta["course_title"], weak, context)
+    # Bias retrieval toward the lecture they're watching.
+    context = await _course_context(course_id, f"{lecture} {last_user}".strip())
+    system = _system_prompt(meta["course_title"], weak, context, lecture)
 
     if not llm.client:
         for w in "The AI tutor needs an OpenAI API key to chat. ".split(" "):

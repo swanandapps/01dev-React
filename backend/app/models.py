@@ -171,3 +171,4 @@ class TutorRequest(BaseModel):
     user_id: str = "anonymous"
     course_id: str
     messages: List[TutorTurn]
+    lecture: str = ""  # the lecture the student is currently watching, if any

@@ -108,7 +108,12 @@ export function buildKnowledgeGraph(courseId: string): Promise<{ status: string 
 
 // Stream a tutor reply over SSE. Resolves when the stream ends.
 export async function streamTutor(
-  body: { user_id: string; course_id: string; messages: { role: string; content: string }[] },
+  body: {
+    user_id: string;
+    course_id: string;
+    messages: { role: string; content: string }[];
+    lecture?: string;
+  },
   cb: { onToken: (t: string) => void; onDone: () => void; onError: (e: Error) => void },
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {

@@ -142,7 +142,7 @@ async def course_insight(req: CourseInsightRequest):
 async def tutor_stream_endpoint(req: TutorRequest):
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
     return StreamingResponse(
-        tutor_service.tutor_stream(req.user_id, req.course_id, messages),
+        tutor_service.tutor_stream(req.user_id, req.course_id, messages, req.lecture),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )

@@ -4,14 +4,27 @@ import Header from "../components/Home/Header";
 import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
-import { recordLectureView } from "../lib/learnApi";
+import { recordLectureView, getCourses } from "../lib/learnApi";
+import { PlayerTutor } from "../components/learn/PlayerTutor";
+import type { Course } from "../types/learn";
 
 export default function CoursePlayerPage() {
   const { courseid } = useParams<{ courseid: string }>();
   const [searchParams] = useSearchParams();
-  const { isCourseBought } = useUserSessionStore();
+  const { isCourseBought, currentuser } = useUserSessionStore();
+  const userId = (currentuser?.uid as string) || "anonymous";
 
   const track = tracks.find((t) => t.id === Number(courseid));
+
+  // Match this course to a backend course (by title) so the in-player tutor is available.
+  const [aiCourse, setAiCourse] = useState<Course | null>(null);
+  useEffect(() => {
+    if (!track) return;
+    getCourses()
+      .then((courses) => setAiCourse(courses.find((c) => c.title === track.title) ?? null))
+      .catch(() => setAiCourse(null));
+  }, [track]);
+
   if (!track) return <Navigate to="/tracks" replace />;
 
   const bought = isCourseBought(track.id);
@@ -160,6 +173,10 @@ export default function CoursePlayerPage() {
           ))}
         </div>
       </div>
+
+      {aiCourse && (
+        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title} />
+      )}
     </div>
   );
 }
