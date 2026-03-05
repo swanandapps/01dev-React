@@ -16,7 +16,6 @@ import SignInPage from "./pages/SignInPage";
 import ProfilePage from "./pages/ProfilePage";
 import BlogsPage from "./pages/BlogsPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
-import RoadmapPage from "./pages/RoadmapPage";
 import AskPage from "./pages/AskPage";
 import LearnPage from "./pages/LearnPage";
 
@@ -80,7 +79,6 @@ function AppInner() {
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/blogs" element={<BlogsPage />} />
       <Route path="/blogs/:id" element={<BlogDetailPage />} />
-      <Route path="/roadmap" element={<RoadmapPage />} />
       <Route path="/ask" element={<AskPage />} />
       <Route path="/dashboard" element={<LearnPage />} />
     </Routes>
