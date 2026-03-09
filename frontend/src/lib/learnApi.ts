@@ -1,6 +1,6 @@
 import type {
   Course, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
-  RecommendationsResponse, CourseInsight,
+  RecommendationsResponse, CourseInsight, Journey,
 } from "../types/learn";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
@@ -48,6 +48,10 @@ export function listQuizSessions(userId: string): Promise<QuizSession[]> {
 
 export function getRecommendations(userId: string): Promise<RecommendationsResponse> {
   return getJson<RecommendationsResponse>(`/api/ai/recommendations?user_id=${encodeURIComponent(userId)}`);
+}
+
+export function getJourney(userId: string): Promise<Journey> {
+  return getJson<Journey>(`/api/ai/journey?user_id=${encodeURIComponent(userId)}`);
 }
 
 export function getCourseInsight(body: {
@@ -161,6 +165,7 @@ export function answerAdaptive(body: {
   question_id: string;
   concept: string;
   correct: boolean;
+  time_taken_ms?: number;
 }): Promise<AdaptiveResponse> {
   return getJson<AdaptiveResponse>("/api/ai/adaptive/answer", {
     method: "POST",

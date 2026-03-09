@@ -131,3 +131,37 @@ export interface CourseInsight {
   next_steps: string[];
 }
 
+// Learning-journey analytics (dashboard)
+export interface JourneyMetrics {
+  quizzes: number;
+  questions_answered: number;
+  avg_score: number;
+  active_days: number;
+  streak: number;
+  courses_engaged: number;
+  concepts_practiced: number;
+  concepts_mastered: number;
+  concepts_weak: number;
+  practice_minutes: number;
+  avg_seconds_per_question: number;
+}
+
+export interface HeatCell {
+  date: string;
+  count: number;
+}
+
+export interface ConceptStat {
+  concept: string;
+  accuracy: number;
+  attempts: number;
+}
+
+export interface Journey {
+  metrics: JourneyMetrics;
+  heatmap: HeatCell[];
+  strengths: ConceptStat[];
+  weaknesses: ConceptStat[];
+  ai: { narrative: string; insights: string[]; focus: string };
+}
+

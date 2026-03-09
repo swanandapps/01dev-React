@@ -218,7 +218,7 @@ async def _record_quiz_session(session: dict) -> None:
         "total": len(answers),
         "answers": [
             {"question_id": a["question_id"], "concept": a["concept"], "difficulty": "",
-             "correct": a["correct"], "time_taken_ms": 0, "lecture": ""}
+             "correct": a["correct"], "time_taken_ms": a.get("time_taken_ms", 0), "lecture": ""}
             for a in answers
         ],
         "concept_breakdown": breakdown,
@@ -228,7 +228,9 @@ async def _record_quiz_session(session: dict) -> None:
     await recommendation_service.invalidate(session["user_id"])
 
 
-async def answer(session_id: str, question_id: str, correct: bool, concept: str) -> dict:
+async def answer(
+    session_id: str, question_id: str, correct: bool, concept: str, time_taken_ms: int = 0
+) -> dict:
     session = await store.get(SESSION_COLLECTION, session_id)
     if not session or session.get("done"):
         return {"status": "done", "summary": None}
@@ -238,7 +240,9 @@ async def answer(session_id: str, question_id: str, correct: bool, concept: str)
 
     await _update_perf(user_id, concept, correct)
     session["answered_ids"].append(question_id)
-    session["answers"].append({"question_id": question_id, "concept": concept, "correct": correct})
+    session["answers"].append(
+        {"question_id": question_id, "concept": concept, "correct": correct, "time_taken_ms": time_taken_ms}
+    )
     session["count"] += 1
 
     # End conditions.

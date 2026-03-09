@@ -153,6 +153,7 @@ class AdaptiveAnswerRequest(BaseModel):
     question_id: str
     concept: str
     correct: bool
+    time_taken_ms: int = 0
 
 
 class CourseInsightRequest(BaseModel):

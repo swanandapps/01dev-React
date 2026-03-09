@@ -22,7 +22,7 @@ from app.services.rag_service import ask, ask_stream
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
     knowledge_graph_service, recommendation_service, course_insight_service,
-    tutor_service,
+    tutor_service, journey_service,
 )
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -110,7 +110,9 @@ async def adaptive_start(req: AdaptiveStartRequest):
 
 @app.post("/api/ai/adaptive/answer")
 async def adaptive_answer(req: AdaptiveAnswerRequest):
-    return await adaptive_service.answer(req.session_id, req.question_id, req.correct, req.concept)
+    return await adaptive_service.answer(
+        req.session_id, req.question_id, req.correct, req.concept, req.time_taken_ms
+    )
 
 
 @app.get("/api/ai/knowledge-graph/{course_id}")
@@ -127,6 +129,11 @@ async def knowledge_graph_build(course_id: str):
 @app.get("/api/ai/recommendations")
 async def recommendations(user_id: str):
     return await recommendation_service.get_recommendations(user_id)
+
+
+@app.get("/api/ai/journey")
+async def journey(user_id: str):
+    return await journey_service.get_journey(user_id)
 
 
 @app.post("/api/ai/course-insight")

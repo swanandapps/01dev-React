@@ -26,6 +26,7 @@ export function AdaptiveModal({
   const [error, setError] = useState<string | null>(null);
   const sessionId = useRef<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shownAt = useRef<number>(Date.now()); // when the current question appeared
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +40,7 @@ export function AdaptiveModal({
         }
         sessionId.current = res.session_id ?? null;
         setQuestion(res.question ?? null);
+        shownAt.current = Date.now();
         if (res.status === "done") {
           setFinished(true);
           setSummary(res.summary ?? null);
@@ -71,6 +73,7 @@ export function AdaptiveModal({
         question_id: question.id,
         concept,
         correct,
+        time_taken_ms: Date.now() - shownAt.current,
       });
       setAnsweredCount((c) => c + 1);
       if (res.status === "done") {
@@ -80,6 +83,7 @@ export function AdaptiveModal({
       } else {
         setQuestion(res.question ?? null);
         setSelected(null);
+        shownAt.current = Date.now();
       }
     } catch (e) {
       setError((e as Error).message);

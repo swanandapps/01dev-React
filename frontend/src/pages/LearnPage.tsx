@@ -1,189 +1,190 @@
 import { useEffect, useState } from "react";
-import { Loader2, GraduationCap, Compass, BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Sparkles, Loader2, Flame, Target, Clock, Brain, CheckCircle2, Zap, Lightbulb } from "lucide-react";
 import Header from "../components/Home/Header";
-import { CourseCompanion } from "../components/learn/CourseCompanion";
-import { getCourses, getRecommendations, listQuizSessions } from "../lib/learnApi";
+import { getJourney } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
-import type { Course, Recommendation, QuizSession } from "../types/learn";
+import type { Journey, ConceptStat } from "../types/learn";
 
-// Group sessions by course so a course shows once — with attempt count and the
-// latest result as a comparable percentage (adaptive runs vary in length).
-function groupProgressByCourse(sessions: QuizSession[]) {
-  const byCourse: Record<string, { course_id: string; title: string; attempts: number; latest: QuizSession; bestPct: number }> = {};
-  for (const s of sessions) {
-    const pct = s.score / Math.max(s.total, 1);
-    const g = byCourse[s.course_id];
-    if (!g) {
-      byCourse[s.course_id] = { course_id: s.course_id, title: s.course_title, attempts: 1, latest: s, bestPct: pct };
-    } else {
-      g.attempts += 1;
-      g.bestPct = Math.max(g.bestPct, pct);
-      if (s.completed_at > g.latest.completed_at) g.latest = s;
-    }
-  }
-  return Object.values(byCourse)
-    .map((g) => ({ ...g, latestPct: g.latest.score / Math.max(g.latest.total, 1) }))
-    .sort((a, b) => (b.latest.completed_at > a.latest.completed_at ? 1 : -1));
+function Metric({ icon: Icon, label, value }: { icon: typeof Flame; label: string; value: string }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+      <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+        <Icon className="w-3.5 h-3.5" />
+        <span className="text-[11px] uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="text-xl font-semibold text-zinc-100">{value}</p>
+    </div>
+  );
 }
 
-// Aggregate per-concept accuracy across all of a user's quiz sessions.
-function aggregateWeakConcepts(sessions: QuizSession[]) {
-  const agg: Record<string, { attempts: number; correct: number }> = {};
-  for (const s of sessions) {
-    for (const c of s.concept_breakdown) {
-      const a = (agg[c.concept] ??= { attempts: 0, correct: 0 });
-      a.attempts += c.attempts;
-      a.correct += c.correct;
-    }
-  }
-  return Object.entries(agg)
-    .map(([concept, v]) => ({ concept, accuracy: v.correct / Math.max(v.attempts, 1) }))
-    .filter((c) => c.accuracy < 0.8)
-    .sort((a, b) => a.accuracy - b.accuracy)
-    .slice(0, 6);
+function heatColor(count: number): string {
+  if (count <= 0) return "bg-zinc-800/70";
+  if (count === 1) return "bg-indigo-900";
+  if (count === 2) return "bg-indigo-700";
+  if (count === 3) return "bg-indigo-500";
+  return "bg-indigo-400";
+}
+
+function Heatmap({ data }: { data: { date: string; count: number }[] }) {
+  if (!data.length) return null;
+  const lead = new Date(data[0].date).getDay(); // empty cells before the first day
+  return (
+    <div>
+      <div className="grid grid-rows-7 grid-flow-col gap-1 w-max">
+        {Array.from({ length: lead }).map((_, i) => (
+          <div key={`pad-${i}`} className="w-3 h-3" />
+        ))}
+        {data.map((d) => (
+          <div
+            key={d.date}
+            title={`${d.date}: ${d.count} session${d.count === 1 ? "" : "s"}`}
+            className={`w-3 h-3 rounded-sm ${heatColor(d.count)}`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5 mt-3 text-[11px] text-zinc-600">
+        <span>Less</span>
+        {[0, 1, 2, 3, 4].map((c) => (
+          <span key={c} className={`w-3 h-3 rounded-sm ${heatColor(c)}`} />
+        ))}
+        <span>More</span>
+      </div>
+    </div>
+  );
+}
+
+function ConceptList({ title, items, good }: { title: string; items: ConceptStat[]; good: boolean }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
+      <h3 className={`text-xs font-semibold uppercase tracking-wide mb-3 ${good ? "text-emerald-400" : "text-amber-400"}`}>
+        {title}
+      </h3>
+      {items.length === 0 ? (
+        <p className="text-xs text-zinc-600">Not enough data yet.</p>
+      ) : (
+        <div className="space-y-2.5">
+          {items.map((c) => {
+            const pct = Math.round(c.accuracy * 100);
+            return (
+              <div key={c.concept}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-zinc-300">{c.concept}</span>
+                  <span className={good ? "text-emerald-400" : "text-amber-400"}>{pct}%</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className={`h-full ${good ? "bg-emerald-500" : "bg-amber-500"}`} style={{ width: `${Math.max(pct, 3)}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function MyLearningPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [recs, setRecs] = useState<Recommendation[] | null>(null);
-  const [sessions, setSessions] = useState<QuizSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [journey, setJourney] = useState<Journey | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const currentuser = useUserSessionStore((s) => s.currentuser);
   const userId = (currentuser?.uid as string) || "anonymous";
 
   useEffect(() => {
-    Promise.all([getCourses(), getRecommendations(userId), listQuizSessions(userId)])
-      .then(([cs, r, ss]) => {
-        setCourses(cs);
-        setRecs(r.recommendations);
-        setSessions(ss);
-      })
-      .catch(() => setRecs([]))
-      .finally(() => setLoading(false));
+    getJourney(userId)
+      .then(setJourney)
+      .catch((e) => setError((e as Error).message));
   }, [userId]);
 
-  const weak = aggregateWeakConcepts(sessions);
+  const m = journey?.metrics;
+  const started = (m?.quizzes ?? 0) > 0;
 
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
       <Header />
       <div className="pt-16">
         <div className="max-w-3xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-100">My Learning</h1>
-              <p className="text-sm text-zinc-500">Your personalized study hub</p>
-            </div>
+          <div className="mb-8">
+            <h1 className="text-xl font-semibold text-zinc-100">Your Journey</h1>
+            <p className="text-sm text-zinc-500">Your learning analytics with 0.1% DEV</p>
           </div>
 
-          {loading && (
+          {!journey && !error && (
             <div className="flex items-center gap-2 text-zinc-400 py-16 justify-center">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Loading your dashboard…</span>
+              <span className="text-sm">Analyzing your journey…</span>
             </div>
           )}
+          {error && <p className="text-sm text-amber-300">{error}</p>}
 
-          {!loading && (
-            <div className="space-y-10">
-              {/* What to study next */}
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <Compass className="w-4 h-4 text-indigo-400" />
-                  <h2 className="text-sm font-semibold text-zinc-100">What to study next</h2>
+          {journey && m && (
+            <div className="space-y-8">
+              {/* AI narrative */}
+              <div className="bg-gradient-to-br from-indigo-950/40 to-zinc-900 border border-indigo-500/20 rounded-2xl px-6 py-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wide">Your story so far</span>
                 </div>
-                <div className="space-y-3">
-                  {recs && recs.length > 0 ? (
-                    recs.map((r) => {
-                      const course = courses.find((c) => c.course_id === r.course_id);
-                      return (
-                        <div
-                          key={r.course_id}
-                          className="bg-gradient-to-br from-indigo-950/30 to-zinc-900 border border-indigo-500/15 rounded-xl px-5 py-4"
-                        >
-                          <p className="text-sm font-semibold text-zinc-100">{r.course_title}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5 mb-3 leading-relaxed">{r.reason}</p>
-                          {course && <CourseCompanion course={course} userId={userId} size="sm" />}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-sm text-zinc-500">No recommendations yet.</p>
-                  )}
-                </div>
-              </section>
-
-              {/* Your progress */}
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <BarChart3 className="w-4 h-4 text-indigo-400" />
-                  <h2 className="text-sm font-semibold text-zinc-100">Your progress</h2>
-                </div>
-
-                {sessions.length === 0 ? (
-                  <p className="text-sm text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4">
-                    Take a practice quiz on any course to start tracking your progress.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {/* One card per course: attempts + latest result as a % */}
-                    <div className="space-y-2">
-                      {groupProgressByCourse(sessions).map((cp) => {
-                        const pct = Math.round(cp.latestPct * 100);
-                        const c =
-                          cp.latestPct >= 0.8
-                            ? { text: "text-emerald-400", bar: "bg-emerald-500" }
-                            : cp.latestPct >= 0.5
-                            ? { text: "text-amber-400", bar: "bg-amber-500" }
-                            : { text: "text-rose-400", bar: "bg-rose-500" };
-                        return (
-                          <div
-                            key={cp.course_id}
-                            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <p className="text-sm text-zinc-200">{cp.title}</p>
-                                <p className="text-xs text-zinc-600">
-                                  {cp.attempts} {cp.attempts === 1 ? "attempt" : "attempts"} · last{" "}
-                                  {new Date(cp.latest.completed_at).toLocaleDateString()}
-                                  {cp.attempts > 1 && cp.bestPct > cp.latestPct
-                                    ? ` · best ${Math.round(cp.bestPct * 100)}%`
-                                    : ""}
-                                </p>
-                              </div>
-                              <span className={`text-sm font-semibold ${c.text}`}>{pct}%</span>
-                            </div>
-                            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <div className={`h-full ${c.bar}`} style={{ width: `${Math.max(pct, 3)}%` }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Weak concepts */}
-                    {weak.length > 0 && (
-                      <div className="bg-amber-950/20 border border-amber-800/30 rounded-xl px-5 py-4">
-                        <p className="text-xs font-semibold text-amber-300 mb-2">Concepts to revisit</p>
-                        <div className="flex flex-wrap gap-2">
-                          {weak.map((w) => (
-                            <span
-                              key={w.concept}
-                              className="text-xs text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1"
-                            >
-                              {w.concept} · {Math.round(w.accuracy * 100)}%
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                <p className="text-sm text-zinc-200 leading-relaxed">{journey.ai.narrative}</p>
+                {journey.ai.focus && (
+                  <div className="mt-3 flex items-start gap-2 text-sm text-indigo-200 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+                    <Zap className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span><span className="font-medium">Focus:</span> {journey.ai.focus}</span>
                   </div>
                 )}
-              </section>
+                {!started && (
+                  <Link to="/tracks" className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-indigo-300 hover:text-indigo-200">
+                    Browse courses to start →
+                  </Link>
+                )}
+              </div>
+
+              {/* metrics */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <Metric icon={Flame} label="Day streak" value={`${m.streak}`} />
+                <Metric icon={Target} label="Avg score" value={`${Math.round(m.avg_score * 100)}%`} />
+                <Metric icon={Brain} label="Concepts mastered" value={`${m.concepts_mastered}`} />
+                <Metric icon={Zap} label="Quizzes" value={`${m.quizzes}`} />
+                <Metric icon={Clock} label="Practiced" value={`${m.practice_minutes}m`} />
+                <Metric icon={CheckCircle2} label="Avg / question" value={m.avg_seconds_per_question ? `${m.avg_seconds_per_question}s` : "—"} />
+              </div>
+
+              {/* activity heatmap */}
+              {started && (
+                <section>
+                  <h2 className="text-sm font-semibold text-zinc-100 mb-3">Activity · last 12 weeks</h2>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 overflow-x-auto">
+                    <Heatmap data={journey.heatmap} />
+                  </div>
+                </section>
+              )}
+
+              {/* strengths / weaknesses */}
+              {started && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <ConceptList title="Your strengths" items={journey.strengths} good />
+                  <ConceptList title="Focus areas" items={journey.weaknesses} good={false} />
+                </div>
+              )}
+
+              {/* AI insights */}
+              {journey.ai.insights.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    <h2 className="text-sm font-semibold text-zinc-100">Patterns we noticed</h2>
+                  </div>
+                  <div className="space-y-2">
+                    {journey.ai.insights.map((ins, i) => (
+                      <div key={i} className="flex items-start gap-2.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+                        <span className="text-amber-500 mt-0.5">✦</span>
+                        <p className="text-sm text-zinc-300 leading-relaxed">{ins}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </div>
