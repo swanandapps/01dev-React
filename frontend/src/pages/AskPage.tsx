@@ -5,6 +5,7 @@ import { RagSourceCard } from "../components/rag/RagSourceCard";
 import { askQuestionStream, askQuestion } from "../lib/ragApi";
 import { FBgetChatHistory, FBsaveChatHistory } from "../lib/firebase";
 import { useUserSessionStore } from "../store/userSession";
+import { FeatureGlimpse } from "../components/common/FeatureGlimpse";
 import type { ChatMessage } from "../types/rag";
 
 function generateId() {
@@ -92,6 +93,7 @@ export default function AskPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const currentuser = useUserSessionStore((s) => s.currentuser);
+  const isUserLoggedIn = useUserSessionStore((s) => s.isUserLoggedIn);
   const uid = (currentuser?.uid as string) || null;
 
   useEffect(() => {
@@ -221,6 +223,36 @@ export default function AskPage() {
       submit(input);
     }
   };
+
+  if (!isUserLoggedIn) {
+    return (
+      <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
+        <Header />
+        <div className="pt-16">
+          <FeatureGlimpse
+            icon={Sparkles}
+            title="Course AI Assistant"
+            tagline="Ask anything about the course content and get instant, grounded answers with citations to the exact lecture."
+            bullets={[
+              "Streamed answers from the indexed lectures",
+              "Source cards linking to the right lecture & timestamp",
+              "Your chat history saved across devices",
+            ]}
+            sample={
+              <div className="space-y-2 text-left">
+                <div className="bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-3 py-2 text-xs ml-auto max-w-[80%] w-fit">
+                  What does npm link do?
+                </div>
+                <div className="bg-zinc-800/70 border border-zinc-700/50 rounded-2xl rounded-tl-sm px-3 py-2 text-xs text-zinc-200 max-w-[85%]">
+                  npm link lets you test a library locally without publishing — it creates a global symlink…
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] h-screen flex flex-col">

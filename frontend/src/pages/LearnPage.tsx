@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Loader2, Flame, Target, Clock, Brain, CheckCircle2, Zap, Lightbulb } from "lucide-react";
+import { Sparkles, Loader2, Flame, Target, Clock, Brain, CheckCircle2, Zap, Lightbulb, LineChart } from "lucide-react";
 import Header from "../components/Home/Header";
+import { FeatureGlimpse } from "../components/common/FeatureGlimpse";
 import { getJourney } from "../lib/learnApi";
 import { useUserSessionStore } from "../store/userSession";
 import type { Journey, ConceptStat } from "../types/learn";
@@ -89,16 +90,52 @@ export default function MyLearningPage() {
   const [error, setError] = useState<string | null>(null);
 
   const currentuser = useUserSessionStore((s) => s.currentuser);
+  const isUserLoggedIn = useUserSessionStore((s) => s.isUserLoggedIn);
   const userId = (currentuser?.uid as string) || "anonymous";
 
   useEffect(() => {
+    if (!isUserLoggedIn) return;
     getJourney(userId)
       .then(setJourney)
       .catch((e) => setError((e as Error).message));
-  }, [userId]);
+  }, [userId, isUserLoggedIn]);
 
   const m = journey?.metrics;
   const started = (m?.quizzes ?? 0) > 0;
+
+  if (!isUserLoggedIn) {
+    return (
+      <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
+        <Header />
+        <div className="pt-16">
+          <FeatureGlimpse
+            icon={LineChart}
+            title="Your Learning Journey"
+            tagline="A personal analytics dashboard that turns your activity into insights — and surfaces patterns you wouldn't notice yourself."
+            bullets={[
+              "Streaks, mastery, time-spent and score metrics",
+              "An activity heatmap of your practice",
+              "AI-found patterns + a focus for what's next",
+            ]}
+            sample={
+              <div className="grid grid-cols-3 gap-2 text-left">
+                {[
+                  { l: "Streak", v: "5" },
+                  { l: "Avg score", v: "82%" },
+                  { l: "Mastered", v: "7" },
+                ].map((s) => (
+                  <div key={s.l} className="bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-3 py-2">
+                    <p className="text-[10px] uppercase text-zinc-500">{s.l}</p>
+                    <p className="text-base font-semibold text-zinc-100">{s.v}</p>
+                  </div>
+                ))}
+              </div>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
