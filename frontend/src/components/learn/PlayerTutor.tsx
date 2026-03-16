@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, X, Send, Loader2, GraduationCap, User, Minus } from "lucide-react";
 import { streamTutor } from "../../lib/learnApi";
+import { useUserSessionStore } from "../../store/userSession";
 import type { Course } from "../../types/learn";
 
 interface Msg {
@@ -29,6 +31,8 @@ export function PlayerTutor({
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const isUserLoggedIn = useUserSessionStore((s) => s.isUserLoggedIn);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: busy ? "auto" : "smooth" });
@@ -70,11 +74,11 @@ export function PlayerTutor({
     });
   };
 
-  // Floating button when collapsed.
+  // Floating button when collapsed. Signed-out users are sent to sign-in.
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => (isUserLoggedIn ? setOpen(true) : navigate("/signin"))}
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-full pl-4 pr-5 py-3 shadow-lg shadow-indigo-900/40 transition-colors"
       >
         <Sparkles className="w-4 h-4" />
