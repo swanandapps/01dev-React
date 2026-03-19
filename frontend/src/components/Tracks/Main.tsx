@@ -117,10 +117,6 @@ export default function TracksMain({ track }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left column */}
           <div className="lg:col-span-2">
-            <div className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border mb-4 ${track.theme} ${track.border}`}>
-              {track.launched ? "Available Now" : "Coming Soon"}
-            </div>
-
             <h1 className="text-4xl font-bold text-white mb-4">{track.title}</h1>
             <p className="text-zinc-400 text-lg mb-10 leading-relaxed">{track.description}</p>
 

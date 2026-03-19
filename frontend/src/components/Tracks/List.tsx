@@ -47,15 +47,6 @@ export default function TracksList() {
                      track.id === 8 ? "Real-Time Systems" :
                      "Engineering"}
                   </span>
-                  {track.launched ? (
-                    <span className="text-xs bg-green-900/60 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                      Available
-                    </span>
-                  ) : (
-                    <span className="text-xs bg-zinc-800 text-zinc-500 border border-zinc-700 px-2 py-0.5 rounded-full">
-                      Coming soon
-                    </span>
-                  )}
                 </div>
               </div>
 
