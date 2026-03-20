@@ -52,7 +52,7 @@ export default function TracksMain({ track }: Props) {
       const user = currentuser as { uid?: string; displayName?: string; email?: string };
 
       const options = {
-        key: "RAZORPAY_KEY_ID_REMOVED",
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.amount,
         currency: data.currency,
         name: "0.1% DEV",
