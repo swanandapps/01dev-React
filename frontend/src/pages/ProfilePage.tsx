@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Home/Header";
 import { useUserSessionStore } from "../store/userSession";
@@ -8,9 +9,18 @@ export default function ProfilePage() {
   const { currentuser, currentuserhistory, logout, isUserLoggedIn } = useUserSessionStore();
   const navigate = useNavigate();
 
+  // Redirect from an effect (never during render).
+  useEffect(() => {
+    if (!isUserLoggedIn) navigate("/signin");
+  }, [isUserLoggedIn, navigate]);
+
   if (!isUserLoggedIn) {
-    navigate("/signin");
-    return null;
+    return (
+      <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
+        <Header />
+        <p className="pt-28 text-center text-sm text-zinc-500">Redirecting to sign in…</p>
+      </div>
+    );
   }
 
   const user = currentuser as { displayName?: string; email?: string; photoURL?: string };
@@ -33,8 +43,8 @@ export default function ProfilePage() {
               <img src={user.photoURL} alt="Profile" className="w-16 h-16 rounded-full" />
             )}
             <div>
-              <h1 className="text-2xl font-bold text-white">{user.displayName}</h1>
-              <p className="text-zinc-400">{user.email}</p>
+              <h1 className="text-2xl font-bold text-white">{user.displayName || "Student"}</h1>
+              <p className="text-zinc-400">{user.email || ""}</p>
             </div>
           </div>
         </div>

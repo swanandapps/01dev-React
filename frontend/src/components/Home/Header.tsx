@@ -79,7 +79,10 @@ export default function Header() {
                   onClick={() => navigate("/profile")}
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-xs text-white flex-shrink-0">
+                <div
+                  onClick={() => navigate("/profile")}
+                  className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-xs text-white flex-shrink-0 cursor-pointer"
+                >
                   {user.displayName?.[0] ?? "U"}
                 </div>
               )}

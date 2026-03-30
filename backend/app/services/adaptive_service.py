@@ -33,6 +33,7 @@ SESSION_COLLECTION = "adaptive_sessions"
 MAX_QUESTIONS = 20
 MASTERY = 0.8
 SPACED_DAYS = 3
+LOW_UNSEEN = 8  # grow the bank when a user has fewer than this many unseen questions left
 
 
 def _now() -> datetime:
@@ -85,14 +86,30 @@ async def _question_bank(course_id: str) -> List[MCQQuestion]:
     return [MCQQuestion(**q) for q in doc["questions"]]
 
 
+async def _seen_question_ids(user_id: str, course_id: str) -> set:
+    """Question ids this user has answered across past sessions for this course."""
+    sessions = await store.query("quiz_sessions", "user_id", user_id)
+    return {
+        a.get("question_id")
+        for s in sessions
+        if s.get("course_id") == course_id
+        for a in s.get("answers", [])
+    }
+
+
 async def _pick_next(
-    user_id: str, course_id: str, bank: List[MCQQuestion], answered_ids: List[str]
+    user_id: str, course_id: str, bank: List[MCQQuestion], answered_ids: List[str], seen: set
 ) -> Optional[MCQQuestion]:
     unanswered = [q for q in bank if q.id not in answered_ids]
     if not unanswered:
         return None
 
-    concepts = {q.concept for q in unanswered}
+    # Prefer questions this user hasn't seen across past sessions; only fall back
+    # to already-seen ones for deliberate review (spaced repetition).
+    unseen = [q for q in unanswered if q.id not in seen]
+    working = unseen if unseen else unanswered
+
+    concepts = {q.concept for q in working}
 
     # Load this user's performance for the concepts still in play.
     perf = {c: await _get_perf(user_id, c) for c in concepts}
@@ -111,10 +128,13 @@ async def _pick_next(
             acc = perf[c]["accuracy"] if perf[c] else None
             if acc is None or acc < MASTERY:
                 candidates.append((c, acc if acc is not None else -1.0))
-        if not candidates:
-            return None  # everything still available is already mastered → end
-        candidates.sort(key=lambda x: x[1])
-        target = candidates[0][0]
+        if candidates:
+            candidates.sort(key=lambda x: x[1])
+            target = candidates[0][0]
+        else:
+            # All in-play concepts mastered — keep serving fresh material for
+            # reinforcement instead of stopping (supports continued practice).
+            target = working[0].concept
 
     acc = perf[target]["accuracy"] if perf[target] else None
     want = _band_difficulty(acc)
@@ -129,9 +149,9 @@ async def _pick_next(
                 want = "medium"
                 break
 
-    pool = [q for q in unanswered if q.concept == target]
+    pool = [q for q in working if q.concept == target]
     preferred = [q for q in pool if q.difficulty == want]
-    return preferred[0] if preferred else (pool[0] if pool else unanswered[0])
+    return preferred[0] if preferred else (pool[0] if pool else working[0])
 
 
 async def _all_concepts_mastered(user_id: str, bank: List[MCQQuestion]) -> bool:
@@ -165,14 +185,23 @@ async def start(user_id: str, course_id: str) -> dict:
         await question_service.ensure_generated(course_id)
         return {"status": "preparing"}
 
+    # What this user has already answered across past sessions (for prefer-unseen).
+    seen = await _seen_question_ids(user_id, course_id)
+
+    # If this user is running low on unseen questions, grow the bank in the
+    # background so next time there's fresh material.
+    if len([q for q in bank if q.id not in seen]) < LOW_UNSEEN:
+        await question_service.top_up(course_id)
+
     session_id = str(uuid.uuid4())
-    first = await _pick_next(user_id, course_id, bank, [])
+    first = await _pick_next(user_id, course_id, bank, [], seen)
     session = {
         "session_id": session_id,
         "user_id": user_id,
         "course_id": course_id,
         "answered_ids": [],
         "answers": [],
+        "seen": list(seen),
         "count": 0,
         "done": False,
         "started_at": _now().isoformat(),
@@ -245,9 +274,15 @@ async def answer(
     )
     session["count"] += 1
 
-    # End conditions.
-    ended = session["count"] >= MAX_QUESTIONS or await _all_concepts_mastered(user_id, bank)
-    nxt = None if ended else await _pick_next(user_id, session["course_id"], bank, session["answered_ids"])
+    # End conditions: hit the cap, or mastered everything AND no fresh questions
+    # left (if fresh material remains, keep going for reinforcement).
+    seen = set(session.get("seen", []))
+    answered = set(session["answered_ids"])
+    fresh_left = any(q.id not in answered and q.id not in seen for q in bank)
+    ended = session["count"] >= MAX_QUESTIONS or (
+        await _all_concepts_mastered(user_id, bank) and not fresh_left
+    )
+    nxt = None if ended else await _pick_next(user_id, session["course_id"], bank, session["answered_ids"], seen)
     if nxt is None:
         session["done"] = True
         await store.set(SESSION_COLLECTION, session_id, session)
