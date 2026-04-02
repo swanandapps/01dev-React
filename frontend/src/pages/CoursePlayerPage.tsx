@@ -20,9 +20,30 @@ export default function CoursePlayerPage() {
   const [aiCourse, setAiCourse] = useState<Course | null>(null);
   useEffect(() => {
     if (!track) return;
-    getCourses()
-      .then((courses) => setAiCourse(courses.find((c) => c.title === track.title) ?? null))
-      .catch(() => setAiCourse(null));
+    let cancelled = false;
+    const match = (courses: Course[]) => courses.find((c) => c.title === track.title) ?? null;
+
+    // 1) Show the button instantly from a cached course list (covers revisits).
+    try {
+      const cached = JSON.parse(localStorage.getItem("courses_cache") || "null");
+      if (cached) setAiCourse(match(cached));
+    } catch { /* ignore */ }
+
+    // 2) Refresh from the backend, retrying through cold starts so the button
+    //    reliably appears even if the backend was asleep on first load.
+    const load = (attempt = 0) => {
+      getCourses()
+        .then((courses) => {
+          if (cancelled) return;
+          localStorage.setItem("courses_cache", JSON.stringify(courses));
+          setAiCourse(match(courses));
+        })
+        .catch(() => {
+          if (!cancelled && attempt < 6) setTimeout(() => load(attempt + 1), 4000);
+        });
+    };
+    load();
+    return () => { cancelled = true; };
   }, [track]);
 
   if (!track) return <Navigate to="/tracks" replace />;
