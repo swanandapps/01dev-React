@@ -9,8 +9,8 @@ from app.models import AskRequest, AskResponse, Course
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask
 
-RZP_KEY_ID = "RAZORPAY_KEY_ID_REMOVED"
-RZP_KEY_SECRET = "RAZORPAY_SECRET_REMOVED"
+RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
 
 class PaymentRequest(BaseModel):
