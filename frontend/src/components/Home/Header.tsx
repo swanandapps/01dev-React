@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { to: "/tracks", label: "Tracks", icon: BookOpen, exact: false },
   { to: "/blogs", label: "Blogs", icon: FileText, exact: false },
   { to: "/dashboard", label: "Dashboard", icon: GraduationCap, exact: false },
-  { to: "/notes-quiz", label: "Notes Quiz", icon: NotebookPen, exact: false },
+  { to: "/quizme", label: "QuizMe", icon: NotebookPen, exact: false },
 ];
 
 export default function Header() {

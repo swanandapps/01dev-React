@@ -19,7 +19,7 @@ export default function NotesQuizPage() {
               <Sparkles className="w-3.5 h-3.5" /> AI Feature
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-100 mb-2">Notes → Quiz</h1>
+          <h1 className="text-2xl font-bold text-zinc-100 mb-2">QuizMe</h1>
           <p className="text-sm text-zinc-500 leading-relaxed max-w-lg">
             Paste your notes, type a topic, or upload a PDF — the AI drafts a lesson plan,
             you approve it, then work through an adaptive quiz with hints and a Socratic tutor.

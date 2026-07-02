@@ -64,7 +64,7 @@ export function CourseCompanion({
           onClick={() => open("notes")}
           className={`flex items-center gap-1.5 font-medium text-teal-300 hover:text-teal-200 bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/30 rounded-lg transition-colors ${pad}`}
         >
-          <NotebookPen className={icon} /> Notes → Quiz
+          <NotebookPen className={icon} /> QuizMe
         </button>
       </div>
 

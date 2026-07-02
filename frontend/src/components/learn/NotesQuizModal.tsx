@@ -578,7 +578,7 @@ export function NotesQuizModal({
           <div className="flex items-center gap-2">
             <NotebookPen className="w-4 h-4 text-indigo-400" />
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100">Notes → Quiz</h2>
+              <h2 className="text-sm font-semibold text-zinc-100">QuizMe</h2>
               <p className="text-xs text-zinc-500">
                 {step === "input" && "Upload PDF or paste notes"}
                 {step === "loading" && "Analysing your notes…"}
