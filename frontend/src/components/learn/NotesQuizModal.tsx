@@ -16,7 +16,13 @@ const diffBadge: Record<Difficulty, string> = {
   advanced: "text-rose-400 bg-rose-500/10 border-rose-500/30",
 };
 
-export function NotesQuizModal({ onClose }: { onClose: () => void }) {
+export function NotesQuizModal({
+  onClose,
+  variant = "modal",
+}: {
+  onClose: () => void;
+  variant?: "modal" | "page";
+}) {
   // ── input step
   const [mode, setMode] = useState<InputMode>("text");
   const [notes, setNotes] = useState("");
@@ -190,11 +196,7 @@ export function NotesQuizModal({ onClose }: { onClose: () => void }) {
   const q: Question | undefined = lesson?.quiz?.questions[qIdx];
   const correct = submitted && selected !== null && q && selected === q.correctIndex;
 
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+  const card = (
       <div
         className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -581,6 +583,16 @@ export function NotesQuizModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
+  );
+
+  if (variant === "page") return card;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      {card}
     </div>
   );
 }
