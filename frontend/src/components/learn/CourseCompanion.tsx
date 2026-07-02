@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Target, TrendingUp, GraduationCap, Lock } from "lucide-react";
+import { BookOpen, Target, TrendingUp, GraduationCap, Lock, NotebookPen } from "lucide-react";
 import { StudyGuideModal } from "./StudyGuideModal";
 import { AdaptiveModal } from "./AdaptiveModal";
 import { InsightModal } from "./InsightModal";
 import { TutorModal } from "./TutorModal";
+import { NotesQuizModal } from "./NotesQuizModal";
 import { useUserSessionStore } from "../../store/userSession";
 import type { Course } from "../../types/learn";
 
-type Tool = "guide" | "adaptive" | "insight" | "tutor";
+type Tool = "guide" | "adaptive" | "insight" | "tutor" | "notes";
 
 /**
  * The per-course AI tools as a row of buttons plus their modals. Tools require
@@ -59,6 +60,12 @@ export function CourseCompanion({
         >
           <TrendingUp className={icon} /> My Progress
         </button>
+        <button
+          onClick={() => open("notes")}
+          className={`flex items-center gap-1.5 font-medium text-teal-300 hover:text-teal-200 bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/30 rounded-lg transition-colors ${pad}`}
+        >
+          <NotebookPen className={icon} /> Notes → Quiz
+        </button>
       </div>
 
       {!isUserLoggedIn && (
@@ -72,6 +79,7 @@ export function CourseCompanion({
       {tool === "guide" && <StudyGuideModal course={course} onClose={() => setTool(null)} />}
       {tool === "adaptive" && <AdaptiveModal course={course} userId={userId} onClose={() => setTool(null)} />}
       {tool === "insight" && <InsightModal course={course} userId={userId} onClose={() => setTool(null)} />}
+      {tool === "notes" && <NotesQuizModal onClose={() => setTool(null)} />}
     </>
   );
 }
