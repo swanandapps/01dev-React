@@ -43,3 +43,24 @@ async def test_progress_message_handles_no_activity_yet(monkeypatch):
     monkeypatch.setattr(progress_handoff, "get_journey", fake_get_journey)
     msg = await build_progress_message("new-student")
     assert "No activity yet." in msg
+
+
+@pytest.mark.asyncio
+async def test_progress_message_falls_back_when_ai_dict_is_empty(monkeypatch):
+    # Malformed/short LLM JSON can leave `ai` present but with no
+    # narrative/focus keys at all — must not produce a blank chat bubble.
+    from app.routing import progress_handoff
+
+    async def fake_get_journey(user_id):
+        return {
+            "metrics": {"quizzes": 0, "avg_score": 0.0},
+            "heatmap": [],
+            "strengths": [],
+            "weaknesses": [],
+            "ai": {},
+        }
+
+    monkeypatch.setattr(progress_handoff, "get_journey", fake_get_journey)
+    msg = await build_progress_message("new-student")
+    assert msg != ""
+    assert "enough activity yet" in msg

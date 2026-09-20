@@ -116,3 +116,66 @@ def test_progress_intent_calls_journey_service_not_the_model(client, monkeypatch
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
     assert "You're making steady progress." in tokens
+
+
+def test_out_of_scope_intent_falls_through_to_normal_chat_logic(client, monkeypatch):
+    # OUT_OF_SCOPE must NOT be diverted by the `if intent in (QUIZ_GENERATE,
+    # PROGRESS_LOOKUP):` short-circuit — it should reach the existing
+    # grounded/decline/agentic path unchanged. Force the intent directly
+    # rather than relying on classify()'s gibberish heuristics, for a
+    # cleaner, more direct test of the routing decision itself.
+    from app import main as app_main
+    from app.routing.intent import Intent
+    from app.services import grounding
+
+    monkeypatch.setattr(app_main, "classify", lambda question: Intent.OUT_OF_SCOPE)
+
+    async def _empty_retrieve(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(grounding, "retrieve", _empty_retrieve)
+
+    resp = client.post(
+        "/api/hermes/chat",
+        json={
+            "question": "asdkjaslkdj",
+            "user_id": "test-student",
+            "course_slug": "js-fundamentals",
+        },
+    )
+    assert resp.status_code == 200
+    events = _sse_events(resp.text)
+    # The decline path (no course material found) is the existing behavior
+    # for an out-of-scope question — proof it reached normal chat logic,
+    # not a hand-off branch.
+    tokens = "".join(e["value"] for e in events if e.get("type") == "token")
+    assert "QuizMe" not in tokens
+    sources_event = next(e for e in events if e.get("type") == "sources")
+    assert sources_event["insufficient_context"] is True
+    assert any(e.get("type") == "done" for e in events)
+
+
+def test_progress_lookup_failure_degrades_gracefully_instead_of_500(client, monkeypatch):
+    # Finding 1 regression: a DB/LLM failure inside build_progress_message
+    # (via journey_service.get_journey) must not become an unhandled 500 on
+    # the whole chat endpoint — it should fall back to a plain message.
+    from app.routing import progress_handoff
+
+    async def _boom(user_id):
+        raise RuntimeError("journey service is down")
+
+    monkeypatch.setattr(progress_handoff, "get_journey", _boom)
+
+    resp = client.post(
+        "/api/hermes/chat",
+        json={
+            "question": "What's my progress so far?",
+            "user_id": "test-student",
+            "course_slug": "js-fundamentals",
+        },
+    )
+    assert resp.status_code == 200
+    events = _sse_events(resp.text)
+    tokens = "".join(e["value"] for e in events if e.get("type") == "token")
+    assert "Journey dashboard" in tokens
+    assert any(e.get("type") == "done" for e in events)

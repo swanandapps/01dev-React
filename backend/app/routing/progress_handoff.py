@@ -14,4 +14,7 @@ async def build_progress_message(student_id: str) -> str:
     focus = ai.get("focus", "").strip()
     if focus:
         parts.append(focus)
-    return " ".join(p for p in parts if p)
+    return " ".join(p for p in parts if p) or (
+        "I don't have enough activity yet to summarize — take a quiz and "
+        "I'll start tracking your progress."
+    )

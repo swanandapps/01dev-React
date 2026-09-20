@@ -28,7 +28,7 @@ from app.services import (
     knowledge_graph_service, recommendation_service, course_insight_service,
     tutor_service, journey_service,
     hermes_client, ollama_client, openai_tutor, audit_service, memory_service,
-    eval_service, gepa_service, grounding, context_builder, pii,
+    eval_service, gepa_service, grounding, context_builder, pii, llm,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
@@ -249,16 +249,20 @@ async def hermes_chat(req: Request):
 
     if intent in (Intent.QUIZ_GENERATE, Intent.PROGRESS_LOOKUP):
         if intent == Intent.QUIZ_GENERATE:
-            outcome, model_label = "quiz_handoff", "rule-based-router"
+            outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
             message = build_handoff_message(course_slug)
         else:
-            outcome, model_label = "progress_handoff", "rule-based-router"
-            message = await build_progress_message(student_id)
+            outcome, model_label, audit_provider = "progress_handoff", llm.GEN_MODEL, "openai"
+            try:
+                message = await build_progress_message(student_id)
+            except Exception as e:  # noqa: BLE001 — journey lookup down → decline gracefully, no 500
+                print(f"[hermes_chat] progress lookup failed: {e}")
+                message = "I couldn't pull up your progress just now — try the Journey dashboard instead."
 
         span.set_attribute("outcome", outcome)
         await audit_service.log_event(
             student_id=student_id, course_slug=course_slug, question=question,
-            model=model_label, provider="none",
+            model=model_label, provider=audit_provider,
         )
 
         async def gen_handoff():

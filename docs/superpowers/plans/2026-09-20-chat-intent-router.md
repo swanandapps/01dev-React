@@ -73,6 +73,17 @@ codebase-grounded version of that slice. Deviations from the spec, and why:
   rule-based version to evaluate it against.
 - `schedule_lookup`, if/when this product gains a live-class calendar
   feature to back it.
+- `memory_service.record_turn(...)` is not called for quiz/progress hand-off
+  turns (matches the plan's own originally-specified code) — so a student
+  who gets the QuizMe hand-off and immediately asks a follow-up like "how do
+  I do that?" won't have the hand-off turn in their conversation memory;
+  that follow-up will be classified as a normal course question with no
+  context of the hand-off.
+- `agentic=true` clients are now diverted to the QUIZ_GENERATE/
+  PROGRESS_LOOKUP hand-offs before reaching the Hermes agent loop, for
+  those two intents specifically — this narrows the "agentic routing stays
+  client-supplied" statement elsewhere in this plan; worth reconciling
+  explicitly if `agentic` semantics matter for those two intents later.
 
 ## Global Constraints
 
