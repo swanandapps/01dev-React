@@ -1,6 +1,7 @@
 import pytest
 
 from app.services import skill_graph_service
+from app.services.store import InMemoryStore
 
 
 @pytest.mark.asyncio
@@ -25,8 +26,10 @@ async def test_populates_a_zeroed_row_per_concept(monkeypatch):
 
     written: dict[str, dict] = {}
 
-    async def fake_get(collection, doc_id):
-        return written.get(doc_id)
+    async def fake_query(collection, field, value):
+        assert collection == "concept_performance"
+        assert field == "user_id"
+        return list(written.values())
 
     async def fake_set(collection, doc_id, data):
         assert collection == "concept_performance"
@@ -34,7 +37,7 @@ async def test_populates_a_zeroed_row_per_concept(monkeypatch):
 
     monkeypatch.setattr(knowledge_graph_service, "has_graph", fake_has_graph)
     monkeypatch.setattr(knowledge_graph_service, "get_graph", fake_get_graph)
-    monkeypatch.setattr(skill_graph_service.store, "get", fake_get)
+    monkeypatch.setattr(skill_graph_service.store, "query", fake_query)
     monkeypatch.setattr(skill_graph_service.store, "set", fake_set)
 
     created = await skill_graph_service.ensure_populated("student-1", "js-fundamentals")
@@ -44,7 +47,7 @@ async def test_populates_a_zeroed_row_per_concept(monkeypatch):
     assert row == {
         "user_id": "student-1", "concept": "closures",
         "attempts": 0, "correct": 0, "accuracy": 0.0,
-        "course_id": "js-fundamentals", "source": "pre_populated",
+        "course_id": "js-fundamentals", "created_by": "pre_population",
     }
 
 
@@ -69,15 +72,15 @@ async def test_is_idempotent_and_never_overwrites_real_progress(monkeypatch):
     }
     written = {"student-1__closures": existing_row}
 
-    async def fake_get(collection, doc_id):
-        return written.get(doc_id)
+    async def fake_query(collection, field, value):
+        return list(written.values())
 
     async def fake_set(collection, doc_id, data):
         written[doc_id] = data
 
     monkeypatch.setattr(knowledge_graph_service, "has_graph", fake_has_graph)
     monkeypatch.setattr(knowledge_graph_service, "get_graph", fake_get_graph)
-    monkeypatch.setattr(skill_graph_service.store, "get", fake_get)
+    monkeypatch.setattr(skill_graph_service.store, "query", fake_query)
     monkeypatch.setattr(skill_graph_service.store, "set", fake_set)
 
     created = await skill_graph_service.ensure_populated("student-1", "js-fundamentals")
@@ -167,4 +170,58 @@ async def test_prerequisite_view_handles_no_attempted_prerequisites(monkeypatch)
 
     assert view["accuracy"] is None
     assert view["attempted"] is False
+    assert view["weakest_prerequisite"] is None
+
+
+@pytest.mark.asyncio
+async def test_ensure_populated_and_get_prerequisite_view_agree_on_never_attempted(monkeypatch):
+    """Composition test: prove Task 1's pre-populated row and Task 2's
+    None-vs-0.0 "never attempted" logic actually agree end-to-end, against
+    the SAME real InMemoryStore instance (not separate monkeypatched
+    closures per test) — store.get/store.set/store.query all seeing the
+    same underlying data is exactly what's under test here."""
+    from app.services import knowledge_graph_service
+
+    real_store = InMemoryStore()
+    monkeypatch.setattr(skill_graph_service, "store", real_store)
+
+    async def fake_has_graph(course_id):
+        return True
+
+    async def fake_get_graph(course_id):
+        return {
+            "course_id": course_id,
+            "concepts": [
+                {"course_id": course_id, "name": "closures", "description": "..."},
+                {"course_id": course_id, "name": "hoisting", "description": "..."},
+            ],
+            "relationships": [
+                {"course_id": course_id, "source": "hoisting", "target": "closures", "type": "prerequisite_of"},
+            ],
+        }
+
+    async def fake_get_prerequisites(course_id, concept):
+        assert concept == "closures"
+        return ["hoisting"]
+
+    monkeypatch.setattr(knowledge_graph_service, "has_graph", fake_has_graph)
+    monkeypatch.setattr(knowledge_graph_service, "get_graph", fake_get_graph)
+    monkeypatch.setattr(knowledge_graph_service, "get_prerequisites", fake_get_prerequisites)
+
+    created = await skill_graph_service.ensure_populated("student-1", "js-fundamentals")
+    assert created == 2
+
+    view = await skill_graph_service.get_prerequisite_view("student-1", "js-fundamentals", "closures")
+
+    # The pre-populated "closures" row was never attempted (attempts == 0),
+    # so ensure_populated's zeroed row and get_prerequisite_view's
+    # attempts-> None translation must genuinely agree: accuracy is None,
+    # never the stored 0.0 placeholder.
+    assert view["accuracy"] is None
+    assert view["attempted"] is False
+
+    hoisting = view["prerequisites"][0]
+    assert hoisting["concept"] == "hoisting"
+    assert hoisting["accuracy"] is None
+    assert hoisting["attempted"] is False
     assert view["weakest_prerequisite"] is None

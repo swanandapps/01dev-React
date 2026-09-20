@@ -19,9 +19,19 @@ from app.services.store import store
 
 PERF_COLLECTION = "concept_performance"
 
-
-def _perf_id(user_id: str, concept: str) -> str:
-    return f"{user_id}__{concept}"
+# NOTE on doc-id scoping: `_perf_id` (imported from adaptive_service below) is
+# keyed as f"{user_id}__{concept}" — GLOBAL across courses, not scoped by
+# course_id. This is inherited from adaptive_service's pre-existing scheme,
+# not something introduced or fixed here. The `course_id` field this module
+# writes onto a row is therefore "whichever course's ensure_populated() call
+# first created this row" metadata ONLY — it is NOT safe to trust as "the
+# course the student is currently engaged with", because if two courses share
+# a concept name, the second course's ensure_populated() sees the row already
+# exists (same doc id, since concept name alone determines it) and skips it,
+# leaving the stale first-writer's course_id in place. get_prerequisite_view
+# below matches purely on concept name for the same reason and never filters
+# by course_id. A real fix requires a coordinated doc-id migration across both
+# adaptive_service and this module — out of scope for this change.
 
 
 async def ensure_populated(user_id: str, course_id: str) -> int:
@@ -29,25 +39,42 @@ async def ensure_populated(user_id: str, course_id: str) -> int:
     course's graph that this student doesn't already have a row for.
     Idempotent: never touches a row that already exists (real progress is
     never reset). Silent no-op if the course has no graph built yet —
-    building one is a separate, deliberately-triggered operation."""
+    building one is a separate, deliberately-triggered operation.
+
+    Fetches this student's existing rows ONCE (one store.query, same
+    fetch-everything-then-filter-in-memory pattern get_prerequisite_view
+    already uses below) instead of one store.get per concept — this runs as
+    the first line of adaptive_service.start(), on every session start, so an
+    N+1 here would mean N sequential DB round-trips before serving the first
+    question, every time."""
+    # Local import: adaptive_service imports this module at module load time,
+    # so a top-level `from app.services.adaptive_service import _perf_id`
+    # here would deadlock into a partial-init ImportError whenever
+    # adaptive_service happens to be the first of the two to be imported
+    # (which it is, via app.main). Importing inside the function defers this
+    # until both modules are fully loaded.
+    from app.services.adaptive_service import _perf_id
+
     if not await knowledge_graph_service.has_graph(course_id):
         return 0
 
     graph = await knowledge_graph_service.get_graph(course_id)
+    existing_rows = await store.query(PERF_COLLECTION, "user_id", user_id)
+    existing_concepts = {r["concept"] for r in existing_rows}
+
     created = 0
     for concept in graph["concepts"]:
         name = concept["name"]
-        doc_id = _perf_id(user_id, name)
-        if await store.get(PERF_COLLECTION, doc_id):
+        if name in existing_concepts:
             continue
-        await store.set(PERF_COLLECTION, doc_id, {
+        await store.set(PERF_COLLECTION, _perf_id(user_id, name), {
             "user_id": user_id,
             "concept": name,
             "attempts": 0,
             "correct": 0,
             "accuracy": 0.0,
             "course_id": course_id,
-            "source": "pre_populated",
+            "created_by": "pre_population",
         })
         created += 1
     return created
@@ -85,6 +112,10 @@ async def get_prerequisite_view(user_id: str, course_id: str, concept: str) -> d
     prerequisites = [_view(by_concept.get(name) or {"concept": name}) for name in prereq_names]
 
     attempted_prereqs = [p for p in prerequisites if p["attempted"]]
-    weakest = min(attempted_prereqs, key=lambda p: p["accuracy"], default=None)
+    weakest = min(
+        attempted_prereqs,
+        key=lambda p: p["accuracy"] if p["accuracy"] is not None else 0.0,
+        default=None,
+    )
 
     return {**target, "prerequisites": prerequisites, "weakest_prerequisite": weakest}

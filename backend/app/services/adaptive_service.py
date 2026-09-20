@@ -179,7 +179,12 @@ async def _mastery_summary(user_id: str, bank: List[MCQQuestion]) -> dict:
 
 
 async def start(user_id: str, course_id: str) -> dict:
-    await skill_graph_service.ensure_populated(user_id, course_id)
+    try:
+        await skill_graph_service.ensure_populated(user_id, course_id)
+    except Exception as e:  # noqa: BLE001
+        # Back-fill is a nice-to-have, not required to serve a question —
+        # a transient store error here must not fail session start.
+        print(f"adaptive_service: ensure_populated failed for {user_id}/{course_id}: {e}")
     bank = await _question_bank(course_id)
     if not bank:
         # Questions not generated yet — warm them up and tell the client to wait.

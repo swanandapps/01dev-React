@@ -49,9 +49,11 @@ decisions, and why:
   backend has no enrollment endpoint — enrollment currently only exists as
   an `arrayUnion` write in Firestore, not read by this backend at all. So
   "when a student starts a course" is approximated as "the first
-  request (chat, quiz, or adaptive) this backend sees for this
-  (student_id, course_slug) pair" — checked and back-filled idempotently,
-  not a new onboarding flow.
+  request this backend sees for this (student_id, course_slug) pair" —
+  checked and back-filled idempotently, not a new onboarding flow. In this
+  slice that is wired to exactly one entry point, adaptive practice's
+  `adaptive_service.start()`; wiring the chat and quiz entry points to the
+  same back-fill is follow-up work, not something this branch does.
 - **No chat-driven exposure tracking in this slice.** A quiz answer has an
   obvious correct/incorrect signal; a chat question doesn't. Correctly
   tagging which concept(s) an arbitrary chat question touches is a real
