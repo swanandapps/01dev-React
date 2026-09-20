@@ -23,6 +23,7 @@ from app.models import (
 )
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream, _build_sources
+from app.services.store import store
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
     knowledge_graph_service, recommendation_service, course_insight_service,
@@ -361,10 +362,13 @@ async def hermes_chat(req: Request):
     # Memory goes up front (prominent) so it isn't overridden by the tool-use rule below.
     memory_block = (mem + "\n\n") if mem else ""
 
-    # No structured source list here — Hermes cites lectures inline in its answer
-    # text (verified: "React Performance Patterns, lecture 4.1 at 01:13"), but the
-    # actual retrieval happens inside its own tool call, not in this backend, so
-    # there's nothing to build a citations array FROM at this layer anymore.
+    # Hermes resolves search_course_content's tool call internally — this backend
+    # never sees it — so the MCP tool itself persists the source cards it built
+    # (chat_citations/{student_id}) for this handler to read back after the
+    # stream completes. Clear any stale entry from a prior turn first so an
+    # empty read after this turn reliably means "no course content was cited",
+    # not "still showing what the last turn cited".
+    await store.delete("chat_citations", student_id)
     sources: list[dict] = []
     system = (
         persona + "\n\n" + memory_block +
@@ -412,6 +416,13 @@ async def hermes_chat(req: Request):
             finally:
                 gspan.set_attribute("answer_chars", len("".join(answer_parts)))
                 gspan.end()
+            try:
+                cited = await store.get("chat_citations", student_id)
+                cards = (cited or {}).get("cards") or []
+                if cards:
+                    yield f"data: {json.dumps({'type': 'sources', 'sources': cards, 'insufficient_context': False, 'offer_general': False})}\n\n"
+            except Exception:  # noqa: BLE001 — citations are an enhancement, never block the answer
+                pass
             try:
                 await memory_service.record_turn(student_id, course_slug, question, "".join(answer_parts))
             except Exception:  # noqa: BLE001 — never fail the response over memory persistence

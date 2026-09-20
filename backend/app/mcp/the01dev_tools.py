@@ -36,6 +36,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
+    from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")
 
@@ -55,7 +56,7 @@ async def _ensure_index() -> None:
 
 # ── Retrieval (unchanged) ─────────────────────────────────────────────────────
 @mcp.tool()
-async def search_course_content(query: str, top_k: int = 5) -> list[dict]:
+async def search_course_content(query: str, student_id: str, top_k: int = 5) -> list[dict]:
     """Search the01.dev course transcripts for material relevant to a student's question.
 
     USE THIS FIRST for ANY question about a concept the course teaches (e.g. "what is
@@ -68,10 +69,20 @@ async def search_course_content(query: str, top_k: int = 5) -> list[dict]:
 
     Args:
         query: The student's question, or the concept to look up.
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
         top_k: How many transcript excerpts to return (default 5).
     """
     await _ensure_index()
     results = await grounding.retrieve(query, top_k=top_k)  # shared retrieval
+
+    # Persisted so the FastAPI chat handler — which never sees this tool call,
+    # since Hermes resolves tool use internally — can read the real citations
+    # back out after the stream and hand the frontend clickable source cards
+    # instead of the empty sources array it used to send unconditionally.
+    if results:
+        cards = [c.model_dump() for c in grounding.build_sources(results)]
+        await store.set("chat_citations", student_id, {"cards": cards})
 
     excerpts: list[dict] = []
     for r in results:
