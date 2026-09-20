@@ -35,7 +35,7 @@ from fastmcp import FastMCP
 with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
-    from app.services import grounding, content, memory_service
+    from app.services import grounding, content, memory_service, skill_graph_service
 
 mcp = FastMCP("the01dev-tools")
 
@@ -174,6 +174,33 @@ async def search_history(query: str, student_id: str, top_k: int = 3) -> list[di
         }
         for r in rows
     ]
+
+
+from app.services.skill_graph_service import get_prerequisite_view
+
+
+# ── Prerequisite-aware confidence (thin wrapper over skill_graph_service) ─────
+@mcp.tool()
+async def get_concept_confidence(concept: str, course_id: str, student_id: str) -> dict:
+    """Check how confident this student is on a concept AND on everything that
+    concept depends on, in one call — use this BEFORE teaching something that has
+    prerequisites, so you can address a shaky prerequisite instead of teaching on
+    top of a gap the student doesn't know they have.
+
+    Returns the target concept's accuracy/attempts, a list of its prerequisites
+    with the same shape, and `weakest_prerequisite` (the lowest-accuracy
+    prerequisite that has actually been attempted — `null` if none have been).
+    `accuracy: null` on any entry means the student has never been graded on it
+    yet, not that they scored zero — do not treat null as a bad score.
+
+    Args:
+        concept: The concept to check (must match a concept tag used in this course).
+        course_id: The course's id/slug — use the exact value you were given for
+            this conversation.
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
+    """
+    return await get_prerequisite_view(student_id, course_id, concept)
 
 
 if __name__ == "__main__":
