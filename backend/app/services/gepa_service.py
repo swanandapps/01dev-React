@@ -22,7 +22,11 @@ from app.services import eval_service
 from app.services.eval_llm import eval_client_and_model
 
 _client, _MODEL = eval_client_and_model()
-_SOUL = Path(os.path.expanduser("~/.hermes/SOUL.md"))
+# Repo-relative, not a user-home path — `~/.hermes/SOUL.md` only exists on a
+# machine that's actually run the Hermes CLI locally. On a deployed
+# container there's no such file, and read_soul() was silently falling back
+# to the generic _FALLBACK_SOUL below instead of the real tutor identity.
+_SOUL = Path(__file__).resolve().parents[2] / "hermes" / "SOUL.md"
 _FALLBACK_SOUL = (
     "You are Dev, a concise, encouraging tutor for the01.dev. Answer only from the course "
     "material you are given, cite the lecture, and never guess."
