@@ -26,7 +26,7 @@ from typing import List, Optional
 from app.models import MCQQuestion
 from app.services.store import store
 from app.services.vector_store import vector_store
-from app.services import question_service, knowledge_graph_service, recommendation_service
+from app.services import question_service, knowledge_graph_service, recommendation_service, skill_graph_service
 
 PERF_COLLECTION = "concept_performance"
 SESSION_COLLECTION = "adaptive_sessions"
@@ -179,6 +179,7 @@ async def _mastery_summary(user_id: str, bank: List[MCQQuestion]) -> dict:
 
 
 async def start(user_id: str, course_id: str) -> dict:
+    await skill_graph_service.ensure_populated(user_id, course_id)
     bank = await _question_bank(course_id)
     if not bank:
         # Questions not generated yet — warm them up and tell the client to wait.
