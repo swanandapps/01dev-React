@@ -1,0 +1,26 @@
+model:
+  default: gpt-4.1-mini
+  provider: openai-api
+  base_url: ''
+agent:
+  max_turns: 60
+  verbose: false
+  reasoning_effort: false
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+  provider: ''
+  nudge_interval: 10
+  flush_min_turns: 6
+platform_toolsets:
+  api_server:
+    - memory
+mcp_servers:
+  the01dev-tools:
+    command: /usr/local/bin/python
+    args:
+      - /app/backend/app/mcp/the01dev_tools.py
+    enabled: true
+_config_version: 33

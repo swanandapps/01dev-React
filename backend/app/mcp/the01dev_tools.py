@@ -36,15 +36,10 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service
-    from app.services.chunker import chunk_transcript
 
 mcp = FastMCP("the01dev-tools")
 
 _initialized = False
-
-# SECURITY: an agent-driven filesystem is a real risk (path traversal, writing
-# outside the project). read_file/write_file are hard-confined to this one dir.
-_AGENT_FS = (_BACKEND / "data" / "agent_fs").resolve()
 
 
 async def _ensure_index() -> None:
@@ -56,17 +51,6 @@ async def _ensure_index() -> None:
         _initialized = True
 
 
-def _safe_path(rel: str) -> Path:
-    """Resolve `rel` strictly inside _AGENT_FS. Reject absolute paths, `..`
-    traversal, and symlinks — the sandbox is non-negotiable for an agent tool."""
-    if os.path.isabs(rel):
-        raise ValueError("absolute paths are not allowed")
-    full = (_AGENT_FS / rel).resolve()
-    if full != _AGENT_FS and not str(full).startswith(str(_AGENT_FS) + os.sep):
-        raise ValueError("path escapes the sandbox")
-    if full.is_symlink():
-        raise ValueError("symlinks are not allowed")
-    return full
 
 
 # ── Retrieval (unchanged) ─────────────────────────────────────────────────────
@@ -190,72 +174,6 @@ async def search_history(query: str, student_id: str, top_k: int = 3) -> list[di
         }
         for r in rows
     ]
-
-
-# ── PDF (thin wrapper over PDF extraction + shared chunker) ───────────────────
-@mcp.tool()
-async def process_pdf(path: str) -> dict:
-    """Extract text from a PDF and chunk it with the shared transcript chunker.
-
-    Use ONLY when the student explicitly provides a PDF file path to ingest. Do NOT
-    call this to answer a question — it needs a real PDF path, and course questions
-    are answered with search_course_content.
-
-    Returns {text, chunks, chars}. Requires `pypdf` (installed in this server's venv).
-
-    Args:
-        path: Filesystem path to the PDF.
-    """
-    try:
-        from pypdf import PdfReader
-    except ImportError:
-        return {"error": "pypdf is not installed in this server's environment"}
-
-    p = Path(path).expanduser()
-    if not p.is_file():
-        return {"error": f"not a file: {path}"}
-
-    reader = PdfReader(str(p))
-    text = "\n".join((page.extract_text() or "") for page in reader.pages).strip()
-    chunks = chunk_transcript(
-        text, course_id="pdf", course_title="PDF",
-        lecture_id=p.stem, lecture_title=p.stem,
-    )
-    return {"text": text, "chunks": len(chunks), "chars": len(text)}
-
-
-# ── Sandboxed filesystem (confined to backend/data/agent_fs/) ─────────────────
-@mcp.tool()
-async def read_file(path: str) -> dict:
-    """Read a text file from the agent sandbox (backend/data/agent_fs/).
-
-    Args:
-        path: Path RELATIVE to the sandbox. Absolute paths / `..` / symlinks are rejected.
-    """
-    try:
-        full = _safe_path(path)
-    except ValueError as e:
-        return {"ok": False, "error": str(e)}
-    if not full.is_file():
-        return {"ok": False, "error": "not found"}
-    return {"ok": True, "content": full.read_text()[:20000]}
-
-
-@mcp.tool()
-async def write_file(path: str, content: str) -> dict:
-    """Write a text file into the agent sandbox (backend/data/agent_fs/).
-
-    Args:
-        path: Path RELATIVE to the sandbox. Absolute paths / `..` / symlinks are rejected.
-        content: The text to write.
-    """
-    try:
-        full = _safe_path(path)
-    except ValueError as e:
-        return {"ok": False, "error": str(e)}
-    full.parent.mkdir(parents=True, exist_ok=True)
-    full.write_text(content)
-    return {"ok": True, "path": str(full.relative_to(_AGENT_FS)), "bytes": len(content)}
 
 
 if __name__ == "__main__":
