@@ -10,3 +10,6 @@ __pycache__/
 
 # git worktrees (SDD sessions)
 .worktrees/
+
+# Local Netlify folder
+.netlify
