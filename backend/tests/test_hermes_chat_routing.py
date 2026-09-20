@@ -43,12 +43,18 @@ def test_quiz_intent_short_circuits_before_any_model_call(client, monkeypatch):
     # If routing is broken and this falls through to the real grounded/agentic
     # path, these would be hit and (without network) raise — the test fails
     # loudly instead of silently calling out to OpenAI/Hermes.
-    from app.services import grounding
+    from app.services import grounding, skill_graph_service
 
     async def _fail_if_called(*args, **kwargs):
         raise AssertionError("retrieval must not run for a QUIZ_GENERATE request")
 
+    async def _fail_if_ensure_populated_called(*args, **kwargs):
+        raise AssertionError(
+            "ensure_populated must not run for QUIZ_GENERATE — it never touches the skill graph"
+        )
+
     monkeypatch.setattr(grounding, "retrieve", _fail_if_called)
+    monkeypatch.setattr(skill_graph_service, "ensure_populated", _fail_if_ensure_populated_called)
 
     resp = client.post(
         "/api/hermes/chat",

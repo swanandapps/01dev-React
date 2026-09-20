@@ -18,3 +18,8 @@ websockets==16.0
 # --- dev/test ---
 pytest==8.3.4
 pytest-asyncio==0.25.2
+
+# NOTE: fastmcp (used by app/mcp/the01dev_tools.py) is intentionally NOT
+# listed here — see requirements-mcp.txt for why it can't share an
+# environment with this file's fastapi pin, and backend/scripts/run_tests.sh
+# for the one documented way to run the full test suite across both.

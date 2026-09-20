@@ -4,6 +4,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_record_skill_observation_wraps_record_observation(monkeypatch):
     from app.mcp import the01dev_tools
+    from app.services import skill_graph_service
 
     async def fake_record_observation(user_id, course_id, concept, confidence, note):
         assert (user_id, course_id, concept, confidence, note) == (
@@ -11,7 +12,7 @@ async def test_record_skill_observation_wraps_record_observation(monkeypatch):
         )
         return {"concept": "closures", "chat_confidence": "weak"}
 
-    monkeypatch.setattr(the01dev_tools, "record_observation", fake_record_observation)
+    monkeypatch.setattr(skill_graph_service, "record_observation", fake_record_observation)
 
     result = await the01dev_tools.record_skill_observation(
         concept="closures", course_id="js-fundamentals", student_id="student-1",

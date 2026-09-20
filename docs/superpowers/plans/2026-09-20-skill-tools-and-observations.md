@@ -645,3 +645,34 @@ git commit -m "feat: add record_skill_observation write tool, back-fill skill gr
    tool wrapper. `ensure_populated(user_id, course_id)` used identically
    between its existing definition (prior slice), `adaptive_service.start()`'s
    existing call, and Task 3's new call from `hermes_chat`.
+
+## Known limitations, not fixed in this slice
+
+Found and explicitly judged acceptable during the 2026-09-20 final
+whole-branch review pass, for this single-learner deployment — written down
+here so they aren't rediscovered from a buried code comment, and aren't
+mistaken for "already safe" if this ever grows past one known user.
+
+- **Untrusted `user_id`/`student_id`.** `record_observation` (and
+  `get_concept_confidence`, and the pre-existing `search_history`) accept
+  `student_id`/`user_id` as a MODEL-SUPPLIED parameter with zero server-side
+  validation binding it to the actual authenticated user. There is a
+  concrete path — student-authored text re-entering the model's context via
+  `memory_context`/`search_history` results — by which the model could be
+  misdirected into writing to a different student's row. Correct and
+  accepted for a single-learner deployment; not safe to assume for
+  multi-tenant use. See the comment directly above
+  `skill_graph_service.record_observation`.
+
+- **Student email reaches the LLM provider verbatim, outside the PII-scrub
+  choke point.** The real student's email address (the `student_id` value,
+  e.g. a Gmail address) reaches the LLM provider verbatim in the system
+  prompt, via the identity line Task 1 added in `hermes_chat`
+  (`persona += f"...student_id=\"{student_id}\"..."`). This is inconsistent
+  with this same handler's own PII-scrubbing posture elsewhere —
+  `pii.scrub()` is called on the question specifically so "no student PII
+  reaches any downstream surface" per its own comment, but the identity
+  line bypasses that same choke point. Accepted for now because this is a
+  single known user and the only downstream party is the LLM provider
+  itself, not a third party beyond it. See the comment at the `persona +=`
+  identity-injection line in `app/main.py`.

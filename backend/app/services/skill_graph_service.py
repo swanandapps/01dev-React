@@ -89,7 +89,15 @@ def _view(row: dict | None) -> dict:
     honest view: attempts == 0 (including a pre-populated-but-untouched
     row from Task 1) means NO real signal exists yet — report accuracy as
     None, never the stored 0.0 placeholder, which would look like a real
-    (bad) score instead of "not tried"."""
+    (bad) score instead of "not tried".
+
+    Also surfaces record_observation's chat_confidence*/note fields (added
+    below), so a chat-inferred observation written for a concept is actually
+    visible on the next get_concept_confidence/get_prerequisite_view call —
+    without this the write and read tools didn't compose. `chat_confidence`
+    is a conversational impression (may be absent); `accuracy` is a real
+    graded score (or None if never graded) — the two are different signals,
+    not interchangeable."""
     attempts = (row or {}).get("attempts", 0)
     attempted = attempts > 0
     return {
@@ -97,6 +105,8 @@ def _view(row: dict | None) -> dict:
         "accuracy": (row or {}).get("accuracy") if attempted else None,
         "attempts": attempts,
         "attempted": attempted,
+        "chat_confidence": (row or {}).get("chat_confidence"),
+        "chat_confidence_note": (row or {}).get("chat_confidence_note"),
     }
 
 
@@ -125,6 +135,15 @@ async def get_prerequisite_view(user_id: str, course_id: str, concept: str) -> d
     return {**target, "prerequisites": prerequisites, "weakest_prerequisite": weakest}
 
 
+# `user_id` below is MODEL-SUPPLIED (Hermes passes whatever it was told
+# student_id is) and is NOT server-verified against the authenticated
+# session. There is a concrete path — student-authored text re-entering the
+# model's context via memory_context/search_history results — by which the
+# model could be misdirected into writing an observation onto a different
+# student's row. This is a deliberate, accepted scoping decision for the
+# current single-learner deployment, NOT a claim that it's already safe for
+# multi-tenant use. See "Known limitations" in
+# docs/superpowers/plans/2026-09-20-skill-tools-and-observations.md.
 async def record_observation(
     user_id: str, course_id: str, concept: str, confidence: str, note: str,
 ) -> dict:
@@ -132,7 +151,12 @@ async def record_observation(
     NOT a graded score. Writes to separate chat_confidence* fields on the same
     concept_performance row ensure_populated/_update_perf use; attempts/correct/
     accuracy (the graded-event fields 4 other services depend on) are never
-    touched here. Creates a zeroed row first if this student has no row for
+    touched here — for the existing-row case this is now enforced by the write
+    itself (store.update, an additive merge), not just by what this function
+    computes: adaptive_service._update_perf does its own read-modify-write on
+    the SAME doc id from a different request path, and a store.set here would
+    silently revert a graded quiz answer that lands between this function's
+    read and write. Creates a zeroed row first if this student has no row for
     this concept yet, so an observation can happen before any graded event."""
     if confidence not in _VALID_CONFIDENCE:
         raise ValueError(f"confidence must be one of {sorted(_VALID_CONFIDENCE)}, got {confidence!r}")
@@ -143,13 +167,19 @@ async def record_observation(
     from app.services.adaptive_service import _perf_id
 
     doc_id = _perf_id(user_id, concept)
-    row = await store.get(PERF_COLLECTION, doc_id) or {
-        "user_id": user_id, "concept": concept,
-        "attempts": 0, "correct": 0, "accuracy": 0.0,
-        "course_id": course_id,
+    chat_fields = {
+        "chat_confidence": confidence,
+        "chat_confidence_note": note,
+        "chat_confidence_updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    row["chat_confidence"] = confidence
-    row["chat_confidence_note"] = note
-    row["chat_confidence_updated_at"] = datetime.now(timezone.utc).isoformat()
-    await store.set(PERF_COLLECTION, doc_id, row)
-    return row
+    row = await store.get(PERF_COLLECTION, doc_id)
+    if row is None:
+        row = {
+            "user_id": user_id, "concept": concept,
+            "attempts": 0, "correct": 0, "accuracy": 0.0,
+            "course_id": course_id, "created_by": "chat_observation",
+        }
+        await store.set(PERF_COLLECTION, doc_id, {**row, **chat_fields})
+    else:
+        await store.update(PERF_COLLECTION, doc_id, chat_fields)
+    return {**row, **chat_fields}

@@ -1,0 +1,31 @@
+# Extra dependency needed ONLY by backend/app/mcp/the01dev_tools.py (the
+# stdio MCP server Hermes launches) and its tests. Installed into
+# backend/.mcp-venv, as a SECOND `pip install` step, AFTER
+# `pip install -r requirements.txt` has already run — never combined with
+# requirements.txt in one `pip install -r ...` invocation.
+#
+# Why it's split out instead of just being added to requirements.txt:
+# fastapi==0.115.5 (pinned in requirements.txt, load-bearing for the whole
+# app.main API) requires starlette<0.42,>=0.40. fastmcp==3.4.4 requires
+# starlette>=1.0.1 (transitively, via its `mcp` dependency). This is a real,
+# proven incompatibility, not pip resolver over-caution: pip's resolver
+# refuses to install both in one transaction, and forcing it (installing
+# this file as a second step, letting it upgrade the already-installed
+# starlette) leaves an app.main that raises
+# `TypeError: Router.__init__() got an unexpected keyword argument
+# 'on_startup'` the moment FastAPI is instantiated — starlette 1.x dropped
+# the kwarg fastapi 0.115.5's Router still passes. Verified directly against
+# a scratch venv while fixing Finding 1 of the 2026-09-20
+# skill-tools-and-observations final-review pass; see that plan doc's
+# "Known limitations, not fixed in this slice" section.
+#
+# Fixing this for real means upgrading fastapi past its starlette<0.42 pin
+# (a separate, larger piece of work, out of scope here) or downgrading
+# fastmcp below the version pinned in hermes-service/Dockerfile (explicitly
+# not wanted — same pin must be kept everywhere). Until one of those
+# happens, backend/.venv (app.main) and backend/.mcp-venv
+# (app.mcp.the01dev_tools) MUST stay two separate environments.
+#
+# Use backend/scripts/run_tests.sh to run the full suite across both in one
+# command instead of remembering this split by hand.
+fastmcp==3.4.4

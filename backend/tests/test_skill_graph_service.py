@@ -243,11 +243,15 @@ async def test_record_observation_adds_fields_without_touching_graded_data():
         return written.get(doc_id)
 
     async def fake_set(collection, doc_id, data):
-        written[doc_id] = data
+        raise AssertionError("existing-row case must use store.update (additive merge), not store.set")
+
+    async def fake_update(collection, doc_id, changes):
+        written[doc_id].update(changes)
 
     import unittest.mock as mock
     with mock.patch.object(skill_graph_service.store, "get", fake_get), \
-         mock.patch.object(skill_graph_service.store, "set", fake_set):
+         mock.patch.object(skill_graph_service.store, "set", fake_set), \
+         mock.patch.object(skill_graph_service.store, "update", fake_update):
         result = await skill_graph_service.record_observation(
             "student-1", "js-fundamentals", "closures", "weak",
             "Struggled to explain closures in their own words.",
@@ -262,7 +266,8 @@ async def test_record_observation_adds_fields_without_touching_graded_data():
     assert row["chat_confidence"] == "weak"
     assert row["chat_confidence_note"] == "Struggled to explain closures in their own words."
     assert "chat_confidence_updated_at" in row
-    assert result == row
+    assert result["chat_confidence"] == "weak"
+    assert result["chat_confidence_note"] == "Struggled to explain closures in their own words."
 
 
 @pytest.mark.asyncio
@@ -287,3 +292,56 @@ async def test_record_observation_creates_row_if_none_exists():
     row = written["student-2__hoisting"]
     assert row["attempts"] == 0
     assert row["chat_confidence"] == "strong"
+
+
+@pytest.mark.asyncio
+async def test_record_observation_composes_with_get_prerequisite_view(monkeypatch):
+    """Composition test: prove the write and read tools actually form a loop.
+    An agent that calls record_skill_observation must be able to see that
+    same observation on its very next get_concept_confidence call — same
+    turn or a later session — via get_prerequisite_view's `chat_confidence`/
+    `chat_confidence_note` fields. Against a real InMemoryStore (not
+    monkeypatched closures), same style as
+    test_ensure_populated_and_get_prerequisite_view_agree_on_never_attempted,
+    since store.get/store.set/store.update/store.query genuinely sharing
+    state is exactly what's under test here."""
+    from app.services import knowledge_graph_service
+
+    real_store = InMemoryStore()
+    monkeypatch.setattr(skill_graph_service, "store", real_store)
+
+    async def fake_get_prerequisites(course_id, concept):
+        assert concept == "closures"
+        return ["scope"]
+
+    monkeypatch.setattr(knowledge_graph_service, "get_prerequisites", fake_get_prerequisites)
+
+    # Observation on the target concept itself (no existing row — create path).
+    await skill_graph_service.record_observation(
+        "student-1", "js-fundamentals", "closures", "weak",
+        "Struggled to explain closures in their own words.",
+    )
+    # Observation on one of its prerequisites, on top of an already-graded row
+    # (existing-row path — proves store.update doesn't clobber graded fields).
+    await real_store.set("concept_performance", "student-1__scope", {
+        "user_id": "student-1", "concept": "scope",
+        "attempts": 3, "correct": 2, "accuracy": 0.667,
+        "course_id": "js-fundamentals",
+    })
+    await skill_graph_service.record_observation(
+        "student-1", "js-fundamentals", "scope", "strong",
+        "Explained variable scope correctly unprompted.",
+    )
+
+    view = await skill_graph_service.get_prerequisite_view("student-1", "js-fundamentals", "closures")
+
+    assert view["chat_confidence"] == "weak"
+    assert view["chat_confidence_note"] == "Struggled to explain closures in their own words."
+
+    scope_prereq = view["prerequisites"][0]
+    assert scope_prereq["concept"] == "scope"
+    assert scope_prereq["chat_confidence"] == "strong"
+    assert scope_prereq["chat_confidence_note"] == "Explained variable scope correctly unprompted."
+    # The graded fields on the prerequisite must have survived the observation write.
+    assert scope_prereq["accuracy"] == 0.667
+    assert scope_prereq["attempted"] is True

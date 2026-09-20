@@ -250,11 +250,6 @@ async def hermes_chat(req: Request):
 
     intent = classify(question)
 
-    try:
-        await skill_graph_service.ensure_populated(student_id, course_slug)
-    except Exception as e:  # noqa: BLE001 — back-fill is never allowed to break a chat turn
-        print(f"[hermes_chat] ensure_populated failed for {student_id}/{course_slug}: {e}")
-
     # OTel parent span for the whole request (no-op unless tracing configured).
     # Started manually + ended in gen()'s finally so it spans the streamed generation.
     tracer = get_tracer()
@@ -300,6 +295,18 @@ async def hermes_chat(req: Request):
 
     # Every remaining intent goes to Hermes — see the docstring for why there's no
     # longer a separate direct-to-OpenAI path here.
+
+    # Back-fill the skill graph only for intents that actually touch it
+    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE/PROGRESS_LOOKUP already
+    # returned above and never reach here. Runs inside the traced span (4
+    # sequential DB queries in steady state) so its latency shows up if chat
+    # latency regresses, instead of being invisible before the span started.
+    try:
+        created = await skill_graph_service.ensure_populated(student_id, course_slug)
+        span.set_attribute("skill_graph.backfilled_concepts", created)
+    except Exception as e:  # noqa: BLE001 — back-fill is never allowed to break a chat turn
+        print(f"[hermes_chat] ensure_populated failed for {student_id}/{course_slug}: {e}")
+
     tutor_client = hermes_client
     tutor_model, tutor_provider = os.getenv("HERMES_MODEL_LABEL", "gpt-4.1-mini"), "hermes (agent loop)"
     span.set_attribute("provider", tutor_provider)
@@ -322,6 +329,12 @@ async def hermes_chat(req: Request):
     # SOUL.md's own "Avoid" section carries the "don't answer outside the course
     # material" guardrail; Hermes enforces that itself now, not a backend score check.
     persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
+    # NOTE: this deliberately puts the raw student_id (currently the student's
+    # actual email) in the LLM-bound prompt, verbatim, OUTSIDE the pii.scrub()
+    # choke point above ("no student PII reaches any downstream surface" per
+    # that comment — this line is the one exception). Accepted for now because
+    # this is a single known user and the only downstream party is the LLM
+    # provider itself, not a third party beyond it. Revisit before multi-tenant.
     persona += (
         f"\nFor any tool that takes student_id or course_id, use exactly "
         f"student_id=\"{student_id}\" and course_id=\"{course_slug}\" — never guess or ask the "

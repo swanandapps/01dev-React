@@ -176,9 +176,6 @@ async def search_history(query: str, student_id: str, top_k: int = 3) -> list[di
     ]
 
 
-from app.services.skill_graph_service import get_prerequisite_view, record_observation
-
-
 # ── Prerequisite-aware confidence (thin wrapper over skill_graph_service) ─────
 @mcp.tool()
 async def get_concept_confidence(concept: str, course_id: str, student_id: str) -> dict:
@@ -193,6 +190,13 @@ async def get_concept_confidence(concept: str, course_id: str, student_id: str) 
     `accuracy: null` on any entry means the student has never been graded on it
     yet, not that they scored zero — do not treat null as a bad score.
 
+    Each entry also carries `chat_confidence`/`chat_confidence_note` — your own
+    prior conversational impression, logged via record_skill_observation, if
+    you (or a past session) logged one for that concept. `null` means no
+    observation has been logged yet, not "weak". `chat_confidence` and
+    `accuracy` are different signals — a chat impression vs. a real graded
+    score — do not conflate them or treat one as a substitute for the other.
+
     Args:
         concept: The concept to check (must match a concept tag used in this course).
         course_id: The course's id/slug — use the exact value you were given for
@@ -200,7 +204,7 @@ async def get_concept_confidence(concept: str, course_id: str, student_id: str) 
         student_id: This student's id — use the exact value you were given for
             this conversation, never a different one.
     """
-    return await get_prerequisite_view(student_id, course_id, concept)
+    return await skill_graph_service.get_prerequisite_view(student_id, course_id, concept)
 
 
 # ── Skill observation write (thin wrapper over skill_graph_service.record_observation) ─
@@ -228,7 +232,7 @@ async def record_skill_observation(
         note: One sentence — what you actually observed, in plain language.
     """
     try:
-        return await record_observation(student_id, course_id, concept, confidence, note)
+        return await skill_graph_service.record_observation(student_id, course_id, concept, confidence, note)
     except ValueError as e:
         return {"error": str(e)}
 
