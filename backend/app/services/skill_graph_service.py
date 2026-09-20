@@ -51,3 +51,40 @@ async def ensure_populated(user_id: str, course_id: str) -> int:
         })
         created += 1
     return created
+
+
+def _view(row: dict | None) -> dict:
+    """Translate a raw concept_performance row (or its absence) into an
+    honest view: attempts == 0 (including a pre-populated-but-untouched
+    row from Task 1) means NO real signal exists yet — report accuracy as
+    None, never the stored 0.0 placeholder, which would look like a real
+    (bad) score instead of "not tried"."""
+    attempts = (row or {}).get("attempts", 0)
+    attempted = attempts > 0
+    return {
+        "concept": (row or {}).get("concept"),
+        "accuracy": (row or {}).get("accuracy") if attempted else None,
+        "attempts": attempts,
+        "attempted": attempted,
+    }
+
+
+async def get_prerequisite_view(user_id: str, course_id: str, concept: str) -> dict:
+    """One-shot view of `concept`'s confidence plus every one of its
+    prerequisites' confidence, for this student. Two queries total no
+    matter how many prerequisites exist: the course's prerequisite edges
+    (knowledge_graph_service, already a single query), and ALL of this
+    student's concept_performance rows in one store.query — the same
+    fetch-everything-then-filter-in-memory pattern journey_service and
+    friends already use, not a new capability."""
+    prereq_names = await knowledge_graph_service.get_prerequisites(course_id, concept)
+    rows = await store.query(PERF_COLLECTION, "user_id", user_id)
+    by_concept = {r["concept"]: r for r in rows}
+
+    target = _view(by_concept.get(concept) or {"concept": concept})
+    prerequisites = [_view(by_concept.get(name) or {"concept": name}) for name in prereq_names]
+
+    attempted_prereqs = [p for p in prerequisites if p["attempted"]]
+    weakest = min(attempted_prereqs, key=lambda p: p["accuracy"], default=None)
+
+    return {**target, "prerequisites": prerequisites, "weakest_prerequisite": weakest}

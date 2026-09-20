@@ -102,3 +102,69 @@ async def test_no_graph_yet_is_a_silent_noop(monkeypatch):
     created = await skill_graph_service.ensure_populated("student-1", "js-fundamentals")
 
     assert created == 0
+
+
+@pytest.mark.asyncio
+async def test_prerequisite_view_combines_target_and_prereqs_in_two_queries(monkeypatch):
+    from app.services import knowledge_graph_service
+
+    query_calls = []
+
+    async def fake_get_prerequisites(course_id, concept):
+        assert (course_id, concept) == ("js-fundamentals", "closures")
+        return ["scope", "functions"]
+
+    async def fake_query(collection, field, value):
+        query_calls.append((collection, field, value))
+        assert collection == "concept_performance"
+        assert (field, value) == ("user_id", "student-1")
+        return [
+            {"user_id": "student-1", "concept": "closures", "attempts": 5, "correct": 3, "accuracy": 0.6},
+            {"user_id": "student-1", "concept": "scope", "attempts": 2, "correct": 0, "accuracy": 0.0},
+            # "functions" deliberately has NO row — never attempted at all.
+        ]
+
+    monkeypatch.setattr(knowledge_graph_service, "get_prerequisites", fake_get_prerequisites)
+    monkeypatch.setattr(skill_graph_service.store, "query", fake_query)
+
+    view = await skill_graph_service.get_prerequisite_view("student-1", "js-fundamentals", "closures")
+
+    # Exactly one query for prerequisites (via get_prerequisites) + one
+    # store.query for ALL this student's performance — never one query
+    # per prerequisite, no matter how many prerequisites there are.
+    assert len(query_calls) == 1
+
+    assert view["concept"] == "closures"
+    assert view["accuracy"] == 0.6
+    assert view["attempted"] is True
+
+    prereqs = {p["concept"]: p for p in view["prerequisites"]}
+    assert prereqs["scope"]["accuracy"] == 0.0
+    assert prereqs["scope"]["attempted"] is True  # 2 attempts, genuinely scored 0%
+    assert prereqs["functions"]["accuracy"] is None  # never attempted — NOT a fake 0.0
+    assert prereqs["functions"]["attempted"] is False
+
+    # Weakest prerequisite must only consider ones actually attempted —
+    # "functions" has no real score to compare, so "scope" wins even
+    # though its accuracy (0.0) looks "worse" than functions' None.
+    assert view["weakest_prerequisite"]["concept"] == "scope"
+
+
+@pytest.mark.asyncio
+async def test_prerequisite_view_handles_no_attempted_prerequisites(monkeypatch):
+    from app.services import knowledge_graph_service
+
+    async def fake_get_prerequisites(course_id, concept):
+        return ["scope"]
+
+    async def fake_query(collection, field, value):
+        return []  # nothing attempted yet at all, including the target concept
+
+    monkeypatch.setattr(knowledge_graph_service, "get_prerequisites", fake_get_prerequisites)
+    monkeypatch.setattr(skill_graph_service.store, "query", fake_query)
+
+    view = await skill_graph_service.get_prerequisite_view("student-1", "js-fundamentals", "closures")
+
+    assert view["accuracy"] is None
+    assert view["attempted"] is False
+    assert view["weakest_prerequisite"] is None
