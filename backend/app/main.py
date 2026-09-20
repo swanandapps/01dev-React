@@ -316,6 +316,11 @@ async def hermes_chat(req: Request):
     # SOUL.md's own "Avoid" section carries the "don't answer outside the course
     # material" guardrail; Hermes enforces that itself now, not a backend score check.
     persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
+    persona += (
+        f"\nFor any tool that takes student_id or course_id, use exactly "
+        f"student_id=\"{student_id}\" and course_id=\"{course_slug}\" — never guess or ask the "
+        f"student for these, you already have them."
+    )
     # Memory goes up front (prominent) so it isn't overridden by the tool-use rule below.
     memory_block = (mem + "\n\n") if mem else ""
 
