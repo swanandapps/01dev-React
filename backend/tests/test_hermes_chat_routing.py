@@ -66,15 +66,16 @@ def test_quiz_intent_short_circuits_before_any_model_call(client, monkeypatch):
 
 
 def test_course_question_intent_is_unaffected(client, monkeypatch):
-    # Not asserting the full grounded-answer path here (that's rag_service's
-    # own concern) — only that a normal question is NOT diverted into the
-    # quiz hand-off.
-    from app.services import grounding
+    # Not asserting the full Hermes answer here (that's hermes_client's own
+    # concern, already covered by its own tests) — only that a normal
+    # question reaches the real Hermes path, not the quiz/progress hand-off.
+    from app.services import hermes_client
 
-    async def _empty_retrieve(*args, **kwargs):
-        return []
+    async def _fake_stream_chat(question, system=None, history=None):
+        yield {"type": "token", "value": "closures capture variables"}
+        yield {"type": "done"}
 
-    monkeypatch.setattr(grounding, "retrieve", _empty_retrieve)
+    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
 
     resp = client.post(
         "/api/hermes/chat",
@@ -87,6 +88,7 @@ def test_course_question_intent_is_unaffected(client, monkeypatch):
     assert resp.status_code == 200
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
+    assert "closures capture variables" in tokens
     assert "QuizMe" not in tokens
 
 
@@ -120,20 +122,23 @@ def test_progress_intent_calls_journey_service_not_the_model(client, monkeypatch
 
 def test_out_of_scope_intent_falls_through_to_normal_chat_logic(client, monkeypatch):
     # OUT_OF_SCOPE must NOT be diverted by the `if intent in (QUIZ_GENERATE,
-    # PROGRESS_LOOKUP):` short-circuit — it should reach the existing
-    # grounded/decline/agentic path unchanged. Force the intent directly
-    # rather than relying on classify()'s gibberish heuristics, for a
-    # cleaner, more direct test of the routing decision itself.
+    # PROGRESS_LOOKUP):` short-circuit — it should reach the same Hermes path
+    # as an ordinary course question (there's no separate backend decline
+    # path anymore; SOUL.md's own "don't answer outside the course material"
+    # instruction is what Hermes uses to decline, not a code branch here).
+    # Force the intent directly rather than relying on classify()'s gibberish
+    # heuristics, for a cleaner, more direct test of the routing decision.
     from app import main as app_main
     from app.routing.intent import Intent
-    from app.services import grounding
+    from app.services import hermes_client
 
     monkeypatch.setattr(app_main, "classify", lambda question: Intent.OUT_OF_SCOPE)
 
-    async def _empty_retrieve(*args, **kwargs):
-        return []
+    async def _fake_stream_chat(question, system=None, history=None):
+        yield {"type": "token", "value": "not covered by this course"}
+        yield {"type": "done"}
 
-    monkeypatch.setattr(grounding, "retrieve", _empty_retrieve)
+    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
 
     resp = client.post(
         "/api/hermes/chat",
@@ -145,13 +150,13 @@ def test_out_of_scope_intent_falls_through_to_normal_chat_logic(client, monkeypa
     )
     assert resp.status_code == 200
     events = _sse_events(resp.text)
-    # The decline path (no course material found) is the existing behavior
-    # for an out-of-scope question — proof it reached normal chat logic,
-    # not a hand-off branch.
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
+    # Reached the real Hermes path (our fake was actually called) — proof it
+    # wasn't diverted to the quiz/progress hand-off branch.
+    assert "not covered by this course" in tokens
     assert "QuizMe" not in tokens
     sources_event = next(e for e in events if e.get("type") == "sources")
-    assert sources_event["insufficient_context"] is True
+    assert sources_event["insufficient_context"] is False
     assert any(e.get("type") == "done" for e in events)
 
 

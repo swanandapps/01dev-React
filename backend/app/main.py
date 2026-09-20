@@ -27,22 +27,18 @@ from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
     knowledge_graph_service, recommendation_service, course_insight_service,
     tutor_service, journey_service,
-    hermes_client, ollama_client, openai_tutor, audit_service, memory_service,
-    eval_service, gepa_service, grounding, context_builder, pii, llm,
+    hermes_client, audit_service, memory_service,
+    eval_service, gepa_service, context_builder, pii, llm,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.routing.progress_handoff import build_progress_message
 
-# The reliable tutor talks to OpenAI in production (managed hosting has no local
-# Ollama). Set TUTOR_PROVIDER=ollama to use the local sovereign model in dev.
+# _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
+# routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
+# path was retired).
 _TUTOR_PROVIDER = os.getenv("TUTOR_PROVIDER", "openai" if os.getenv("OPENAI_API_KEY") else "ollama")
-# CHAT_MODE=hermes → /chat runs full-Hermes (agentic) by default, no OpenAI.
-# Grounding then flows through the search_course_content MCP tool, which uses the
-# vector store's keyword fallback automatically when OpenAI embeddings are off.
-_CHAT_MODE = os.getenv("CHAT_MODE", "").lower()
-_GROUNDING_THRESHOLD = float(os.getenv("HERMES_GROUNDING_THRESHOLD", "0.45"))
 _MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -207,12 +203,17 @@ async def ask_question_stream(request: AskRequest):
 @app.post("/api/hermes/chat")
 async def hermes_chat(req: Request):
     """Governance layer for the Hermes tutor: access gate + EU-AI-Act audit +
-    session-spanning memory + streaming proxy to the Hermes agent (:8642), all on a
-    LOCAL sovereign model. Two modes:
+    session-spanning memory + streaming proxy to the Hermes agent (:8642).
 
-      - default (hybrid): retrieve course material here and inject it — reliable on 8GB.
-      - agentic=true: let the Hermes agent drive the search_course_content MCP tool
-        itself (the real ReAct loop; best on a GPU-hosted model).
+    Every question that isn't one of the two fixed-answer intents (quiz hand-off,
+    progress lookup) goes to Hermes. Hermes drives its own retrieval via the
+    search_course_content/search_history MCP tools and decides for itself how many
+    tool calls a question needs — that decision used to be made here (a client-supplied
+    `agentic` flag, plus a backend similarity-score threshold deciding whether to
+    answer or decline) when Hermes ran on a local model too slow/unreliable for
+    real-time chat. Hermes now runs on the same OpenAI model either way, so that
+    split no longer has a reason to exist; SOUL.md's own "don't answer outside the
+    course material" instruction is the guardrail now, not a backend score check.
 
     Either way the tutor REMEMBERS the student: prior turns are threaded (multi-turn)
     and a running profile is injected, then this exchange is persisted for next time.
@@ -221,7 +222,6 @@ async def hermes_chat(req: Request):
     question = (body.get("question") or "").strip()
     student_id = body.get("user_id") or req.headers.get("X-Student-Id") or ""
     course_slug = body.get("course_slug") or req.headers.get("X-Course-Slug") or "js-fundamentals"
-    agentic = bool(body.get("agentic", False)) or _CHAT_MODE == "hermes"
 
     # 1. Access gate.
     if not student_id:
@@ -241,7 +241,6 @@ async def hermes_chat(req: Request):
     tracer = get_tracer()
     span = tracer.start_span("hermes_chat")
     span.set_attribute("course_slug", course_slug)
-    span.set_attribute("agentic", agentic)
     span.set_attribute("intent", intent.value)
     span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])  # hashed, no PII
     if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
@@ -280,16 +279,10 @@ async def hermes_chat(req: Request):
             headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
         )
 
-    # Resolve which engine answers — audit must record the TRUE model/provider.
-    if agentic:
-        tutor_client = hermes_client
-        tutor_model, tutor_provider = os.getenv("HERMES_MODEL_LABEL", "gpt-4.1-mini"), "hermes (agent loop)"
-    elif _TUTOR_PROVIDER == "ollama":
-        tutor_client = ollama_client
-        tutor_model, tutor_provider = ollama_client.TUTOR_MODEL, "ollama (local, sovereign)"
-    else:
-        tutor_client = openai_tutor
-        tutor_model, tutor_provider = openai_tutor.TUTOR_MODEL, "openai"
+    # Every remaining intent goes to Hermes — see the docstring for why there's no
+    # longer a separate direct-to-OpenAI path here.
+    tutor_client = hermes_client
+    tutor_model, tutor_provider = os.getenv("HERMES_MODEL_LABEL", "gpt-4.1-mini"), "hermes (agent loop)"
     span.set_attribute("provider", tutor_provider)
 
     # 2. EU AI Act audit — before inference.
@@ -307,77 +300,27 @@ async def hermes_chat(req: Request):
         history.append({"role": "assistant", "content": t.get("answer", "")})
 
     # Persona comes from the SOUL — the identity GEPA evolves (and the audit fingerprints).
+    # SOUL.md's own "Avoid" section carries the "don't answer outside the course
+    # material" guardrail; Hermes enforces that itself now, not a backend score check.
     persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
-    # Memory goes up front (prominent) so it isn't overridden by the material rule below.
+    # Memory goes up front (prominent) so it isn't overridden by the tool-use rule below.
     memory_block = (mem + "\n\n") if mem else ""
 
-    # Deterministic grounding: only material at/above this similarity counts as "covered".
-    # Below it, we DON'T trust the small model to decline — we decline in code, then offer
-    # a general answer that the student must explicitly authorize (HITL consent).
-    allow_general = bool(body.get("allow_general", False))
-    threshold = _GROUNDING_THRESHOLD
-    insufficient_context = False   # question is outside the course's scope
-    offer_general = False          # …and we're offering an ungrounded general answer
-    decline_msg = None
-
-    if agentic:
-        # Real agent loop: Hermes drives the MCP tool itself; no injected material.
-        sources = []
-        system = (
-            persona + "\n\n" + memory_block +
-            "Use the search_course_content tool to find relevant course material, then "
-            "answer grounded in what it returns and cite the lecture. "
-            "When the student refers to how you previously taught them something "
-            "(e.g. 'like you taught me closures'), call the search_history tool to "
-            "retrieve those past exchanges and mirror that explanation's style. "
-            "For general facts about the student, use the STUDENT MEMORY above."
-        )
-        span.set_attribute("outcome", "agentic")
-    else:
-        try:
-            with otel_trace.use_span(span, end_on_exit=False):
-                results = await grounding.retrieve(question, top_k=4)  # embed + vector_search child spans
-        except Exception as e:  # noqa: BLE001 — retrieval down → decline gracefully, no 500
-            print(f"[hermes_chat] retrieval failed: {e}")
-            results = []
-        best = results[0].score if results else 0.0
-        span.set_attribute("top_score", round(best, 3))
-        span.set_attribute("n_results", len(results))
-        span.set_attribute("in_scope", bool(best >= threshold))
-
-        if best >= threshold:
-            # In scope → grounded answer, cite the lectures.
-            span.set_attribute("outcome", "grounded")
-            sources = [s.model_dump() for s in _build_sources(results)]
-            material = grounding.build_material(results)  # shared material block
-            system = (
-                persona + "\n\n" + memory_block +
-                "Answer the student's question using ONLY the course material below and cite "
-                "the lecture and timestamp. For questions about the student or what they have "
-                "studied before, use the STUDENT MEMORY above and the conversation so far.\n\n"
-                "=== COURSE MATERIAL ===\n" + material
-            )
-        elif allow_general:
-            # Out of scope, but the student explicitly authorized a general answer (HITL).
-            span.set_attribute("outcome", "general")
-            sources = []
-            system = (
-                persona + "\n\n" + memory_block +
-                "The course material does not cover this question, and the student has asked "
-                "for a general answer. Begin by noting this is a GENERAL answer (not from the "
-                "course), then answer helpfully and accurately from your own knowledge."
-            )
-        else:
-            # Out of scope, no consent yet → decline in code, offer a general answer.
-            span.set_attribute("outcome", "declined")
-            sources = []
-            insufficient_context = True
-            offer_general = True
-            system = None
-            decline_msg = (
-                f"That isn't covered in the '{course_slug}' course material. "
-                "Would you like me to answer from general knowledge instead?"
-            )
+    # No structured source list here — Hermes cites lectures inline in its answer
+    # text (verified: "React Performance Patterns, lecture 4.1 at 01:13"), but the
+    # actual retrieval happens inside its own tool call, not in this backend, so
+    # there's nothing to build a citations array FROM at this layer anymore.
+    sources: list[dict] = []
+    system = (
+        persona + "\n\n" + memory_block +
+        "Use the search_course_content tool to find relevant course material, then "
+        "answer grounded in what it returns and cite the lecture. "
+        "When the student refers to how you previously taught them something "
+        "(e.g. 'like you taught me closures'), call the search_history tool to "
+        "retrieve those past exchanges and mirror that explanation's style. "
+        "For general facts about the student, use the STUDENT MEMORY above."
+    )
+    span.set_attribute("outcome", "hermes")
 
     # Context Builder — RESOLVE step: fit the prompt to the window, trimming the
     # OLDEST turns first so nothing is silently truncated. Reports what it dropped.
@@ -392,38 +335,28 @@ async def hermes_chat(req: Request):
               f"({_fit['prompt_tokens_est']}/{_fit['limit']} tok), dropped {_fit['dropped_turns']} old turn(s)"
               f"{' — essentials OVER limit' if _fit['over_limit'] else ''}")
 
-    # 4. Stream, accumulate the answer, then persist the turn. The reliable tutor
-    #    talks to the model DIRECTLY (Hermes's agent loop mangles multi-turn context
-    #    on a small model — proven by A/B); agentic mode routes through Hermes.
-    #    tutor_client was resolved above (OpenAI in prod, Ollama in dev, Hermes if agentic).
+    # 4. Stream, accumulate the answer, then persist the turn.
 
     async def gen():
         try:
             sources_payload = {
                 "type": "sources", "sources": sources,
-                "insufficient_context": insufficient_context, "offer_general": offer_general,
+                "insufficient_context": False, "offer_general": False,
             }
             yield f"data: {json.dumps(sources_payload)}\n\n"
             answer_parts: list[str] = []
-            if decline_msg is not None:
-                # Deterministic decline — no model call at all, so grounding is guaranteed.
-                for word in decline_msg.split(" "):
-                    answer_parts.append(word + " ")
-                    yield f"data: {json.dumps({'type': 'token', 'value': word + ' '})}\n\n"
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
-            else:
-                # llm_generate span as an explicit child of the parent (manual parent
-                # context avoids OTel current-context leakage across generator yields).
-                gspan = tracer.start_span("llm_generate", context=otel_trace.set_span_in_context(span))
-                gspan.set_attribute("provider", tutor_provider)
-                try:
-                    async for event in tutor_client.stream_chat(question, system=system, history=history):
-                        if event.get("type") == "token":
-                            answer_parts.append(event.get("value", ""))
-                        yield f"data: {json.dumps(event)}\n\n"
-                finally:
-                    gspan.set_attribute("answer_chars", len("".join(answer_parts)))
-                    gspan.end()
+            # llm_generate span as an explicit child of the parent (manual parent
+            # context avoids OTel current-context leakage across generator yields).
+            gspan = tracer.start_span("llm_generate", context=otel_trace.set_span_in_context(span))
+            gspan.set_attribute("provider", tutor_provider)
+            try:
+                async for event in tutor_client.stream_chat(question, system=system, history=history):
+                    if event.get("type") == "token":
+                        answer_parts.append(event.get("value", ""))
+                    yield f"data: {json.dumps(event)}\n\n"
+            finally:
+                gspan.set_attribute("answer_chars", len("".join(answer_parts)))
+                gspan.end()
             try:
                 await memory_service.record_turn(student_id, course_slug, question, "".join(answer_parts))
             except Exception:  # noqa: BLE001 — never fail the response over memory persistence
