@@ -165,15 +165,8 @@ export default function AskPage() {
     const finishError = (msg: string) =>
       patch({ content: msg, insufficient_context: true, streaming: false });
 
-    // No cloud fallback — by design. This is the SOVEREIGN tutor: if the local
-    // Hermes agent is unreachable we say so honestly rather than silently routing
-    // the question to an external provider (which would break the sovereignty
-    // guarantee). The one-word answer to "why no OpenAI fallback here?" is: trust.
-    const sovereignUnavailable = (detail: string) =>
-      finishError(
-        `The sovereign tutor is unavailable (${detail}). It runs a local model — ` +
-          `make sure the Hermes gateway (:9119) and Ollama are running, then retry.`,
-      );
+    const tutorUnavailable = (detail: string) =>
+      finishError(`The tutor is temporarily unavailable (${detail}). Please try again in a moment.`);
 
     askHermesStream(
       q,
@@ -197,7 +190,7 @@ export default function AskPage() {
           setIsStreaming(false);
         },
         onError: (err) => {
-          if (!gotToken) sovereignUnavailable(err.message);
+          if (!gotToken) tutorUnavailable(err.message);
           else {
             // Error after partial content: keep what streamed, just stop.
             console.warn("stream interrupted:", err.message);
@@ -207,7 +200,7 @@ export default function AskPage() {
         },
       },
     ).catch((err) => {
-      if (!gotToken) sovereignUnavailable((err as Error).message);
+      if (!gotToken) tutorUnavailable((err as Error).message);
       else patch({ streaming: false });
       setIsStreaming(false);
     });
@@ -271,7 +264,7 @@ export default function AskPage() {
         <div className="px-6 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
           <div>
             <h1 className="text-base font-semibold text-zinc-100">Course Assistant</h1>
-            <p className="text-xs text-zinc-500">Sovereign local model · grounded, cited &amp; audited</p>
+            <p className="text-xs text-zinc-500">AI tutor · grounded, cited &amp; audited</p>
           </div>
           <div className="flex items-center gap-3">
             {messages.length > 0 && (
@@ -286,7 +279,7 @@ export default function AskPage() {
               </button>
             )}
             <span className="text-xs text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/50">
-              Sovereign · Hermes
+              Hermes
             </span>
           </div>
         </div>

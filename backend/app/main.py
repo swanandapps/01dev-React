@@ -328,7 +328,25 @@ async def hermes_chat(req: Request):
     # Persona comes from the SOUL — the identity GEPA evolves (and the audit fingerprints).
     # SOUL.md's own "Avoid" section carries the "don't answer outside the course
     # material" guardrail; Hermes enforces that itself now, not a backend score check.
-    persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
+    #
+    # "all-courses" is a frontend sentinel (the global Ask page has no course
+    # selector) meaning "no specific course chosen" — NOT a real course name.
+    # Interpolating it into "You are tutoring the 'all-courses' course" was
+    # confusing the model into treating it as an actual enrolled course (it
+    # answered "you're enrolled in the course called all-courses" when asked).
+    # Also: this backend has no enrollment data source at all (enrollment
+    # currently only lives in Firestore, unread here) — the model should
+    # decline enrollment questions honestly, not guess.
+    if course_slug == "all-courses":
+        persona = gepa_service.read_soul() + (
+            "\nYou help students with ANY course on the01.dev — you are not scoped to a "
+            "single course in this conversation. Use search_course_content freely across "
+            "all courses and mention which course an answer came from. If asked what "
+            "courses the student is enrolled in, say plainly that you don't have access "
+            "to enrollment records — do not guess or invent a course name."
+        )
+    else:
+        persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
     # NOTE: this deliberately puts the raw student_id (currently the student's
     # actual email) in the LLM-bound prompt, verbatim, OUTSIDE the pii.scrub()
     # choke point above ("no student PII reaches any downstream surface" per
