@@ -29,6 +29,7 @@ from app.services import (
     tutor_service, journey_service,
     hermes_client, audit_service, memory_service,
     eval_service, gepa_service, context_builder, pii, llm,
+    skill_graph_service,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
@@ -248,6 +249,11 @@ async def hermes_chat(req: Request):
     question, pii_kinds = pii.scrub(question)
 
     intent = classify(question)
+
+    try:
+        await skill_graph_service.ensure_populated(student_id, course_slug)
+    except Exception as e:  # noqa: BLE001 — back-fill is never allowed to break a chat turn
+        print(f"[hermes_chat] ensure_populated failed for {student_id}/{course_slug}: {e}")
 
     # OTel parent span for the whole request (no-op unless tracing configured).
     # Started manually + ended in gen()'s finally so it spans the streamed generation.

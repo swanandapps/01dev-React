@@ -184,3 +184,47 @@ def test_progress_lookup_failure_degrades_gracefully_instead_of_500(client, monk
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
     assert "Journey dashboard" in tokens
     assert any(e.get("type") == "done" for e in events)
+
+
+def test_course_question_backfills_skill_graph(client, monkeypatch):
+    from app.services import hermes_client, skill_graph_service
+
+    calls = []
+
+    async def fake_ensure_populated(user_id, course_id):
+        calls.append((user_id, course_id))
+        return 0
+
+    async def _fake_stream_chat(question, system=None, history=None):
+        yield {"type": "token", "value": "ok"}
+        yield {"type": "done"}
+
+    monkeypatch.setattr(skill_graph_service, "ensure_populated", fake_ensure_populated)
+    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
+
+    resp = client.post(
+        "/api/hermes/chat",
+        json={"question": "What is a closure?", "user_id": "backfill-test", "course_slug": "js-fundamentals"},
+    )
+    assert resp.status_code == 200
+    assert ("backfill-test", "js-fundamentals") in calls
+
+
+def test_backfill_failure_does_not_break_chat(client, monkeypatch):
+    from app.services import hermes_client, skill_graph_service
+
+    async def fake_ensure_populated(user_id, course_id):
+        raise RuntimeError("skill graph service is down")
+
+    async def _fake_stream_chat(question, system=None, history=None):
+        yield {"type": "token", "value": "ok"}
+        yield {"type": "done"}
+
+    monkeypatch.setattr(skill_graph_service, "ensure_populated", fake_ensure_populated)
+    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
+
+    resp = client.post(
+        "/api/hermes/chat",
+        json={"question": "What is a closure?", "user_id": "backfill-fail-test", "course_slug": "js-fundamentals"},
+    )
+    assert resp.status_code == 200

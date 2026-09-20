@@ -14,10 +14,14 @@ accuracy/last_seen) are unchanged — journey_service, course_insight_service,
 recommendation_service, and tutor_service all read this collection directly
 and must keep working without modification.
 """
+from datetime import datetime, timezone
+
 from app.services import knowledge_graph_service
 from app.services.store import store
 
 PERF_COLLECTION = "concept_performance"
+
+_VALID_CONFIDENCE = {"weak", "developing", "strong"}
 
 # NOTE on doc-id scoping: `_perf_id` (imported from adaptive_service below) is
 # keyed as f"{user_id}__{concept}" — GLOBAL across courses, not scoped by
@@ -119,3 +123,33 @@ async def get_prerequisite_view(user_id: str, course_id: str, concept: str) -> d
     )
 
     return {**target, "prerequisites": prerequisites, "weakest_prerequisite": weakest}
+
+
+async def record_observation(
+    user_id: str, course_id: str, concept: str, confidence: str, note: str,
+) -> dict:
+    """Log a chat-inferred observation about a student's grasp of a concept —
+    NOT a graded score. Writes to separate chat_confidence* fields on the same
+    concept_performance row ensure_populated/_update_perf use; attempts/correct/
+    accuracy (the graded-event fields 4 other services depend on) are never
+    touched here. Creates a zeroed row first if this student has no row for
+    this concept yet, so an observation can happen before any graded event."""
+    if confidence not in _VALID_CONFIDENCE:
+        raise ValueError(f"confidence must be one of {sorted(_VALID_CONFIDENCE)}, got {confidence!r}")
+
+    # Local import: same circular-import hazard ensure_populated documents
+    # above (adaptive_service imports this module at load time) — deferred
+    # here until both modules are fully loaded.
+    from app.services.adaptive_service import _perf_id
+
+    doc_id = _perf_id(user_id, concept)
+    row = await store.get(PERF_COLLECTION, doc_id) or {
+        "user_id": user_id, "concept": concept,
+        "attempts": 0, "correct": 0, "accuracy": 0.0,
+        "course_id": course_id,
+    }
+    row["chat_confidence"] = confidence
+    row["chat_confidence_note"] = note
+    row["chat_confidence_updated_at"] = datetime.now(timezone.utc).isoformat()
+    await store.set(PERF_COLLECTION, doc_id, row)
+    return row

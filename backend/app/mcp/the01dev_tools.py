@@ -176,7 +176,7 @@ async def search_history(query: str, student_id: str, top_k: int = 3) -> list[di
     ]
 
 
-from app.services.skill_graph_service import get_prerequisite_view
+from app.services.skill_graph_service import get_prerequisite_view, record_observation
 
 
 # ── Prerequisite-aware confidence (thin wrapper over skill_graph_service) ─────
@@ -201,6 +201,36 @@ async def get_concept_confidence(concept: str, course_id: str, student_id: str) 
             this conversation, never a different one.
     """
     return await get_prerequisite_view(student_id, course_id, concept)
+
+
+# ── Skill observation write (thin wrapper over skill_graph_service.record_observation) ─
+@mcp.tool()
+async def record_skill_observation(
+    concept: str, course_id: str, student_id: str, confidence: str, note: str,
+) -> dict:
+    """Log what you've noticed about this student's grasp of a concept from the
+    conversation — NOT a quiz score. Call this whenever the conversation makes
+    their understanding clear either way (they explained it correctly unprompted,
+    or they were clearly confused/wrong about it) — you don't need to ask
+    permission, this is internal bookkeeping, not a consequential action.
+
+    confidence must be exactly one of: "weak", "developing", "strong".
+    Do not call this for vague or ambiguous signals — only when the
+    conversation actually showed you something concrete.
+
+    Args:
+        concept: The concept this observation is about.
+        course_id: The course's id/slug — use the exact value you were given
+            for this conversation.
+        student_id: This student's id — use the exact value you were given
+            for this conversation, never a different one.
+        confidence: "weak" | "developing" | "strong".
+        note: One sentence — what you actually observed, in plain language.
+    """
+    try:
+        return await record_observation(student_id, course_id, concept, confidence, note)
+    except ValueError as e:
+        return {"error": str(e)}
 
 
 if __name__ == "__main__":

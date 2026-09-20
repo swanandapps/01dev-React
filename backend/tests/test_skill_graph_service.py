@@ -225,3 +225,65 @@ async def test_ensure_populated_and_get_prerequisite_view_agree_on_never_attempt
     assert hoisting["accuracy"] is None
     assert hoisting["attempted"] is False
     assert view["weakest_prerequisite"] is None
+
+
+@pytest.mark.asyncio
+async def test_record_observation_adds_fields_without_touching_graded_data():
+    from app.services import skill_graph_service
+
+    written = {
+        "student-1__closures": {
+            "user_id": "student-1", "concept": "closures",
+            "attempts": 5, "correct": 4, "accuracy": 0.8,
+            "course_id": "js-fundamentals",
+        }
+    }
+
+    async def fake_get(collection, doc_id):
+        return written.get(doc_id)
+
+    async def fake_set(collection, doc_id, data):
+        written[doc_id] = data
+
+    import unittest.mock as mock
+    with mock.patch.object(skill_graph_service.store, "get", fake_get), \
+         mock.patch.object(skill_graph_service.store, "set", fake_set):
+        result = await skill_graph_service.record_observation(
+            "student-1", "js-fundamentals", "closures", "weak",
+            "Struggled to explain closures in their own words.",
+        )
+
+    row = written["student-1__closures"]
+    # Graded fields untouched.
+    assert row["attempts"] == 5
+    assert row["correct"] == 4
+    assert row["accuracy"] == 0.8
+    # New observational fields present.
+    assert row["chat_confidence"] == "weak"
+    assert row["chat_confidence_note"] == "Struggled to explain closures in their own words."
+    assert "chat_confidence_updated_at" in row
+    assert result == row
+
+
+@pytest.mark.asyncio
+async def test_record_observation_creates_row_if_none_exists():
+    from app.services import skill_graph_service
+
+    written: dict = {}
+
+    async def fake_get(collection, doc_id):
+        return written.get(doc_id)
+
+    async def fake_set(collection, doc_id, data):
+        written[doc_id] = data
+
+    import unittest.mock as mock
+    with mock.patch.object(skill_graph_service.store, "get", fake_get), \
+         mock.patch.object(skill_graph_service.store, "set", fake_set):
+        await skill_graph_service.record_observation(
+            "student-2", "js-fundamentals", "hoisting", "strong", "Explained it correctly unprompted.",
+        )
+
+    row = written["student-2__hoisting"]
+    assert row["attempts"] == 0
+    assert row["chat_confidence"] == "strong"
