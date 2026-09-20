@@ -12,7 +12,7 @@ import hashlib
 from opentelemetry import trace as otel_trace
 
 import razorpay
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -43,6 +43,19 @@ _MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
+# run/approve, eval history) have no per-user auth model yet — gate them
+# with a shared secret instead of leaving them open on a public URL.
+# Unset locally on purpose (dev convenience); Railway sets a real value.
+_ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")
+
+
+async def require_admin_key(x_admin_key: str = Header(default="")) -> None:
+    if not _ADMIN_API_KEY:
+        return  # no key configured (local dev) — leave routes open, same as today
+    if x_admin_key != _ADMIN_API_KEY:
+        raise HTTPException(status_code=401, detail="Missing or invalid X-Admin-Key")
 
 
 class PaymentRequest(BaseModel):
@@ -371,51 +384,51 @@ async def hermes_chat(req: Request):
     )
 
 
-@app.get("/api/hermes/audit")
+@app.get("/api/hermes/audit", dependencies=[Depends(require_admin_key)])
 async def hermes_audit(limit: int = 20):
     """Recent EU-AI-Act audit records — the compliance/inspection view."""
     return await audit_service.recent(limit)
 
 
-@app.get("/api/hermes/memory/{student_id}")
+@app.get("/api/hermes/memory/{student_id}", dependencies=[Depends(require_admin_key)])
 async def hermes_memory(student_id: str):
     """Transparency: exactly what the tutor remembers about a student."""
     return await memory_service.recall(student_id)
 
 
-@app.delete("/api/hermes/memory/{student_id}")
+@app.delete("/api/hermes/memory/{student_id}", dependencies=[Depends(require_admin_key)])
 async def hermes_memory_erase(student_id: str):
     """GDPR right-to-erasure — delete everything the tutor stored for a student."""
     return await memory_service.erase(student_id)
 
 
-@app.post("/api/hermes/gepa/run")
+@app.post("/api/hermes/gepa/run", dependencies=[Depends(require_admin_key)])
 async def gepa_run():
     """Run one GEPA evolution round → a human-reviewable proposal. Applies nothing."""
     return await gepa_service.run_round()
 
 
-@app.post("/api/hermes/gepa/approve")
+@app.post("/api/hermes/gepa/approve", dependencies=[Depends(require_admin_key)])
 async def gepa_approve(req: Request):
     """HUMAN gate — apply an approved SOUL evolution (the only path that mutates the SOUL)."""
     body = await req.json()
     return await gepa_service.approve(body.get("proposal_id", ""))
 
 
-@app.get("/api/hermes/gepa/proposals")
+@app.get("/api/hermes/gepa/proposals", dependencies=[Depends(require_admin_key)])
 async def gepa_proposals():
     """The evolution history — proposals, their before/after scores, and what was applied."""
     return gepa_service.proposals()
 
 
-@app.get("/api/hermes/eval/rag-outputs")
+@app.get("/api/hermes/eval/rag-outputs", dependencies=[Depends(require_admin_key)])
 async def eval_rag_outputs():
     """The tutor's RAG triples {question, answer, contexts} over the eval set — the input the
     isolated RAGAS harness scores (faithfulness / answer-relevancy / context-precision)."""
     return await eval_service.collect_rag_outputs(gepa_service.read_soul())
 
 
-@app.get("/api/hermes/eval/history")
+@app.get("/api/hermes/eval/history", dependencies=[Depends(require_admin_key)])
 async def eval_history(kind: str | None = None, limit: int = 50):
     """The recorded eval / RAGAS / GEPA results over time — the quality trend."""
     from app.eval import results_store
