@@ -1,0 +1,30 @@
+[
+  {
+    "question": "How does React.memo improve performance?",
+    "expect": "ground",
+    "note": "In corpus (React Performance). Should explain memo skips re-renders when props are shallowly equal, and cite the lecture.",
+    "reference": "React.memo is a higher-order component that memoizes a function component's rendered output. It skips re-rendering when the incoming props are shallowly equal to the previous props, so a child does not re-render just because its parent did. It helps performance for expensive components that frequently receive the same props; it does not help when props change on every render or the component is cheap to render."
+  },
+  {
+    "question": "When should I use useCallback versus useMemo?",
+    "expect": "ground",
+    "note": "In corpus. Should distinguish a stable function reference from a memoized computed value.",
+    "reference": "useCallback returns a memoized function reference that stays stable across renders until its dependencies change, useful for passing stable callbacks to memoized children or effect dependency arrays. useMemo returns a memoized computed value, caching the result of an expensive calculation until its dependencies change. In short: useCallback memoizes the function itself, useMemo memoizes the value the function returns."
+  },
+  {
+    "question": "What is a WebSocket handshake and when do you use it over long-polling?",
+    "expect": "ground",
+    "note": "In corpus (Web APIs / Real-Time). Should describe the HTTP upgrade and the transport trade-off.",
+    "reference": "A WebSocket handshake begins as an HTTP request carrying an Upgrade: websocket header; the server replies with 101 Switching Protocols and the same TCP connection is upgraded to a persistent, full-duplex WebSocket channel. You choose WebSockets over long-polling when you need low-latency, bidirectional, real-time communication (chat, live updates), because the connection stays open and either side can push messages, avoiding the repeated request overhead and latency of long-polling."
+  },
+  {
+    "question": "What is a closure in JavaScript?",
+    "expect": "decline",
+    "note": "NOT in the corpus. The tutor should decline (out of course scope), not answer."
+  },
+  {
+    "question": "How do I center a div in CSS?",
+    "expect": "decline",
+    "note": "NOT a course topic. Should decline."
+  }
+]

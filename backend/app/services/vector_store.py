@@ -18,11 +18,24 @@ _STOP_WORDS = {
 }
 
 
+def _fmt_vec(v: List[float]) -> str:
+    """List -> pgvector text literal, e.g. '[0.1,0.2]'."""
+    return "[" + ",".join(repr(float(x)) for x in v) + "]"
+
+
+def _parse_vec(s: str) -> List[float]:
+    """pgvector text literal -> list."""
+    return [float(x) for x in s.strip("[]").split(",")] if s else []
+
+
 class InMemoryVectorStore:
     """
-    In-memory RAG store for MVP. Drop-in replaceable with pgvector:
-    swap search() to use pg vector_cosine_ops index and initialize()
-    to INSERT chunks into PostgreSQL instead of a list.
+    RAG store. Chunk metadata is held in memory (small, deterministic seed set);
+    embeddings are persisted to Postgres/pgvector when DATABASE_URL is set, so they
+    survive restarts and aren't recomputed (and cost re-paid) on every boot.
+
+    search() stays synchronous (in-process cosine) so callers are unchanged; the
+    pgvector table is the durable cache + basis for SQL-side search at larger scale.
     """
 
     def __init__(self):
@@ -35,13 +48,49 @@ class InMemoryVectorStore:
             data = json.load(f)
 
         self.chunks = [TranscriptChunk(**item) for item in data]
-        print(f"Computing embeddings for {len(self.chunks)} transcript chunks...")
+        self._embeddings = []
 
+        if os.getenv("DATABASE_URL") and embedding_service.use_openai:
+            try:
+                await self._init_with_pgvector()
+                return
+            except Exception as e:  # noqa: BLE001 — DB/driver missing (e.g. in the MCP venv) → degrade
+                print(f"Vector store: pgvector path unavailable ({e}); using in-memory embeddings.")
+                self._embeddings = []
+
+        print(f"Computing embeddings for {len(self.chunks)} transcript chunks (in-memory)...")
         for chunk in self.chunks:
-            emb = await embedding_service.embed(chunk.text)
+            self._embeddings.append(await embedding_service.embed(chunk.text))
+        print(f"Vector store ready — {len(self.chunks)} chunks indexed (in-memory).")
+
+    async def _init_with_pgvector(self):
+        """Reuse persisted embeddings; only embed (and store) chunks not yet cached."""
+        from app.services.db import get_pool
+
+        pool = await get_pool()
+        rows = await pool.fetch(
+            "select chunk_id, embedding::text as emb from rag_chunks where embedding is not null"
+        )
+        cached = {r["chunk_id"]: _parse_vec(r["emb"]) for r in rows}
+
+        newly = 0
+        for chunk in self.chunks:
+            emb = cached.get(chunk.chunk_id)
+            if emb is None:
+                emb = await embedding_service.embed(chunk.text)
+                await pool.execute(
+                    """insert into rag_chunks (chunk_id, text, meta, embedding)
+                       values ($1, $2, $3, $4::vector)
+                       on conflict (chunk_id)
+                       do update set text = $2, meta = $3, embedding = $4::vector""",
+                    chunk.chunk_id, chunk.text,
+                    chunk.model_dump(exclude={"embedding"}), _fmt_vec(emb),
+                )
+                newly += 1
             self._embeddings.append(emb)
 
-        print(f"Vector store ready — {len(self.chunks)} chunks indexed.")
+        print(f"Vector store ready — {len(self.chunks)} chunks "
+              f"({newly} newly embedded, {len(self.chunks) - newly} from pgvector cache).")
 
     def search(
         self,

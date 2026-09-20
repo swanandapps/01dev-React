@@ -11,7 +11,9 @@ class EmbeddingService:
         if self.use_openai:
             try:
                 from openai import AsyncOpenAI
-                self.client = AsyncOpenAI(api_key=self.api_key)
+                from app.services.tracing import maybe_trace
+                # timeout + bounded exponential-backoff retries (SDK-native)
+                self.client = maybe_trace(AsyncOpenAI(api_key=self.api_key, timeout=30.0, max_retries=3))
                 print("EmbeddingService: using OpenAI text-embedding-3-small")
             except ImportError:
                 self.use_openai = False

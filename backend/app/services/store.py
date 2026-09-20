@@ -2,15 +2,17 @@
 Document datastore used by the student-facing AI features (study guides,
 questions, quiz sessions, concept performance, knowledge graph, recommendations).
 
-In production it talks to Firestore via the Firebase Admin SDK. Locally — or
-anywhere a service-account credential is absent — it falls back to an in-memory
-store so the features remain fully testable without Firebase. This mirrors the
-graceful-degradation pattern already used by EmbeddingService / AnswerGenerator.
+In production it talks to Postgres (Neon) via asyncpg. Firestore is still
+supported as an alternative backend; locally — or anywhere no persistent backend
+is configured — it falls back to an in-memory store so the features remain fully
+testable. This mirrors the graceful-degradation pattern already used by
+EmbeddingService / AnswerGenerator.
 
-Credential resolution (first hit wins):
-  1. FIREBASE_SERVICE_ACCOUNT_JSON  — the service-account JSON as a string (Render-friendly)
-  2. GOOGLE_APPLICATION_CREDENTIALS — path to a service-account JSON file
-  3. otherwise -> in-memory store (with a loud warning)
+Backend resolution (first hit wins):
+  1. DATABASE_URL                   — Postgres (Neon) via asyncpg  [production]
+  2. FIREBASE_SERVICE_ACCOUNT_JSON  — the service-account JSON as a string
+  3. GOOGLE_APPLICATION_CREDENTIALS — path to a service-account JSON file
+  4. otherwise -> in-memory store (with a loud warning; data NOT persisted)
 """
 
 import asyncio
@@ -46,6 +48,64 @@ class InMemoryStore:
 
     async def delete(self, collection: str, doc_id: str) -> None:
         self._col(collection).pop(doc_id, None)
+
+
+class PostgresStore:
+    """
+    Durable store backed by a single jsonb `docs(collection, doc_id, data)` table.
+    Same interface as InMemoryStore / FirestoreStore, so it's a drop-in backend.
+    Data survives restarts, crashes, and redeploys — the whole point.
+    """
+
+    async def get(self, collection: str, doc_id: str) -> Optional[dict]:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        return await pool.fetchval(
+            "select data from docs where collection=$1 and doc_id=$2", collection, doc_id
+        )
+
+    async def set(self, collection: str, doc_id: str, data: dict) -> None:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        await pool.execute(
+            """insert into docs (collection, doc_id, data) values ($1, $2, $3)
+               on conflict (collection, doc_id)
+               do update set data = $3, updated_at = now()""",
+            collection, doc_id, data,
+        )
+
+    async def update(self, collection: str, doc_id: str, changes: dict) -> None:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        # merge (upsert), mirroring FirestoreStore.set(merge=True)
+        await pool.execute(
+            """insert into docs (collection, doc_id, data) values ($1, $2, $3)
+               on conflict (collection, doc_id)
+               do update set data = docs.data || $3, updated_at = now()""",
+            collection, doc_id, changes,
+        )
+
+    async def query(self, collection: str, field: str, value: Any) -> List[dict]:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        rows = await pool.fetch(
+            "select data from docs where collection=$1 and data->>$2 = $3",
+            collection, field, str(value),
+        )
+        return [r["data"] for r in rows]
+
+    async def list_all(self, collection: str) -> List[dict]:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        rows = await pool.fetch("select data from docs where collection=$1", collection)
+        return [r["data"] for r in rows]
+
+    async def delete(self, collection: str, doc_id: str) -> None:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        await pool.execute(
+            "delete from docs where collection=$1 and doc_id=$2", collection, doc_id
+        )
 
 
 class FirestoreStore:
@@ -89,11 +149,16 @@ class FirestoreStore:
 
 
 def _init_store():
+    if os.getenv("DATABASE_URL"):
+        # Pool is created lazily on first use; construction here is synchronous.
+        print("Store: using Postgres (asyncpg) — data persisted.")
+        return PostgresStore()
+
     sa_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
     sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     if not sa_json and not sa_path:
-        print("Store: no Firebase credentials — using in-memory store (data NOT persisted).")
+        print("Store: no DATABASE_URL or Firebase credentials — using in-memory store (data NOT persisted).")
         return InMemoryStore()
 
     try:

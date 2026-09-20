@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, AlertCircle, Loader2, Bot, User, Trash2 } from "lucide-react";
 import Header from "../components/Home/Header";
 import { RagSourceCard } from "../components/rag/RagSourceCard";
-import { askQuestionStream, askQuestion } from "../lib/ragApi";
+import { askHermesStream } from "../lib/ragApi";
 import { FBgetChatHistory, FBsaveChatHistory } from "../lib/firebase";
 import { useUserSessionStore } from "../store/userSession";
 import { FeatureGlimpse } from "../components/common/FeatureGlimpse";
@@ -52,10 +52,10 @@ function loadLocalHistory(): ChatMessage[] {
 }
 
 const EXAMPLE_QUESTIONS = [
-  "Why does npm link matter while building a library?",
-  "Explain prototype inheritance simply.",
-  "What is a WebSocket handshake?",
-  "Why does V8 create hidden classes?",
+  "How does React.memo improve performance?",
+  "When should I use useCallback vs useMemo?",
+  "What is memoization in React?",
+  "WebSockets vs long-polling — what's the difference?",
 ];
 
 function EmptyState({ onQuestion }: { onQuestion: (q: string) => void }) {
@@ -138,17 +138,23 @@ export default function AskPage() {
     }
   }, [messages, isStreaming, hydrated, uid]);
 
-  const submit = (question: string) => {
+  const runTutor = (
+    question: string,
+    opts: { allowGeneral?: boolean; addUserBubble?: boolean } = {},
+  ) => {
     const q = question.trim();
     if (!q || isStreaming) return;
+    const { allowGeneral = false, addUserBubble = true } = opts;
 
     const assistantId = generateId();
     setMessages((prev) => [
       ...prev,
-      { id: generateId(), role: "user", content: q, timestamp: new Date() },
-      { id: assistantId, role: "assistant", content: "", streaming: true, timestamp: new Date() },
+      ...(addUserBubble
+        ? [{ id: generateId(), role: "user" as const, content: q, timestamp: new Date() }]
+        : []),
+      { id: assistantId, role: "assistant" as const, content: "", streaming: true, timestamp: new Date() },
     ]);
-    setInput("");
+    if (addUserBubble) setInput("");
     setIsStreaming(true);
 
     const patch = (changes: Partial<ChatMessage>) =>
@@ -159,53 +165,55 @@ export default function AskPage() {
     const finishError = (msg: string) =>
       patch({ content: msg, insufficient_context: true, streaming: false });
 
-    // If streaming is unavailable (e.g. backend mid-deploy without /stream),
-    // fall back to the non-streaming endpoint so the assistant still answers.
-    const fallbackNonStreaming = async () => {
-      try {
-        const data = await askQuestion(q);
-        patch({
-          content: data.answer,
-          sources: data.sources,
-          insufficient_context: data.insufficient_context,
-          streaming: false,
-        });
-      } catch (err) {
-        finishError(
-          `Something went wrong: ${(err as Error).message}. Make sure the RAG backend is running.`,
-        );
-      } finally {
-        setIsStreaming(false);
-      }
-    };
+    // No cloud fallback — by design. This is the SOVEREIGN tutor: if the local
+    // Hermes agent is unreachable we say so honestly rather than silently routing
+    // the question to an external provider (which would break the sovereignty
+    // guarantee). The one-word answer to "why no OpenAI fallback here?" is: trust.
+    const sovereignUnavailable = (detail: string) =>
+      finishError(
+        `The sovereign tutor is unavailable (${detail}). It runs a local model — ` +
+          `make sure the Hermes gateway (:9119) and Ollama are running, then retry.`,
+      );
 
-    askQuestionStream(q, {
-      onSources: (sources, insufficientContext) =>
-        patch({ sources, insufficient_context: insufficientContext }),
-      onToken: (token) => {
-        gotToken = true;
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + token } : m)),
-        );
+    askHermesStream(
+      q,
+      { userId: uid ?? "", courseSlug: "all-courses", allowGeneral },
+      {
+        onSources: (sources, insufficientContext, _model, offerGeneral) =>
+          patch({
+            sources,
+            insufficient_context: insufficientContext,
+            offer_general: offerGeneral,
+            general_prompt: offerGeneral ? q : undefined,
+          }),
+        onToken: (token) => {
+          gotToken = true;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + token } : m)),
+          );
+        },
+        onDone: () => {
+          patch({ streaming: false });
+          setIsStreaming(false);
+        },
+        onError: (err) => {
+          if (!gotToken) sovereignUnavailable(err.message);
+          else {
+            // Error after partial content: keep what streamed, just stop.
+            console.warn("stream interrupted:", err.message);
+            patch({ streaming: false });
+          }
+          setIsStreaming(false);
+        },
       },
-      onDone: () => {
-        patch({ streaming: false });
-        setIsStreaming(false);
-      },
-      onError: (err) => {
-        if (!gotToken) return void fallbackNonStreaming();
-        // Error after partial content: keep what streamed, just stop.
-        console.warn("stream interrupted:", err.message);
-        patch({ streaming: false });
-        setIsStreaming(false);
-      },
-    }).catch(() => {
-      // Request never produced tokens (e.g. /stream 404 during deploy) → fall back.
-      if (!gotToken) return void fallbackNonStreaming();
-      patch({ streaming: false });
+    ).catch((err) => {
+      if (!gotToken) sovereignUnavailable((err as Error).message);
+      else patch({ streaming: false });
       setIsStreaming(false);
     });
   };
+
+  const submit = (question: string) => runTutor(question);
 
   const clearHistory = () => {
     if (isStreaming) return;
@@ -263,7 +271,7 @@ export default function AskPage() {
         <div className="px-6 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
           <div>
             <h1 className="text-base font-semibold text-zinc-100">Course Assistant</h1>
-            <p className="text-xs text-zinc-500">Grounded answers from indexed lectures</p>
+            <p className="text-xs text-zinc-500">Sovereign local model · grounded, cited &amp; audited</p>
           </div>
           <div className="flex items-center gap-3">
             {messages.length > 0 && (
@@ -277,8 +285,8 @@ export default function AskPage() {
                 Clear
               </button>
             )}
-            <span className="text-xs text-zinc-600 bg-zinc-800 px-2.5 py-1 rounded-full border border-zinc-700">
-              RAG · semantic search
+            <span className="text-xs text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/50">
+              Sovereign · Hermes
             </span>
           </div>
         </div>
@@ -328,6 +336,17 @@ export default function AskPage() {
                             )}
                           </p>
                         </div>
+                      )}
+                      {!msg.streaming && msg.offer_general && msg.general_prompt && (
+                        <button
+                          onClick={() =>
+                            runTutor(msg.general_prompt!, { allowGeneral: true, addUserBubble: false })
+                          }
+                          disabled={isStreaming}
+                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/40 rounded-lg px-3 py-2 transition-colors disabled:opacity-50"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Answer from general knowledge
+                        </button>
                       )}
                       {!msg.streaming && msg.sources && msg.sources.length > 0 && (
                         <div className="mt-3">

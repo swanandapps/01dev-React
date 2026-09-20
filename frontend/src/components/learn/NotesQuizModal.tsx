@@ -3,10 +3,16 @@ import {
   X, Upload, FileText, Loader2, Check, XCircle, ChevronRight,
   RotateCcw, Sparkles, NotebookPen,
 } from "lucide-react";
-import {
-  uploadText, uploadPdf, startLesson, approveLesson, submitResult, askTutor,
-  type LessonView, type Objective, type Question, type Difficulty,
-} from "../../lib/notesQuizApi";
+import * as quizApi from "../../lib/notesQuizApiLang";
+import type { LessonView, Objective, Question, Difficulty } from "../../lib/notesQuizApi";
+
+/** The QuizMe backend client. Default = the sovereign LangGraph service.
+ *  (The Mastra client in notesQuizApi.ts is retained only as the code reference /
+ *  shared type source — nothing in the app calls it anymore.) */
+export type QuizApi = Pick<
+  typeof quizApi,
+  "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor"
+>;
 
 type InputMode = "text" | "pdf";
 type Step = "input" | "loading" | "plan" | "quizzing" | "complete";
@@ -22,9 +28,11 @@ const diffBadge: Record<Difficulty, string> = {
 export function NotesQuizModal({
   onClose,
   variant = "modal",
+  api = quizApi,
 }: {
   onClose: () => void;
   variant?: "modal" | "page";
+  api?: QuizApi;
 }) {
   const [mode, setMode] = useState<InputMode>("text");
   const [notes, setNotes] = useState("");
@@ -97,15 +105,15 @@ export function NotesQuizModal({
       let docId: string;
       if (mode === "pdf") {
         if (!pdfFile) throw new Error("Please choose a PDF file.");
-        const r = await uploadPdf(pdfFile);
+        const r = await api.uploadPdf(pdfFile);
         docId = r.docId;
       } else {
         const text = notes.trim() || topic.trim();
         if (!text) throw new Error("Please enter some notes or a topic.");
-        const r = await uploadText(text, topic.trim() || undefined);
+        const r = await api.uploadText(text, topic.trim() || undefined);
         docId = r.docId;
       }
-      const view = await startLesson(docId);
+      const view = await api.startLesson(docId);
       applyLesson(view);
     } catch (e) {
       setError((e as Error).message);
@@ -120,7 +128,7 @@ export function NotesQuizModal({
     setError("");
     setPlanBusy(true);
     try {
-      const view = await approveLesson(lesson.id, valid, perQuiz);
+      const view = await api.approveLesson(lesson.id, valid, perQuiz);
       applyLesson(view);
     } catch (e) {
       setError((e as Error).message);
@@ -145,7 +153,7 @@ export function NotesQuizModal({
     if (correct && last) {
       setQuizBusy(true);
       try {
-        const view = await submitResult(lesson.id, firstTry + 1, lesson.quiz.questions.length);
+        const view = await api.submitResult(lesson.id, firstTry + 1, lesson.quiz.questions.length);
         applyLesson(view);
       } catch (e) {
         setError((e as Error).message);
@@ -168,7 +176,7 @@ export function NotesQuizModal({
     setTutorBusy(true);
     setTutorA("");
     try {
-      const { answer } = await askTutor(lesson.id, tutorQ.trim());
+      const { answer } = await api.askTutor(lesson.id, tutorQ.trim());
       setTutorA(answer);
     } catch {
       setTutorA("Couldn't reach the tutor right now. Try again.");

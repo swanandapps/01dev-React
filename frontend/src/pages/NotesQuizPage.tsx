@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Sparkles, NotebookPen } from "lucide-react";
+import { Sparkles, NotebookPen, ShieldCheck } from "lucide-react";
 import Header from "../components/Home/Header";
 import { NotesQuizModal } from "../components/learn/NotesQuizModal";
 
@@ -18,6 +18,9 @@ export default function NotesQuizPage() {
             <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wide">
               <Sparkles className="w-3.5 h-3.5" /> AI Feature
             </div>
+            <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/50">
+              <ShieldCheck className="w-3.5 h-3.5" /> LangGraph · Sovereign
+            </span>
           </div>
           <h1 className="text-2xl font-bold text-zinc-100 mb-2">QuizMe</h1>
           <p className="text-sm text-zinc-500 leading-relaxed max-w-lg">

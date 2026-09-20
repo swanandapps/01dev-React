@@ -1,22 +1,23 @@
 import json
 from typing import AsyncIterator
 
-from app.models import AskRequest, AskResponse, SourceCard
-from app.services.vector_store import vector_store
-from app.services.embeddings import embedding_service
+from app.models import AskRequest, AskResponse
 from app.services.answer_generator import answer_generator
 from app.services import knowledge_graph_service
-
-INSUFFICIENT_CONTEXT_ANSWER = (
-    "The course content does not contain enough information to answer this question. "
-    "This assistant only answers questions about the indexed course material."
+from app.services.grounding import (
+    retrieve,
+    build_sources,
+    answer_grounded,  # noqa: F401 — canonical grounded answer, re-exported for callers/tools
+    INSUFFICIENT_CONTEXT_ANSWER,
 )
+
+# Back-compat: main.py imports `_build_sources` from here.
+_build_sources = build_sources
 
 
 async def ask(request: AskRequest) -> AskResponse:
-    query_embedding = await embedding_service.embed(request.question)
-    results = vector_store.search(query_embedding, top_k=5, query_text=request.question)
-
+    # Reuses the shared retrieval; keeps this route's knowledge-graph enrichment.
+    results = await retrieve(request.question, top_k=5)
     if not results:
         return AskResponse(
             answer=INSUFFICIENT_CONTEXT_ANSWER,
@@ -24,14 +25,12 @@ async def ask(request: AskRequest) -> AskResponse:
             insufficient_context=True,
             model="retrieval-only",
         )
-
     answer, model_name = await answer_generator.generate(
         request.question, results, await _graph_context(results)
     )
-
     return AskResponse(
         answer=answer,
-        sources=_build_sources(results),
+        sources=build_sources(results),
         insufficient_context=False,
         model=model_name,
     )
@@ -39,8 +38,7 @@ async def ask(request: AskRequest) -> AskResponse:
 
 async def ask_stream(request: AskRequest) -> AsyncIterator[str]:
     """Server-Sent Events stream: a `sources` event, then `token` events, then `done`."""
-    query_embedding = await embedding_service.embed(request.question)
-    results = vector_store.search(query_embedding, top_k=5, query_text=request.question)
+    results = await retrieve(request.question, top_k=5)
 
     if not results:
         yield _sse({"type": "sources", "sources": [], "insufficient_context": True, "model": "retrieval-only"})
@@ -49,7 +47,7 @@ async def ask_stream(request: AskRequest) -> AsyncIterator[str]:
         yield _sse({"type": "done"})
         return
 
-    sources = [s.model_dump() for s in _build_sources(results)]
+    sources = [s.model_dump() for s in build_sources(results)]
     yield _sse({
         "type": "sources",
         "sources": sources,
@@ -66,23 +64,6 @@ async def ask_stream(request: AskRequest) -> AsyncIterator[str]:
         return
 
     yield _sse({"type": "done"})
-
-
-def _build_sources(results) -> list[SourceCard]:
-    return [
-        SourceCard(
-            course_id=r.chunk.course_id,
-            course_title=r.chunk.course_title,
-            lecture_id=r.chunk.lecture_id,
-            lecture_title=r.chunk.lecture_title,
-            timestamp=_fmt_time(r.chunk.start_time),
-            start_time=r.chunk.start_time,
-            end_time=r.chunk.end_time,
-            snippet=r.chunk.text[:220] + "…",
-            score=round(r.score, 3),
-        )
-        for r in results
-    ]
 
 
 async def _graph_context(results) -> str:
@@ -112,8 +93,3 @@ async def _graph_context(results) -> str:
 
 def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
-
-
-def _fmt_time(seconds: int) -> str:
-    m, s = divmod(seconds, 60)
-    return f"{m:02d}:{s:02d}"

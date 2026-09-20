@@ -1,0 +1,27 @@
+[
+  {
+    "question": "what is a closure in javascript?",
+    "reference_tools": ["search_course_content"],
+    "note": "Concept question → the agent should ground it in course material via search_course_content, then answer."
+  },
+  {
+    "question": "what is the event loop in javascript?",
+    "reference_tools": ["search_course_content"],
+    "note": "Concept question → same expected path. (Historically the 3B model mis-routed this to generate_notes/process_pdf.)"
+  },
+  {
+    "question": "Here's my lecture text, please make study notes from it: Promises represent the eventual completion of an async operation and can be pending, fulfilled, or rejected.",
+    "reference_tools": ["generate_notes"],
+    "note": "Student SUPPLIES their own text and asks for notes → generate_notes is correct here (NOT search_course_content). Positive case for the sharpened description."
+  },
+  {
+    "question": "Quiz me on this: A closure is a function bundled with its lexical scope, letting it access variables from an outer function after that function has returned.",
+    "reference_tools": ["generate_quiz"],
+    "note": "Student supplies text and asks to be quizzed → generate_quiz is correct. Positive case."
+  },
+  {
+    "question": "what did we cover in our last session?",
+    "reference_tools": ["search_history"],
+    "note": "Refers to a PAST conversation → search_history is correct (NOT search_course_content). Positive case."
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "question": "What does the npm link command do?",
+    "gold_chunk_ids": ["custom-lib-8-1-a", "custom-lib-8-1-c"],
+    "gold_answer": "npm link lets you test your library locally inside another project without publishing to npm, by creating a global symlink to your library."
+  },
+  {
+    "question": "Why is npm link a two-step process?",
+    "gold_chunk_ids": ["custom-lib-8-1-b"],
+    "gold_answer": "First you run `npm link` inside the library directory to register a global link, then `npm link <name>` in the consuming project to use it."
+  },
+  {
+    "question": "What is prototype inheritance in JavaScript?",
+    "gold_chunk_ids": ["js-deep-4-1-a"],
+    "gold_answer": "It is the mechanism by which JavaScript objects inherit properties and methods from other objects; every object has a prototype it can delegate to."
+  },
+  {
+    "question": "Is prototype inheritance copying or delegation?",
+    "gold_chunk_ids": ["js-deep-4-1-b"],
+    "gold_answer": "Delegation, not copying — if a property isn't on the object, JavaScript looks it up along the prototype chain."
+  },
+  {
+    "question": "Are JavaScript classes real classes or prototype-based?",
+    "gold_chunk_ids": ["js-deep-4-1-c"],
+    "gold_answer": "The class keyword is syntactic sugar over prototype-based inheritance; it's still prototypes under the hood."
+  },
+  {
+    "question": "How does a WebSocket connection start?",
+    "gold_chunk_ids": ["web-apis-2-2-a"],
+    "gold_answer": "It starts with a handshake that begins as a regular HTTP GET request with an upgrade header."
+  },
+  {
+    "question": "What HTTP status does the server send to accept a WebSocket upgrade?",
+    "gold_chunk_ids": ["web-apis-2-2-b"],
+    "gold_answer": "HTTP 101 Switching Protocols."
+  },
+  {
+    "question": "Why does V8 use hidden classes?",
+    "gold_chunk_ids": ["js-deep-5-1-a"],
+    "gold_answer": "V8 uses hidden classes to optimize property access on objects."
+  },
+  {
+    "question": "How do you write V8-friendly code?",
+    "gold_chunk_ids": ["js-deep-5-1-c"],
+    "gold_answer": "Initialize all object properties in the constructor in the same order every time, and don't add new properties later."
+  },
+  {
+    "question": "What is memoization?",
+    "gold_chunk_ids": ["react-perf-3-2-a"],
+    "gold_answer": "Caching the result of an expensive computation and returning the cached result when the same inputs occur again, instead of recomputing."
+  },
+  {
+    "question": "What is the difference between useMemo and useCallback?",
+    "gold_chunk_ids": ["react-perf-3-2-b"],
+    "gold_answer": "useMemo memoizes a computed value; useCallback memoizes a function reference."
+  },
+  {
+    "question": "Which queue do Promises use in the event loop?",
+    "gold_chunk_ids": ["js-deep-6-1-b"],
+    "gold_answer": "The microtask queue, which is higher priority and drained after every task before the event loop continues."
+  },
+  {
+    "question": "What is long-polling?",
+    "gold_chunk_ids": ["web-apis-3-1-a"],
+    "gold_answer": "A pre-WebSocket real-time trick where the client sends an HTTP request and the server holds it open until it has data, then responds."
+  },
+  {
+    "question": "How does React.memo work?",
+    "gold_chunk_ids": ["react-perf-4-1-a"],
+    "gold_answer": "It wraps a component and skips the re-render when the component's props are shallowly equal to the previous render."
+  }
+]

@@ -1,0 +1,850 @@
+======================================================================================================
+  SESSION LOG
+  tool         : claude-code (anthropic)
+  project      : 01dev-React
+  feature      : RAG Learning Assistant
+  session      : 2026-06-12T09:14:32Z
+  note         : Representative AI collaboration session — research through production
+======================================================================================================
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  01 — Research & Problem Framing
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:14:34] user
+before we build anythig — who specifically is the student using this. not a generic persona, give me
+          a real one
+
+[09:14:43] assistant
+Two profiles dominate. Primary: second-year CS student, 2–3 courses active simultaneously, studies
+          in 45–90 min blocks, mostly laptop but switches to mobile for quick lookups, 4–6 tabs open
+          while studying. Secondary: working professional taking upskill courses, studies late
+          evening, 20–30 min sessions, higher intent but less time. The primary user is who'll
+          stress-test the system — context-switching, interruptions, half-formed questions. Build
+          for her and the rest follows.
+
+[09:15:01] user
+and wat does that student actually do rite now when they have a question mid-lecture. walk me thru
+          the exact 5 minutes
+
+[09:15:13] assistant
+They pause the video. Open a new tab. Type something fragmented — 'how does async work python' not
+          'how does async work in the context of the event loop chapter I just watched.' Land on
+          Stack Overflow. Read something slightly off-topic. Get pulled into a rabbit hole or give
+          up. Return to the video 8–15 minutes later having partially answered the question and
+          completely lost the thread of what they were learning.
+
+[09:15:35] user
+so the cost isnt just time. its losing the learning context entirely. how long does it take to get
+          back into flow state after an interruption
+
+[09:15:43] assistant
+Gloria Mark's research at UC Irvine: average return-to-focus time is 23 minutes after an
+          interruption. For learning specifically the compounding effect is worse — the concept they
+          were building toward needs the preceding 10 minutes of context to land. Break that chain
+          and the new concept doesn't stick. The interruption isn't just a delay, it's a
+          comprehension hit.
+
+[09:16:13] user
+so the real product value isnt answering questions. its keeping students in the learning context
+
+[09:16:19] assistant
+Exactly. The metric that matters isn't 'questions answered' — it's 'minutes of uninterrupted
+          learning preserved.' The assistant is a context anchor. The answer is secondary to not
+          breaking the student's current mental model.
+
+[09:16:59] user
+ok but research on desirable difficulty says struggle improves retention. if we just give answers
+          immediately are we actually hurting learning outcomes
+
+[09:17:09] assistant
+Yes — this is Robert Bjork's work. Immediate correct answers reduce long-term retention compared to
+          effortful retrieval, even failed retrieval. The nuance: it's question-type dependent.
+          Factual lookup ('what is the syntax for X') benefits from immediate answers. Conceptual
+          understanding ('why does X work this way') benefits from guided discovery. Your assistant
+          needs to distinguish these and respond differently to each.
+
+[09:17:34] user
+so two modes. direct answer for factual, socratic for conceptual. how do we classify which is which
+          without overcomplicating it
+
+[09:17:45] assistant
+Query classification at input. Conceptual signals: 'why', 'how does', 'explain', comparisons, cause-
+          effect questions. Factual signals: 'what is', 'show me', 'syntax for', 'how do I'.
+          Classify with a keyword heuristic for v1 — get it right 80% of the time, 20%
+          misclassification is acceptable, students can prompt for a different mode. Log
+          misclassification complaints — that's your training data for a better classifier.
+
+[09:18:20] user
+have we looked at khanmigo and google learnlm before deciding this. i dont want to rebuild wat
+          already exists
+
+[09:18:29] assistant
+Khanmigo: Socratic-only, refuses direct answers. Strong pedagogically but users report frustration —
+          sometimes you just need the answer to move forward. LearnLM: Google's fine-tuned model for
+          learning contexts, better at pedagogical framing, but generic. Neither integrates with the
+          student's actual course material. That's the real gap — both are general tutors. Neither
+          knows what the student studied this week, in this course, up to this specific moment.
+
+[09:18:51] user
+so our differentiator is curriculum scoping. the assistant knows exactly wat theyre studying right
+          now
+
+[09:18:58] assistant
+That, and temporal context. Not just 'this course' but 'the specific concept they were learning when
+          they asked.' Retrieval should weight recent course progress higher than older content. A
+          student 20 minutes into the async chapter shouldn't be getting answers grounded in content
+          from 3 weeks ago.
+
+[09:19:42] user
+last research question before architecture. how do students fail with current tools. not wat they
+          say in surveys — wat do they DO
+
+[09:19:54] assistant
+Observational pattern from learning analytics research: they ask questions too vague to get useful
+          results, get a generic answer, then either (a) accept it and move on without actual
+          understanding, or (b) give up. The 'give up' users don't come back. The 'accept it' users
+          show up in assessments with surface-level knowledge that breaks under follow-up questions.
+          Both are silent failures — no error state, no signal to the platform that learning didn't
+          happen.
+
+[09:19:57] judge:arch
+          checking : research phase completeness before architecture decision
+          verdict  : PASS
+          notes    : Product hypothesis grounded in specific research (Bjork desirable difficulty,
+                     Gloria Mark flow state). Competitive differentiation is concrete. One gap: no
+                     validation that 01DEV's actual user base matches this persona. Recommend:
+                     validate session length and query patterns against platform analytics before
+                     architecture commit. Don't design for an assumed user.
+
+[09:20:47] user
+before we go to architecture — is this even a RAG problem or should we fine-tune a model on our
+          content
+
+[09:21:01] assistant
+Different tools. Fine-tuning bakes knowledge into weights — good for tone and style, bad for factual
+          recall: fine-tuned models still hallucinate, and when course content updates you retrain.
+          RAG retrieves from a live index — knowledge is always current, sources are verifiable, new
+          content is live without touching the model. For a learning platform where curriculum
+          evolves, RAG is right. Fine-tuning on top of RAG for pedagogical style is the long-term
+          play, not the starting point.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  02 — Architecture Decisions
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:21:31] user
+embedding models. ada-002 vs 3-small vs 3-large vs open source like e5 or bge. give me real
+          tradeoffs not marketing copy
+
+[09:21:44] assistant
+ada-002: 1536 dims, solid baseline, being deprecated. text-embedding-3-small: better MTEB scores,
+          $0.00002/1K tokens, supports Matryoshka dimension reduction. text-embedding-3-large: 3072
+          dims, highest quality, 5x the storage. E5-large/BGE-M3: open source, self-hosted, no per-
+          token cost, competitive with 3-small on retrieval benchmarks. Under 2M chunks: 3-small is
+          pragmatic. Above that, BGE-M3 on your own infra starts making economic sense.
+
+[09:22:12] user
+matryoshka embeddings — is that actually useful or just a cool name
+
+[09:22:20] assistant
+It's real. OpenAI reports 1–2% accuracy drop truncating 1536-dim vectors to 256 dims. At 512 dims
+          you're using 67% less storage and HNSW queries are meaningfully faster. Worth using if
+          storage cost is a constraint — use 512-dim truncated vectors and fall back to full 1536
+          only if you measure retrieval degradation in eval.
+
+[09:22:55] user
+vector store. pgvector vs dedicated. at wat scale does pgvector actually become a problem
+
+[09:23:06] assistant
+pgvector HNSW starts showing latency degradation around 5–10M vectors at high concurrency (50+ QPS).
+          Below that, with tuned index parameters, you stay under 20ms p95. The earlier bottleneck:
+          write performance during bulk ingestion — HNSW doesn't support concurrent writes well. For
+          a learning platform adding content periodically, manageable. Review checkpoint at 1M
+          vectors — benchmark then, decide if Qdrant or Weaviate buys you anything real.
+
+[09:23:26] user
+small-to-big retrieval — explain with one concrete example
+
+[09:23:35] assistant
+Student asks 'what is a deadlock?' Your index has 128-token chunks. Retrieved chunk: 'A deadlock
+          occurs when two processes each hold a resource the other needs.' Correct but thin. Small-
+          to-big: each small chunk has a parent_chunk_id pointing to its 512-token parent. When you
+          retrieve the small chunk, you pass the parent to the LLM. Same retrieval precision, the
+          LLM now has the definition plus surrounding explanation of why it matters. One column in
+          the schema enables this entirely.
+
+[09:24:01] user
+hybrid search BM25 plus vector — how do we actually combine the scores. theyre on different scales
+
+[09:24:09] assistant
+Reciprocal Rank Fusion. Rank each result list independently, combine ranks via 1/(k + rank). No
+          score normalization needed — handles the scale mismatch automatically. Linear combination
+          requires calibrating alpha and normalizing scores. Learned fusion is best quality but most
+          complex. RRF matches learned fusion within a few percentage points on most retrieval
+          benchmarks and requires zero calibration. Start here.
+
+[09:24:39] user
+reranking — cross encoders. wen does it help and wat does it cost
+
+[09:24:49] assistant
+Retrieve top-50 with vector search, rerank to top-5 with cross-encoder. Gain: 5–15% improvement in
+          precision. Cost: 50–200ms added latency. Worth it when your corpus has many similar-
+          looking chunks where bi-encoder similarity can't distinguish relevance. For structured
+          curriculum content — less ambiguous by nature — the gain is smaller. Measure retrieval
+          precision first. Add reranking only when you identify it as the specific failure mode.
+
+[09:25:11] user
+HyDE — what is it and should we use it here
+
+[09:25:20] assistant
+Hypothetical Document Embeddings. Instead of embedding the raw query, generate a hypothetical answer
+          first, then embed that. The hypothetical answer is in the same semantic space as your
+          document chunks, so retrieval is more accurate than embedding a terse question. Measured
+          gains: 10–30% on retrieval benchmarks for short or ambiguous queries. Cost: one additional
+          small-model call per query, 50–100ms. Worth it for conceptual queries. Skip for factual
+          lookups where the query is already precise.
+
+[09:25:23] judge:arch
+          checking : architecture stack — embedding, chunking, retrieval, hybrid search
+          verdict  : PASS
+          notes    : Small-to-big correctly identified as high-value low-complexity for v1. RRF
+                     for hybrid fusion is the right pragmatic call. Reranking correctly deferred.
+                     HyDE included. One gap: no discussion of query-side spelling correction.
+                     Student queries on mobile are often misspelled — 'asnyc' vs 'async' will miss
+                     BM25 retrieval entirely. Add lightweight spell-correct pass on raw query
+                     before retrieval.
+
+[09:25:53] user
+context window management. 5 chunks plus system prompt plus conversation history — how do we budget
+          this
+
+[09:26:03] assistant
+Treat the window as a fixed resource with explicit allocation. For GPT-4o-mini (128K): 2K system
+          prompt, 3K conversation history (last 4 turns), 4K retrieved context (5 chunks), 1K
+          generation budget. The discipline: never let retrieved context crowd out conversation
+          history. History carries the student's current understanding — it's what makes the tutor
+          feel continuous. Chunks are replaceable each turn. History is not.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  03 — Security & Data
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:26:41] user
+security. multi tenant — different courses, students, instructors. wat are the actual threat
+          vectors. dont skip any
+
+[09:26:55] assistant
+Four surfaces. One: retrieval boundary violation — student in course A retrieves course B content
+          they're not enrolled in. Two: prompt injection — crafted message overrides system context
+          or extracts other session data. Three: embedding inversion — if the vector store is
+          compromised, inversion attacks can approximately reconstruct source text from vectors
+          (Morris et al. 2023, 60–80% word accuracy on short chunks). Four: generation abuse —
+          jailbreaking via educational framing.
+
+[09:27:15] user
+retrieval boundary — enforce this at the data layer not the API layer
+
+[09:27:24] assistant
+Every chunk gets metadata: course_id, access_tier. Every query is filtered at the vector search
+          level — WHERE clause applied in pgvector before ANN search, not after. This runs at the
+          database level, not application code. Application-level post-retrieval filtering can be
+          bypassed by bugs or race conditions. Database-level filtering is a hard boundary — the
+          wrong chunks never appear in the result set at all. Never rely on the LLM to decide what
+          to include from retrieved context.
+
+[09:27:49] user
+prompt injection — its largely unsolved right. wat can we actually do practically
+
+[09:28:00] assistant
+Mitigatable in layers. One: input validation — detect and sanitize known injection patterns. Catches
+          naive attempts, not sophisticated ones. Two: system prompt hardening — never include
+          sensitive data in the system prompt; if extracted, attacker finds nothing useful. Three:
+          output filtering — check whether the response contains content outside the student's
+          enrolled curriculum before returning. Four: per-session rate limiting — limits systematic
+          extraction even if injection partially succeeds.
+
+[09:28:22] user
+embedding inversion — i hadnt thought about this. how real is this for us specifically
+
+[09:28:32] assistant
+More real than most teams realize. For short chunks under 100 tokens, inversion accuracy is highest
+          — precisely what we're storing. For a platform with proprietary or licensed course
+          content, this is an IP risk if the vector store is compromised. Mitigations: store
+          embeddings in a separate access-controlled store from raw chunks. Encrypt at rest. Never
+          embed content you'd be uncomfortable having partially reconstructed — student PII,
+          instructor private notes, licensed verbatim text.
+
+[09:28:35] judge:arch
+          checking : security model completeness for multi-tenant RAG
+          verdict  : FLAG
+          notes    : Embedding inversion correctly flagged — rare to see this raised proactively.
+                     Two gaps: (1) No rate limiting per user to prevent systematic extraction via
+                     many small semantically varied queries. (2) FERPA compliance — if US-based
+                     students are involved and queries are logged with user IDs, those logs may
+                     constitute education records requiring specific access controls and deletion
+                     rights. Neither is a blocker but both must be addressed before production
+                     student data enters the system.
+
+[09:28:55] user
+FERPA — are we actually in scope for this
+
+[09:29:03] assistant
+If you have US-based students and store any PII linked to education records, yes. FERPA covers quiz
+          scores, course enrollment, learning history. Key question: does the RAG system log queries
+          associated with user IDs? If yes, those logs are potentially education records.
+          Practically: hash or pseudonymize user ID in query logs, or route analytics through a
+          separate anonymized pipeline that's FERPA-safe by design.
+
+[09:29:33] user
+data retention. embeddings, conversation history, query logs. wat are our defaults
+
+[09:29:42] assistant
+Separate policies by data type. Embeddings: permanent until model version change forces reindex.
+          Source chunks: tied to course lifecycle, delete when course is retired. Conversation
+          history: session-scoped by default, opt-in for cross-session memory. Query logs: 90 days
+          raw, then aggregate and anonymize. User-facing: students can delete their conversation
+          history on demand. Required under GDPR for EU users and increasingly expected under CCPA.
+
+[09:30:10] user
+if a student uploads their own notes — who owns that and can it leak to other students
+
+[09:30:20] assistant
+Student-uploaded content goes into a per-user private index, never merged with shared curriculum
+          index. Retrieval searches the student's personal index AND shared curriculum, never
+          another student's personal index. Ownership: student retains it, platform gets a license
+          for retrieval within that student's sessions only. This needs to be in Terms of Service,
+          not just the architecture. A technical boundary without a legal boundary still creates
+          liability.
+
+[09:30:52] user
+cache — if two students ask the same question, could one student's session data leak through a
+          shared cache entry
+
+[09:31:01] assistant
+Cache key structure: course_id + content_version + query_hash — no user_id. Two students asking the
+          same curriculum question hit the same cache entry, which is fine — the answer doesn't
+          change per student. What must not share cache keys: anything including conversation
+          history (user-specific) or anything from a student's personal document index. Separate
+          cache namespaces for these. Shared cache is for curriculum Q&A only.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  04 — User Behavior & Edge Cases
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:31:03] context:USER_BEHAVIOR.md
+Session: 20–40 min active. Enters mid-course. Questions cluster around current topic. 2–3 follow-ups
+          per session before moving on. Uses assistant to avoid watching lectures. 34% mobile
+          sessions. 18% re-entry rate after 48h. Most common drop: after a failed or unhelpful
+          answer. Users rarely rate responses explicitly.
+
+[09:31:28] user
+18% re-entry after 48 hours is low. if they come back 3 days later their context is gone. wat does
+          that experience look like
+
+[09:31:38] assistant
+Two continuity levels. Short-term (same day): conversation persists in browser state, restore
+          without a server round-trip. Medium-term (within 7 days): persist last N turns server-
+          side, 'resume your session' on return. Beyond 7 days: don't restore a stale conversation —
+          confusing and probably irrelevant. Instead show a topic summary: 'Last time you were
+          studying async programming and asked about deadlocks. Pick up there?' Uses stored
+          metadata, not raw conversation history.
+
+[09:32:00] user
+34% mobile. does that change the architecture or just the UI
+
+[09:32:08] assistant
+Both. Mobile users have a 3-second abandon threshold vs 5–7 for desktop. Streaming responses are
+          non-negotiable on mobile — first token under 1 second. Also: mobile users ask shorter,
+          more fragmented queries. Your query preprocessing (spelling correction, HyDE for
+          conceptual) matters more for this cohort than for desktop.
+
+[09:32:43] user
+student who keeps asking the same thing differently because they genuinely dont understand. thats a
+          signal not noise
+
+[09:32:54] assistant
+Most important signal in the system. Keep a running list of question embeddings per session (max
+          20). Cosine similarity check on each new message — similarity > 0.85 to any prior question
+          triggers approach switch. Don't rephrase the same explanation, that never works. Change
+          modality: if you explained with text, switch to a step-by-step example. The system should
+          detect the stuck pattern and adapt, not repeat itself.
+
+[09:33:22] user
+how do we detect semantic similarity per session without a full embedding comparison on every
+          message
+
+[09:33:31] assistant
+One embedding per message (already done for retrieval), then a fast dot product against a small in-
+          session list (max 20 vectors). Total added compute: under 5ms per turn. Session-local
+          state, no database write, evict after session ends. If you don't instrument this from day
+          one you'll have no idea how many students are silently stuck on the same concept — it's
+          invisible without this signal.
+
+[09:34:01] user
+student uploads a textbook PDF they dont have rights to. we cant police copyright but we have
+          liability exposure
+
+[09:34:11] assistant
+Technical mitigations reduce but don't eliminate exposure. File size limit discourages bulk uploads.
+          Rate limit on user uploads. Most importantly: user-uploaded content stays in per-user
+          private index — never redistributed. Copyright liability stays with the user if content
+          isn't redistributed from the platform. Clear Terms of Service stating user responsibility.
+          Maintain the platform-as-conduit distinction architecturally.
+
+[09:34:49] user
+wat if the model generates something factually wrong about a topic a student is studying for an exam
+
+[09:34:59] assistant
+Two-layer response. Technical: citations alongside every answer make the source verifiable — student
+          can check the underlying chunk. Faithfulness failures are detectable and loggable. Policy:
+          clear disclaimer in UI that the assistant is a study aid, not a substitute for course
+          materials or instructor judgment. The technical citation layer is the stronger protection
+          — transparent sourcing is harder to argue against than a buried TOS disclaimer.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  05 — Implementation
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:35:44] user
+ok lets actually build. data model first. all tables all columns no shortcuts
+
+[09:35:58] assistant
+Six tables.
+courses       : id, title, track_id, access_tier, created_at, archived_at
+documents     : id, course_id, title, source_type, raw_content_url, content_hash, status, created_at
+chunks        : id, document_id, parent_chunk_id (nullable), text, token_count, position_index,
+          metadata jsonb
+embeddings    : id, chunk_id, vector vector(512), model_id, created_at
+conversations : id, user_id, course_id, topic_summary, started_at, last_active_at
+messages      : id, conversation_id, role, content, retrieved_chunk_ids int[], faithfulness_score
+          float,
+query_type (factual/conceptual), created_at
+
++ user_documents / user_chunks / user_embeddings — same schema, scoped to user_id instead of
+          course_id
+
+[09:36:13] user
+why content_hash on documents
+
+[09:36:19] assistant
+Deduplication. Instructor uploads the same PDF twice — or edits and reuploads — you don't re-embed
+          blindly. Hash the content on ingest. Hash matches existing document in same course: skip
+          processing entirely. Partial match (same file, different version): diff at chunk level,
+          re-embed only changed chunks. Reindexing a 200-page textbook is expensive. Hash-based
+          dedup is a one-line check that saves significant compute over time.
+
+[09:36:59] user
+ingestion pipeline. full design — not pseudocode, actual flow
+
+[09:37:12] assistant
+Async queue-based. Upload endpoint: validate (MIME type, file size, user permissions) -> store raw
+          file in object storage -> enqueue job with {document_id, storage_path, course_id}. Return
+          immediately with job_id. Worker pipeline: fetch file -> extract text (pdf-parse for PDF,
+          Whisper for video, passthrough for markdown) -> validate extraction (empty? image-only?
+          minimum length?) -> chunk with overlap -> batch embed (100 chunks per API call) -> write
+          chunks and embeddings -> mark document indexed. On failure: dead letter queue -> alert ->
+          document.status = 'failed' with error_reason. Never block the upload response on
+          processing.
+
+[09:37:32] user
+pdf-parse fails on scanned documents. image-only PDFs. wat then
+
+[09:37:41] assistant
+Detect early. After extraction: text length under 100 characters for a document over 1 page =
+          probably scanned. For v1: fail fast with a clear user message — 'This PDF appears to be
+          scanned. Please upload a text-based PDF or paste your content directly.' Don't silently
+          produce near-empty extraction. Downstream hallucinations from bad context are worse than a
+          clear error. OCR is v2.
+
+[09:38:19] user
+the query handler. end to end. wat happens between student sends message and first token arrives
+
+[09:38:34] assistant
+Step 1 : classify query type (factual/conceptual) — keyword heuristic, <10ms
+Step 2 : for conceptual, run HyDE (generate hypothetical answer, embed that)
+for factual, embed query directly
+Step 3 : hybrid search — pgvector ANN filtered by enrolled course_ids + BM25 via pg_trgm, RRF fusion
+Step 4 : small-to-big expansion — fetch parent chunks for all retrieved small chunks
+Step 5 : deduplicate (same parent appearing via multiple children -> include once)
+Step 6 : check session state — repeated concept? flag for approach switch
+Step 7 : assemble context with chunks + last 4 conversation turns
+Step 8 : stream generation via SSE
+Step 9 : async faithfulness check on completed response — log everything
+
+[09:38:56] user
+step 9 is async — so we show the response before we know if its faithful. wat if it fails after the
+          student already read it
+
+[09:39:06] assistant
+Show immediately, append caveat if faithfulness fails: 'I want to flag I'm not confident this is
+          fully grounded in your course material — please verify.' Better UX for an educational
+          assistant where the harm floor is low. Hard exception: if query touches a flagged category
+          (medical, legal, financial) — don't generate at all for those, regardless of latency cost.
+
+[09:39:34] user
+API design. REST vs streaming vs both. wat does the SSE event structure look like
+
+[09:39:46] assistant
+Both. REST for management: POST /conversations, GET /conversations/:id/messages, DELETE
+          /conversations/:id,
+POST /documents. SSE for query responses at POST /conversations/:id/query.
+
+SSE event sequence:
+event: chunks_found  data: {chunk_ids, sources}     // UI shows 'Searching your async chapter...'
+event: token         data: {text}                    // per token in stream
+event: done          data: {faithfulness_score, citations: [{chunk_id, text, source_title}]}
+
+[09:40:18] user
+conversation memory. full history vs summarization
+
+[09:40:27] assistant
+Progressive summarization. Turns 1–4: verbatim in context. Turns 5–12: summarize older turns with a
+          fast model — 'Student learned about event loops, asked about deadlocks. Misconception:
+          confused OS-level and application-level locking.' Turn 12+: keep summary + last 4
+          verbatim. This preserves what matters pedagogically without burning context budget on old
+          message text. Store summary in conversations.topic_summary.
+
+[09:40:52] user
+citations in the UI — how do we surface them without cluttering the reading experience
+
+[09:41:00] assistant
+Inline footnote numbers, expandable on click. [1][2] superscripts in response text — don't interrupt
+          reading flow. Collapsed 'Sources' section below expands to show chunk text + document
+          title + page/timestamp. On mobile: tap superscript for a bottom sheet. Citations must be
+          verifiable, not decorative. If a student can tap [1] and see the exact sentence from their
+          lecture notes that grounded the answer, the assistant earns trust.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  06 — Testing & Evaluation
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:41:02] context:TESTING.md
+Framework: functional correctness, boundary behavior, failure modes, regression surface. AI outputs
+          need probabilistic acceptance — thresholds not exact matches. Judge agents must be
+          stateless, deterministic given same inputs, run in under 2s. Coverage targets: retrieval
+          90%, generation 80%, integration 70%. All evals runnable on every PR.
+
+[09:41:33] user
+testing the retrieval layer. how do we know if retreival is actually good vs just feels good
+
+[09:41:44] assistant
+Golden retrieval set: 100–200 question-chunk pairs where you know the correct chunks for each
+          question. Metrics: precision@5 (how many top-5 chunks are relevant), recall@5 (of all
+          relevant chunks, how many in top 5), MRR (where does first relevant chunk appear). Run on
+          every schema or config change. Baseline + regression threshold: precision@5 drops more
+          than 5% = block the merge. Suite runs in minutes, automate it.
+
+[09:42:06] user
+how do we build those question-chunk pairs without spending weeks
+
+[09:42:15] assistant
+Synthetic generation. For each chunk: 'Generate 3 specific questions a student might ask where this
+          chunk would be the ideal answer.' Store (question, chunk_id) pairs. Human-review 20% to
+          remove bad pairs. 500 pairs in an afternoon. Synthetic bias risk: LLM generates questions
+          in its own phrasing, not how students actually ask. Mitigate by replacing 30% of synthetic
+          pairs with real user queries after 2 weeks in production.
+
+[09:42:43] user
+testing the generation layer. acceptance criteria. a correct answer isnt a string match
+
+[09:42:54] assistant
+LLM-as-judge with structured rubric. Four axes, 1–3 scale each: (1) Faithfulness — answer stays
+          within retrieved context. (2) Correctness — factually accurate per the chunks. (3)
+          Pedagogical quality — helps the student understand, not just informs. (4) Scope —
+          addresses what was asked without over-explaining. Pass threshold: average >= 2.5, no
+          single axis below 1.5. Run nightly against 50 fixed query-response pairs.
+
+[09:43:18] user
+the judge itself could be wrong or biased. how do we validate the judge
+
+[09:43:28] assistant
+Meta-evaluation. Build 30–40 responses with high-confidence human labels: clear passes and clear
+          failures. Run the judge against these, measure judge accuracy — below 85% means the judge
+          is unreliable, fix it before trusting it. Also: run multiple judge calls on the same
+          response at temperature > 0, measure variance. High variance on the same response = judge
+          is uncertain, lower confidence in that evaluation. Audit 10% of judge outputs weekly.
+
+[09:43:58] user
+regression testing. a prompt change breaks something that was working. how do we catch that before
+          it ships
+
+[09:44:08] assistant
+Shadow eval on every PR touching retrieval config, prompt, or embedding model. Run full eval suite
+          against main and the branch, diff the results. Block merge if any metric regresses beyond
+          threshold. The discipline: never merge prompt changes without running eval. 'It's just a
+          minor wording change' is how regressions ship. Minor prompt changes cause major behavior
+          shifts — the eval suite is the only way to know which direction.
+
+[09:44:30] user
+query classifier testing. factual vs conceptual. we need to test that specifically
+
+[09:44:38] assistant
+50-query classification test set, manually labeled. Run against the classifier on every change
+          touching classification logic. Measure precision and recall separately per class — a
+          classifier that's 95% accurate by always predicting 'factual' is useless if 40% of real
+          queries are conceptual. Log misclassification complaints from users explicitly — these
+          become training data for a better classifier.
+
+[09:45:10] user
+load testing. how many concurrent users and how do we measure it
+
+[09:45:21] assistant
+Test two bottlenecks separately. Retrieval: pgvector ANN is CPU-bound — measure p50/p95/p99 at 10,
+          50, 100 concurrent queries. Generation: test SSE connection stability under concurrent
+          streaming load — 100 users streaming simultaneously stresses your event loop, not just the
+          LLM API. Tool: k6 with realistic query distribution. Target: p95 first-token latency under
+          2s at 50 concurrent users.
+
+[09:45:46] user
+load test with realistic queries — how do we get those before we have real users
+
+[09:45:55] assistant
+Generate from course content. For each major concept in curriculum, create 5 plausible student
+          questions at varying complexity — factual and conceptual, well-formed and typo-ridden
+          (representing mobile users). 10 concepts × 5 questions = 50 queries. Use the same
+          synthetic set built for retrieval eval. The point: stress-test with queries that exercise
+          the full pipeline, not synthetic load that bypasses the interesting parts.
+
+[09:46:23] user
+wat do we do wen the LLM API is down
+
+[09:46:33] assistant
+Graceful degradation in layers. Layer 1: retry with exponential backoff, 2 attempts at 1s and 3s.
+          Layer 2: check response cache — if same query answered recently with high faithfulness,
+          return cached. Layer 3: return retrieval-only — raw chunk text with no generation, labeled
+          clearly. Layer 4: retrieval also degraded — clear error with expected resolution time.
+          Each layer gives the user something rather than a broken experience.
+
+[09:46:36] judge:arch
+          checking : testing strategy completeness
+          verdict  : PASS
+          notes    : Meta-evaluation of the judge is a non-obvious inclusion — correct and
+                     important. Shadow eval on PRs is the right gate. Query classifier test set
+                     added correctly. One remaining gap: no E2E integration test covering the full
+                     path from student query to citation in the UI. Unit tests on individual
+                     components won't catch pipeline integration failures. Add one E2E test per
+                     critical user journey.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  07 — Performance & Optimizations
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:47:13] user
+latency. target is first token under 1 second. where does time actually go in our pipeline
+
+[09:47:27] assistant
+Typical breakdown:
+query classification            20–50ms
+query embedding (API call)      80–150ms
+pgvector ANN search              5–20ms
+BM25 search                     10–30ms
+RRF fusion                        ~1ms
+small-to-big parent fetch        5–10ms
+context assembly                  ~1ms
+LLM first token                300–800ms
+─────────────────────────────────────────
+total to first token           420–1060ms
+
+Two dominant costs: embedding API call and LLM first token. Priority: parallelize embedding
+and BM25 (independent operations), cache frequent query embeddings, use a faster model for
+first-token — GPT-4o-mini and Claude Haiku are 2–3x faster than full-size models.
+
+[09:47:49] user
+parallelize embedding and BM25 — show me how that works in the handler
+
+[09:47:57] assistant
+They're independent operations. Node: Promise.all([embedQuery(text), bm25Search(text, courseIds)]).
+          Python async: asyncio.gather(embed_query(text), bm25_search(text, course_ids)). Embedding
+          result feeds into ANN search, BM25 only needs raw text — both land at roughly the same
+          time, then RRF fusion on combined lists. This alone saves 80–150ms — the embedding call no
+          longer blocks BM25. For a sub-1-second target that's material.
+
+[09:48:27] user
+caching. wat exactly do we cache and at wat levels
+
+[09:48:37] assistant
+Three layers. One: query embedding cache — hash query string, store embedding, 24h TTL in Redis.
+          Two: retrieval results cache — (course_id + content_version + query_hash -> chunk_ids), 1h
+          TTL, invalidate on content update via version counter. Three: response cache for common
+          questions — 'what is a deadlock' asked by 500 students hits cache after the first answer.
+          Layer 3 is highest value at scale — common curriculum questions have very high repeat
+          rates. Instrument cache hit rates from day one.
+
+[09:48:59] user
+content_version for cache invalidation — how do we track it without a distributed lock problem
+
+[09:49:07] assistant
+Per-course version counter, no locking needed. Postgres: UPDATE courses SET content_version =
+          content_version + 1 WHERE id = $1 RETURNING content_version. Atomic increment, no race
+          condition possible. Store current version in Redis for fast reads. When content updates:
+          increment Postgres first, write new version to Redis. Old cache entries become unreachable
+          (wrong version in key) and expire via TTL. Simple, no invalidation bugs.
+
+[09:49:35] user
+context compression — 5 chunks at 800 tokens. can we compress before sending to the LLM
+
+[09:49:45] assistant
+LLMLingua class of techniques. Token-level classifier predicts which tokens the LLM needs, removes
+          low-probability ones. LLMLingua-2 (Microsoft, open source) achieves 4x compression with
+          under 5% quality drop on most benchmarks. Risk: classifier makes mistakes on domain-
+          specific technical vocabulary. Use with caution in v1 — add in v2 once you have baseline
+          quality metrics to compare against.
+
+[09:50:13] user
+model routing — cheaper model for simple questions. how do we decide which query gets which model
+
+[09:50:22] assistant
+Complexity signals: factual + short + single concept -> Haiku/GPT-4o-mini. Conceptual + multi-part +
+          synthesis -> Sonnet/GPT-4o. Upgrade triggers: 'why', 'explain', 'compare', query length >
+          20 words, follow-up to prior conceptual question. The router should be a fast heuristic —
+          not another LLM call. Keyword rules + query length + classification label from step 1. Log
+          which model handled which query alongside faithfulness scores — tells you if thresholds
+          need adjustment.
+
+[09:50:25] judge:arch
+          checking : cost optimization strategy
+          verdict  : CONDITIONAL PASS
+          notes    : Model routing by query complexity is correct. Gap: no discussion of how to
+                     determine complexity reliably at routing time without being expensive itself.
+                     A lightweight complexity classifier is needed — not another LLM call. Also
+                     missing: per-course budget caps to prevent runaway costs from a misconfigured
+                     ingestion job or a single heavy user.
+
+[09:50:57] user
+embedding model upgrade wen we want to move to a better model — how do we do it without downtime
+
+[09:51:07] assistant
+Blue-green reindex. Keep existing index live and serving. Build new index in a shadow table in
+          parallel — model_id column on embeddings makes this possible. Once shadow index is fully
+          built: run retrieval eval suite against both. If new index wins by threshold, update a
+          config flag pointing retrieval to the new table. Keep old table 48h for rollback. Zero-
+          downtime. The model_id column is load-bearing for this operation.
+
+[09:51:39] user
+token cost at scale. 10k daily active users 5 queries each. how do we think about this
+
+[09:51:50] assistant
+50K queries/day. Embedding: ~$0.10/day (negligible). Generation with routing: 70% factual -> Haiku,
+          30% conceptual -> Sonnet. Average context 800 input + 200 generation tokens. Haiku: 35K x
+          1K = ~$8.75. Sonnet: 15K x 1K = ~$45. Total: ~$54/day, ~$1,620/month. With 30% cache hit
+          rate: ~$1,130/month. Every query correctly routed to Haiku instead of Sonnet saves 10x.
+          Monitor cost-per-query by type and tune routing thresholds.
+
+[09:52:15] user
+reranking at scale — cross encoders add latency. lighter option
+
+[09:52:24] assistant
+ColBERT-style late interaction. Encodes query and document separately at token level — each query
+          token interacts with each document token via MaxSim. 10x faster than full cross-encoders,
+          approaches their accuracy. Can self-host. Cohere Rerank API with aggressive batching
+          (top-20 not top-50) also keeps added latency under 100ms. Pragmatic question first: if
+          retrieval precision@5 is already above 0.80, what specific failure mode are you solving?
+          Measure, then add.
+
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+  08 — Monitoring & Observability
+──────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[09:52:59] user
+instrumentation. wat is non-negotiable from day one. not nice to have — the things where if we dont
+          have them we're flying blind
+
+[09:53:12] assistant
+Non-negotiable from day one:
+
+(1) end-to-end query latency — p50/p95/p99 broken down by stage (classify, embed, retrieve,
+          generate)
+without stage breakdown you cannot diagnose where degradation originates
+(2) retrieval hit rate — % of queries returning at least one chunk above similarity threshold 0.7
+low hit rate = index problems, not a model problem
+(3) faithfulness score distribution — not just average
+bimodal (many 3s AND many 1s) is more dangerous than a uniform 2.0
+(4) error rate by type — extraction failures, embedding API errors, generation timeouts
+(5) cache hit rate per layer — tells you if caching is actually working
+
+[09:53:40] user
+user satisfaction signal. they wont rate every response. how do we get implicit signal
+
+[09:53:50] assistant
+Implicit signals are more reliable than explicit ratings. Track: follow-up question (user asks
+          another = engaged), copy action (user copies text = found it useful enough to keep),
+          lecture resumption within 60 seconds of asking (confusion resolved), repeat question on
+          same concept within 24h (didn't understand the first answer), session length trend. Build
+          a composite engagement score from these. More honest than a 5-star rating 80% of users
+          skip.
+
+[09:54:20] user
+alerting. wat pages someone at 2am vs wat waits for morning
+
+[09:54:31] assistant
+2am (human action required right now):
+- query error rate > 10% for 5 minutes — service is broken for users
+- LLM API completely unavailable with no cache covering it — students getting nothing
+- ingestion queue backed up > 500 jobs for 30+ minutes — content failing at scale
+
+morning (important, not emergency):
+- faithfulness daily average drops > 0.3 from 7-day baseline — quality regression
+- retrieval hit rate below 0.6 — index health issue
+- daily cost exceeds budget threshold — financial alert
+
+principle: page someone only when human action right now improves user experience
+
+[09:55:06] user
+feedback loop. how does production data make the system better over time. i dont want to build this
+          and forget it
+
+[09:55:18] assistant
+Flywheel by design. Week 1–4: collect real query logs, retrieval results, responses, implicit
+          engagement signals. Week 4: analyze — which queries have low retrieval hit rates? Which
+          cause session abandonment? Which repeat within a session (stuck students)? This becomes
+          your first real eval set grounded in actual usage. Month 2: use low-satisfaction pairs to
+          identify specific failures, fix them. Month 3: with enough volume, fine-tune the query
+          classifier on your actual distribution. The system gets better because you defined the
+          feedback loop from day one — not as an afterthought.
+
+[09:55:56] user
+go/no-go criteria for production. wat does ready to ship actually mean for this system
+
+[09:56:10] assistant
+Checklist:
+retrieval     precision@5 > 0.75 on golden eval set
+generation    faithfulness > 2.5, correctness > 2.5 on judge eval
+latency       p95 first token < 1.5s at 50 concurrent users
+security      multi-tenant isolation verified (not assumed), prompt injection suite passing
+reliability   graceful degradation tested at each failure layer — API down, retrieval down, both
+          down
+observability all non-negotiable metrics live, at least one alert configured and tested
+rollout       staged plan ready — 5% -> 20% -> 100% with observation period at each gate
+rollback      defined trigger: if abandonment rate increases > 15% vs pre-RAG baseline within
+48h of launch, rollback immediately
+
+not on the checklist: perfect answers
+ship when it's good enough, fast enough, and safe enough — then measure and improve
+
+[09:56:13] judge:arch
+          checking : go-live readiness criteria completeness
+          verdict  : PASS
+          notes    : Criteria are specific and measurable — no vague clauses. Staged rollout plan
+                     included. Rollback trigger defined with a concrete metric. One addition:
+                     include a manual data integrity audit before launch — verify no cross-course
+                     retrieval leakage for a test set of queries from unenrolled students. Run it
+                     once before the 5% gate opens.
+
+
+======================================================================================================
+  END OF SESSION
+  ended        : 2026-06-12T09:56:15Z
+  duration     : 41 minutes
+  exchanges    : 150 (approx)
+  judge runs   : 7
+  ctx injected : 2  (USER_BEHAVIOR.md, TESTING.md)
+======================================================================================================

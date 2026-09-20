@@ -12,7 +12,9 @@ class AnswerGenerator:
         if self.api_key:
             try:
                 from openai import AsyncOpenAI
-                self.client = AsyncOpenAI(api_key=self.api_key)
+                from app.services.tracing import maybe_trace
+                # timeout + bounded exponential-backoff retries (SDK-native)
+                self.client = maybe_trace(AsyncOpenAI(api_key=self.api_key, timeout=60.0, max_retries=3))
                 print("AnswerGenerator: using gpt-4.1-mini")
             except ImportError:
                 print("AnswerGenerator: openai package not found, using local fallback")
@@ -37,23 +39,22 @@ class AnswerGenerator:
         """Yield answer tokens as they are produced."""
         context = self._build_context(results) + extra_context
         if self.client:
-            stream = await self.client.chat.completions.create(
-                model="gpt-4.1-mini",
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"Educational context:\n\n{context}\n\nStudent question: {question}",
-                    },
-                ],
-                temperature=0.3,
-                max_tokens=800,
-                stream=True,
-            )
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content
-                if delta:
-                    yield delta
+            try:
+                stream = await self.client.chat.completions.create(
+                    model="gpt-4.1-mini",
+                    messages=self._messages(question, context),
+                    temperature=0.3,
+                    max_tokens=800,
+                    stream=True,
+                    stream_options={"include_usage": True},  # so LangSmith gets token/cost
+                )
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta.content if chunk.choices else None
+                    if delta:
+                        yield delta
+            except Exception as e:  # noqa: BLE001 — degrade gracefully mid-stream
+                print(f"[answer_generator] stream failed: {e}")
+                yield "The assistant is temporarily unavailable. Please try again in a moment."
         else:
             # Local fallback: emit the excerpt word-by-word so the UI still streams.
             text = self._local_generate(question, results)
@@ -69,20 +70,27 @@ class AnswerGenerator:
             )
         return "\n\n---\n\n".join(parts)
 
+    @staticmethod
+    def _messages(question: str, context: str) -> list:
+        return [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",
+             "content": f"Educational context:\n\n{context}\n\nStudent question: {question}"},
+        ]
+
     async def _openai_generate(self, question: str, context: str) -> Tuple[str, str]:
-        response = await self.client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"Educational context:\n\n{context}\n\nStudent question: {question}",
-                },
-            ],
-            temperature=0.3,
-            max_tokens=800,
-        )
-        return response.choices[0].message.content, "text-embedding-3-small + gpt-4.1-mini"
+        try:
+            response = await self.client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=self._messages(question, context),
+                temperature=0.3,
+                max_tokens=800,
+            )
+            return response.choices[0].message.content, "text-embedding-3-small + gpt-4.1-mini"
+        except Exception as e:  # noqa: BLE001 — degrade gracefully, no 500
+            print(f"[answer_generator] generation failed: {e}")
+            return ("The assistant is temporarily unavailable. Please try again in a moment.",
+                    "unavailable")
 
     def _local_generate(self, question: str, results: List[SearchResult]) -> str:
         top = results[0].chunk

@@ -20,7 +20,10 @@ class LLM:
         if self.api_key:
             try:
                 from openai import AsyncOpenAI
-                self.client = AsyncOpenAI(api_key=self.api_key)
+                from app.services.tracing import maybe_trace
+                # traced like the other clients so content generation (study guides,
+                # questions, quiz/notes → MCP tools) shows up in LangSmith too.
+                self.client = maybe_trace(AsyncOpenAI(api_key=self.api_key))
             except ImportError:
                 print("LLM: openai package not found.")
 

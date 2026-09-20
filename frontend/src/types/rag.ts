@@ -23,13 +23,21 @@ export interface ChatMessage {
   content: string;
   sources?: RagSourceCard[];
   insufficient_context?: boolean;
+  offer_general?: boolean;   // out of scope — show "answer from general knowledge" button
+  general_prompt?: string;   // the question to re-ask with consent
   streaming?: boolean;
   timestamp: Date;
 }
 
-// Maps RAG course_id slugs to numeric platform course IDs
+// Maps RAG course_id slugs (backend corpus) → numeric platform course IDs (tracks.ts),
+// so a source card deep-links to /course/{id}?t={start_time} and seeks the video.
 export const RAG_COURSE_MAP: Record<string, number> = {
-  "custom-library": 2,
+  // Slugs the current transcript corpus actually emits → their course pages.
+  "custom-library": 2, // Build a Custom Library (has recorded video → full seek)
+  "javascript-deep-dive": 9, // JavaScript Deep Dive
+  "web-apis": 10, // Web APIs and Real-Time
+  "react-perf": 11, // React Performance Patterns
+  // Other platform courses — mapped for when their transcripts are seeded.
   "programming-language": 1,
   "product-engineering": 4,
   "state-management": 5,
