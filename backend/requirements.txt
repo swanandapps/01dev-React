@@ -5,6 +5,7 @@ openai==1.58.1
 python-dotenv==1.0.1
 httpx==0.28.1
 razorpay==1.4.1
+setuptools<81  # razorpay imports pkg_resources; removed from setuptools>=81, not bundled at all on Python 3.12+ base images
 firebase-admin==6.5.0
 asyncpg==0.31.0
 langsmith==0.10.6
