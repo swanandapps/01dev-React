@@ -31,6 +31,9 @@ from app.services import (
     eval_service, gepa_service, grounding, context_builder, pii,
 )
 from app.services.otel import get_tracer, init_tracing
+from app.routing.intent import Intent, classify
+from app.routing.quiz_handoff import build_handoff_message
+from app.routing.progress_handoff import build_progress_message
 
 # The reliable tutor talks to OpenAI in production (managed hosting has no local
 # Ollama). Set TUTOR_PROVIDER=ollama to use the local sovereign model in dev.
@@ -231,15 +234,47 @@ async def hermes_chat(req: Request):
     # reaches any downstream surface. (regex tier; Presidio is the drop-in upgrade.)
     question, pii_kinds = pii.scrub(question)
 
+    intent = classify(question)
+
     # OTel parent span for the whole request (no-op unless tracing configured).
     # Started manually + ended in gen()'s finally so it spans the streamed generation.
     tracer = get_tracer()
     span = tracer.start_span("hermes_chat")
     span.set_attribute("course_slug", course_slug)
     span.set_attribute("agentic", agentic)
+    span.set_attribute("intent", intent.value)
     span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])  # hashed, no PII
     if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
         span.set_attribute("pii_redacted", ",".join(pii_kinds))
+
+    if intent in (Intent.QUIZ_GENERATE, Intent.PROGRESS_LOOKUP):
+        if intent == Intent.QUIZ_GENERATE:
+            outcome, model_label = "quiz_handoff", "rule-based-router"
+            message = build_handoff_message(course_slug)
+        else:
+            outcome, model_label = "progress_handoff", "rule-based-router"
+            message = await build_progress_message(student_id)
+
+        span.set_attribute("outcome", outcome)
+        await audit_service.log_event(
+            student_id=student_id, course_slug=course_slug, question=question,
+            model=model_label, provider="none",
+        )
+
+        async def gen_handoff():
+            try:
+                yield f"data: {json.dumps({'type': 'sources', 'sources': [], 'insufficient_context': False, 'offer_general': False})}\n\n"
+                for word in message.split(" "):
+                    yield f"data: {json.dumps({'type': 'token', 'value': word + ' '})}\n\n"
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            finally:
+                span.end()
+
+        return StreamingResponse(
+            gen_handoff(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
 
     # Resolve which engine answers — audit must record the TRUE model/provider.
     if agentic:
