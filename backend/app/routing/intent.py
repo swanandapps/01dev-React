@@ -22,11 +22,11 @@ class Intent(str, Enum):
 # review of past performance, not a request to be quizzed. Progress rules
 # must win that overlap, so they're matched before the quiz rules below.
 _PROGRESS_PATTERNS = [
-    re.compile(r"\bmy\s+\w+\s+(progress|journey|streak|strengths?|weakness(es)?)", re.I),
-    re.compile(r"\bmy\s+(progress|journey|streak|strengths?|weakness(es)?)", re.I),
+    re.compile(r"\bmy\s+\w+\s+(progress|journey|streak|strengths?|weakness(es)?)\b", re.I),
+    re.compile(r"\bmy\s+(progress|journey|streak|strengths?|weakness(es)?)\b", re.I),
     re.compile(r"\bhow\s+(am\s+i|did\s+i)\s+(doing|do)\b", re.I),
     re.compile(r"\bam\s+i\s+(improving|getting\s+better)\b", re.I),
-    re.compile(r"\bshow\s+me\s+my\s+\w+\s+(progress|journey|stats)", re.I),
+    re.compile(r"\bshow\s+me\s+my\s+\w+\s+(progress|journey|stats)\b", re.I),
     re.compile(r"\bshow\s+me\s+my\s+(progress|journey|stats)\b", re.I),
 ]
 
@@ -51,10 +51,10 @@ def classify(question: str) -> Intent:
     for pattern in _QUIZ_PATTERNS:
         if pattern.search(q):
             return Intent.QUIZ_GENERATE
-    # Detect gibberish: single word with mostly consonants (low vowel ratio)
-    if " " not in q:
+    # Detect gibberish: single word, minimum 8 chars, and very low vowel ratio
+    if " " not in q and len(q) >= 8:
         vowels = len(re.findall(r"[aeiouAEIOU]", q))
         vowel_ratio = vowels / len(q) if q else 0
-        if vowel_ratio < 0.25:  # Less than 25% vowels suggests gibberish
+        if vowel_ratio < 0.20:  # Less than 20% vowels in long single-word input suggests gibberish
             return Intent.OUT_OF_SCOPE
     return Intent.COURSE_QUESTION
