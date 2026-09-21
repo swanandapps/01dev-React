@@ -1,16 +1,21 @@
 """
 One-off seed: populates real progress/mastery/memory data for the operator's
-own account (swanandkadam828@gmail.com / Firebase uid x94FcfXU7KRrobyOA4UHDukbRoC2)
-so the demo has something real to query — grounded ONLY in the actual seed
-transcript content (backend/app/data/seed_transcripts.json), never invented
-facts, so nothing the tutor later says about this history is fabricated.
+own account so the demo has something real to query — grounded ONLY in the
+actual seed transcript content (backend/app/data/seed_transcripts.json),
+never invented facts, so nothing the tutor later says about this history is
+fabricated.
 
 Firestore enrollment (PrevCourses) is handled separately via the REST API +
 gcloud access token, not here — this script only touches Postgres.
 
-Run once: backend/.venv/bin/python scripts/seed_demo_account.py
+Two real Firebase accounts exist for the operator (swanandkadam828@gmail.com
+and beingswanand@gmail.com) — seeded both since it wasn't clear which one a
+given browser session is actually signed in as, and re-running is idempotent.
+
+Run: backend/.venv/bin/python scripts/seed_demo_account.py <student_id>
 """
 import asyncio
+import sys
 from datetime import datetime, timedelta, timezone
 
 from dotenv import load_dotenv
@@ -18,7 +23,7 @@ load_dotenv()
 
 from app.services.store import store  # noqa: E402
 
-STUDENT_ID = "x94FcfXU7KRrobyOA4UHDukbRoC2"  # the frontend's `currentuser.uid` — the actual key every endpoint uses
+STUDENT_ID = sys.argv[1] if len(sys.argv) > 1 else "x94FcfXU7KRrobyOA4UHDukbRoC2"
 
 
 def _iso(days_ago: float) -> str:
