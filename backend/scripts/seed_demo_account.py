@@ -173,7 +173,14 @@ async def seed_turns(course_slug: str, turns: list[tuple]) -> None:
 
 async def seed_quiz_sessions() -> None:
     for i, (course_id, course_title, days_ago, breakdown_raw) in enumerate(QUIZ_SESSIONS):
-        session_id = f"seed-{course_id}-{i}"
+        # Scoped by STUDENT_ID — an earlier version of this script used a
+        # student-agnostic doc_id here, so seeding a second account silently
+        # overwrote the first account's quiz_sessions (store.set is an
+        # upsert keyed by doc_id). Caught via the live dashboard showing
+        # Concepts Mastered correctly (that collection IS student-scoped)
+        # but Quizzes/Streak/Avg Score all zero (quiz_sessions had been
+        # clobbered by the second run).
+        session_id = f"seed-{STUDENT_ID}-{course_id}-{i}"
         breakdown = [
             {"concept": c, "attempts": a, "correct": k, "accuracy": round(k / a, 3)}
             for c, a, k in breakdown_raw
