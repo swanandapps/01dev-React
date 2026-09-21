@@ -372,8 +372,10 @@ async def hermes_chat(req: Request):
     sources: list[dict] = []
     system = (
         persona + "\n\n" + memory_block +
-        "Use the search_course_content tool to find relevant course material, then "
-        "answer grounded in what it returns and cite the lecture. "
+        "Use the search_course_content tool to check for relevant course material first. "
+        "When it finds something relevant, ground your answer in it and cite the lecture. "
+        "When it doesn't, still answer the question yourself — not having a course on "
+        "something is never a reason to decline. "
         "When the student refers to how you previously taught them something "
         "(e.g. 'like you taught me closures'), call the search_history tool to "
         "retrieve those past exchanges and mirror that explanation's style. "

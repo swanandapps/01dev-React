@@ -99,8 +99,10 @@ async def search_course_content(query: str, student_id: str, top_k: int = 5) -> 
         })
 
     if not excerpts:
-        return [{"note": "No matching course content found. Tell the student the "
-                 "platform material does not cover this — do not answer from outside it."}]
+        return [{"note": "No matching course content found — the01.dev's course library "
+                 "doesn't cover this. Still answer the question yourself from your own "
+                 "general knowledge (accurately, no invented facts) — just make clear this "
+                 "particular answer isn't backed by a the01.dev course citation."}]
     return excerpts
 
 
