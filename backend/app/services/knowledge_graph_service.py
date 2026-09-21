@@ -79,6 +79,17 @@ async def get_prerequisites(course_id: str, concept: str) -> List[str]:
     return [r["source"] for r in rels if r.get("type") == "prerequisite_of" and r.get("target") == concept]
 
 
+async def find_course_for_concept(concept: str) -> str | None:
+    """Reverse lookup: which course this concept tag belongs to. concept_performance
+    rows are global (not course-scoped — see skill_graph_service's note on this), so
+    a caller that only has a concept name (no course_id) needs this to reach the
+    course-scoped prerequisite graph at all."""
+    for c in await store.list_all(CONCEPTS):
+        if c.get("name") == concept:
+            return c.get("course_id")
+    return None
+
+
 async def _build(course_id: str) -> None:
     try:
         meta = vector_store.get_course_meta(course_id)

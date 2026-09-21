@@ -36,6 +36,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
+    from app.services import journey_service, knowledge_graph_service
     from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")
@@ -216,6 +217,45 @@ async def get_concept_confidence(concept: str, course_id: str, student_id: str) 
             this conversation, never a different one.
     """
     return await skill_graph_service.get_prerequisite_view(student_id, course_id, concept)
+
+
+# ── Course-agnostic strengths/weaknesses (thin wrapper over journey_service) ──
+@mcp.tool()
+async def get_learning_strengths(student_id: str) -> dict:
+    """What this student is good/bad at OVERALL — use this for broad questions like
+    "what am I good at?", "what am I weak on?", "where do I need work?" that don't
+    name one specific concept or course. Do NOT use get_concept_confidence for these —
+    that tool needs one concept AND a course_id already in hand; this one needs neither.
+
+    Each weakness includes its prerequisites (from the course knowledge graph) with
+    their own accuracy, so you can connect the dots for the student — e.g. "you're
+    weak on X, and its prerequisite Y is shaky too, so start there" — the same
+    reasoning get_concept_confidence gives for one concept, applied across all of them.
+
+    Returns `strengths`/`weaknesses` (accuracy >= 0.8 counts as a strength) and
+    `concepts_attempted`. An empty result means no graded activity yet — say so
+    plainly, don't guess.
+
+    Args:
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
+    """
+    data = await journey_service.get_strengths_weaknesses(student_id)
+
+    enriched_weaknesses = []
+    for w in data["weaknesses"]:
+        course_id = await knowledge_graph_service.find_course_for_concept(w["concept"])
+        prerequisites = []
+        if course_id:
+            view = await skill_graph_service.get_prerequisite_view(student_id, course_id, w["concept"])
+            prerequisites = view["prerequisites"]
+        enriched_weaknesses.append({**w, "course_id": course_id, "prerequisites": prerequisites})
+
+    return {
+        "strengths": data["strengths"],
+        "weaknesses": enriched_weaknesses,
+        "concepts_attempted": data["concepts_attempted"],
+    }
 
 
 # ── Skill observation write (thin wrapper over skill_graph_service.record_observation) ─

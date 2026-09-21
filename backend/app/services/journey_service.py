@@ -50,6 +50,30 @@ def _part_of_day(hour: int) -> str:
     return "late nights"
 
 
+def _rank_strengths_weaknesses(practiced: list[dict]):
+    strengths = sorted([p for p in practiced if p["accuracy"] >= 0.8], key=lambda p: -p["accuracy"])[:6]
+    weaknesses = sorted([p for p in practiced if p["accuracy"] < 0.8], key=lambda p: p["accuracy"])[:6]
+    fmt = lambda p: {"concept": p["concept"], "accuracy": p["accuracy"], "attempts": p["attempts"]}
+    return strengths, weaknesses, fmt
+
+
+async def get_strengths_weaknesses(user_id: str) -> dict:
+    """Course-agnostic strengths/weaknesses — no course_id needed, since
+    concept_performance is a flat (user_id, concept) table, not scoped per
+    course (see skill_graph_service's note on this). Deliberately skips
+    get_journey's quiz_sessions aggregation and LLM narrative — this is the
+    cheap, tool-call-friendly version for "what am I good/bad at" style
+    questions that don't name a course or a specific concept."""
+    perf = await store.query("concept_performance", "user_id", user_id)
+    practiced = [p for p in perf if p.get("attempts", 0) > 0]
+    strengths, weaknesses, fmt = _rank_strengths_weaknesses(practiced)
+    return {
+        "strengths": [fmt(p) for p in strengths],
+        "weaknesses": [fmt(p) for p in weaknesses],
+        "concepts_attempted": len(practiced),
+    }
+
+
 async def get_journey(user_id: str) -> dict:
     sessions = await store.query("quiz_sessions", "user_id", user_id)
     perf = await store.query("concept_performance", "user_id", user_id)
@@ -90,9 +114,7 @@ async def get_journey(user_id: str) -> dict:
     ]
 
     # ---- strengths / weaknesses ----
-    strengths = sorted([p for p in practiced if p["accuracy"] >= 0.8], key=lambda p: -p["accuracy"])[:6]
-    weaknesses = sorted([p for p in practiced if p["accuracy"] < 0.8], key=lambda p: p["accuracy"])[:6]
-    fmt = lambda p: {"concept": p["concept"], "accuracy": p["accuracy"], "attempts": p["attempts"]}
+    strengths, weaknesses, fmt = _rank_strengths_weaknesses(practiced)
 
     # ---- AI insights ----
     ai = await _ai_insights(metrics, strengths, weaknesses, dts, sessions)
