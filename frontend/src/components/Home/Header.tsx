@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, FileText, Bot, GraduationCap, NotebookPen } from "lucide-react";
+import { Home, BookOpen, FileText, Bot, GraduationCap, FlaskConical } from "lucide-react";
 import { useUserSessionStore } from "../../store/userSession";
 import { auth, signOut } from "../../lib/firebase";
 
@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { to: "/tracks", label: "Tracks", icon: BookOpen, exact: false },
   { to: "/blogs", label: "Blogs", icon: FileText, exact: false },
   { to: "/dashboard", label: "Dashboard", icon: GraduationCap, exact: false },
-  { to: "/quizme", label: "QuizMe", icon: NotebookPen, exact: false },
+  { to: "/lab", label: "Lab", icon: FlaskConical, exact: false },
 ];
 
 export default function Header() {

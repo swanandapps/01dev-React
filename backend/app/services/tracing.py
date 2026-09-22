@@ -7,7 +7,7 @@ Wiring is opt-in via env, so it's a clean no-op until a key is present:
   LANGCHAIN_PROJECT=the01dev        (optional; groups the traces)
 
 `maybe_trace(client)` wraps an OpenAI client so its calls show up in LangSmith
-when tracing is enabled, and returns the client untouched otherwise. QuizMe
+when tracing is enabled, and returns the client untouched otherwise. Lab
 (LangGraph) auto-traces from the same env vars — no code change needed there.
 """
 import os

@@ -1,4 +1,4 @@
-"""Sovereign structured generators for the QuizMe LangGraph pipeline.
+"""Structured generators for the Lab LangGraph pipeline.
 
 Faithful re-implementation of what the Mastra/Memorang V2 agents produced —
 objectives, per-objective quizzes, a Socratic tutor nudge, and a final summary —
@@ -10,16 +10,13 @@ context only on the synchronous graph path, so nodes (and thus these calls) are
 sync. The FastAPI layer runs the graph in a threadpool, so blocking never stalls
 the event loop.
 """
+
+# Env: app.main loads backend/.env at import, before any of this package's
+# code runs, so this module does no .env loading of its own.
+
 import json
 import os
 import uuid
-from pathlib import Path
-
-from dotenv import load_dotenv
-
-# QuizMe runs as its own process and didn't load the backend env before — so it
-# never saw the OPENAI/LANGFUSE keys. Load them so it uses OpenAI and traces to Langfuse.
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")  # backend/.env
 
 from pydantic import ValidationError
 
@@ -29,7 +26,7 @@ from .schemas import Objective, PerObjective, Question, Summary
 def _make_client():
     """OpenAI in production; local model in dev (LESSON_PROVIDER=ollama).
     Uses the Langfuse-instrumented OpenAI drop-in when LANGFUSE keys are set, so
-    every QuizMe model call is traced to Langfuse."""
+    every Lab model call is traced to Langfuse."""
     if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
         from langfuse.openai import OpenAI  # drop-in → traces to Langfuse
     else:
@@ -48,7 +45,18 @@ def _make_client():
     return client, model
 
 
-_client, _MODEL = _make_client()
+# Built on first use, not at import: importing a service module must not
+# require credentials or do work. app/main.py now imports this transitively.
+_CLIENT_CACHE: tuple | None = None
+
+
+def _get_client() -> tuple:
+    """(client, model), constructed once on first call and cached."""
+    global _CLIENT_CACHE
+    if _CLIENT_CACHE is None:
+        _CLIENT_CACHE = _make_client()
+    return _CLIENT_CACHE
+
 
 DIFFICULTIES = {"beginner", "intermediate", "advanced"}
 
@@ -56,8 +64,9 @@ DIFFICULTIES = {"beginner", "intermediate", "advanced"}
 def _chat_json(system: str, user: str, max_tokens: int = 900) -> dict:
     """One JSON-mode call to the local model, with a single defensive retry."""
     for attempt in range(2):
-        resp = _client.chat.completions.create(
-            model=_MODEL,
+        client, model = _get_client()
+        resp = client.chat.completions.create(
+            model=model,
             temperature=0.4 if attempt == 0 else 0.1,
             max_tokens=max_tokens,
             response_format={"type": "json_object"},
@@ -184,56 +193,15 @@ def tutor_answer(document: str, objective: dict | None, question: str) -> str:
         "it outright — ask a guiding question or point to the concept. 2-3 sentences, plain prose."
     )
     obj = objective.get("title") if objective else "the current topic"
-    resp = _client.chat.completions.create(
-        model=_MODEL,
+    client, model = _get_client()
+    resp = client.chat.completions.create(
+        model=model,
         temperature=0.5,
         max_tokens=250,
         messages=[
             {"role": "system", "content": sys},
             {"role": "user", "content": f"OBJECTIVE: {obj}\nMATERIAL:\n{document[:2500]}\n\n"
                                         f"STUDENT ASKS: {question}"},
-        ],
-    )
-    return (resp.choices[0].message.content or "").strip()
-
-
-# ── One-shot document artifacts (notes / summary / quiz / flashcards) ─────────
-# Backs the "converts documents into structured notes, summaries, quizzes and
-# flashcards" capability — each artifact is produced by a specialized generator.
-ARTIFACT_TYPES = ["notes", "summary", "quiz", "flashcards"]
-
-_ARTIFACT_SYS = {
-    "notes": (
-        "You are a revision-notes generator. Produce 6-10 concise bullet-point notes "
-        "covering the key ideas in the material. Markdown bullets only, no preamble."
-    ),
-    "summary": (
-        "You are a study summarizer. Write a clear 4-5 sentence summary of the material. "
-        "Plain prose, no preamble, no headings."
-    ),
-    "quiz": (
-        "You are a quiz author. Write 3 multiple-choice questions testing the material. "
-        "Each has 4 answer options written out in full (never single letters), one correct. "
-        "Format each as:\nQ1. <question>\n  a) ...\n  b) ...\n  c) ...\n  d) ...\n  Answer: <letter>\n"
-        "No preamble."
-    ),
-    "flashcards": (
-        "You are a flashcard generator. Produce exactly 5 flashcards from the material, one "
-        "per line, each as 'Front: <term/question> | Back: <answer>'. No preamble."
-    ),
-}
-
-
-def gen_artifact(artifact_type: str, document: str) -> str:
-    """Generate one document artifact (notes/summary/quiz/flashcards) as text."""
-    system = _ARTIFACT_SYS.get(artifact_type, _ARTIFACT_SYS["summary"])
-    resp = _client.chat.completions.create(
-        model=_MODEL,
-        temperature=0.3,
-        max_tokens=600,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": f"MATERIAL:\n{document[:4000]}"},
         ],
     )
     return (resp.choices[0].message.content or "").strip()

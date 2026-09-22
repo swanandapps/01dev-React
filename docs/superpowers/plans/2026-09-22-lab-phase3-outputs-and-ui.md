@@ -10,7 +10,38 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-22-lab-content-pipeline-design.md`
 
-**Depends on:** Phase 1 and Phase 2 plans complete.
+**Depends on:** Phase 1 complete. ~~Phase 2~~ — **superseded 2026-09-22.** Phase 2's
+dependency was audited task-by-task and found to be sequencing only, not code coupling:
+no Phase 3 task references `concept_resolver`/`resolve`, `gen_quiz`'s `concept` field,
+the `answers`/`student_id` submit contract, `concept_performance`/`quiz_sessions`, or
+`explain_concept`. Running Phase 3 first does not invalidate Phase 2's plan text — both
+touch `routes.py` and `NotesQuizModal.tsx`, but on disjoint functions, and Phase 2's
+line hints are content-anchored. **Phase 3 runs on top of Phase 1 alone.**
+
+## Carried-in findings (read before Task 3 and Task 4)
+
+- **`doc_id` is silently dropped.** Task 4's `/generate` quiz codepath calls
+  `GRAPH.invoke(..., {"doc_id": req.docId, ...})`, but `LessonState`
+  (`backend/app/services/lab/graph.py:30`) declares no `doc_id` channel, and LangGraph
+  drops unrecognized keys without error. As written this is an inert no-op that no test
+  catches. **Add `doc_id: str` to `LessonState` as part of Task 3** rather than shipping
+  a line that appears to work and doesn't. If you deliberately choose not to, delete the
+  key from the `invoke` call instead of leaving it dangling.
+- **Parked from Phase 1, still open:** `backend/app/services/lab/routes.py`'s `/upload`
+  does `await file.read()` before the `MAX_PDF_BYTES` check, so the whole request body is
+  materialized before it can be rejected. Starlette 0.41.3's 1MB `max_file_size` is a
+  spool threshold, not a limit. Not introduced by Phase 1 and out of its scope; the fix is
+  a `Content-Length` check and/or chunked `file.read(65536)`. Fold it into Task 4 if you
+  are already editing the upload path.
+- **Netlify deploys ignore site env vars.** `netlify deploy --prod --dir=dist` publishes a
+  *locally* built bundle, and a local Vite build cannot see Netlify's site-level
+  environment variables. Building from a worktree (no `.env.local`, which is gitignored)
+  bakes `http://localhost:8080` into the bundle and silently breaks production. This
+  happened on 2026-09-22. **Pass the vars on the build command** —
+  `VITE_RAG_API_URL="https://the01dev-backend-production.up.railway.app"
+  VITE_RAZORPAY_KEY_ID="rzp_live_cXVLxzfGX16ijd" npm run build` — and after deploying,
+  verify the live bundle's API base, not just that it built. Grepping for absent strings
+  proves nothing.
 
 ## Global Constraints
 

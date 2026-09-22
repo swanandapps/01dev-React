@@ -1,9 +1,10 @@
-// LangGraph-backed QuizMe client — IDENTICAL interface to notesQuizApi.ts (the
-// Mastra/Memorang V2 client). Only the backend differs: a local sovereign
-// LangGraph service instead of the cloud Mastra service. This is the "same
-// contract, swapped stack" proof — the exact same UI drives either one.
+// Lab quiz client — IDENTICAL interface to notesQuizApi.ts (the Mastra/Memorang
+// V2 client, kept as the shared type source and reference implementation). Only
+// the backend differs: our own LangGraph flow inside the01dev-backend instead of
+// the external Mastra service. Same contract, swapped stack — the same UI drives
+// either one, which is what made the migration verifiable.
 //
-// Contract implemented by backend/lesson_service (see HERMES_HLD / mapping doc).
+// Contract implemented by backend/app/services/lab/routes.py.
 
 import type {
   LessonView, Objective,
@@ -12,7 +13,12 @@ export type {
   Difficulty, Objective, Question, Quiz, Result, Summary, LessonStatus, LessonView,
 } from "./notesQuizApi";
 
-const BASE = import.meta.env.VITE_QUIZME_LANG_URL || "http://localhost:8090";
+// Lab is served by the main backend now, not a standalone :8090 service.
+// VITE_QUIZME_LANG_URL is retained as an override for pointing at a local
+// backend during development. Strip any trailing slash so a `.../` env value
+// can't turn this into `.../ /api/lab` (a `//api/lab` that 404s everywhere).
+const RAG_API_URL = (import.meta.env.VITE_RAG_API_URL || "http://localhost:8080").replace(/\/+$/, "");
+const BASE = import.meta.env.VITE_QUIZME_LANG_URL || `${RAG_API_URL}/api/lab`;
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -22,14 +28,14 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`QuizMe (LangGraph) API error ${res.status}: ${text}`);
+    throw new Error(`Lab API error ${res.status}: ${text}`);
   }
   return res.json();
 }
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`QuizMe (LangGraph) API error ${res.status}`);
+  if (!res.ok) throw new Error(`Lab API error ${res.status}`);
   return res.json();
 }
 
@@ -43,7 +49,7 @@ export async function uploadPdf(file: File): Promise<{ docId: string }> {
   const res = await fetch(`${BASE}/upload`, { method: "POST", body: form });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`QuizMe (LangGraph) API error ${res.status}: ${text}`);
+    throw new Error(`Lab API error ${res.status}: ${text}`);
   }
   return res.json();
 }

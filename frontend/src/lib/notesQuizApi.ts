@@ -1,9 +1,10 @@
 // Typed client for the Memorang V2 (Notes Quiz) microservice on Railway (Mastra).
 //
-// RETAINED AS REFERENCE ONLY. The app now uses the sovereign LangGraph client
-// (notesQuizApiLang.ts); nothing calls these functions anymore. This file is kept
-// as the Mastra→LangGraph comparison point and the shared TYPE source that the
-// LangGraph client and NotesQuizModal import. See QUIZME_MASTRA_TO_LANGGRAPH.md.
+// RETAINED AS REFERENCE ONLY. The app now uses our own LangGraph client
+// (notesQuizApiLang.ts, served by the01dev-backend); nothing calls these
+// functions anymore. This file is kept as the Mastra->LangGraph comparison point
+// and the shared TYPE source that the LangGraph client and NotesQuizModal
+// import. Do not delete it.
 
 const BASE =
   import.meta.env.VITE_NOTES_QUIZ_URL ||

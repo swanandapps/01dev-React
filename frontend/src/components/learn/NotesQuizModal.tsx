@@ -1,19 +1,19 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  X, Upload, FileText, Loader2, Check, XCircle, ChevronRight,
-  RotateCcw, Sparkles, NotebookPen,
+  Upload, Loader2, Check, XCircle, ChevronRight, RotateCcw, Sparkles,
+  NotebookPen,
 } from "lucide-react";
-import * as quizApi from "../../lib/notesQuizApi";
+import * as quizApi from "../../lib/notesQuizApiLang";
 import type { LessonView, Objective, Question, Difficulty } from "../../lib/notesQuizApi";
 
-/** The QuizMe backend client. Reusing the existing, already-deployed Mastra/
- *  Memorang V2 service (pdf-learning-tutor-v2-production.up.railway.app) —
- *  confirmed live and working end-to-end (upload-text -> lesson generation)
- *  rather than deploying the sovereign LangGraph reimplementation
- *  (notesQuizApiLang.ts, still available, currently unused/undeployed). */
+/** The Lab backend client. Now the LangGraph implementation served by
+ *  the01dev-backend at /api/lab/* (previously the external Mastra service at
+ *  pdf-learning-tutor-v2-production.up.railway.app, retired). The Mastra
+ *  client notesQuizApi.ts is kept as the shared TYPE source and the
+ *  Mastra→LangGraph comparison reference — do NOT delete it. */
 export type QuizApi = Pick<
   typeof quizApi,
-  "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor"
+  "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor" | "getLesson"
 >;
 
 type InputMode = "text" | "pdf";
@@ -28,13 +28,17 @@ const diffBadge: Record<Difficulty, string> = {
 };
 
 export function NotesQuizModal({
-  onClose,
-  variant = "modal",
   api = quizApi,
+  resumeLessonId,
+  onRestart,
 }: {
-  onClose: () => void;
-  variant?: "modal" | "page";
   api?: QuizApi;
+  resumeLessonId?: string;
+  /** When set (Lab hosts this resumed lesson), the "complete" screen's
+   *  restart action defers to this instead of the internal restart() —
+   *  the internal one reopens this component's own upload form, which is
+   *  retired for the Lab path (Lab's own studio owns new-material intake). */
+  onRestart?: () => void;
 }) {
   const [mode, setMode] = useState<InputMode>("text");
   const [notes, setNotes] = useState("");
@@ -60,6 +64,17 @@ export function NotesQuizModal({
   const [tutorQ, setTutorQ] = useState("");
   const [tutorA, setTutorA] = useState("");
   const [tutorBusy, setTutorBusy] = useState(false);
+
+  // Started by LabStudio via /generate — fetch its state instead of showing
+  // the upload form again.
+  useEffect(() => {
+    if (!resumeLessonId) return;
+    setStep("loading");
+    api.getLesson(resumeLessonId).then(applyLesson).catch((e) => {
+      setError((e as Error).message);
+      setStep("input");
+    });
+  }, [resumeLessonId]);
 
   // ── helpers ──────────────────────────────────────────────
 
@@ -211,8 +226,11 @@ export function NotesQuizModal({
         </p>
       )}
 
-      {/* INPUT */}
-      {step === "input" && (
+      {/* INPUT — never shown when resuming a Lab-started lesson: if the
+          resume fetch itself fails, this retired standalone upload form
+          must not surface. The error banner above already carries the
+          message, and Lab's own header still offers Back to Lab / close. */}
+      {step === "input" && !resumeLessonId && (
         <div className="flex flex-col gap-4">
           <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
             {(["text", "pdf"] as InputMode[]).map((m) => (
@@ -561,49 +579,19 @@ export function NotesQuizModal({
           )}
 
           <button
-            onClick={restart}
+            onClick={onRestart ?? restart}
             className="w-full inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-zinc-300 text-sm font-medium rounded-xl py-3 transition-colors"
           >
-            <RotateCcw className="w-4 h-4" /> Try another set of notes
+            <RotateCcw className="w-4 h-4" /> {onRestart ? "Make something else" : "Try another set of notes"}
           </button>
         </div>
       )}
     </div>
   );
 
-  // ── page variant (no backdrop, full-width) ─────────────────
-  if (variant === "page") return content;
-
-  // ── modal variant ──────────────────────────────────────────
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <NotebookPen className="w-4 h-4 text-indigo-400" />
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-100">QuizMe</h2>
-              <p className="text-xs text-zinc-500">
-                {step === "input" && "Upload PDF or paste notes"}
-                {step === "loading" && "Analysing your notes…"}
-                {step === "plan" && "Review your lesson plan"}
-                {step === "quizzing" && lesson?.currentObjective?.title}
-                {step === "complete" && "Session complete"}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-6 py-5">{content}</div>
-      </div>
-    </div>
-  );
+  // Lab owns the surrounding chrome (header, X, Esc) — this component renders
+  // only the lesson body. The former `variant="modal"` branch was removed: it
+  // had no caller left, and its unreachable header made the QuizMe->Lab rename
+  // look done in a grep while never actually rendering.
+  return content;
 }

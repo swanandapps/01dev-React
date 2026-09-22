@@ -1,4 +1,4 @@
-"""QuizMe as a LangGraph StateGraph — a 1:1 re-implementation of the Mastra/
+"""The Lab quiz flow as a LangGraph StateGraph — a 1:1 re-implementation of the Mastra/
 Memorang V2 lesson workflow, on a local sovereign model.
 
 Mastra  → LangGraph mapping:
@@ -29,6 +29,7 @@ from .llm import gen_objectives, gen_quiz, gen_summary
 
 class LessonState(TypedDict, total=False):
     doc: str
+    doc_id: str
     title: str
     proposed_objectives: list[dict]
     objectives: list[dict]

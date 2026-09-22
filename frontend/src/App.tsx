@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import {
   onAuthStateChanged,
@@ -19,7 +19,7 @@ import BlogsPage from "./pages/BlogsPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import AskPage from "./pages/AskPage";
 import LearnPage from "./pages/LearnPage";
-import NotesQuizPage from "./pages/NotesQuizPage";
+import LabPage from "./pages/LabPage";
 
 function AppInner() {
   const {
@@ -93,7 +93,9 @@ function AppInner() {
       <Route path="/blogs/:id" element={<BlogDetailPage />} />
       <Route path="/ask" element={<AskPage />} />
       <Route path="/dashboard" element={<LearnPage />} />
-      <Route path="/quizme" element={<NotesQuizPage />} />
+      <Route path="/lab" element={<LabPage />} />
+      {/* keep the old path working for anyone with a bookmark */}
+      <Route path="/quizme" element={<Navigate to="/lab" replace />} />
     </Routes>
   );
 }

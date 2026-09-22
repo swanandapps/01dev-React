@@ -6,9 +6,10 @@ are thin wrappers over these; any backend caller can reuse them too. They use th
 shared OpenAI client (`app.services.llm`) — same model the product ships on.
 
 Note on scope (honest): `question_service` (course-wide MCQ *bank* with dedupe /
-difficulty mix) and `lesson_service` (per-objective quiz, separate process + venv)
-are distinct capabilities and are NOT collapsed into these primitives — see the
-build notes. These primitives are the single source for *ad-hoc text → quiz/notes*.
+difficulty mix) and `app.services.lab` (per-objective quiz, now merged into this
+service — no separate process or venv) are distinct capabilities and are NOT
+collapsed into these primitives — see the build notes. These primitives are the
+single source for *ad-hoc text → quiz/notes*.
 """
 from typing import List
 

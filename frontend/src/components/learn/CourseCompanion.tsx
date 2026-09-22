@@ -5,7 +5,7 @@ import { StudyGuideModal } from "./StudyGuideModal";
 import { AdaptiveModal } from "./AdaptiveModal";
 import { InsightModal } from "./InsightModal";
 import { TutorModal } from "./TutorModal";
-import { NotesQuizModal } from "./NotesQuizModal";
+import { LabStudio } from "../lab/LabStudio";
 import { useUserSessionStore } from "../../store/userSession";
 import type { Course } from "../../types/learn";
 
@@ -64,7 +64,7 @@ export function CourseCompanion({
           onClick={() => open("notes")}
           className={`flex items-center gap-1.5 font-medium text-teal-300 hover:text-teal-200 bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/30 rounded-lg transition-colors ${pad}`}
         >
-          <NotebookPen className={icon} /> QuizMe
+          <NotebookPen className={icon} /> Lab
         </button>
       </div>
 
@@ -79,7 +79,15 @@ export function CourseCompanion({
       {tool === "guide" && <StudyGuideModal course={course} onClose={() => setTool(null)} />}
       {tool === "adaptive" && <AdaptiveModal course={course} userId={userId} onClose={() => setTool(null)} />}
       {tool === "insight" && <InsightModal course={course} userId={userId} onClose={() => setTool(null)} />}
-      {tool === "notes" && <NotesQuizModal onClose={() => setTool(null)} />}
+      {tool === "notes" && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+             onClick={() => setTool(null)}>
+          <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6"
+               onClick={(e) => e.stopPropagation()}>
+            <LabStudio studentId={userId} onClose={() => setTool(null)} />
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app import deps as app_deps
 from app import main as app_main
 
 
@@ -16,33 +17,43 @@ def client(monkeypatch):
 
 
 def test_admin_routes_open_when_no_key_configured(client, monkeypatch):
-    monkeypatch.setattr(app_main, "_ADMIN_API_KEY", "")
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "")
     resp = client.get("/api/hermes/audit")
     assert resp.status_code == 200
 
 
 def test_admin_routes_reject_missing_key_when_configured(client, monkeypatch):
-    monkeypatch.setattr(app_main, "_ADMIN_API_KEY", "secret-123")
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
     resp = client.get("/api/hermes/audit")
     assert resp.status_code == 401
 
 
 def test_admin_routes_reject_wrong_key_when_configured(client, monkeypatch):
-    monkeypatch.setattr(app_main, "_ADMIN_API_KEY", "secret-123")
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
     resp = client.get("/api/hermes/audit", headers={"X-Admin-Key": "wrong"})
     assert resp.status_code == 401
 
 
 def test_admin_routes_accept_correct_key_when_configured(client, monkeypatch):
-    monkeypatch.setattr(app_main, "_ADMIN_API_KEY", "secret-123")
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
     resp = client.get("/api/hermes/audit", headers={"X-Admin-Key": "secret-123"})
+    assert resp.status_code == 200
+
+
+def test_lab_audit_route_gated_the_same_way(client, monkeypatch):
+    # /api/lab/audit follows the same require_admin_key convention as the
+    # Hermes audit route above, not left open on its own.
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
+    assert client.get("/api/lab/audit").status_code == 401
+    assert client.get("/api/lab/audit", headers={"X-Admin-Key": "wrong"}).status_code == 401
+    resp = client.get("/api/lab/audit", headers={"X-Admin-Key": "secret-123"})
     assert resp.status_code == 200
 
 
 def test_chat_route_unaffected_by_admin_key(monkeypatch):
     # /api/hermes/chat must NOT require the admin key — it's a student-facing
     # route, not an admin one. Guard against accidentally gating it too.
-    monkeypatch.setattr(app_main, "_ADMIN_API_KEY", "secret-123")
+    monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
     from app.services import audit_service, hermes_client, memory_service
 
     async def _fake_stream_chat(question, system=None, history=None):

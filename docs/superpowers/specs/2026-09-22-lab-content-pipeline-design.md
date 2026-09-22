@@ -447,3 +447,8 @@ Verify this with a throwaway graph before building anything else. If it does not
 hold, the fallback is two graphs in one service (artifacts graph and lesson graph
 invoked in sequence by the endpoint rather than joined in one run) — which loses
 the single-run elegance but nothing functional.
+
+**Resolved 2026-09-22: PASS.** A `Send` fan-out that joins, followed by an
+`interrupt()` in the tail, leaves the fan-out's writes readable via
+`get_state()` while the run is suspended. The single-graph design in
+"Architecture" stands as written.
