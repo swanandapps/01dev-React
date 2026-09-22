@@ -32,3 +32,7 @@ pytest-asyncio==0.25.2
 langgraph==1.2.9
 pypdf==6.19.0
 langfuse==4.15.4
+# FastAPI's UploadFile/File (used by /api/lab/upload) parses multipart form
+# bodies via python-multipart — discovered missing while implementing that
+# endpoint. Verified drift-free against the pinned stack above.
+python-multipart==0.0.32

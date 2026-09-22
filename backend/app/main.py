@@ -37,6 +37,7 @@ from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.routing import smalltalk_classifier
+from app.services.lab.routes import router as lab_router
 
 # _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
 # routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
@@ -83,6 +84,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Lab — the student content pipeline (Phase 1: quiz flow only, at /api/lab/*).
+app.include_router(lab_router)
 
 
 @app.get("/health")
