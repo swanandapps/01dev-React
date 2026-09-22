@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   X, Upload, FileText, Loader2, Check, XCircle, ChevronRight,
   RotateCcw, Sparkles, NotebookPen,
@@ -13,7 +13,7 @@ import type { LessonView, Objective, Question, Difficulty } from "../../lib/note
  *  Mastra→LangGraph comparison reference — do NOT delete it. */
 export type QuizApi = Pick<
   typeof quizApi,
-  "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor"
+  "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor" | "getLesson"
 >;
 
 type InputMode = "text" | "pdf";
@@ -31,10 +31,12 @@ export function NotesQuizModal({
   onClose,
   variant = "modal",
   api = quizApi,
+  resumeLessonId,
 }: {
   onClose: () => void;
   variant?: "modal" | "page";
   api?: QuizApi;
+  resumeLessonId?: string;
 }) {
   const [mode, setMode] = useState<InputMode>("text");
   const [notes, setNotes] = useState("");
@@ -60,6 +62,17 @@ export function NotesQuizModal({
   const [tutorQ, setTutorQ] = useState("");
   const [tutorA, setTutorA] = useState("");
   const [tutorBusy, setTutorBusy] = useState(false);
+
+  // Started by LabStudio via /generate — fetch its state instead of showing
+  // the upload form again.
+  useEffect(() => {
+    if (!resumeLessonId) return;
+    setStep("loading");
+    api.getLesson(resumeLessonId).then(applyLesson).catch((e) => {
+      setError((e as Error).message);
+      setStep("input");
+    });
+  }, [resumeLessonId]);
 
   // ── helpers ──────────────────────────────────────────────
 
@@ -588,7 +601,7 @@ export function NotesQuizModal({
           <div className="flex items-center gap-2">
             <NotebookPen className="w-4 h-4 text-indigo-400" />
             <div>
-              <h2 className="text-sm font-semibold text-zinc-100">QuizMe</h2>
+              <h2 className="text-sm font-semibold text-zinc-100">Lab</h2>
               <p className="text-xs text-zinc-500">
                 {step === "input" && "Upload PDF or paste notes"}
                 {step === "loading" && "Analysing your notes…"}
