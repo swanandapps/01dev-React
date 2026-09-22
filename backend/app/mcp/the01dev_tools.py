@@ -260,6 +260,23 @@ async def get_learning_strengths(student_id: str) -> dict:
     }
 
 
+# ── Dashboard metrics (thin wrapper over journey_service.get_metrics) ─────────
+@mcp.tool()
+async def get_learning_metrics(student_id: str) -> dict:
+    """Raw activity numbers for this student — quiz count, streak, average score,
+    active days, practice time. Use this for "what's my streak", "how many quizzes
+    have I taken", "how am I doing overall" — anything asking for the numbers
+    themselves rather than which concepts are strong/weak (use get_learning_strengths
+    for that instead). `streak` counts consecutive days including today/yesterday;
+    0 quizzes/0 streak means no graded activity yet — say so plainly, don't guess.
+
+    Args:
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
+    """
+    return await journey_service.get_metrics(student_id)
+
+
 # ── Enrollment (thin wrapper over enrollment_service) ─────────────────────────
 @mcp.tool()
 async def get_enrolled_courses(student_id: str) -> list[dict]:

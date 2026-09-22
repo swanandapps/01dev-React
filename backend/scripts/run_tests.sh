@@ -24,6 +24,7 @@ MCP_ONLY_TESTS=(
   tests/test_mcp_search_course_content_citations.py
   tests/test_mcp_get_learning_strengths.py
   tests/test_mcp_get_enrolled_courses.py
+  tests/test_mcp_get_learning_metrics.py
 )
 
 if [ ! -x .venv/bin/pytest ]; then

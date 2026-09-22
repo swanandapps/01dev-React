@@ -98,19 +98,19 @@ def test_course_question_intent_is_unaffected(client, monkeypatch):
     assert "QuizMe" not in tokens
 
 
-def test_progress_intent_calls_journey_service_not_the_model(client, monkeypatch):
-    from app.routing import progress_handoff
-    from app.services import grounding
+def test_progress_question_reaches_real_hermes_path_not_a_handoff(client, monkeypatch):
+    # "What's my progress" used to be a PROGRESS_LOOKUP short-circuit that
+    # never reached Hermes at all — it's a plain COURSE_QUESTION now, and
+    # Hermes answers it via the get_learning_strengths/get_learning_metrics
+    # tools like any other question (those tools' own behavior is covered by
+    # their dedicated tests; this just proves the routing decision).
+    from app.services import hermes_client
 
-    async def _fail_if_called(*args, **kwargs):
-        raise AssertionError("retrieval must not run for a PROGRESS_LOOKUP request")
+    async def _fake_stream_chat(question, system=None, history=None):
+        yield {"type": "token", "value": "you're making steady progress"}
+        yield {"type": "done"}
 
-    async def _fake_get_journey(user_id):
-        assert user_id == "test-student"
-        return {"ai": {"narrative": "You're making steady progress.", "insights": [], "focus": "Keep it up."}}
-
-    monkeypatch.setattr(grounding, "retrieve", _fail_if_called)
-    monkeypatch.setattr(progress_handoff, "get_journey", _fake_get_journey)
+    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
 
     resp = client.post(
         "/api/hermes/chat",
@@ -123,15 +123,16 @@ def test_progress_intent_calls_journey_service_not_the_model(client, monkeypatch
     assert resp.status_code == 200
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
-    assert "You're making steady progress." in tokens
+    assert "you're making steady progress" in tokens
+    assert "QuizMe" not in tokens
 
 
 def test_out_of_scope_intent_falls_through_to_normal_chat_logic(client, monkeypatch):
-    # OUT_OF_SCOPE must NOT be diverted by the `if intent in (QUIZ_GENERATE,
-    # PROGRESS_LOOKUP):` short-circuit — it should reach the same Hermes path
-    # as an ordinary course question (there's no separate backend decline
-    # path anymore; SOUL.md's own "don't answer outside the course material"
-    # instruction is what Hermes uses to decline, not a code branch here).
+    # OUT_OF_SCOPE must NOT be diverted by the `if intent == QUIZ_GENERATE:`
+    # short-circuit — it should reach the same Hermes path as an ordinary
+    # course question (there's no separate backend decline path anymore;
+    # SOUL.md's own "don't answer outside the course material" instruction
+    # is what Hermes uses to decline, not a code branch here).
     # Force the intent directly rather than relying on classify()'s gibberish
     # heuristics, for a cleaner, more direct test of the routing decision.
     from app import main as app_main
@@ -163,32 +164,6 @@ def test_out_of_scope_intent_falls_through_to_normal_chat_logic(client, monkeypa
     assert "QuizMe" not in tokens
     sources_event = next(e for e in events if e.get("type") == "sources")
     assert sources_event["insufficient_context"] is False
-    assert any(e.get("type") == "done" for e in events)
-
-
-def test_progress_lookup_failure_degrades_gracefully_instead_of_500(client, monkeypatch):
-    # Finding 1 regression: a DB/LLM failure inside build_progress_message
-    # (via journey_service.get_journey) must not become an unhandled 500 on
-    # the whole chat endpoint — it should fall back to a plain message.
-    from app.routing import progress_handoff
-
-    async def _boom(user_id):
-        raise RuntimeError("journey service is down")
-
-    monkeypatch.setattr(progress_handoff, "get_journey", _boom)
-
-    resp = client.post(
-        "/api/hermes/chat",
-        json={
-            "question": "What's my progress so far?",
-            "user_id": "test-student",
-            "course_slug": "js-fundamentals",
-        },
-    )
-    assert resp.status_code == 200
-    events = _sse_events(resp.text)
-    tokens = "".join(e["value"] for e in events if e.get("type") == "token")
-    assert "Journey dashboard" in tokens
     assert any(e.get("type") == "done" for e in events)
 
 

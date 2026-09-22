@@ -11,21 +11,21 @@ QUIZ_EXAMPLES = [
     "give me a practice quiz about async/await",
 ]
 
-PROGRESS_EXAMPLES = [
-    "What's my progress so far?",
-    "How am I doing in this course?",
-    "show me my learning journey",
-    "what are my strengths and weaknesses",
-    "am I improving",
-    "what's my quiz streak",
-]
-
 COURSE_QUESTION_EXAMPLES = [
     "What is a closure in JavaScript?",
     "Explain useCallback vs useMemo",
     "Can you summarize lecture 4.1?",
     "why does my component re-render every time",
     "what did we cover last week",
+    # Operational/"dashboard" questions are COURSE_QUESTION now too — Hermes
+    # reasons about these itself via get_learning_strengths/get_learning_metrics,
+    # there's no separate PROGRESS_LOOKUP short-circuit anymore.
+    "What's my progress so far?",
+    "How am I doing in this course?",
+    "show me my learning journey",
+    "what are my strengths and weaknesses",
+    "am I improving",
+    "what's my quiz streak",
 ]
 
 OUT_OF_SCOPE_EXAMPLES = [
@@ -38,11 +38,6 @@ OUT_OF_SCOPE_EXAMPLES = [
 @pytest.mark.parametrize("question", QUIZ_EXAMPLES)
 def test_classifies_quiz_requests(question):
     assert classify(question) == Intent.QUIZ_GENERATE
-
-
-@pytest.mark.parametrize("question", PROGRESS_EXAMPLES)
-def test_classifies_progress_requests(question):
-    assert classify(question) == Intent.PROGRESS_LOOKUP
 
 
 @pytest.mark.parametrize("question", COURSE_QUESTION_EXAMPLES)
@@ -62,7 +57,7 @@ def test_quiz_keyword_inside_a_real_question_does_not_misfire():
     assert classify("What's the difference between unit tests and integration tests?") == Intent.COURSE_QUESTION
 
 
-def test_progress_takes_priority_over_quiz_when_both_words_appear():
-    # "quiz" appears, but this is asking to REVIEW past quiz performance,
-    # not to be quizzed — progress rules must be checked before quiz rules.
-    assert classify("how did I do on my last quiz") == Intent.PROGRESS_LOOKUP
+def test_reviewing_past_quiz_performance_does_not_misfire_into_quiz_generate():
+    # "quiz" appears, but this is asking to REVIEW past performance, not to
+    # be quizzed — must not match the imperative _QUIZ_PATTERNS.
+    assert classify("how did I do on my last quiz") == Intent.COURSE_QUESTION

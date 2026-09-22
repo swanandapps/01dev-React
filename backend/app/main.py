@@ -30,13 +30,12 @@ from app.services import (
     knowledge_graph_service, recommendation_service, course_insight_service,
     tutor_service, journey_service, enrollment_service,
     hermes_client, audit_service, memory_service,
-    eval_service, gepa_service, context_builder, pii, llm,
+    eval_service, gepa_service, context_builder, pii,
     skill_graph_service,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
-from app.routing.progress_handoff import build_progress_message
 
 # _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
 # routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
@@ -272,17 +271,9 @@ async def hermes_chat(req: Request):
     if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
         span.set_attribute("pii_redacted", ",".join(pii_kinds))
 
-    if intent in (Intent.QUIZ_GENERATE, Intent.PROGRESS_LOOKUP):
-        if intent == Intent.QUIZ_GENERATE:
-            outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
-            message = build_handoff_message(course_slug)
-        else:
-            outcome, model_label, audit_provider = "progress_handoff", llm.GEN_MODEL, "openai"
-            try:
-                message = await build_progress_message(student_id)
-            except Exception as e:  # noqa: BLE001 — journey lookup down → decline gracefully, no 500
-                print(f"[hermes_chat] progress lookup failed: {e}")
-                message = "I couldn't pull up your progress just now — try the Journey dashboard instead."
+    if intent == Intent.QUIZ_GENERATE:
+        outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
+        message = build_handoff_message(course_slug)
 
         span.set_attribute("outcome", outcome)
         await audit_service.log_event(
@@ -309,8 +300,8 @@ async def hermes_chat(req: Request):
     # longer a separate direct-to-OpenAI path here.
 
     # Back-fill the skill graph only for intents that actually touch it
-    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE/PROGRESS_LOOKUP already
-    # returned above and never reach here. Runs inside the traced span (4
+    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE already returned above and
+    # never reaches here. Runs inside the traced span (4
     # sequential DB queries in steady state) so its latency shows up if chat
     # latency regresses, instead of being invisible before the span started.
     try:

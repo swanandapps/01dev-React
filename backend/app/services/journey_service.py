@@ -74,14 +74,10 @@ async def get_strengths_weaknesses(user_id: str) -> dict:
     }
 
 
-async def get_journey(user_id: str) -> dict:
-    sessions = await store.query("quiz_sessions", "user_id", user_id)
-    perf = await store.query("concept_performance", "user_id", user_id)
-
+def _compute_metrics(sessions: list[dict], perf: list[dict]):
     dts = [d for d in (_parse_date(s.get("completed_at", "")) for s in sessions) if d]
     day_set = {d.date() for d in dts}
 
-    # ---- metrics ----
     total_q = sum(s.get("total", 0) for s in sessions)
     total_correct = sum(s.get("score", 0) for s in sessions)
     total_ms = sum(a.get("time_taken_ms", 0) for s in sessions for a in s.get("answers", []))
@@ -104,6 +100,26 @@ async def get_journey(user_id: str) -> dict:
         "practice_minutes": round(total_ms / 60000, 1),
         "avg_seconds_per_question": round(total_ms / 1000 / total_q, 1) if total_q and total_ms else 0,
     }
+    return metrics, dts, day_set, practiced
+
+
+async def get_metrics(user_id: str) -> dict:
+    """Raw dashboard metrics (quizzes, streak, avg score, active days,
+    practice time) — no LLM narrative, no heatmap. This is the tool-call-
+    friendly version for questions like "what's my streak" / "how many
+    quizzes have I taken" that get_learning_strengths doesn't cover (it
+    deliberately skips quiz_sessions entirely). Hermes writes its own
+    answer from these numbers, same pattern as get_learning_strengths."""
+    sessions = await store.query("quiz_sessions", "user_id", user_id)
+    perf = await store.query("concept_performance", "user_id", user_id)
+    metrics, _, _, _ = _compute_metrics(sessions, perf)
+    return metrics
+
+
+async def get_journey(user_id: str) -> dict:
+    sessions = await store.query("quiz_sessions", "user_id", user_id)
+    perf = await store.query("concept_performance", "user_id", user_id)
+    metrics, dts, day_set, practiced = _compute_metrics(sessions, perf)
 
     # ---- activity heatmap (last HEATMAP_DAYS) ----
     by_day = Counter(d.date().isoformat() for d in dts)
