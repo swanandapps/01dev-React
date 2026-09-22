@@ -1,4 +1,4 @@
-"""QuizMe as a LangGraph StateGraph — a 1:1 re-implementation of the Mastra/
+"""The Lab quiz flow as a LangGraph StateGraph — a 1:1 re-implementation of the Mastra/
 Memorang V2 lesson workflow, on a local sovereign model.
 
 Mastra  → LangGraph mapping:

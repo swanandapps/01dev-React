@@ -1,4 +1,4 @@
-"""Sovereign structured generators for the QuizMe LangGraph pipeline.
+"""Structured generators for the Lab LangGraph pipeline.
 
 Faithful re-implementation of what the Mastra/Memorang V2 agents produced —
 objectives, per-objective quizzes, a Socratic tutor nudge, and a final summary —
@@ -26,7 +26,7 @@ from .schemas import Objective, PerObjective, Question, Summary
 def _make_client():
     """OpenAI in production; local model in dev (LESSON_PROVIDER=ollama).
     Uses the Langfuse-instrumented OpenAI drop-in when LANGFUSE keys are set, so
-    every QuizMe model call is traced to Langfuse."""
+    every Lab model call is traced to Langfuse."""
     if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
         from langfuse.openai import OpenAI  # drop-in → traces to Langfuse
     else:

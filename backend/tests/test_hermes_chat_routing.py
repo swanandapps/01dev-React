@@ -67,7 +67,7 @@ def test_quiz_intent_short_circuits_before_any_model_call(client, monkeypatch):
     assert resp.status_code == 200
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
-    assert "QuizMe" in tokens
+    assert "Lab" in tokens
     assert any(e.get("type") == "done" for e in events)
 
 
@@ -95,7 +95,7 @@ def test_course_question_intent_is_unaffected(client, monkeypatch):
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
     assert "closures capture variables" in tokens
-    assert "QuizMe" not in tokens
+    assert "Lab" not in tokens
 
 
 def test_progress_question_reaches_real_hermes_path_not_a_handoff(client, monkeypatch):
@@ -124,7 +124,7 @@ def test_progress_question_reaches_real_hermes_path_not_a_handoff(client, monkey
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
     assert "you're making steady progress" in tokens
-    assert "QuizMe" not in tokens
+    assert "Lab" not in tokens
 
 
 def test_out_of_scope_intent_short_circuits_before_any_model_call(client, monkeypatch):
@@ -152,7 +152,7 @@ def test_out_of_scope_intent_short_circuits_before_any_model_call(client, monkey
     events = _sse_events(resp.text)
     tokens = "".join(e["value"] for e in events if e.get("type") == "token")
     assert "ask me about a course" in tokens
-    assert "QuizMe" not in tokens
+    assert "Lab" not in tokens
     sources_event = next(e for e in events if e.get("type") == "sources")
     assert sources_event["insufficient_context"] is False
     assert any(e.get("type") == "done" for e in events)

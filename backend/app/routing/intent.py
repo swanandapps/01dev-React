@@ -9,7 +9,7 @@ routing log to train it on.
 
 Deliberately narrow scope: this classifier ONLY exists to catch the two
 cases that need to bypass Hermes's own reasoning entirely — QUIZ_GENERATE
-(a hand-off to a separate app, QuizMe, not just a different answer) and
+(a hand-off to the Lab tab, not just a different answer) and
 OUT_OF_SCOPE (empty/gibberish input, not worth an LLM call at all).
 Everything else — course questions, "what's my progress"/"what am I good
 at" style operational questions, and general technical questions outside
