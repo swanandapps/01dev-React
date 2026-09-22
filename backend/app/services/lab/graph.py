@@ -29,6 +29,7 @@ from .llm import gen_objectives, gen_quiz, gen_summary
 
 class LessonState(TypedDict, total=False):
     doc: str
+    doc_id: str
     title: str
     proposed_objectives: list[dict]
     objectives: list[dict]
