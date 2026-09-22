@@ -43,7 +43,10 @@ async def test_library_is_newest_first(store):
 async def test_library_respects_the_limit(store):
     for i in range(5):
         await artifact_store.save("s1", "d", "t", "summary", f"s{i}")
-    assert len(await artifact_store.library("s1", limit=2)) == 2
+    got = await artifact_store.library("s1", limit=2)
+    # Not just the count: the NEWEST two. Slicing before the sort would also
+    # return two rows, but the wrong two.
+    assert [r["content"] for r in got] == ["s4", "s3"]
 
 
 @pytest.mark.asyncio
