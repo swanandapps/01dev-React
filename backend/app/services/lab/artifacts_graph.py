@@ -54,7 +54,9 @@ class LabState(TypedDict, total=False):
     student_id: str
     outputs_requested: list[str]
     artifacts: Annotated[dict, _merge]   # artifact_type -> content
-    status: str                          # complete | awaiting_objectives
+    status: str                          # "complete" on the artifacts-only path;
+                                          # left unset on the quiz path — see
+                                          # quiz_tail's docstring for why
 
 
 def fan_out(state: LabState):
@@ -101,11 +103,17 @@ def route_after_join(state: LabState) -> str:
 def quiz_tail(state: LabState) -> dict:
     """Marker node: the endpoint hands off to the lesson graph from here.
 
+    Deliberately does not set `status`. The live client contract for this
+    exact moment in the flow is graph.py's `plan_objectives`, which sets
+    "awaiting_approval" and runs immediately after this handoff — a second
+    vocabulary here ("awaiting_objectives") would only be a trap if it ever
+    leaked into a response before that handoff happens.
+
     The objectives→approve→quiz→summarize flow stays in graph.py, unchanged and
     already parity-verified. Duplicating it here would fork a working
     implementation for no gain.
     """
-    return {"status": "awaiting_objectives"}
+    return {}
 
 
 def build_lab_graph():

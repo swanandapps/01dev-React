@@ -1,9 +1,10 @@
 """
 The student's library of generated artifacts.
 
-Persisted as each generator lands rather than at the end of a run, so a
-long-lived interactive quiz tail never holds finished flashcards hostage — if
-the process restarts mid-quiz, the artifacts the student already earned survive.
+This module IS the store — it does not decide when writes happen. The caller
+(the route that runs the fan-out graph, see artifacts_graph.py) awaits `save`
+for each artifact once the fan-out joins, before handing off to the
+interactive quiz tail.
 """
 import uuid
 from datetime import datetime, timezone
