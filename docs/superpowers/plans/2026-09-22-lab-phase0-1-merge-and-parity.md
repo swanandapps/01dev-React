@@ -758,7 +758,7 @@ def _state_values(lesson_id: str) -> dict:
 async def health():
     return {"status": "ok", "service": "lab", "orchestrator": "langgraph",
             "model": os.getenv("LESSON_MODEL", "gpt-4.1-mini"),
-            "outputs_enabled": ["quiz"]}
+            "outputs_enabled": OUTPUT_TYPES}
 
 
 @router.post("/upload-text")
@@ -1018,7 +1018,9 @@ Expected: `{"status":"ok","chunks_indexed":21,"db":"ok","tutor_provider":"openai
 curl -s https://the01dev-backend-production.up.railway.app/api/lab/health
 ```
 
-Expected: `{"status":"ok","service":"lab","orchestrator":"langgraph","model":"gpt-4.1-mini","outputs_enabled":["quiz"]}`.
+Expected (Phase 0/1): `{"status":"ok","service":"lab","orchestrator":"langgraph","model":"gpt-4.1-mini","outputs_enabled":["quiz"]}`.
+As of Phase 3 (`/generate` and `/library`), `outputs_enabled` reflects all four:
+`["quiz","flashcards","summary","study_plan"]`.
 
 - [ ] **Step 5: Walk a real lesson end-to-end against production**
 

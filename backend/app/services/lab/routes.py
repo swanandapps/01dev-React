@@ -1,14 +1,15 @@
 """
 Lab — the student content pipeline's HTTP surface.
 
-Phase 1 exposes ONLY the quiz flow, at the same contract the frontend already
-speaks (`LessonView`), so the existing quiz UI drives it unchanged. This was
+The quiz flow speaks the same contract the frontend already knows
+(`LessonView`), so the existing quiz UI drives it unchanged. This was
 previously a standalone FastAPI app (lesson_service/main.py, never deployed);
 it is now a router on the main backend so one service serves everything.
 
-Deliberately NOT exposed yet: the /artifacts/* endpoints. artifacts_graph.py
-ships with the package but is reshaped in Phase 3 into the unified sequenced
-graph (fan-out, then the quiz tail).
+Phase 3 adds `/generate` and `/library`: the student's output selection
+(quiz/flashcards/summary/study_plan) fans out through artifacts_graph.py's
+unified graph, then — if quiz was selected — hands off to the same lesson
+graph the quiz-only /lessons endpoints already use, unchanged.
 
 Phase 1 writes NOTHING to concept_performance or quiz_sessions — see the spec:
 the external service this replaces writes nothing to the learner model, so a
@@ -42,9 +43,11 @@ AUDIT: list[dict] = []       # HITL decision trail (EU AI Act)
 # text in memory indefinitely (no eviction/TTL until the Postgres-checkpointer
 # phase), so an accepted upload grows the RSS of the single-worker process that
 # also serves chat/RAG/payments for the life of the process. These caps bound
-# what we RETAIN, not what we receive: /upload still reads the whole request
-# body before it can measure it, so a huge POST costs transient spool + memory
-# regardless. Bounding the body itself needs a Content-Length/chunked read.
+# what we RETAIN. What we RECEIVE is only partly bounded: /upload rejects a
+# declared Content-Length over MAX_PDF_BYTES before reading anything, but a
+# chunked body with no Content-Length header has nothing to check upfront —
+# it still falls through to the post-read len(data) check below, so it is
+# fully materialized in memory before it can be rejected.
 MAX_TEXT_CHARS = 200_000       # ~ a long set of study notes
 MAX_PDF_BYTES = 10 * 1024 * 1024  # 10 MB, checked before parsing
 
@@ -142,7 +145,7 @@ def _state_values(lesson_id: str) -> dict:
 async def health():
     return {"status": "ok", "service": "lab", "orchestrator": "langgraph",
             "model": os.getenv("LESSON_MODEL", "gpt-4.1-mini"),
-            "outputs_enabled": ["quiz"]}
+            "outputs_enabled": OUTPUT_TYPES}
 
 
 @router.post("/upload-text")
@@ -171,9 +174,12 @@ def _extract_pdf_text(data: bytes) -> str:
 @router.post("/upload")
 async def upload_pdf(request: Request, file: UploadFile = File(...)):
     # Reject on the declared Content-Length before spooling the body into
-    # memory at all -- Starlette's max_file_size is a spool threshold, not a
-    # limit, so without this an oversized POST is fully materialized before
-    # len(data) below ever gets a chance to reject it.
+    # memory, when the client declares one -- Starlette's max_file_size is a
+    # spool threshold, not a limit, so without this an oversized POST is
+    # fully materialized before len(data) below ever gets a chance to reject
+    # it. This only covers requests that send Content-Length: a chunked body
+    # with no declared length still falls through to that post-read check,
+    # fully materialized first (see the module-level comment on MAX_PDF_BYTES).
     content_length = request.headers.get("content-length")
     if content_length is not None:
         try:
@@ -296,6 +302,12 @@ async def generate_outputs(req: GenerateReq):
             req.student_id, req.docId, doc["title"], artifact_type, content,
         )
 
+    # Chosen failure semantics, not yet made idempotent: artifacts are
+    # committed above, before the quiz tail runs. If the quiz tail below
+    # raises, the 500 carries no run_id/lesson_id for the client to key a
+    # retry off of, so a naive retry re-runs generate() and duplicates these
+    # rows in lab_artifacts. Accepted for now -- see task review for Phase 3
+    # task 4; revisit if duplicate-artifact reports show up.
     body: dict = {
         "run_id": run_id,
         "status": "complete",
@@ -306,6 +318,11 @@ async def generate_outputs(req: GenerateReq):
         return body
 
     # Quiz selected: start the lesson graph, which owns the objectives HITL gate.
+    # Deliberately passes doc_id, which start_lesson()'s GRAPH.invoke() above
+    # (the production /lessons call) does not: that LessonState channel exists
+    # specifically so this Lab flow can carry provenance through to the quiz
+    # tail. Its absence from /lessons is the production baseline, not an
+    # oversight here -- this is an intentional divergence, not a drift.
     lesson_id = uuid.uuid4().hex[:12]
     lesson_values = await run_in_threadpool(
         GRAPH.invoke,

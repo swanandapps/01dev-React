@@ -15,6 +15,17 @@ def client(monkeypatch):
     monkeypatch.setattr(lab_graph, "gen_objectives", lambda doc, title: [
         {"id": "o1", "title": "Closures", "difficulty": "beginner", "focus": "scope"},
     ])
+    # Also fake the quiz-generation and summary steps (not just objectives) so
+    # tests can drive a lesson all the way through approve -> submit -> complete
+    # without a live LLM call -- same pattern as test_lab_routes.py's fixture.
+    monkeypatch.setattr(lab_graph, "gen_quiz", lambda doc, objective, n: [
+        {"question": f"Q about {objective['title']}?", "options": ["a", "b", "c", "d"],
+         "correctIndex": 1, "explanation": "because b", "hint": "think about b"}
+        for _ in range(n)
+    ])
+    monkeypatch.setattr(lab_graph, "gen_summary", lambda doc, objectives, results: {
+        "overall": "Good work.", "perObjective": [], "studyTips": ["Review closures."],
+    })
     # rebuild the graph so the patched generate is picked up by fresh nodes
     monkeypatch.setattr(routes, "LAB_GRAPH", artifacts_graph.build_lab_graph())
     return TestClient(app), s
@@ -47,24 +58,86 @@ def test_quiz_selected_returns_a_lesson_id_and_objectives(client):
 
 
 def test_quiz_only_via_generate_matches_the_existing_lessons_endpoint_byte_for_byte(client):
-    """Production constraint: outputs=["quiz"] through the new /generate route
-    must be byte-identical to POST /api/lab/lessons, the endpoint already
-    live in production. Same LessonView keys, same values -- the existing
-    quiz frontend depends on this shape not drifting. Only `run_id` (new to
-    /generate, absent from /lessons) and the redundant `lesson_id`/`id` naming
-    are allowed to differ; everything else in the LessonView must match."""
+    """Production constraint: a lesson started through the new /generate route
+    (outputs=["quiz"]) must produce the exact same LessonView as one started
+    through POST /api/lab/lessons, the endpoint already live in production --
+    the existing quiz frontend depends on this shape not drifting.
+
+    /generate's own JSON response is NOT that comparison: it deliberately
+    reshapes/renames a few fields (`lesson_id` instead of `id`,
+    `proposed_objectives` instead of `plan.objectives`, plus `run_id` and
+    `artifacts` which /lessons doesn't have at all) -- see its docstring.
+    Diffing /generate's wrapper against /lessons' response would therefore
+    "fail" on the very renames that are intentional, while missing a real
+    regression in lesson_view() itself, since /generate's wrapper picks
+    individual fields out of `view` by name rather than re-exposing `view`
+    wholesale.
+
+    So this test goes around the wrapper: it fetches the CANONICAL LessonView
+    for the /generate-created lesson via GET /lessons/{id} -- the same
+    function (`lesson_view()`) and endpoint code path production traffic
+    hits -- and diffs that against a lesson created the production way. It
+    also drives both lessons through approve -> submit so the comparison
+    covers the `quizzing` and `complete` shapes too, not just the first view;
+    those statuses expose keys (`quiz`, `objectives`, `results`, `summary`)
+    a first-view-only comparison would never touch.
+
+    A pure `sorted(a.keys()) == sorted(b.keys())` relative comparison is
+    NOT enough on its own: both `a` and `b` here are built by the same
+    `lesson_view()` function, so a SYMMETRIC change to it (e.g. renaming
+    "id" -> "lessonId" everywhere) drifts both sides identically and the
+    relative comparison still passes -- confirmed by manually renaming that
+    key and checking: both dicts came back as `['lessonId', 'plan',
+    'status']`, so `sorted(...) == sorted(...)` was still True. So each
+    side is ALSO checked against a literal, hardcoded expected key set below
+    -- that's what actually pins the production contract rather than just
+    pinning the two code paths to agreeing with each other.
+    """
     c, _ = client
-    doc = c.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
-
-    via_lessons = c.post("/api/lab/lessons", json={"docId": doc}).json()
+    doc1 = c.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
     doc2 = c.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
-    via_generate = c.post("/api/lab/generate", json={
-        "docId": doc2, "outputs": ["quiz"], "student_id": "s1"}).json()
 
-    assert via_generate["status"] == via_lessons["status"]
-    assert via_generate["proposed_objectives"] == via_lessons["plan"]["objectives"]
-    assert via_generate["lesson_id"]
-    assert via_generate["artifacts"] == {}
+    lesson_via_lessons = c.post("/api/lab/lessons", json={"docId": doc1}).json()
+    generate_body = c.post("/api/lab/generate", json={
+        "docId": doc2, "outputs": ["quiz"], "student_id": "s1"}).json()
+    lesson_id_via_generate = generate_body["lesson_id"]
+    lesson_via_generate = c.get(f"/api/lab/lessons/{lesson_id_via_generate}").json()
+
+    # awaiting_approval: full key-set parity between the two flows, AND each
+    # flow's keys pinned literally -- the literal pin is what actually
+    # catches a symmetric rename in lesson_view() (see docstring above).
+    AWAITING_APPROVAL_KEYS = {"id", "status", "plan"}
+    assert sorted(lesson_via_generate.keys()) == sorted(lesson_via_lessons.keys())
+    assert set(lesson_via_lessons.keys()) == AWAITING_APPROVAL_KEYS
+    assert set(lesson_via_generate.keys()) == AWAITING_APPROVAL_KEYS
+    assert lesson_via_generate["status"] == lesson_via_lessons["status"] == "awaiting_approval"
+    assert lesson_via_generate["plan"]["objectives"] == lesson_via_lessons["plan"]["objectives"]
+
+    # quizzing: drive both lessons through /approve and re-check key parity,
+    # again both relatively and against a literal expected set.
+    QUIZZING_KEYS = {"id", "status", "objectives", "objectiveIndex",
+                     "objectivesCount", "currentObjective", "quiz", "results"}
+    lv_quizzing = c.post(f"/api/lab/lessons/{lesson_via_lessons['id']}/approve",
+                         json={"objectives": lesson_via_lessons["plan"]["objectives"],
+                               "questionsPerQuiz": 1}).json()
+    gv_quizzing = c.post(f"/api/lab/lessons/{lesson_id_via_generate}/approve",
+                         json={"objectives": lesson_via_generate["plan"]["objectives"],
+                               "questionsPerQuiz": 1}).json()
+    assert sorted(gv_quizzing.keys()) == sorted(lv_quizzing.keys())
+    assert set(lv_quizzing.keys()) == QUIZZING_KEYS
+    assert set(gv_quizzing.keys()) == QUIZZING_KEYS
+    assert gv_quizzing["status"] == lv_quizzing["status"] == "quizzing"
+
+    # complete: drive both through /submit and re-check key parity again.
+    COMPLETE_KEYS = {"id", "status", "objectives", "results", "summary"}
+    lv_complete = c.post(f"/api/lab/lessons/{lesson_via_lessons['id']}/submit",
+                         json={"score": 1, "total": 1}).json()
+    gv_complete = c.post(f"/api/lab/lessons/{lesson_id_via_generate}/submit",
+                         json={"score": 1, "total": 1}).json()
+    assert sorted(gv_complete.keys()) == sorted(lv_complete.keys())
+    assert set(lv_complete.keys()) == COMPLETE_KEYS
+    assert set(gv_complete.keys()) == COMPLETE_KEYS
+    assert gv_complete["status"] == lv_complete["status"] == "complete"
 
 
 def test_all_four_returns_artifacts_and_a_lesson(client):
