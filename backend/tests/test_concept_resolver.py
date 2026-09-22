@@ -332,6 +332,27 @@ async def test_dimension_mismatch_triggers_reembed_not_truncated_compare(store, 
 
 
 @pytest.mark.asyncio
+async def test_backfilled_vector_of_a_wrong_dimension_is_never_compared(store, monkeypatch):
+    """The dimension guard must cover FRESHLY backfilled vectors too, not just
+    stored ones. If a backfill returns a different-dimension vector, _cosine's
+    zip would truncate and score an unrelated concept 1.0 — merging a student's
+    Kubernetes notes onto 'event-loop' and moving the wrong course mastery.
+    A vector we cannot compare is unreadable, not a match."""
+    await store.set("concepts", "react-perf::event-loop", {
+        "course_id": "react-perf", "name": "event-loop",  # cold: no embedding
+    })
+    _stub_embeddings(monkeypatch, {
+        "event-loop": [1.0, 0.0, 0.0, 0.0, 0.0],          # backfill: 5-dim
+        "totally unrelated kubernetes": [1.0, 0.0, 0.0],  # candidate: 3-dim
+    })
+
+    got = await concept_resolver.resolve("totally unrelated kubernetes")
+
+    assert got != "event-loop", "truncated compare merged an unrelated concept"
+    assert got == "totally-unrelated-kubernetes"
+
+
+@pytest.mark.asyncio
 async def test_exact_threshold_score_of_0_64_merges(store, monkeypatch):
     """0.64 is not an approximate cutoff — pin the exact boundary so a later
     change from >= to > can't silently raise the effective threshold."""

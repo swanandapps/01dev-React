@@ -295,7 +295,11 @@ async def resolve(candidate, course_id: str | None = None) -> str:
                                  # flaky node can't let a hostile candidate
                                  # spend the whole budget retrying it
                 fresh = await _try_backfill(doc_id, c)
-                if fresh is None:
+                # A freshly-backfilled vector gets the same dimension check as
+                # a stored one. Without it, _cosine's zip would truncate and
+                # score an unrelated concept 1.0 — a silent wrong merge, which
+                # is the one failure this module exists to prevent.
+                if fresh is None or len(fresh) != candidate_dim:
                     unreadable += 1
                     continue
                 vec = fresh
@@ -316,7 +320,7 @@ async def resolve(candidate, course_id: str | None = None) -> str:
         # merge can.
         for doc_id, c in pending:
             fresh = await _try_backfill(doc_id, c)
-            if fresh is None:
+            if fresh is None or len(fresh) != candidate_dim:  # see note above
                 unreadable += 1
                 continue
             score = _cosine(candidate_vec, fresh)
