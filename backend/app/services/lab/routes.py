@@ -19,18 +19,22 @@ import io
 import os
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from langgraph.types import Command
 from pydantic import BaseModel
 
 from app.deps import require_admin_key
+from app.services.lab import artifact_store
+from app.services.lab.artifacts_graph import build_lab_graph
+from app.services.lab.generators import OUTPUT_TYPES
 from app.services.lab.graph import build_graph
 from app.services.lab.llm import tutor_answer
 
 router = APIRouter(prefix="/api/lab", tags=["lab"])
 
 GRAPH = build_graph()
+LAB_GRAPH = build_lab_graph()
 DOCS: dict[str, dict] = {}   # docId -> {"text","title"} — in-memory by design in Phase 1
 AUDIT: list[dict] = []       # HITL decision trail (EU AI Act)
 
@@ -66,6 +70,12 @@ class SubmitReq(BaseModel):
 
 class AskReq(BaseModel):
     question: str
+
+
+class GenerateReq(BaseModel):
+    docId: str
+    outputs: list[str]
+    student_id: str = ""
 
 
 # Langfuse tracing for the graph run: one trace per lesson, span per node,
@@ -159,7 +169,22 @@ def _extract_pdf_text(data: bytes) -> str:
 
 
 @router.post("/upload")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(request: Request, file: UploadFile = File(...)):
+    # Reject on the declared Content-Length before spooling the body into
+    # memory at all -- Starlette's max_file_size is a spool threshold, not a
+    # limit, so without this an oversized POST is fully materialized before
+    # len(data) below ever gets a chance to reject it.
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            declared = int(content_length)
+        except ValueError:
+            declared = None
+        if declared is not None and declared > MAX_PDF_BYTES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"PDF too large ({declared} bytes; max {MAX_PDF_BYTES})",
+            )
     data = await file.read()
     if len(data) > MAX_PDF_BYTES:
         raise HTTPException(
@@ -228,6 +253,75 @@ async def ask(lesson_id: str, req: AskReq):
         tutor_answer, v.get("doc", ""), v.get("current_objective"), req.question
     )
     return {"answer": answer}
+
+
+@router.post("/generate")
+async def generate_outputs(req: GenerateReq):
+    """Fan out to the selected artifacts, persist them, then start the quiz
+    if it was chosen.
+
+    Persistence is this route's job, not the graph's: the `_gen` nodes in
+    artifacts_graph.py deliberately do no I/O (see that module's docstring —
+    bridging their async `artifact_store.save` into a sync node via
+    `asyncio.run()` breaks the process-wide asyncpg pool's event-loop
+    affinity in production). So here, on the route's own already-running
+    event loop, we run the graph, read the artifacts back out of state, and
+    await `artifact_store.save` directly -- once per artifact, before the
+    quiz tail (if any) begins.
+
+    Returns artifacts plus, when the quiz was selected, a `lesson_id` and the
+    proposed objectives -- so the client goes straight into the existing
+    objectives-approval screen.
+    """
+    doc = DOCS.get(req.docId)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Unknown docId")
+    if not req.outputs:
+        raise HTTPException(status_code=400, detail="choose at least one output")
+    unknown = [t for t in req.outputs if t not in OUTPUT_TYPES]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"unknown output(s): {unknown}")
+    wanted = req.outputs
+
+    run_id = uuid.uuid4().hex[:12]
+    values = await run_in_threadpool(
+        LAB_GRAPH.invoke,
+        {"document": doc["text"], "doc_id": req.docId, "doc_title": doc["title"],
+         "student_id": req.student_id, "outputs_requested": wanted, "artifacts": {}},
+        _cfg(f"lab-{run_id}"),
+    )
+    artifacts = values.get("artifacts", {})
+    for artifact_type, content in artifacts.items():
+        await artifact_store.save(
+            req.student_id, req.docId, doc["title"], artifact_type, content,
+        )
+
+    body: dict = {
+        "run_id": run_id,
+        "status": "complete",
+        "artifacts": artifacts,
+        "lesson_id": None,
+    }
+    if "quiz" not in wanted:
+        return body
+
+    # Quiz selected: start the lesson graph, which owns the objectives HITL gate.
+    lesson_id = uuid.uuid4().hex[:12]
+    lesson_values = await run_in_threadpool(
+        GRAPH.invoke,
+        {"doc": doc["text"], "title": doc["title"], "results": [], "doc_id": req.docId},
+        _cfg(lesson_id),
+    )
+    view = lesson_view(lesson_id, lesson_values)
+    body["status"] = view["status"]
+    body["lesson_id"] = lesson_id
+    body["proposed_objectives"] = view.get("plan", {}).get("objectives", [])
+    return body
+
+
+@router.get("/library")
+async def get_library(student_id: str, limit: int = 50):
+    return await artifact_store.library(student_id, limit)
 
 
 @router.get("/audit", dependencies=[Depends(require_admin_key)])
