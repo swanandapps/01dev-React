@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  X, Upload, FileText, Loader2, Check, XCircle, ChevronRight,
-  RotateCcw, Sparkles, NotebookPen,
+  Upload, Loader2, Check, XCircle, ChevronRight, RotateCcw, Sparkles,
+  NotebookPen,
 } from "lucide-react";
 import * as quizApi from "../../lib/notesQuizApiLang";
 import type { LessonView, Objective, Question, Difficulty } from "../../lib/notesQuizApi";
@@ -28,14 +28,10 @@ const diffBadge: Record<Difficulty, string> = {
 };
 
 export function NotesQuizModal({
-  onClose,
-  variant = "modal",
   api = quizApi,
   resumeLessonId,
   onRestart,
 }: {
-  onClose: () => void;
-  variant?: "modal" | "page";
   api?: QuizApi;
   resumeLessonId?: string;
   /** When set (Lab hosts this resumed lesson), the "complete" screen's
@@ -593,39 +589,9 @@ export function NotesQuizModal({
     </div>
   );
 
-  // ── page variant (no backdrop, full-width) ─────────────────
-  if (variant === "page") return content;
-
-  // ── modal variant ──────────────────────────────────────────
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <NotebookPen className="w-4 h-4 text-indigo-400" />
-            <div>
-              <h2 className="text-sm font-semibold text-zinc-100">Lab</h2>
-              <p className="text-xs text-zinc-500">
-                {step === "input" && "Upload PDF or paste notes"}
-                {step === "loading" && "Analysing your notes…"}
-                {step === "plan" && "Review your lesson plan"}
-                {step === "quizzing" && lesson?.currentObjective?.title}
-                {step === "complete" && "Session complete"}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-6 py-5">{content}</div>
-      </div>
-    </div>
-  );
+  // Lab owns the surrounding chrome (header, X, Esc) — this component renders
+  // only the lesson body. The former `variant="modal"` branch was removed: it
+  // had no caller left, and its unreachable header made the QuizMe->Lab rename
+  // look done in a grep while never actually rendering.
+  return content;
 }

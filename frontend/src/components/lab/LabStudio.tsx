@@ -146,9 +146,7 @@ export function LabStudio({
         />
         <ArtifactView artifacts={artifacts} />
         <NotesQuizModal
-          variant="page"
           resumeLessonId={lessonId}
-          onClose={onClose}
           onRestart={restart}
         />
       </div>
