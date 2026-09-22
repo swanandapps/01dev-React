@@ -12,7 +12,12 @@ export type {
   Difficulty, Objective, Question, Quiz, Result, Summary, LessonStatus, LessonView,
 } from "./notesQuizApi";
 
-const BASE = import.meta.env.VITE_QUIZME_LANG_URL || "http://localhost:8090";
+// Lab is served by the main backend now, not a standalone :8090 service.
+// VITE_QUIZME_LANG_URL is retained as an override for pointing at a local
+// backend during development.
+const BASE =
+  import.meta.env.VITE_QUIZME_LANG_URL ||
+  `${import.meta.env.VITE_RAG_API_URL || "http://localhost:8080"}/api/lab`;
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {

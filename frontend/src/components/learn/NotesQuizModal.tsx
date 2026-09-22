@@ -3,14 +3,14 @@ import {
   X, Upload, FileText, Loader2, Check, XCircle, ChevronRight,
   RotateCcw, Sparkles, NotebookPen,
 } from "lucide-react";
-import * as quizApi from "../../lib/notesQuizApi";
+import * as quizApi from "../../lib/notesQuizApiLang";
 import type { LessonView, Objective, Question, Difficulty } from "../../lib/notesQuizApi";
 
-/** The QuizMe backend client. Reusing the existing, already-deployed Mastra/
- *  Memorang V2 service (pdf-learning-tutor-v2-production.up.railway.app) —
- *  confirmed live and working end-to-end (upload-text -> lesson generation)
- *  rather than deploying the sovereign LangGraph reimplementation
- *  (notesQuizApiLang.ts, still available, currently unused/undeployed). */
+/** The Lab backend client. Now the LangGraph implementation served by
+ *  the01dev-backend at /api/lab/* (previously the external Mastra service at
+ *  pdf-learning-tutor-v2-production.up.railway.app, retired). The Mastra
+ *  client notesQuizApi.ts is kept as the shared TYPE source and the
+ *  Mastra→LangGraph comparison reference — do NOT delete it. */
 export type QuizApi = Pick<
   typeof quizApi,
   "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor"
