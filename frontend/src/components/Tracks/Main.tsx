@@ -2,9 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { useUserSessionStore } from "../../store/userSession";
-import { db } from "../../lib/firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
-import { getCourses } from "../../lib/learnApi";
+import { getCourses, enrollCourse } from "../../lib/learnApi";
 import { CourseCompanion } from "../learn/CourseCompanion";
 import type { Course } from "../../types/learn";
 import type { Track } from "../../data/tracks";
@@ -72,12 +70,11 @@ export default function TracksMain({ track }: Props) {
         description: track.title,
         order_id: data.id,
         handler: async () => {
-          // Save purchase to Firestore
+          // Save purchase — enrollment is Postgres (backend), not Firestore.
+          // Firebase stays scoped to auth + storage.
           if (user.uid) {
             try {
-              await updateDoc(doc(db, "users", user.uid), {
-                PrevCourses: arrayUnion({ id: track.id, title: track.title, purchasedAt: new Date().toISOString() }),
-              });
+              await enrollCourse({ student_id: user.uid, course_id: track.id, course_title: track.title });
               // Update local store so UI reflects purchase immediately
               const updated = {
                 ...currentuserhistory,
@@ -88,7 +85,7 @@ export default function TracksMain({ track }: Props) {
               };
               setCurrentUserHistory(updated, "purchase", true);
             } catch (e) {
-              console.error("Firestore update failed", e);
+              console.error("Enrollment save failed", e);
             }
           }
           navigate(`/course/${track.id}`);

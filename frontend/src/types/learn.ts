@@ -165,3 +165,9 @@ export interface Journey {
   ai: { narrative: string; insights: string[]; focus: string };
 }
 
+export interface EnrolledCourse {
+  id: number;
+  title: string;
+  purchased_at: string;
+}
+

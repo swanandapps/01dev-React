@@ -173,3 +173,17 @@ class TutorRequest(BaseModel):
     course_id: str
     messages: List[TutorTurn]
     lecture: str = ""  # the lecture the student is currently watching, if any
+
+
+# ---- Enrollment (Postgres system of record; Firebase stays auth + storage only) ----
+
+class EnrolledCourse(BaseModel):
+    id: int
+    title: str
+    purchased_at: str
+
+
+class EnrollRequest(BaseModel):
+    student_id: str
+    course_id: int
+    course_title: str

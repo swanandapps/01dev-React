@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from app.models import (
     AskRequest, AskResponse, Course, QuizSubmit,
     AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest, TutorRequest,
+    EnrolledCourse, EnrollRequest,
 )
 from app.services.vector_store import vector_store
 from app.services.rag_service import ask, ask_stream, _build_sources
@@ -27,7 +28,7 @@ from app.services.store import store
 from app.services import (
     study_guide_service, question_service, quiz_service, adaptive_service,
     knowledge_graph_service, recommendation_service, course_insight_service,
-    tutor_service, journey_service,
+    tutor_service, journey_service, enrollment_service,
     hermes_client, audit_service, memory_service,
     eval_service, gepa_service, context_builder, pii, llm,
     skill_graph_service,
@@ -176,6 +177,16 @@ async def recommendations(user_id: str):
 @app.get("/api/ai/journey")
 async def journey(user_id: str):
     return await journey_service.get_journey(user_id)
+
+
+@app.get("/api/enrollment/{student_id}", response_model=list[EnrolledCourse])
+async def get_enrollment(student_id: str):
+    return await enrollment_service.get_enrolled_courses(student_id)
+
+
+@app.post("/api/enrollment", response_model=list[EnrolledCourse])
+async def post_enrollment(req: EnrollRequest):
+    return await enrollment_service.enroll(req.student_id, req.course_id, req.course_title)
 
 
 @app.post("/api/ai/course-insight")
@@ -335,16 +346,13 @@ async def hermes_chat(req: Request):
     # Interpolating it into "You are tutoring the 'all-courses' course" was
     # confusing the model into treating it as an actual enrolled course (it
     # answered "you're enrolled in the course called all-courses" when asked).
-    # Also: this backend has no enrollment data source at all (enrollment
-    # currently only lives in Firestore, unread here) — the model should
-    # decline enrollment questions honestly, not guess.
     if course_slug == "all-courses":
         persona = gepa_service.read_soul() + (
             "\nYou help students with ANY course on the01.dev — you are not scoped to a "
             "single course in this conversation. Use search_course_content freely across "
             "all courses and mention which course an answer came from. If asked what "
-            "courses the student is enrolled in, say plainly that you don't have access "
-            "to enrollment records — do not guess or invent a course name."
+            "courses the student is enrolled in or has access to, use the "
+            "get_enrolled_courses tool — you DO have this data now, don't decline or guess."
         )
     else:
         persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "

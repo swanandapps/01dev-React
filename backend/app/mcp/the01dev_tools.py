@@ -36,7 +36,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
-    from app.services import journey_service, knowledge_graph_service
+    from app.services import journey_service, knowledge_graph_service, enrollment_service
     from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")
@@ -258,6 +258,21 @@ async def get_learning_strengths(student_id: str) -> dict:
         "weaknesses": enriched_weaknesses,
         "concepts_attempted": data["concepts_attempted"],
     }
+
+
+# ── Enrollment (thin wrapper over enrollment_service) ─────────────────────────
+@mcp.tool()
+async def get_enrolled_courses(student_id: str) -> list[dict]:
+    """Which courses this student actually has access to (purchased/enrolled).
+    Use this for "what courses am I enrolled in / do I have access to" — you DO
+    have this data now, don't decline or guess. An empty list means genuinely
+    no enrollments yet, not that you lack access to check — say that plainly.
+
+    Args:
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
+    """
+    return await enrollment_service.get_enrolled_courses(student_id)
 
 
 # ── Skill observation write (thin wrapper over skill_graph_service.record_observation) ─

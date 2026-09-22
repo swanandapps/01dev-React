@@ -8,6 +8,7 @@ import {
   FBgetLoggedUserandStoreHistory,
 } from "./lib/firebase";
 import { useUserSessionStore } from "./store/userSession";
+import { getEnrollment } from "./lib/learnApi";
 import HomePage from "./pages/HomePage";
 import TracksPage from "./pages/TracksPage";
 import CourseDetailsPage from "./pages/CourseDetailsPage";
@@ -59,8 +60,18 @@ function AppInner() {
           });
         }
         const history = await FBgetLoggedUserandStoreHistory(user.uid);
-        if (history) {
-          setCurrentUserHistory(history, isNew ? "new" : "existing", true);
+        // Enrollment (PrevCourses) is Postgres now, not Firestore — Firebase
+        // stays scoped to auth + storage. Fall back to Firestore's cached
+        // PrevCourses only if the enrollment fetch itself fails.
+        let prevCourses: { id: number }[] = (history as { PrevCourses?: { id: number }[] } | null)?.PrevCourses || [];
+        try {
+          const enrollment = await getEnrollment(user.uid);
+          prevCourses = enrollment.map((c) => ({ id: c.id }));
+        } catch (e) {
+          console.error("Enrollment fetch failed, falling back to cached Firestore data", e);
+        }
+        if (history || prevCourses.length) {
+          setCurrentUserHistory({ ...(history || {}), PrevCourses: prevCourses }, isNew ? "new" : "existing", true);
         }
       } else {
         logout();

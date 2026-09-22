@@ -51,8 +51,9 @@ def test_all_courses_sentinel_does_not_read_as_a_real_course_name(monkeypatch):
     # The old phrasing ("You are tutoring the 'all-courses' course") made the
     # model answer "you're enrolled in the course called all-courses" when
     # asked what courses the student is enrolled in — it must not read as a
-    # real course name, and the model should be told to decline enrollment
-    # questions rather than guess (this backend has no enrollment data at all).
+    # real course name. (Enrollment now has real data via the
+    # get_enrolled_courses tool — see test_enrollment_endpoint.py /
+    # test_mcp_get_enrolled_courses.py; this test only checks the sentinel.)
     from app.services import audit_service, memory_service
 
     captured = {}
@@ -91,4 +92,4 @@ def test_all_courses_sentinel_does_not_read_as_a_real_course_name(monkeypatch):
     assert resp.status_code == 200
     system = captured["system"]
     assert "tutoring the 'all-courses' course" not in system
-    assert "don't have access to enrollment records" in system
+    assert "get_enrolled_courses" in system
