@@ -51,6 +51,36 @@ def test_upload_text_rejects_empty(client):
     assert r.status_code == 400
 
 
+def test_upload_text_rejects_oversize(client):
+    from app.services.lab.routes import MAX_TEXT_CHARS
+
+    r = client.post("/api/lab/upload-text",
+                    json={"text": "x" * (MAX_TEXT_CHARS + 1)})
+    assert r.status_code == 400
+    assert "too long" in r.json()["detail"]
+
+
+def test_upload_text_accepts_up_to_the_limit(client):
+    from app.services.lab.routes import MAX_TEXT_CHARS
+
+    r = client.post("/api/lab/upload-text",
+                    json={"text": "x" * MAX_TEXT_CHARS})
+    assert r.status_code == 200
+    assert r.json()["docId"]
+
+
+def test_upload_pdf_rejects_oversize_before_parsing(client):
+    from app.services.lab.routes import MAX_PDF_BYTES
+
+    # Garbage bytes, not a real PDF — the size check must reject this on byte
+    # count alone, before ever handing it to PdfReader.
+    oversize = b"x" * (MAX_PDF_BYTES + 1)
+    r = client.post("/api/lab/upload",
+                    files={"file": ("notes.pdf", oversize, "application/pdf")})
+    assert r.status_code == 400
+    assert "too large" in r.json()["detail"]
+
+
 def test_start_lesson_returns_awaiting_approval_lessonview(client):
     doc_id = client.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
     r = client.post("/api/lab/lessons", json={"docId": doc_id})

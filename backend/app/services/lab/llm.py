@@ -13,14 +13,10 @@ the event loop.
 import json
 import os
 import uuid
-from pathlib import Path
 
-from dotenv import load_dotenv
-
-# QuizMe runs as its own process and didn't load the backend env before — so it
-# never saw the OPENAI/LANGFUSE keys. Load them so it uses OpenAI and traces to Langfuse.
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")  # backend/.env
-
+# app.main loads backend/.env at import, before any of this package's code
+# runs — this module doesn't need to (and, at this nested path, no longer
+# has a correct relative .env to find anyway).
 from pydantic import ValidationError
 
 from .schemas import Objective, PerObjective, Question, Summary

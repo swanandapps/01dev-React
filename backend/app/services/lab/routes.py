@@ -19,11 +19,12 @@ import io
 import os
 import uuid
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from langgraph.types import Command
 from pydantic import BaseModel
 
+from app.deps import require_admin_key
 from app.services.lab.graph import build_graph
 from app.services.lab.llm import tutor_answer
 
@@ -32,6 +33,13 @@ router = APIRouter(prefix="/api/lab", tags=["lab"])
 GRAPH = build_graph()
 DOCS: dict[str, dict] = {}   # docId -> {"text","title"} — in-memory by design in Phase 1
 AUDIT: list[dict] = []       # HITL decision trail (EU AI Act)
+
+# Uploads are unauthenticated and DOCS/the LangGraph checkpointer keep document
+# text in memory indefinitely (no eviction/TTL until the Postgres-checkpointer
+# phase) — an unbounded upload grows the RSS of the single-worker process that
+# also serves chat/RAG/payments, risking an OOM restart. Cap both paths.
+MAX_TEXT_CHARS = 200_000       # ~ a long set of study notes
+MAX_PDF_BYTES = 10 * 1024 * 1024  # 10 MB, checked before parsing
 
 
 class UploadTextReq(BaseModel):
@@ -128,18 +136,35 @@ async def health():
 async def upload_text(req: UploadTextReq):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="empty text")
+    if len(req.text) > MAX_TEXT_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"text too long ({len(req.text)} chars; max {MAX_TEXT_CHARS})",
+        )
     doc_id = uuid.uuid4().hex[:12]
     DOCS[doc_id] = {"text": req.text, "title": req.title or ""}
     return {"docId": doc_id}
 
 
+def _extract_pdf_text(data: bytes) -> str:
+    """Synchronous, CPU-bound PDF parsing — run via run_in_threadpool, never
+    called directly from an async handler (it would block the event loop for
+    the whole extraction, stalling /health, SSE chat streams, everything)."""
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(data))
+    return "\n".join((p.extract_text() or "") for p in reader.pages).strip()
+
+
 @router.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     data = await file.read()
+    if len(data) > MAX_PDF_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"PDF too large ({len(data)} bytes; max {MAX_PDF_BYTES})",
+        )
     try:
-        from pypdf import PdfReader
-        reader = PdfReader(io.BytesIO(data))
-        text = "\n".join((p.extract_text() or "") for p in reader.pages).strip()
+        text = await run_in_threadpool(_extract_pdf_text, data)
     except Exception as e:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"could not read PDF: {e}")
     if not text:
@@ -202,7 +227,7 @@ async def ask(lesson_id: str, req: AskReq):
     return {"answer": answer}
 
 
-@router.get("/audit")
+@router.get("/audit", dependencies=[Depends(require_admin_key)])
 async def audit(limit: int = 20):
     """HITL decision trail — additive, not part of the Mastra contract."""
     return list(reversed(AUDIT))[:limit]

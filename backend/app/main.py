@@ -12,7 +12,7 @@ import hashlib
 from opentelemetry import trace as otel_trace
 
 import razorpay
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -38,6 +38,10 @@ from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.routing import smalltalk_classifier
 from app.services.lab.routes import router as lab_router
+# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
+# run/approve, eval history, lab audit) are gated behind a shared secret — see
+# app/deps.py for require_admin_key and why it lives there, not here.
+from app.deps import require_admin_key
 
 # _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
 # routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
@@ -47,19 +51,6 @@ _MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
-
-# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
-# run/approve, eval history) have no per-user auth model yet — gate them
-# with a shared secret instead of leaving them open on a public URL.
-# Unset locally on purpose (dev convenience); Railway sets a real value.
-_ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")
-
-
-async def require_admin_key(x_admin_key: str = Header(default="")) -> None:
-    if not _ADMIN_API_KEY:
-        return  # no key configured (local dev) — leave routes open, same as today
-    if x_admin_key != _ADMIN_API_KEY:
-        raise HTTPException(status_code=401, detail="Missing or invalid X-Admin-Key")
 
 
 class PaymentRequest(BaseModel):
