@@ -36,8 +36,11 @@ AUDIT: list[dict] = []       # HITL decision trail (EU AI Act)
 
 # Uploads are unauthenticated and DOCS/the LangGraph checkpointer keep document
 # text in memory indefinitely (no eviction/TTL until the Postgres-checkpointer
-# phase) — an unbounded upload grows the RSS of the single-worker process that
-# also serves chat/RAG/payments, risking an OOM restart. Cap both paths.
+# phase), so an accepted upload grows the RSS of the single-worker process that
+# also serves chat/RAG/payments for the life of the process. These caps bound
+# what we RETAIN, not what we receive: /upload still reads the whole request
+# body before it can measure it, so a huge POST costs transient spool + memory
+# regardless. Bounding the body itself needs a Content-Length/chunked read.
 MAX_TEXT_CHARS = 200_000       # ~ a long set of study notes
 MAX_PDF_BYTES = 10 * 1024 * 1024  # 10 MB, checked before parsing
 

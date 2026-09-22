@@ -10,13 +10,14 @@ context only on the synchronous graph path, so nodes (and thus these calls) are
 sync. The FastAPI layer runs the graph in a threadpool, so blocking never stalls
 the event loop.
 """
+
+# Env: app.main loads backend/.env at import, before any of this package's
+# code runs, so this module does no .env loading of its own.
+
 import json
 import os
 import uuid
 
-# app.main loads backend/.env at import, before any of this package's code
-# runs — this module doesn't need to (and, at this nested path, no longer
-# has a correct relative .env to find anyway).
 from pydantic import ValidationError
 
 from .schemas import Objective, PerObjective, Question, Summary
