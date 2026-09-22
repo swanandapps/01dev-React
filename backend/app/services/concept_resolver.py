@@ -25,34 +25,72 @@ Never rewrites existing rows. `adaptive_service._perf_id` is
 f"{user_id}__{concept}", so changing a concept's spelling changes its doc id
 and would orphan the row.
 
-Fix-round-1 additions (all defend against things found against the LIVE pool):
+Fix-round-1 additions (defend against things found against the LIVE pool):
 
 - knowledge_graph_service writes {course_id, name, description} with no
-  `embedding` field at all — that's every node in production today. The
-  embedding branch used to silently skip any node without one, making it
-  reachable only by exact slug match. Now a pool node found without a usable
-  embedding is embedded from its `name` and persisted back onto the SAME
-  document (via `store.list_all_with_ids`, not a reconstructed id — the id
-  scheme knowledge_graph_service uses, `f"{course_id}::{name}"` with the RAW
-  name, differs from the `scope::slug` scheme this module uses for nodes it
-  creates itself). Bounded per call — see MAX_BACKFILL_PER_RESOLVE.
-- `slugify` used to strip anything non-ASCII-alphanumeric, so `C++`, `C#` and
-  `C` all collapsed to `"c"` and a student's C# notes would silently move
-  their C++ mastery. Distinguishing symbols are spelled out before stripping,
-  and unicode letters/digits are kept (not deleted), so non-Latin names slug
-  to themselves rather than to nothing.
-- A candidate that STILL slugifies to nothing (emoji-only, punctuation-only)
-  no longer returns `""` — a blank canonical name would collide every such
-  candidate onto the same `concept_performance` row
-  (`f"{user_id}__{concept}"`). It falls back to a stable hash of the original
-  text, logged as such.
-- `_cosine` used to zip mismatched-length vectors and silently truncate,
-  which is reachable in practice: `embeddings.py` embeds at 256 dims locally
-  (no API key) and 1536 via OpenAI, and a node's stored vector doesn't change
-  dimension just because the service that will read it next does. A
-  dimension mismatch is now treated the same as "no usable embedding" — the
-  node gets re-embedded (and its stored dimension/model updated), never
-  compared truncated.
+  `embedding` field at all — that's every node in production today. A pool
+  node found without a usable embedding is embedded from its `name` and
+  persisted back onto the SAME document (via `store.list_all_with_ids`, not
+  a reconstructed id — the id scheme knowledge_graph_service uses,
+  `f"{course_id}::{name}"` with the RAW name, differs from the
+  `scope::slug` scheme this module uses for nodes it creates itself).
+- `slugify` spells out distinguishing symbols (C++ / C# / C must not all
+  become "c") and keeps unicode letters/digits instead of deleting them.
+- A candidate that slugifies to nothing (emoji-only, punctuation-only) falls
+  back to a stable hash of the original text rather than returning "" —
+  "" would collide every such candidate onto one concept_performance row.
+- A dimension mismatch between a stored vector and the candidate's is
+  treated as "no usable embedding" (re-embed), never compared truncated —
+  reachable because embeddings.py embeds at 256 dims locally vs 1536 via
+  OpenAI.
+
+Fix-round-2 additions (a bound that itself forked permanent duplicates, plus
+robustness the first fix-round didn't cover):
+
+- CRITICAL: bounding the pool-vs-candidate comparison (so one student's
+  request can't pay for embedding an unbounded backlog) is only safe to do
+  in front of a MERGE, never in front of a CREATE. Merging is recoverable;
+  creating a node is not. So the bound now gates only the fast path: if a
+  match is found while comparing the first MAX_BACKFILL_PER_RESOLVE-or-fewer
+  cold nodes, return it immediately. If nothing matches within that budget,
+  the *remaining* cold nodes are backfilled and compared too — unbounded —
+  before a create is allowed to happen. A prior version bounded the whole
+  comparison, so a 9-node cold pool with the true match at position 9 and a
+  bound of 5 forked a permanent duplicate: the fork then wins the exact-slug
+  branch forever, so that student's course mastery never moved again. DO NOT
+  re-bound the path in front of create() — that reintroduces exactly this.
+- A failed backfill embed (rate limit, outage) is caught per-node and no
+  longer propagates out of resolve() — pre-round-1, a vectorless node was
+  merely unreachable via the embedding branch, never a crash, and that must
+  still hold. If a failure means the pool couldn't be fully compared before
+  a create, the create still happens (a student's request must never hang
+  or 500 on this), but the resolution log records
+  `comparison_incomplete: True` and how many nodes were unreadable, so a
+  possible fork is findable later instead of silent.
+- The exact-slug branch deliberately does NOT trigger backfill. Repeat
+  candidates for the same concept hit that branch and return immediately;
+  making the cheapest, most common path also pay for pool migration would
+  be exactly backwards. Coldness only matters — and only gets paid for — at
+  the moment a create is about to happen, per the point above.
+- `best_name` is now checked for truthiness, not `is not None` — a pool
+  node with `name: ""` and a usable embedding used to be returned as the
+  resolved name, and "" is exactly the value that poisons `_perf_id`.
+- Symbol substitution (+/# -> plus/sharp) now only applies when the
+  original string has at least one alphanumeric character. Without that
+  guard, pure junk like "#" or "@#$%^&*" slugified to a plausible-looking
+  word ("sharp") instead of falling back to the hash path, and could then
+  merge with an unrelated real concept of that name.
+- `resolve(None)` and `resolve("")`/whitespace-only no longer reach
+  `embed()` at all — None used to crash before hitting the API, and a
+  blank string is rejected BY the API. Both now go straight to the
+  fallback-slug path.
+- A persisted embedding's `embedding_model` tag is now compared too, not
+  just its length — dimension alone can't tell two same-length vectors
+  from different provenances apart (embeddings.py's local fallback uses
+  Python's `hash()`, per-process randomised). A missing tag (data written
+  before this field existed, including this module's own tests) is
+  trusted rather than treated as stale; only an explicit mismatch forces
+  re-embed.
 """
 import hashlib
 import re
@@ -73,39 +111,45 @@ _SELF_STUDY_SCOPE = "self-study"
 
 # Symbols that distinguish otherwise-identical short names and must survive
 # slugify rather than being stripped to nothing (`C++`, `C#`, `C` must not
-# all become "c"). Order matters only in that longer tokens should be mapped
-# before any substrings of them would be.
+# all become "c"). Only applied when the original has real alphanumeric
+# content — see slugify().
 _SYMBOL_WORDS = {
     "+": "plus",
     "#": "sharp",
 }
 
-# Bound on how many pool nodes without a usable embedding get backfilled
-# during a single resolve() call. The live pool had 9 concept nodes and NONE
-# carried an embedding at the time this was found, so a cold pool needs this
-# to be more than a token amount — 5 clears most or all of a pool that size
-# in one call and the rest within two or three more, without making one
-# student's request pay for embedding an unbounded backlog synchronously.
+# Bound on how many cold (unbackfilled/stale) pool nodes are compared on the
+# FAST path of a single resolve() call — i.e. before we know whether we'll
+# need to create. This bound must NEVER gate the comparison that happens
+# immediately before a create decision: see the fix-round-2 note above. The
+# live pool had 9 concept nodes and NONE carried an embedding, so a cold
+# pool needs this to be more than a token amount — 5 clears most of a pool
+# that size for free (no create pending) and the rest is paid for, in full,
+# by whichever request would otherwise have forked a duplicate.
 MAX_BACKFILL_PER_RESOLVE = 5
 
 
 def slugify(name: str) -> str:
     """'React.memo' -> 'react-memo'. Lowercase; symbols that distinguish
     otherwise-identical names (C++ / C# / C) are spelled out rather than
-    stripped; unicode letters/digits are kept, not deleted, so non-Latin
-    names slug to themselves instead of to nothing."""
+    stripped, but only when the string has real alphanumeric content —
+    otherwise pure junk like "#" would slug to a plausible word ("sharp")
+    instead of falling through to the hash fallback where it belongs.
+    Unicode letters/digits are kept, not deleted, so non-Latin names slug
+    to themselves instead of to nothing."""
     s = str(name or "")
-    for sym, word in _SYMBOL_WORDS.items():
-        s = s.replace(sym, f"-{word}-")
+    if any(ch.isalnum() for ch in s):
+        for sym, word in _SYMBOL_WORDS.items():
+            s = s.replace(sym, f"-{word}-")
     s = unicodedata.normalize("NFKC", s).lower()
     out = [ch if ch.isalnum() else "-" for ch in s]
     s = re.sub(r"-+", "-", "".join(out))
     return s.strip("-")
 
 
-def _fallback_slug(original: str) -> str:
+def _fallback_slug(original) -> str:
     """Deterministic slug for a name that slugifies to nothing (emoji-only,
-    punctuation-only, or empty). Uses hashlib — NOT Python's built-in
+    punctuation-only, empty, or None). Uses hashlib — NOT Python's built-in
     hash(), which is randomised per process for strings and would mint a
     new node for the same odd name on every restart — so the fallback is
     stable across calls and processes."""
@@ -124,13 +168,45 @@ def _cosine(a: list[float], b: list[float]) -> float:
 
 def _current_embedding_model() -> str:
     # Read-only mirror of embeddings.py's own choice (never modify that
-    # file). Purely descriptive metadata; the actual reuse/backfill decision
-    # below is driven by comparing vector LENGTHS, not this string, so a
-    # stale or missing value here can't cause a wrong comparison.
+    # file). Used both as descriptive metadata and, since round 2, as part
+    # of the staleness check alongside vector length.
     return "text-embedding-3-small" if getattr(embedding_service, "use_openai", False) else "local-hash-256"
 
 
-async def _log(candidate: str, resolved_to: str, method: str, score, **extra) -> None:
+def _node_needs_backfill(node: dict, candidate_dim: int) -> bool:
+    vec = node.get("embedding")
+    if not vec or len(vec) != candidate_dim:
+        return True
+    tag = node.get("embedding_model")
+    # A missing tag is legacy/test data written before this field existed —
+    # trusted rather than treated as stale. Only an explicit mismatch (the
+    # service's current choice has actually changed) forces re-embed.
+    return tag is not None and tag != _current_embedding_model()
+
+
+async def _try_backfill(doc_id: str, node: dict):
+    """Embed a pool node's name and persist the vector back onto the SAME
+    document, preserving every existing field. Returns the fresh vector, or
+    None if the embed or the write failed — caught here so one bad node
+    (rate limit, outage, whatever) can't crash somebody else's resolve()
+    call. Pre-round-1, a vectorless node was merely unreachable via the
+    embedding branch, never a crash; that property must survive a failed
+    backfill attempt too."""
+    try:
+        vec = await embedding_service.embed(node.get("name", ""))
+        await store.set(CONCEPTS, doc_id, {
+            **node,
+            "embedding": vec,
+            "embedding_dim": len(vec),
+            "embedding_model": _current_embedding_model(),
+        })
+    except Exception:
+        return None
+    await _log_backfill(node.get("name", ""), doc_id)
+    return vec
+
+
+async def _log(candidate, resolved_to: str, method: str, score, **extra) -> None:
     ts = datetime.now(timezone.utc).isoformat()
     entry = {
         "candidate": candidate,
@@ -140,7 +216,7 @@ async def _log(candidate: str, resolved_to: str, method: str, score, **extra) ->
         "at": ts,
     }
     entry.update(extra)
-    await store.set(RESOLUTIONS, f"{slugify(candidate) or 'x'}__{ts}", entry)
+    await store.set(RESOLUTIONS, f"{slugify(str(candidate or '')) or 'x'}__{ts}", entry)
 
 
 async def _log_backfill(node_name: str, doc_id: str) -> None:
@@ -160,7 +236,7 @@ async def _log_backfill(node_name: str, doc_id: str) -> None:
     })
 
 
-async def resolve(candidate: str, course_id: str | None = None) -> str:
+async def resolve(candidate, course_id: str | None = None) -> str:
     """Canonical concept name to key concept_performance on. Never returns "".
 
     `course_id` is the INGEST SOURCE's course, not a filter — the search pool is
@@ -176,53 +252,105 @@ async def resolve(candidate: str, course_id: str | None = None) -> str:
 
     known = await store.list_all_with_ids(CONCEPTS)
 
-    # 1. exact slug match — free, no API call
+    # 1. exact slug match — free, no API call, and deliberately does no
+    # backfill: this is the cheapest, most common path (repeat candidates
+    # for a concept already resolved once) and must stay that way.
     for _doc_id, c in known:
         if slugify(c.get("name", "")) == slug:
             await _log(candidate, c["name"], "slug", 1.0, used_fallback_slug=used_fallback_slug)
             return c["name"]
 
-    # 2. embedding compare against cached concept embeddings. Pool nodes with
-    # no embedding, or one of a stale dimension, are backfilled in place
-    # (bounded) rather than skipped or truncate-compared.
-    candidate_vec = await embedding_service.embed(candidate)
-    candidate_dim = len(candidate_vec)
+    # Nothing to embed for None / blank-only input — None crashes embed()
+    # before it even reaches the API, and a whitespace-only string is
+    # rejected BY the API. A punctuation/emoji-only candidate (non-blank,
+    # e.g. "!!!") still has real characters and goes through normally; only
+    # truly empty input skips the embedding branch entirely.
+    candidate_is_embeddable = candidate is not None and str(candidate).strip() != ""
+
+    candidate_vec = None
+    candidate_dim = None
     best_name, best_score = None, 0.0
-    backfilled = 0
-    for doc_id, c in known:
-        vec = c.get("embedding")
-        if not vec or len(vec) != candidate_dim:
-            if backfilled >= MAX_BACKFILL_PER_RESOLVE:
-                continue  # leave it for a later resolve() call; don't block this request
-            vec = await embedding_service.embed(c.get("name", ""))
-            await store.set(CONCEPTS, doc_id, {
-                **c,
-                "embedding": vec,
-                "embedding_dim": len(vec),
-                "embedding_model": _current_embedding_model(),
-            })
-            await _log_backfill(c.get("name", ""), doc_id)
-            backfilled += 1
+    did_compare = False
+    unreadable = 0
 
-        score = _cosine(candidate_vec, vec)
-        if score > best_score:
-            best_name, best_score = c.get("name"), score
+    if candidate_is_embeddable:
+        did_compare = True
+        candidate_vec = await embedding_service.embed(candidate)
+        candidate_dim = len(candidate_vec)
 
-    if best_name is not None and best_score >= SIMILARITY_THRESHOLD:
-        await _log(candidate, best_name, "embedding", best_score, used_fallback_slug=used_fallback_slug)
-        return best_name
+        # 2. embedding compare against cached concept embeddings. Cold pool
+        # nodes are backfilled in place, bounded — but ONLY as a fast path:
+        # if that bounded pass already finds a merge, return it now. If it
+        # doesn't, the bound must not be allowed to gate the decision to
+        # create — see the fix-round-2 note at the top of this file.
+        backfilled = 0
+        pending = []  # cold nodes not yet attempted because the bound was hit
+        for doc_id, c in known:
+            vec = c.get("embedding")
+            if _node_needs_backfill(c, candidate_dim):
+                if backfilled >= MAX_BACKFILL_PER_RESOLVE:
+                    pending.append((doc_id, c))
+                    continue
+                backfilled += 1  # counts the ATTEMPT, success or not — a
+                                 # flaky node can't let a hostile candidate
+                                 # spend the whole budget retrying it
+                fresh = await _try_backfill(doc_id, c)
+                if fresh is None:
+                    unreadable += 1
+                    continue
+                vec = fresh
+
+            score = _cosine(candidate_vec, vec)
+            if score > best_score:
+                best_name, best_score = c.get("name"), score
+
+        if best_name and best_score >= SIMILARITY_THRESHOLD:
+            await _log(candidate, best_name, "embedding", best_score, used_fallback_slug=used_fallback_slug)
+            return best_name
+
+        # No merge on the bounded pass, but the pool wasn't fully compared.
+        # Creating now would risk forking a permanent duplicate over a real
+        # match we simply hadn't reached the budget for — exactly what
+        # forked one in production. Finish the remainder, unbounded,
+        # because creating a node cannot be undone the way returning a
+        # merge can.
+        for doc_id, c in pending:
+            fresh = await _try_backfill(doc_id, c)
+            if fresh is None:
+                unreadable += 1
+                continue
+            score = _cosine(candidate_vec, fresh)
+            if score > best_score:
+                best_name, best_score = c.get("name"), score
+
+        if best_name and best_score >= SIMILARITY_THRESHOLD:
+            await _log(candidate, best_name, "embedding", best_score, used_fallback_slug=used_fallback_slug)
+            return best_name
 
     # 3. create a new node — the graph grows to fit the student
     scope = course_id or _SELF_STUDY_SCOPE
-    await store.set(CONCEPTS, f"{scope}::{slug}", {
+    doc = {
         "course_id": course_id,     # None for self-study, deliberately not a string
         "name": slug,
         "description": "",
         "created_by": "student_content",
-        "embedding": candidate_vec,  # cached so the pool is never re-embedded
-        "embedding_dim": candidate_dim,
-        "embedding_model": _current_embedding_model(),
         "created_at": datetime.now(timezone.utc).isoformat(),
-    })
-    await _log(candidate, slug, "created", best_score, used_fallback_slug=used_fallback_slug)
+    }
+    if candidate_vec is not None:
+        doc.update({
+            "embedding": candidate_vec,      # cached so the pool is never re-embedded
+            "embedding_dim": candidate_dim,
+            "embedding_model": _current_embedding_model(),
+        })
+    await store.set(CONCEPTS, f"{scope}::{slug}", doc)
+
+    extra = {"used_fallback_slug": used_fallback_slug}
+    if unreadable:
+        # The pool comparison could not be fully completed before this
+        # create — some nodes' backfill attempts failed. A possible fork
+        # from this must be findable later, since we chose to let the
+        # student's request through rather than block or crash it.
+        extra["comparison_incomplete"] = True
+        extra["unreadable_pool_nodes"] = unreadable
+    await _log(candidate, slug, "created", best_score if did_compare else None, **extra)
     return slug
