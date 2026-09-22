@@ -48,7 +48,18 @@ def _make_client():
     return client, model
 
 
-_client, _MODEL = _make_client()
+# Built on first use, not at import: importing a service module must not
+# require credentials or do work. app/main.py now imports this transitively.
+_CLIENT_CACHE: tuple | None = None
+
+
+def _get_client() -> tuple:
+    """(client, model), constructed once on first call and cached."""
+    global _CLIENT_CACHE
+    if _CLIENT_CACHE is None:
+        _CLIENT_CACHE = _make_client()
+    return _CLIENT_CACHE
+
 
 DIFFICULTIES = {"beginner", "intermediate", "advanced"}
 
@@ -56,8 +67,9 @@ DIFFICULTIES = {"beginner", "intermediate", "advanced"}
 def _chat_json(system: str, user: str, max_tokens: int = 900) -> dict:
     """One JSON-mode call to the local model, with a single defensive retry."""
     for attempt in range(2):
-        resp = _client.chat.completions.create(
-            model=_MODEL,
+        client, model = _get_client()
+        resp = client.chat.completions.create(
+            model=model,
             temperature=0.4 if attempt == 0 else 0.1,
             max_tokens=max_tokens,
             response_format={"type": "json_object"},
@@ -184,8 +196,9 @@ def tutor_answer(document: str, objective: dict | None, question: str) -> str:
         "it outright — ask a guiding question or point to the concept. 2-3 sentences, plain prose."
     )
     obj = objective.get("title") if objective else "the current topic"
-    resp = _client.chat.completions.create(
-        model=_MODEL,
+    client, model = _get_client()
+    resp = client.chat.completions.create(
+        model=model,
         temperature=0.5,
         max_tokens=250,
         messages=[
@@ -227,8 +240,9 @@ _ARTIFACT_SYS = {
 def gen_artifact(artifact_type: str, document: str) -> str:
     """Generate one document artifact (notes/summary/quiz/flashcards) as text."""
     system = _ARTIFACT_SYS.get(artifact_type, _ARTIFACT_SYS["summary"])
-    resp = _client.chat.completions.create(
-        model=_MODEL,
+    client, model = _get_client()
+    resp = client.chat.completions.create(
+        model=model,
         temperature=0.3,
         max_tokens=600,
         messages=[
