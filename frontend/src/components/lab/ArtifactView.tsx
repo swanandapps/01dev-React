@@ -8,6 +8,17 @@ const META = {
   study_plan: { icon: ListOrdered, title: "Study plan" },
 } as const;
 
+// The generators drop malformed items, so an empty list/string is a real,
+// reachable outcome — not just a loading gap. Silence is the worst option
+// here: show a short, honest message instead of an icon over blank space.
+function EmptyNote({ title }: { title: string }) {
+  return (
+    <p className="text-sm text-zinc-500 bg-zinc-800/30 border border-zinc-700/40 rounded-xl px-4 py-4">
+      Nothing usable came back for {title.toLowerCase()} — try again or add more material.
+    </p>
+  );
+}
+
 export function ArtifactView({ artifacts }: { artifacts: LabArtifacts }) {
   const present = (Object.keys(META) as (keyof typeof META)[]).filter(
     (k) => artifacts[k] !== undefined,
@@ -27,32 +38,45 @@ export function ArtifactView({ artifacts }: { artifacts: LabArtifacts }) {
               </p>
             </div>
 
-            {key === "flashcards" && (
-              <FlashcardDeck cards={(artifacts.flashcards ?? []) as Flashcard[]} />
-            )}
+            {key === "flashcards" && (() => {
+              const cards = (artifacts.flashcards ?? []) as Flashcard[];
+              return cards.length
+                ? <FlashcardDeck cards={cards} />
+                : <EmptyNote title={title} />;
+            })()}
 
-            {key === "summary" && (
-              <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-4">
-                {artifacts.summary as string}
-              </p>
-            )}
+            {key === "summary" && (() => {
+              const summary = ((artifacts.summary as string | undefined) ?? "").trim();
+              return summary
+                ? (
+                  <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-4">
+                    {summary}
+                  </p>
+                )
+                : <EmptyNote title={title} />;
+            })()}
 
-            {key === "study_plan" && (
-              <ol className="flex flex-col gap-2">
-                {((artifacts.study_plan ?? []) as StudyPlanStep[]).map((s) => (
-                  <li key={s.step}
-                      className="bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 flex gap-3">
-                    <span className="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                      {s.step}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-100">{s.title}</p>
-                      {s.detail && <p className="text-xs text-zinc-500 mt-0.5">{s.detail}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
+            {key === "study_plan" && (() => {
+              const steps = (artifacts.study_plan ?? []) as StudyPlanStep[];
+              return steps.length
+                ? (
+                  <ol className="flex flex-col gap-2">
+                    {steps.map((s) => (
+                      <li key={s.step}
+                          className="bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 flex gap-3">
+                        <span className="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {s.step}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-zinc-100">{s.title}</p>
+                          {s.detail && <p className="text-xs text-zinc-500 mt-0.5">{s.detail}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )
+                : <EmptyNote title={title} />;
+            })()}
           </div>
         );
       })}

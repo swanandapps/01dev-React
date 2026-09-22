@@ -1,5 +1,9 @@
-import { useRef, useState } from "react";
-import { Upload, NotebookPen, Loader2, Sparkles, ChevronRight, Check, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  Upload, NotebookPen, Loader2, Sparkles, ChevronRight, Check, RotateCcw,
+  FlaskConical, X,
+} from "lucide-react";
 import * as quizApi from "../../lib/notesQuizApiLang";
 import { generateOutputs, OUTPUT_LABELS } from "../../lib/labApi";
 import type { LabArtifacts, OutputType } from "../../lib/labApi";
@@ -11,6 +15,42 @@ type Step = "input" | "generating" | "results";
 
 const ALL_OUTPUTS: OutputType[] = ["quiz", "flashcards", "summary", "study_plan"];
 
+// Shared chrome so every step — including the quiz hand-off — carries a
+// visible "Lab" title and a close control that actually calls onClose.
+// Matches the header idiom in NotesQuizModal's own modal chrome and
+// AdaptiveModal (icon + title/subtitle left, X right).
+function StudioHeader({
+  subtitle,
+  onClose,
+  extra,
+}: {
+  subtitle: string;
+  onClose: () => void;
+  extra?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <FlaskConical className="w-4 h-4 text-indigo-400" />
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-100">Lab</h2>
+          <p className="text-xs text-zinc-500">{subtitle}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {extra}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="text-zinc-500 hover:text-zinc-200"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function LabStudio({
   studentId,
   onClose,
@@ -20,7 +60,7 @@ export function LabStudio({
   onClose: () => void;
   lectureText?: string;
 }) {
-  const [mode, setMode] = useState<InputMode>(lectureText ? "text" : "text");
+  const [mode, setMode] = useState<InputMode>("text");
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState(lectureText ?? "");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -32,6 +72,16 @@ export function LabStudio({
   const [error, setError] = useState("");
   const [artifacts, setArtifacts] = useState<LabArtifacts>({});
   const [lessonId, setLessonId] = useState<string | null>(null);
+
+  // Esc closes Lab the same way the header X does, wherever Lab is presented
+  // (in-course modal or the full page).
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
 
   const toggle = (t: OutputType) =>
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
@@ -75,21 +125,49 @@ export function LabStudio({
 
   if (step === "results" && lessonId) {
     // Quiz was selected — hand straight off to the existing, parity-verified
-    // quiz UI, with any artifacts shown above it.
+    // quiz UI, with any artifacts shown above it. "Back to Lab" stays
+    // reachable the whole time (plan/quizzing/complete, below), and is also
+    // wired into NotesQuizModal's own completion screen via onRestart — so
+    // neither abandoning nor finishing the quiz can strand the student in
+    // NotesQuizModal's retired standalone upload form.
     return (
       <div className="flex flex-col gap-6">
+        <StudioHeader
+          subtitle="Continuing into your quiz"
+          onClose={onClose}
+          extra={
+            <button
+              onClick={restart}
+              className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Back to Lab
+            </button>
+          }
+        />
         <ArtifactView artifacts={artifacts} />
         <NotesQuizModal
           variant="page"
           resumeLessonId={lessonId}
           onClose={onClose}
+          onRestart={restart}
         />
       </div>
     );
   }
 
+  const subtitle =
+    step === "generating"
+      ? "Working through your material…"
+      : step === "results"
+      ? "Here's what we made"
+      : lectureText
+      ? "Using this lecture's transcript"
+      : "Bring your material, then pick what to make";
+
   return (
     <div className="flex flex-col gap-5">
+      <StudioHeader subtitle={subtitle} onClose={onClose} />
+
       {error && (
         <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-xl px-4 py-3">
           {error}
@@ -233,7 +311,13 @@ export function LabStudio({
 
       {step === "results" && !lessonId && (
         <>
-          <ArtifactView artifacts={artifacts} />
+          {Object.keys(artifacts).length > 0 ? (
+            <ArtifactView artifacts={artifacts} />
+          ) : (
+            <p className="text-sm text-zinc-400 bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-4">
+              Nothing usable came back for this material — try again, or add more detail and retry.
+            </p>
+          )}
           <button
             onClick={restart}
             className="w-full inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-zinc-300 text-sm font-medium rounded-xl py-3 transition-colors"

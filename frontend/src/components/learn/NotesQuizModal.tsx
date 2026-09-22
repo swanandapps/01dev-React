@@ -32,11 +32,17 @@ export function NotesQuizModal({
   variant = "modal",
   api = quizApi,
   resumeLessonId,
+  onRestart,
 }: {
   onClose: () => void;
   variant?: "modal" | "page";
   api?: QuizApi;
   resumeLessonId?: string;
+  /** When set (Lab hosts this resumed lesson), the "complete" screen's
+   *  restart action defers to this instead of the internal restart() —
+   *  the internal one reopens this component's own upload form, which is
+   *  retired for the Lab path (Lab's own studio owns new-material intake). */
+  onRestart?: () => void;
 }) {
   const [mode, setMode] = useState<InputMode>("text");
   const [notes, setNotes] = useState("");
@@ -224,8 +230,11 @@ export function NotesQuizModal({
         </p>
       )}
 
-      {/* INPUT */}
-      {step === "input" && (
+      {/* INPUT — never shown when resuming a Lab-started lesson: if the
+          resume fetch itself fails, this retired standalone upload form
+          must not surface. The error banner above already carries the
+          message, and Lab's own header still offers Back to Lab / close. */}
+      {step === "input" && !resumeLessonId && (
         <div className="flex flex-col gap-4">
           <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
             {(["text", "pdf"] as InputMode[]).map((m) => (
@@ -574,10 +583,10 @@ export function NotesQuizModal({
           )}
 
           <button
-            onClick={restart}
+            onClick={onRestart ?? restart}
             className="w-full inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-zinc-300 text-sm font-medium rounded-xl py-3 transition-colors"
           >
-            <RotateCcw className="w-4 h-4" /> Try another set of notes
+            <RotateCcw className="w-4 h-4" /> {onRestart ? "Make something else" : "Try another set of notes"}
           </button>
         </div>
       )}
