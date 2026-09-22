@@ -75,9 +75,15 @@ export function LabStudio({
 
   // Esc closes Lab the same way the header X does, wherever Lab is presented
   // (in-course modal or the full page).
+  // Not while they're typing: Esc in the notes textarea would close Lab and
+  // discard everything they'd written, with no undo.
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT" || el?.isContentEditable) return;
+      onClose();
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
