@@ -36,6 +36,7 @@ from app.services import (
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
+from app.routing import smalltalk_classifier
 
 # _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
 # routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
@@ -261,6 +262,19 @@ async def hermes_chat(req: Request):
 
     intent = classify(question)
 
+    # Small-talk check — only ever upgrades COURSE_QUESTION to OUT_OF_SCOPE,
+    # and only when SMALLTALK_BLOCK_ENABLED=true (default off; see
+    # smalltalk_classifier's docstring — ships observing real similarity
+    # scores before ever acting on them). The score is logged either way.
+    smalltalk = {"checked": False, "similarity": 0.0, "should_block": False}
+    if intent == Intent.COURSE_QUESTION:
+        try:
+            smalltalk = await smalltalk_classifier.check(question)
+        except Exception as e:  # noqa: BLE001 — this check must never break a chat turn
+            print(f"[hermes_chat] smalltalk check failed: {e}")
+        if smalltalk["should_block"]:
+            intent = Intent.OUT_OF_SCOPE
+
     # OTel parent span for the whole request (no-op unless tracing configured).
     # Started manually + ended in gen()'s finally so it spans the streamed generation.
     tracer = get_tracer()
@@ -270,10 +284,16 @@ async def hermes_chat(req: Request):
     span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])  # hashed, no PII
     if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
         span.set_attribute("pii_redacted", ",".join(pii_kinds))
+    if smalltalk["checked"]:
+        span.set_attribute("smalltalk_similarity", smalltalk["similarity"])
 
-    if intent == Intent.QUIZ_GENERATE:
-        outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
-        message = build_handoff_message(course_slug)
+    if intent in (Intent.QUIZ_GENERATE, Intent.OUT_OF_SCOPE):
+        if intent == Intent.QUIZ_GENERATE:
+            outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
+            message = build_handoff_message(course_slug)
+        else:
+            outcome, model_label, audit_provider = "out_of_scope_handoff", "rule-based-router", "none"
+            message = "Hey, I'm Dev — ask me about a course or a technical concept and I'll help!"
 
         span.set_attribute("outcome", outcome)
         await audit_service.log_event(
@@ -300,8 +320,8 @@ async def hermes_chat(req: Request):
     # longer a separate direct-to-OpenAI path here.
 
     # Back-fill the skill graph only for intents that actually touch it
-    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE already returned above and
-    # never reaches here. Runs inside the traced span (4
+    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE/OUT_OF_SCOPE already
+    # returned above and never reach here. Runs inside the traced span (4
     # sequential DB queries in steady state) so its latency shows up if chat
     # latency regresses, instead of being invisible before the span started.
     try:
