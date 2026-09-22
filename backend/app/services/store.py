@@ -46,6 +46,12 @@ class InMemoryStore:
     async def list_all(self, collection: str) -> List[dict]:
         return list(self._col(collection).values())
 
+    async def list_all_with_ids(self, collection: str) -> List[tuple]:
+        """Like list_all, but pairs each document with its doc_id so a caller
+        can write a correction back onto the SAME document instead of
+        reconstructing (and risking guessing wrong) an id."""
+        return list(self._col(collection).items())
+
     async def delete(self, collection: str, doc_id: str) -> None:
         self._col(collection).pop(doc_id, None)
 
@@ -100,6 +106,14 @@ class PostgresStore:
         rows = await pool.fetch("select data from docs where collection=$1", collection)
         return [r["data"] for r in rows]
 
+    async def list_all_with_ids(self, collection: str) -> List[tuple]:
+        from app.services.db import get_pool
+        pool = await get_pool()
+        rows = await pool.fetch(
+            "select doc_id, data from docs where collection=$1", collection
+        )
+        return [(r["doc_id"], r["data"]) for r in rows]
+
     async def delete(self, collection: str, doc_id: str) -> None:
         from app.services.db import get_pool
         pool = await get_pool()
@@ -140,6 +154,11 @@ class FirestoreStore:
     async def list_all(self, collection: str) -> List[dict]:
         def _op():
             return [d.to_dict() for d in self._client.collection(collection).stream()]
+        return await asyncio.to_thread(_op)
+
+    async def list_all_with_ids(self, collection: str) -> List[tuple]:
+        def _op():
+            return [(d.id, d.to_dict()) for d in self._client.collection(collection).stream()]
         return await asyncio.to_thread(_op)
 
     async def delete(self, collection: str, doc_id: str) -> None:

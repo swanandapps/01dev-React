@@ -10,9 +10,25 @@ from app.services.store import InMemoryStore
     ("  Event  Loop  ", "event-loop"),
     ("V8 Hidden Classes!", "v8-hidden-classes"),
     ("closures", "closures"),
+    # Distinguishing symbols must be spelled out, not stripped — otherwise
+    # C++, C# and C all collapse to "c" and a student's C# notes would
+    # silently move their C++ mastery via the exact-slug-match branch.
+    ("C++", "c-plus-plus"),
+    ("C#", "c-sharp"),
+    ("C", "c"),
+    # Non-ASCII letters must be kept, not deleted — "Café" must not become
+    # "caf" (which could then collide with an unrelated "Caf" concept).
+    ("Café", "café"),
 ])
 def test_slugify(raw, expected):
     assert concept_resolver.slugify(raw) == expected
+
+
+def test_slugify_distinguishes_c_variants():
+    """Belt-and-suspenders on the parametrized cases above: the three must
+    be pairwise distinct, not just individually match an expected string."""
+    slugs = {concept_resolver.slugify(s) for s in ("C++", "C#", "C")}
+    assert len(slugs) == 3
 
 
 @pytest.fixture
@@ -151,3 +167,151 @@ async def test_second_resolution_of_the_same_candidate_hits_the_slug_path(store,
     monkeypatch.setattr(embeddings.embedding_service, "embed", fail_embed)
 
     assert await concept_resolver.resolve("Kubernetes") == "kubernetes"
+
+
+# ---------------------------------------------------------------------------
+# Fix round 1 — findings 1, 2, 4, 5
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_pool_node_without_embedding_is_backfilled_and_reused(store, monkeypatch):
+    """Mirrors production: knowledge_graph_service writes {course_id, name,
+    description} with NO embedding field at all (verified true of all 9 live
+    concept nodes). The embedding branch must still be able to reach it —
+    backfilling the vector onto the SAME document, preserving every existing
+    field — rather than silently skipping it and forcing everything onto the
+    slug branch."""
+    await store.set("concepts", "react-perf::closures", {
+        "course_id": "react-perf", "name": "closures", "description": "some description",
+    })
+    _stub_embeddings(monkeypatch, {
+        "closures": [1.0, 0.0, 0.0],                 # backfill embed of the pool node's own name
+        "Closures in JavaScript": [0.98, 0.2, 0.0],  # candidate — close to the backfilled vector
+    })
+
+    assert await concept_resolver.resolve("Closures in JavaScript") == "closures"
+
+    node = await store.get("concepts", "react-perf::closures")
+    assert node["embedding"] == [1.0, 0.0, 0.0]
+    assert node["course_id"] == "react-perf"          # preserved, not clobbered
+    assert node["description"] == "some description"  # preserved, not clobbered
+
+    backfill_logs = [e for e in await store.list_all("concept_resolutions") if e["method"] == "backfill"]
+    assert len(backfill_logs) == 1
+    assert backfill_logs[0]["candidate"] == "closures"
+
+    # Second call must reuse the now-persisted embedding — not re-embed the
+    # pool node again, only the new candidate text.
+    calls = []
+
+    async def tracking_embed(text):
+        calls.append(text)
+        return [0.98, 0.2, 0.0]
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", tracking_embed)
+
+    assert await concept_resolver.resolve("Closures in JS again") == "closures"
+    assert calls == ["Closures in JS again"]
+
+
+@pytest.mark.asyncio
+async def test_backfill_is_bounded_per_call(store, monkeypatch):
+    """A cold pool with more embedding-less nodes than
+    MAX_BACKFILL_PER_RESOLVE must not block the request embedding all of
+    them — it backfills up to the bound and proceeds."""
+    bound = concept_resolver.MAX_BACKFILL_PER_RESOLVE
+    for i in range(bound + 3):
+        await store.set("concepts", f"react-perf::topic-{i}", {
+            "course_id": "react-perf", "name": f"topic-{i}",
+        })
+
+    embed_calls = {"n": 0}
+
+    async def counting_embed(text):
+        embed_calls["n"] += 1
+        return [0.0, 1.0, 0.0]  # orthogonal to nothing in particular; just needs a fixed dim
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", counting_embed)
+
+    await concept_resolver.resolve("something unrelated")
+
+    # 1 embed for the candidate + at most `bound` backfills, never one per node.
+    assert embed_calls["n"] <= 1 + bound
+    backfill_logs = [e for e in await store.list_all("concept_resolutions") if e["method"] == "backfill"]
+    assert len(backfill_logs) <= bound
+
+
+@pytest.mark.asyncio
+async def test_dimension_mismatch_triggers_reembed_not_truncated_compare(store, monkeypatch):
+    """A node's stored embedding may be stale (e.g. embedded under the
+    256-dim local hash fallback before an OPENAI_API_KEY was ever set, now
+    compared against 1536-dim OpenAI vectors). It must be re-embedded, never
+    compared via truncated zip — a truncated compare is not a real
+    similarity score."""
+    await store.set("concepts", "react-perf::event-loop", {
+        "course_id": "react-perf", "name": "event-loop",
+        "embedding": [1.0, 0.0, 0.0],  # stale 3-dim vector
+    })
+    _stub_embeddings(monkeypatch, {
+        "event-loop": [0.0, 0.0, 1.0, 0.0],        # re-embed of the pool node, new 4-dim space
+        "the event loop": [0.0, 0.0, 0.99, 0.05],  # candidate, 4-dim, close to the NEW vector
+    })
+
+    assert await concept_resolver.resolve("the event loop") == "event-loop"
+
+    node = await store.get("concepts", "react-perf::event-loop")
+    assert len(node["embedding"]) == 4  # replaced, not left at the stale 3-dim vector
+    assert node["embedding_dim"] == 4
+
+
+@pytest.mark.asyncio
+async def test_exact_threshold_score_of_0_64_merges(store, monkeypatch):
+    """0.64 is not an approximate cutoff — pin the exact boundary so a later
+    change from >= to > can't silently raise the effective threshold."""
+    await store.set("concepts", "react-perf::example", {
+        "course_id": "react-perf", "name": "example", "embedding": [1.0, 0.0],
+    })
+    # cosine(candidate, [1, 0]) == exactly 0.64
+    _stub_embeddings(monkeypatch, {"candidate": [0.64, (1 - 0.64 ** 2) ** 0.5]})
+
+    assert await concept_resolver.resolve("candidate") == "example"
+
+
+@pytest.mark.asyncio
+async def test_punctuation_only_candidate_never_returns_empty_string(store, monkeypatch):
+    """A candidate that slugifies to nothing (emoji/punctuation-only) must
+    fall back to a stable hash-derived slug, never "" — an empty canonical
+    name would collide every such candidate onto the same
+    concept_performance row (f"{user_id}__{concept}" -> f"{user_id}__")."""
+    _stub_embeddings(monkeypatch, {"!!!": [0.0, 1.0, 0.0]})
+
+    result = await concept_resolver.resolve("!!!")
+    assert result != ""
+    assert result.startswith("concept-")
+
+    logged = await store.list_all("concept_resolutions")
+    assert len(logged) == 1
+    assert logged[0]["candidate"] == "!!!"
+    assert logged[0]["used_fallback_slug"] is True
+
+
+@pytest.mark.asyncio
+async def test_punctuation_only_candidate_is_stable_across_calls(store, monkeypatch):
+    """The same unresolvable candidate must fall back to the SAME slug every
+    time (hashlib, not the per-process-randomised builtin hash()), so repeat
+    submissions land on one node instead of forking a new one each call."""
+    _stub_embeddings(monkeypatch, {"???": [0.0, 1.0, 0.0]})
+
+    first = await concept_resolver.resolve("???")
+
+    async def fail_embed(text):
+        raise AssertionError("second resolution of the identical fallback candidate must hit the slug path")
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", fail_embed)
+
+    second = await concept_resolver.resolve("???")
+    assert first == second
