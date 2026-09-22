@@ -74,8 +74,8 @@ async function pumpSSE(res: Response, cb: StreamCallbacks): Promise<void> {
 }
 
 /**
- * Streams a grounded answer from the SOVEREIGN Hermes tutor
- * (`POST /api/hermes/chat`): access gate + EU-AI-Act audit + a local model.
+ * Streams a grounded answer from the Hermes tutor
+ * (`POST /api/hermes/chat`): access gate + EU-AI-Act audit.
  * Same SSE contract as askQuestionStream, but requires a signed-in user_id.
  */
 export async function askHermesStream(

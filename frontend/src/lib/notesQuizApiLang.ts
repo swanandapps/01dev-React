@@ -1,9 +1,10 @@
-// LangGraph-backed QuizMe client — IDENTICAL interface to notesQuizApi.ts (the
-// Mastra/Memorang V2 client). Only the backend differs: a local sovereign
-// LangGraph service instead of the cloud Mastra service. This is the "same
-// contract, swapped stack" proof — the exact same UI drives either one.
+// Lab quiz client — IDENTICAL interface to notesQuizApi.ts (the Mastra/Memorang
+// V2 client, kept as the shared type source and reference implementation). Only
+// the backend differs: our own LangGraph flow inside the01dev-backend instead of
+// the external Mastra service. Same contract, swapped stack — the same UI drives
+// either one, which is what made the migration verifiable.
 //
-// Contract implemented by backend/app/services/lab (see HERMES_HLD / mapping doc).
+// Contract implemented by backend/app/services/lab/routes.py.
 
 import type {
   LessonView, Objective,
@@ -27,14 +28,14 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`QuizMe (LangGraph) API error ${res.status}: ${text}`);
+    throw new Error(`Lab API error ${res.status}: ${text}`);
   }
   return res.json();
 }
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`QuizMe (LangGraph) API error ${res.status}`);
+  if (!res.ok) throw new Error(`Lab API error ${res.status}`);
   return res.json();
 }
 
@@ -48,7 +49,7 @@ export async function uploadPdf(file: File): Promise<{ docId: string }> {
   const res = await fetch(`${BASE}/upload`, { method: "POST", body: form });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`QuizMe (LangGraph) API error ${res.status}: ${text}`);
+    throw new Error(`Lab API error ${res.status}: ${text}`);
   }
   return res.json();
 }
