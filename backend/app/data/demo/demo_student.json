@@ -21,7 +21,7 @@
       "concepts": [
         {"concept": "use-memo", "correct": 1, "total": 2},
         {"concept": "shallow-equality", "correct": 1, "total": 2},
-        {"concept": "use-callback", "correct": 2, "total": 2}
+        {"concept": "use-callback", "correct": 1, "total": 1}
       ]
     },
     {
@@ -30,30 +30,9 @@
       "utc_minute": 20,
       "course_slug": "react-perf",
       "concepts": [
-        {"concept": "react-memo", "correct": 2, "total": 3},
-        {"concept": "use-memo", "correct": 2, "total": 3},
-        {"concept": "shallow-equality", "correct": 2, "total": 3}
-      ]
-    },
-    {
-      "days_ago": 34,
-      "utc_hour": 16,
-      "utc_minute": 10,
-      "course_slug": "react-perf",
-      "concepts": [
-        {"concept": "use-callback", "correct": 3, "total": 4},
-        {"concept": "use-memo", "correct": 3, "total": 3},
-        {"concept": "react-memo", "correct": 3, "total": 3}
-      ]
-    },
-    {
-      "days_ago": 32,
-      "utc_hour": 13,
-      "utc_minute": 55,
-      "course_slug": "custom-library",
-      "concepts": [
-        {"concept": "global-symlinks", "correct": 2, "total": 2},
-        {"concept": "npm-link", "correct": 2, "total": 3}
+        {"concept": "react-memo", "correct": 1, "total": 2},
+        {"concept": "use-memo", "correct": 2, "total": 2},
+        {"concept": "shallow-equality", "correct": 0, "total": 1}
       ]
     },
     {
@@ -62,9 +41,8 @@
       "utc_minute": 30,
       "course_slug": "custom-library",
       "concepts": [
-        {"concept": "npm-link", "correct": 3, "total": 3},
-        {"concept": "global-symlinks", "correct": 2, "total": 3},
-        {"concept": "local-package-testing", "correct": 2, "total": 3}
+        {"concept": "global-symlinks", "correct": 1, "total": 2},
+        {"concept": "npm-link", "correct": 2, "total": 3}
       ]
     },
     {
@@ -73,27 +51,15 @@
       "utc_minute": 45,
       "course_slug": "custom-library",
       "concepts": [
-        {"concept": "npm-link", "correct": 3, "total": 3},
-        {"concept": "local-package-testing", "correct": 2, "total": 2},
-        {"concept": "global-symlinks", "correct": 3, "total": 3}
+        {"concept": "npm-link", "correct": 2, "total": 2},
+        {"concept": "local-package-testing", "correct": 1, "total": 2},
+        {"concept": "global-symlinks", "correct": 1, "total": 2}
       ]
     },
     {
-      "days_ago": 23,
+      "days_ago": 24,
       "utc_hour": 16,
       "utc_minute": 25,
-      "course_slug": "react-perf",
-      "concepts": [
-        {"concept": "shallow-equality", "correct": 3, "total": 4},
-        {"concept": "react-memo", "correct": 3, "total": 3},
-        {"concept": "use-callback", "correct": 3, "total": 3},
-        {"concept": "use-memo", "correct": 3, "total": 3}
-      ]
-    },
-    {
-      "days_ago": 20,
-      "utc_hour": 13,
-      "utc_minute": 15,
       "course_slug": "javascript-deep-dive",
       "concepts": [
         {"concept": "prototype-inheritance", "correct": 2, "total": 3},
@@ -101,29 +67,40 @@
       ]
     },
     {
-      "days_ago": 18,
-      "utc_hour": 15,
-      "utc_minute": 50,
+      "days_ago": 21,
+      "utc_hour": 13,
+      "utc_minute": 15,
       "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
-        {"concept": "class-syntax-sugar", "correct": 2, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 2, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 1, "total": 2},
         {"concept": "v8-hidden-classes", "correct": 1, "total": 3}
       ]
     },
     {
-      "days_ago": 16,
-      "utc_hour": 14,
-      "utc_minute": 5,
-      "course_slug": "react-perf",
+      "days_ago": 19,
+      "utc_hour": 15,
+      "utc_minute": 50,
+      "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "shallow-equality", "correct": 4, "total": 4},
-        {"concept": "react-memo", "correct": 4, "total": 4},
-        {"concept": "use-callback", "correct": 4, "total": 4}
+        {"concept": "event-loop", "correct": 1, "total": 4},
+        {"concept": "v8-hidden-classes", "correct": 1, "total": 2},
+        {"concept": "class-syntax-sugar", "correct": 1, "total": 2}
       ]
     },
     {
-      "days_ago": 14,
+      "days_ago": 17,
+      "utc_hour": 14,
+      "utc_minute": 5,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 3},
+        {"concept": "v8-hidden-classes", "correct": 2, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 15,
       "utc_hour": 16,
       "utc_minute": 0,
       "course_slug": "web-apis",
@@ -133,20 +110,43 @@
       ]
     },
     {
-      "days_ago": 12,
+      "days_ago": 14,
       "utc_hour": 13,
       "utc_minute": 35,
       "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "v8-hidden-classes", "correct": 2, "total": 3},
-        {"concept": "event-loop", "correct": 0, "total": 3},
-        {"concept": "prototype-inheritance", "correct": 3, "total": 3}
+        {"concept": "event-loop", "correct": 1, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 13,
+      "utc_hour": 15,
+      "utc_minute": 20,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "shallow-equality", "correct": 5, "total": 5},
+        {"concept": "react-memo", "correct": 5, "total": 5},
+        {"concept": "use-callback", "correct": 5, "total": 5},
+        {"concept": "use-memo", "correct": 5, "total": 5}
+      ]
+    },
+    {
+      "days_ago": 11,
+      "utc_hour": 14,
+      "utc_minute": 10,
+      "course_slug": "custom-library",
+      "concepts": [
+        {"concept": "npm-link", "correct": 6, "total": 6},
+        {"concept": "global-symlinks", "correct": 6, "total": 6},
+        {"concept": "local-package-testing", "correct": 5, "total": 5}
       ]
     },
     {
       "days_ago": 10,
-      "utc_hour": 15,
-      "utc_minute": 20,
+      "utc_hour": 14,
+      "utc_minute": 40,
       "course_slug": "web-apis",
       "concepts": [
         {"concept": "http-upgrade", "correct": 3, "total": 3},
@@ -157,14 +157,13 @@
     },
     {
       "days_ago": 8,
-      "utc_hour": 14,
-      "utc_minute": 40,
+      "utc_hour": 13,
+      "utc_minute": 50,
       "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "event-loop", "correct": 1, "total": 3},
-        {"concept": "class-syntax-sugar", "correct": 2, "total": 3},
-        {"concept": "microtask-queue", "correct": 0, "total": 4},
-        {"concept": "v8-hidden-classes", "correct": 0, "total": 1}
+        {"concept": "event-loop", "correct": 1, "total": 4},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 2},
+        {"concept": "microtask-queue", "correct": 0, "total": 4}
       ]
     },
     {
@@ -173,9 +172,9 @@
       "utc_minute": 15,
       "course_slug": "react-perf",
       "concepts": [
-        {"concept": "react-memo", "correct": 3, "total": 3},
-        {"concept": "use-memo", "correct": 3, "total": 3},
-        {"concept": "use-callback", "correct": 4, "total": 4},
+        {"concept": "react-memo", "correct": 5, "total": 5},
+        {"concept": "use-memo", "correct": 5, "total": 5},
+        {"concept": "use-callback", "correct": 5, "total": 5},
         {"concept": "shallow-equality", "correct": 5, "total": 5}
       ]
     },
@@ -188,7 +187,7 @@
         {"concept": "websocket-handshake", "correct": 3, "total": 3},
         {"concept": "long-polling", "correct": 1, "total": 2},
         {"concept": "polling-vs-websockets", "correct": 1, "total": 2},
-        {"concept": "http-upgrade", "correct": 2, "total": 2}
+        {"concept": "http-upgrade", "correct": 3, "total": 3}
       ]
     },
     {
@@ -197,9 +196,9 @@
       "utc_minute": 10,
       "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "event-loop", "correct": 2, "total": 4},
+        {"concept": "event-loop", "correct": 2, "total": 3},
         {"concept": "prototype-inheritance", "correct": 4, "total": 4},
-        {"concept": "class-syntax-sugar", "correct": 3, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 3, "total": 4},
         {"concept": "v8-hidden-classes", "correct": 2, "total": 2}
       ]
     },
@@ -211,8 +210,8 @@
       "concepts": [
         {"concept": "event-loop", "correct": 2, "total": 3},
         {"concept": "microtask-queue", "correct": 1, "total": 3},
-        {"concept": "v8-hidden-classes", "correct": 2, "total": 2},
-        {"concept": "prototype-inheritance", "correct": 3, "total": 3}
+        {"concept": "v8-hidden-classes", "correct": 2, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 4, "total": 4}
       ]
     },
     {
@@ -221,7 +220,7 @@
       "utc_minute": 30,
       "course_slug": "web-apis",
       "concepts": [
-        {"concept": "http-upgrade", "correct": 3, "total": 3},
+        {"concept": "http-upgrade", "correct": 4, "total": 4},
         {"concept": "polling-vs-websockets", "correct": 1, "total": 2},
         {"concept": "long-polling", "correct": 2, "total": 2},
         {"concept": "websocket-handshake", "correct": 2, "total": 3}
@@ -233,9 +232,9 @@
       "utc_minute": 0,
       "course_slug": "javascript-deep-dive",
       "concepts": [
-        {"concept": "event-loop", "correct": 3, "total": 4},
+        {"concept": "event-loop", "correct": 3, "total": 5},
         {"concept": "microtask-queue", "correct": 2, "total": 3},
-        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 4, "total": 4},
         {"concept": "class-syntax-sugar", "correct": 2, "total": 2}
       ]
     }
@@ -258,7 +257,7 @@
       "answer": "useMemo memoizes a computed value; useCallback memoizes the function reference itself. You reach for useCallback specifically when you pass a callback into a child wrapped in React.memo, so the child doesn't see a new reference on every parent render. Don't wrap everything, though — the dependency comparison has its own cost, so profile first. (3.2 - Memoization and Computed State)"
     },
     {
-      "days_ago": 31,
+      "days_ago": 29,
       "utc_hour": 16,
       "utc_minute": 5,
       "course_slug": "custom-library",

@@ -891,15 +891,15 @@
       },
       {
         "id": "web-apis-q5",
-        "question": "Why does the WebSocket handshake start as a regular HTTP GET request before upgrading?",
+        "question": "A WebSocket URL starts with ws:// or wss://, yet the very first thing the browser sends is an HTTP GET request. Why?",
         "options": [
-          "Because WebSocket URLs are not supported by browsers",
-          "To encrypt the connection from the start",
-          "To allow proxies to cache the connection",
-          "To reuse existing HTTP infrastructure for initial connection"
+          "The GET downloads a WebSocket protocol handler, after which the browser opens a new TCP connection to the ws:// URL",
+          "ws:// and wss:// are aliases for http:// and https://, so the connection stays plain HTTP request-response",
+          "The browser first fetches its Sec-WebSocket-Key from the server over HTTP, then connects separately over ws://",
+          "The handshake itself travels over HTTP: the GET carries Upgrade: websocket, asking the server to upgrade that same HTTP connection to a persistent WebSocket connection"
         ],
         "correct_index": 3,
-        "explanation": "The handshake starts as a regular HTTP GET to reuse existing HTTP infrastructure and then upgrades to WebSocket.",
+        "explanation": "The lecture explains that the handshake starts as a regular HTTP GET with an Upgrade: websocket header — the browser asks the server to upgrade this HTTP connection — which is why ws:// URLs still begin with an HTTP handshake.",
         "concept": "http-upgrade",
         "difficulty": "hard",
         "lecture": "2.2 - WebSocket Handshake"
@@ -1394,15 +1394,15 @@
       },
       {
         "id": "custom-library-q14",
-        "question": "How does npm link help avoid importing stale output during local package testing?",
+        "question": "You're testing a TypeScript library in another project through npm link. What must you do so the consuming project doesn't import stale compiled output?",
         "options": [
-          "By copying source files into the consuming project.",
-          "By publishing the package after every change.",
-          "By requiring you to rebuild or run the compiler in watch mode after changes.",
-          "By automatically rebuilding the library on every change."
+          "Run npm link your-package-name again in the consuming project after every change.",
+          "Publish a new version to npm after every change.",
+          "Rebuild the library after every change, or run the compiler in watch mode.",
+          "Delete the global symlink and recreate it after every change."
         ],
         "correct_index": 2,
-        "explanation": "You must rebuild or run the compiler in watch mode to avoid stale compiled output when using npm link.",
+        "explanation": "The lecture warns that with TypeScript you must rebuild the library after every change or run the compiler in watch mode, otherwise the consuming project imports stale compiled output.",
         "concept": "local-package-testing",
         "difficulty": "easy",
         "lecture": "8.1 - The npm link command"

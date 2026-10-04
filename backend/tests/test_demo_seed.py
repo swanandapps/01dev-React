@@ -209,6 +209,27 @@ async def test_accuracy_targets(seeded):
     assert acc["http-upgrade"] >= 0.75 and acc["websocket-handshake"] >= 0.75
 
 
+async def test_dashboard_score_trend_reads_improving(seeded, monkeypatch):
+    """Drive the dashboard's own path (get_journey -> _ai_insights) and read the
+    trend line it hands the narrative model: must be "improving", by >= 8 points."""
+    import re
+
+    captured = {}
+
+    async def fake_generate_json(system, user, **kwargs):
+        captured["user"] = user
+        return None
+
+    monkeypatch.setattr(journey_service.llm, "generate_json", fake_generate_json)
+    await _seed(seeded)
+    await journey_service.get_journey(UID)
+    m = re.search(r"Score trend: (\w+) \((\d+)% → (\d+)%\)", captured["user"])
+    assert m, captured["user"]
+    label, early, late = m.group(1), int(m.group(2)), int(m.group(3))
+    assert label == "improving"
+    assert late - early >= 8, (early, late)
+
+
 def test_event_loop_improves_across_sessions():
     docs = seed.build_docs(UID, NOW)
     chron = sorted(docs["quiz_sessions"].values(), key=lambda s: s["completed_at"])
