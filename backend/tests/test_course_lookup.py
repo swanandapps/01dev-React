@@ -1,0 +1,103 @@
+import pytest
+
+from app.models import TranscriptChunk
+from app.services import course_lookup as cl
+from app.services import enrollment_service
+from app.services.catalog_index import CatalogEntry
+
+
+def _chunk(slug, title, lecture, text="t", start=87):
+    return TranscriptChunk(chunk_id=f"{slug}-x", course_id=slug, course_title=title, lecture_id=f"{slug}-l",
+                           lecture_title=lecture, text=text, start_time=start, end_time=start + 30)
+
+
+NPM_CHUNK = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "npm link symlinks...")
+MEMO_CHUNK = _chunk("react-perf", "React Performance Patterns", "4.1 - React.memo and useCallback")
+NPM_MODULE = CatalogEntry(2, "custom-library", "Build a Custom Library", "NPM Package Development", "npm link")
+
+
+@pytest.fixture
+def patch_sources(monkeypatch):
+    # Pin thresholds so these tests don't depend on Task 9's calibrated values.
+    monkeypatch.setattr(cl, "TRANSCRIPT_THRESHOLD", 0.35)
+    monkeypatch.setattr(cl, "CATALOG_THRESHOLD", 0.35)
+
+    def apply(transcripts=(), catalog=(), enrolled_ids=(), enrollment_error=False):
+        async def fake_transcripts(question, top_k=8):
+            return list(transcripts)
+
+        async def fake_catalog(query, top_k=5):
+            return list(catalog)
+
+        async def fake_enrolled(student_id):
+            if enrollment_error:
+                raise RuntimeError("db down")
+            return [{"id": i, "title": f"course {i}", "purchased_at": "x"} for i in enrolled_ids]
+
+        monkeypatch.setattr(cl, "_transcript_hits", fake_transcripts)
+        monkeypatch.setattr(cl.catalog_index, "search", fake_catalog)
+        monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
+    return apply
+
+
+async def test_npm_question_for_student_not_in_custom_library_is_not_enrolled(patch_sources):
+    # Demo fixture from the spec: enrolled in JS Deep Dive (9) + React Perf (11), not Custom Library (2).
+    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[9, 11])
+    out = await cl.course_lookup("how do I publish an npm library", "demo")
+    assert out.case == cl.LookupCase.NOT_ENROLLED_MATCH
+    assert out.hits[0].course_title == "Build a Custom Library"
+    assert all(not h.enrolled for h in out.hits)
+
+
+async def test_enrolled_hit_wins_over_not_enrolled(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.70), (MEMO_CHUNK, 0.50)], enrolled_ids=[11])
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.ENROLLED_MATCH
+    assert out.hits[0].course_slug == "react-perf"
+
+
+async def test_scores_below_threshold_mean_no_match(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, cl.TRANSCRIPT_THRESHOLD - 0.01)],
+                  catalog=[(NPM_MODULE, cl.CATALOG_THRESHOLD - 0.01)])
+    out = await cl.course_lookup("how do I bake bread", "s")
+    assert out.case == cl.LookupCase.NO_MATCH
+    assert out.hits == []
+
+
+async def test_enrollment_failure_still_answers_as_not_enrolled(patch_sources):
+    patch_sources(transcripts=[(MEMO_CHUNK, 0.6)], enrollment_error=True)
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.NOT_ENROLLED_MATCH
+    assert out.enrolled_titles == []
+
+
+async def test_lecture_scope_ranks_current_lecture_first(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.80), (MEMO_CHUNK, 0.50)], enrolled_ids=[2, 11])
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
+    out = await cl.course_lookup("what does this mean", "s", scope)
+    assert out.hits[0].course_slug == "react-perf"
+
+
+async def test_catalog_hit_for_same_course_as_transcript_hit_is_dropped(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], catalog=[(NPM_MODULE, 0.58)])
+    out = await cl.course_lookup("q", "s")
+    assert [h.source for h in out.hits] == ["transcript"]
+
+
+async def test_facts_and_cards(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], enrolled_ids=[9])
+    out = await cl.course_lookup("q", "s")
+    facts = cl.render_facts(out, cl.ChatScope(), weak_concepts=None)
+    assert "CASE: NOT_ENROLLED_MATCH" in facts
+    assert "[NOT ENROLLED] Build a Custom Library" in facts
+    assert "the01.dev/course/2" in facts
+    card = cl.to_cards(out)[0]
+    assert card["course_id"] == "custom-library" and card["timestamp"] == "01:27"
+
+
+def test_lecture_mode_facts_include_lecture_and_weak_concepts():
+    lookup = cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=["React Performance Patterns"])
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
+    facts = cl.render_facts(lookup, scope, weak_concepts=["useCallback (40%)"])
+    assert "MODE: in-lecture" in facts and "4.1 - React.memo and useCallback" in facts
+    assert "useCallback (40%)" in facts

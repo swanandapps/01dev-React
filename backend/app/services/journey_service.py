@@ -74,6 +74,21 @@ async def get_strengths_weaknesses(user_id: str) -> dict:
     }
 
 
+async def weak_concepts_for_course(user_id: str, course_slug: str) -> list[str]:
+    """This student's weakest concepts (accuracy < 70%) among the concepts the
+    course's question bank covers, worst first, as "concept (NN%)" — max 5."""
+    qdoc = await store.get("questions", course_slug)
+    if not qdoc:
+        return []
+    course_concepts = {q["concept"] for q in qdoc["questions"]}
+    perf = await store.query("concept_performance", "user_id", user_id)
+    weak = sorted(
+        [p for p in perf if p["concept"] in course_concepts and p["attempts"] > 0 and p["accuracy"] < 0.7],
+        key=lambda p: p["accuracy"],
+    )
+    return [f"{p['concept']} ({round(p['accuracy']*100)}%)" for p in weak[:5]]
+
+
 def _compute_metrics(sessions: list[dict], perf: list[dict]):
     dts = [d for d in (_parse_date(s.get("completed_at", "")) for s in sessions) if d]
     day_set = {d.date() for d in dts}

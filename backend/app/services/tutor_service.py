@@ -11,7 +11,7 @@ import json
 from typing import AsyncIterator, List
 
 from app.services.llm import llm, GEN_MODEL
-from app.services.store import store
+from app.services import journey_service
 from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
 
@@ -21,16 +21,7 @@ def _sse(payload: dict) -> str:
 
 
 async def _weak_concepts(user_id: str, course_id: str) -> List[str]:
-    qdoc = await store.get("questions", course_id)
-    if not qdoc:
-        return []
-    course_concepts = {q["concept"] for q in qdoc["questions"]}
-    perf = await store.query("concept_performance", "user_id", user_id)
-    weak = sorted(
-        [p for p in perf if p["concept"] in course_concepts and p["attempts"] > 0 and p["accuracy"] < 0.7],
-        key=lambda p: p["accuracy"],
-    )
-    return [f"{p['concept']} ({round(p['accuracy']*100)}%)" for p in weak[:5]]
+    return await journey_service.weak_concepts_for_course(user_id, course_id)
 
 
 async def _course_context(course_id: str, query: str) -> str:
