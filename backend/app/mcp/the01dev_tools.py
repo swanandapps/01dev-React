@@ -36,7 +36,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
-    from app.services import journey_service, knowledge_graph_service, enrollment_service
+    from app.services import journey_service, enrollment_service
     from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")

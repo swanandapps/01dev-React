@@ -9,14 +9,14 @@ branches and pauses for approval.
 import json
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import AsyncIterator, Optional
+from typing import Annotated, AsyncIterator, Literal, Optional
 
 from langchain.agents import create_agent
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
-from app.services import (enrollment_service, grounding, journey_service, memory_service,
+from app.services import (catalog_service, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
 from app.services import tool_descriptions as D
 from app.services.llm import GEN_MODEL
@@ -31,14 +31,38 @@ def _dump(data) -> str:
     return json.dumps(data, default=str)
 
 
+# Argument descriptions: @tool(description=...) doesn't parse an Args section,
+# so each argument's guidance rides on its type.
+Concept = Annotated[str, "Concept tag as used in that course, e.g. 'react-memo'."]
+CourseId = Annotated[str, "Course slug, e.g. 'react-perf'."]
+
+
+async def _enrolled_ids(student_id: str) -> set:
+    try:
+        return {c["id"] for c in await enrollment_service.get_enrolled_courses(student_id)}
+    except Exception as e:  # noqa: BLE001 — unknown enrollment = not enrolled; never fail the turn
+        print(f"[tutor_agent] enrollment lookup failed: {e!r}")
+        return set()
+
+
+def _enrollment_label(course_slug: str, enrolled_ids: set) -> str:
+    course = catalog_service.by_slug(course_slug)
+    return "ENROLLED" if course and course["id"] in enrolled_ids else "NOT ENROLLED"
+
+
 @tool("search_course_content", description=D.SEARCH_COURSE_CONTENT, response_format="content_and_artifact")
-async def search_course_content(query: str) -> tuple[str, list[dict]]:
+async def search_course_content(
+    query: Annotated[str, "What to look up — the student's follow-up question or the concept."],
+    runtime: ToolRuntime[ChatContext],
+) -> tuple[str, list[dict]]:
     results = await grounding.retrieve(query, top_k=5)
     if not results:
         return "No matching course content.", []
+    enrolled_ids = await _enrolled_ids(runtime.context.student_id)
     cards = [c.model_dump() for c in grounding.build_sources(results)]
     text = "\n".join(
-        f"- {r.chunk.course_title} → {r.chunk.lecture_title} @ {c['timestamp']}: {r.chunk.text}"
+        f"[{_enrollment_label(r.chunk.course_id, enrolled_ids)}] "
+        f"{r.chunk.course_title} → {r.chunk.lecture_title} @ {c['timestamp']}: {r.chunk.text}"
         for r, c in zip(results, cards)
     )
     return text, cards
@@ -60,12 +84,13 @@ async def get_learning_metrics(runtime: ToolRuntime[ChatContext]) -> str:
 
 
 @tool("get_concept_confidence", description=D.GET_CONCEPT_CONFIDENCE)
-async def get_concept_confidence(concept: str, course_id: str, runtime: ToolRuntime[ChatContext]) -> str:
+async def get_concept_confidence(concept: Concept, course_id: CourseId, runtime: ToolRuntime[ChatContext]) -> str:
     return _dump(await skill_graph_service.get_prerequisite_view(runtime.context.student_id, course_id, concept))
 
 
 @tool("search_history", description=D.SEARCH_HISTORY)
-async def search_history(query: str, runtime: ToolRuntime[ChatContext]) -> str:
+async def search_history(query: Annotated[str, "What to look for in the student's past exchanges, e.g. 'did we cover promises?'."],
+                         runtime: ToolRuntime[ChatContext]) -> str:
     rows = await memory_service.search_history(runtime.context.student_id, query, 3)
     return _dump([
         {"date": str(r.get("created_at", ""))[:10], "course": r.get("course_slug"),
@@ -75,8 +100,13 @@ async def search_history(query: str, runtime: ToolRuntime[ChatContext]) -> str:
 
 
 @tool("record_skill_observation", description=D.RECORD_SKILL_OBSERVATION)
-async def record_skill_observation(concept: str, course_id: str, confidence: str, note: str,
-                                   runtime: ToolRuntime[ChatContext]) -> str:
+async def record_skill_observation(
+    concept: Concept,
+    course_id: CourseId,
+    confidence: Literal["weak", "developing", "strong"],
+    note: Annotated[str, "One sentence: what you actually observed, in plain language."],
+    runtime: ToolRuntime[ChatContext],
+) -> str:
     try:
         return _dump(await skill_graph_service.record_observation(
             runtime.context.student_id, course_id, concept, confidence, note))
