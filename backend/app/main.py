@@ -30,7 +30,7 @@ from app.services import (
     tutor_service, journey_service, enrollment_service,
     hermes_client, audit_service, memory_service,
     eval_service, context_builder, pii,
-    skill_graph_service,
+    skill_graph_service, catalog_index,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
@@ -58,6 +58,10 @@ class PaymentRequest(BaseModel):
 async def lifespan(app: FastAPI):
     init_tracing()  # OpenTelemetry → OTLP/SigNoz (no-op unless configured)
     await vector_store.initialize()
+    try:
+        await catalog_index.ensure_built()
+    except Exception as e:  # noqa: BLE001 — built lazily on first lookup instead
+        print(f"[startup] catalog index build failed, will retry on first lookup: {e}")
     yield
 
 
