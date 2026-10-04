@@ -1,9 +1,9 @@
 // Lab — the student content pipeline. Ingestion and the quiz flow live in
 // notesQuizApiLang.ts (same LessonView contract as before); this module adds
-// the output-selection and library calls.
+// the output-selection call.
 //
 // Contract implemented by backend/app/services/lab.
-import type { Objective } from "./notesQuizApi";
+import type { Objective } from "../types/lab";
 
 // Same base-URL resolution as notesQuizApiLang.ts: strip any trailing slash
 // from VITE_RAG_API_URL so a `.../` env value can't turn this into
@@ -24,14 +24,6 @@ export type GenerateResponse = {
   artifacts: LabArtifacts;
   lesson_id: string | null;
   proposed_objectives?: Objective[];
-};
-
-export type LabArtifact = {
-  artifact_id: string;
-  artifact_type: Exclude<OutputType, "quiz">;
-  doc_title: string;
-  content: unknown;
-  created_at: string;
 };
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -57,12 +49,6 @@ export function generateOutputs(
     outputs,
     student_id: studentId,
   });
-}
-
-export async function getLibrary(studentId: string): Promise<LabArtifact[]> {
-  const res = await fetch(`${BASE}/library?student_id=${encodeURIComponent(studentId)}`);
-  if (!res.ok) throw new Error(`Lab API error ${res.status}`);
-  return res.json();
 }
 
 export const OUTPUT_LABELS: Record<OutputType, { label: string; blurb: string }> = {

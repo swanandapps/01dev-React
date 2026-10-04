@@ -4,13 +4,10 @@ import {
   NotebookPen,
 } from "lucide-react";
 import * as quizApi from "../../lib/notesQuizApiLang";
-import type { LessonView, Objective, Question, Difficulty } from "../../lib/notesQuizApi";
+import type { LessonView, Objective, Question, Difficulty } from "../../types/lab";
 
-/** The Lab backend client. Now the LangGraph implementation served by
- *  the01dev-backend at /api/lab/* (previously the external Mastra service at
- *  pdf-learning-tutor-v2-production.up.railway.app, retired). The Mastra
- *  client notesQuizApi.ts is kept as the shared TYPE source and the
- *  Mastra→LangGraph comparison reference — do NOT delete it. */
+/** The Lab backend client: the LangGraph implementation served by
+ *  the01dev-backend at /api/lab/*. */
 export type QuizApi = Pick<
   typeof quizApi,
   "uploadText" | "uploadPdf" | "startLesson" | "approveLesson" | "submitResult" | "askTutor" | "getLesson"
