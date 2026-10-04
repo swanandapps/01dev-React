@@ -18,12 +18,11 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.models import (
-    AskRequest, AskResponse, Course,
+    Course,
     AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest, TutorRequest,
     EnrolledCourse, EnrollRequest,
 )
 from app.services.vector_store import vector_store
-from app.services.rag_service import ask, ask_stream
 from app.services.store import store
 from app.services import (
     study_guide_service, question_service, adaptive_service,
@@ -36,17 +35,12 @@ from app.services import (
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
-from app.routing import smalltalk_classifier
 from app.services.lab.routes import router as lab_router
 # Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
 # run/approve, eval history, lab audit) are gated behind a shared secret — see
 # app/deps.py for require_admin_key and why it lives there, not here.
 from app.deps import require_admin_key
 
-# _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
-# routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
-# path was retired).
-_TUTOR_PROVIDER = os.getenv("TUTOR_PROVIDER", "openai" if os.getenv("OPENAI_API_KEY") else "ollama")
 _MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
@@ -91,7 +85,7 @@ async def health():
         "status": status,
         "chunks_indexed": len(vector_store.chunks),
         "db": ("ok" if db_ok else "unreachable") if os.getenv("DATABASE_URL") else "in-memory",
-        "tutor_provider": _TUTOR_PROVIDER,
+        "tutor_provider": "langchain-agent",
     }
 
 
@@ -169,24 +163,6 @@ async def tutor_stream_endpoint(req: TutorRequest):
     )
 
 
-@app.post("/api/ai/ask", response_model=AskResponse)
-async def ask_question(request: AskRequest):
-    return await ask(request)
-
-
-@app.post("/api/ai/ask/stream")
-async def ask_question_stream(request: AskRequest):
-    return StreamingResponse(
-        ask_stream(request),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # disable proxy buffering so tokens flush immediately
-        },
-    )
-
-
 @app.post("/api/hermes/chat")
 async def hermes_chat(req: Request):
     """Governance layer for the Hermes tutor: access gate + EU-AI-Act audit +
@@ -223,19 +199,6 @@ async def hermes_chat(req: Request):
 
     intent = classify(question)
 
-    # Small-talk check — only ever upgrades COURSE_QUESTION to OUT_OF_SCOPE,
-    # and only when SMALLTALK_BLOCK_ENABLED=true (default off; see
-    # smalltalk_classifier's docstring — ships observing real similarity
-    # scores before ever acting on them). The score is logged either way.
-    smalltalk = {"checked": False, "similarity": 0.0, "should_block": False}
-    if intent == Intent.COURSE_QUESTION:
-        try:
-            smalltalk = await smalltalk_classifier.check(question)
-        except Exception as e:  # noqa: BLE001 — this check must never break a chat turn
-            print(f"[hermes_chat] smalltalk check failed: {e}")
-        if smalltalk["should_block"]:
-            intent = Intent.OUT_OF_SCOPE
-
     # OTel parent span for the whole request (no-op unless tracing configured).
     # Started manually + ended in gen()'s finally so it spans the streamed generation.
     tracer = get_tracer()
@@ -245,8 +208,6 @@ async def hermes_chat(req: Request):
     span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])  # hashed, no PII
     if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
         span.set_attribute("pii_redacted", ",".join(pii_kinds))
-    if smalltalk["checked"]:
-        span.set_attribute("smalltalk_similarity", smalltalk["similarity"])
 
     if intent in (Intent.QUIZ_GENERATE, Intent.OUT_OF_SCOPE):
         if intent == Intent.QUIZ_GENERATE:

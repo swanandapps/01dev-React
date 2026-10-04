@@ -2,9 +2,9 @@
 Single source of truth for the "grounded answer" capability.
 
 Retrieval + source-card building + a full grounded answer live here, ONCE.
-Every path reuses these — the RAG routes (`rag_service`), the Hermes governance
-handler (`main.py`), the eval harness (`eval/accuracy.py`), and the MCP tool
-(`answer_question`). No caller re-embeds/re-searches/re-builds-material itself.
+Every path reuses these — the Hermes governance handler (`main.py`), the eval
+harness (`eval/accuracy.py`), and the MCP tool (`answer_question`). No caller
+re-embeds/re-searches/re-builds-material itself.
 """
 from typing import List
 

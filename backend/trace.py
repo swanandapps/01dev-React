@@ -10,9 +10,9 @@ import urllib.request
 
 TOKEN = "the01dev-local"
 URL = "http://localhost:9119/api/sessions?limit=12"
-# The model's context window (Ollama num_ctx). Default is 2048 unless you start
-# Ollama with OLLAMA_CONTEXT_LENGTH — set the same value here so ctx% is accurate.
-CONTEXT_WINDOW = int(os.getenv("MODEL_CONTEXT_LIMIT", "2048"))
+# The context budget ctx% is measured against — the same MODEL_CONTEXT_LIMIT
+# (and default) the backend's context builder uses.
+CONTEXT_WINDOW = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
 
 def main() -> None:

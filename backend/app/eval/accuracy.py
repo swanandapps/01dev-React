@@ -8,10 +8,10 @@ GROUND TRUTH:
     recall@k  — is a gold chunk in the top-k retrieved?
     MRR       — how highly is the first gold chunk ranked?
 
-  ANSWER accuracy (sovereign LLM-judge vs the gold answer):
+  ANSWER accuracy (OpenAI LLM-judge vs the gold answer):
     fraction of answers judged to convey the gold answer's key point.
 
-Run from backend/:   python3 app/eval/accuracy.py        (needs .env + Ollama up)
+Run from backend/:   python3 app/eval/accuracy.py        (needs .env with OPENAI_API_KEY)
 """
 import asyncio
 import json
@@ -65,7 +65,7 @@ async def retrieval_metrics(golden: list[dict], k: int = 5) -> dict:
     }
 
 
-# ── Answer accuracy (sovereign LLM-judge vs gold) ────────────────────────────
+# ── Answer accuracy (LLM-judge vs gold) ──────────────────────────────────────
 async def _answer(question: str) -> str:
     # Reuse the canonical grounded-answer path so eval measures the real product.
     res = await answer_grounded(question, top_k=4)
@@ -116,7 +116,7 @@ async def main():
     print()
 
     a = await answer_metrics(golden)
-    print("=== ANSWER ACCURACY (sovereign judge vs gold answer) ===")
+    print("=== ANSWER ACCURACY (LLM judge vs gold answer) ===")
     print(f"  answer_accuracy={a['answer_accuracy']}")
     for w in a["wrong"]:
         print(f"   ✗ {w['q'][:50]} — {w['reason']}")

@@ -156,8 +156,8 @@ def test_artifacts_endpoints_are_not_exposed_in_phase_1(client):
 
 
 def test_phase_1_writes_nothing_to_the_learner_model(client, monkeypatch):
-    # HARD CONSTRAINT: Mastra (the external service this replaces) writes
-    # nothing to our learner model, so this parity migration must not either.
+    # HARD CONSTRAINT: the Phase 1 quiz flow writes nothing to our learner
+    # model.
     # concept_performance / quiz_sessions coupling lands in Phase 2, together
     # with the concept resolver — writing them before the resolver exists
     # would start fragmenting concepts immediately.

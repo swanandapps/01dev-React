@@ -338,5 +338,5 @@ async def generate_outputs(req: GenerateReq):
 
 @router.get("/audit", dependencies=[Depends(require_admin_key)])
 async def audit(limit: int = 20):
-    """HITL decision trail — additive, not part of the Mastra contract."""
+    """HITL decision trail — additive, not part of the Lab response contract."""
     return list(reversed(AUDIT))[:limit]

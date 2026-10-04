@@ -131,8 +131,7 @@ def test_out_of_scope_intent_short_circuits_before_any_model_call(client, monkey
     # OUT_OF_SCOPE (gibberish/empty) short-circuits with a canned decline —
     # it must NOT reach Hermes at all, same as QUIZ_GENERATE. This used to
     # fall through to the real Hermes path (a latent gap: classifying
-    # something OUT_OF_SCOPE didn't actually skip the expensive call) —
-    # fixed alongside wiring up the smalltalk classifier's short-circuit.
+    # something OUT_OF_SCOPE didn't actually skip the expensive call).
     from app.services import hermes_client
 
     async def _fail_if_called(*args, **kwargs):
@@ -156,59 +155,6 @@ def test_out_of_scope_intent_short_circuits_before_any_model_call(client, monkey
     sources_event = next(e for e in events if e.get("type") == "sources")
     assert sources_event["insufficient_context"] is False
     assert any(e.get("type") == "done" for e in events)
-
-
-def test_smalltalk_check_does_not_block_by_default(client, monkeypatch):
-    # SMALLTALK_BLOCK_ENABLED defaults to false — even a short greeting-like
-    # message must still reach Hermes while this ships in observe-only mode.
-    from app.routing import smalltalk_classifier
-    from app.services import hermes_client
-
-    async def _fake_check(question):
-        return {"checked": True, "similarity": 0.99, "should_block": False}
-
-    async def _fake_stream_chat(question, system=None, history=None):
-        yield {"type": "token", "value": "hey there!"}
-        yield {"type": "done"}
-
-    monkeypatch.setattr(smalltalk_classifier, "check", _fake_check)
-    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
-
-    resp = client.post(
-        "/api/hermes/chat",
-        json={"question": "hi", "user_id": "test-student", "course_slug": "js-fundamentals"},
-    )
-    assert resp.status_code == 200
-    events = _sse_events(resp.text)
-    tokens = "".join(e["value"] for e in events if e.get("type") == "token")
-    assert "hey there!" in tokens
-
-
-def test_smalltalk_block_enabled_short_circuits_to_out_of_scope(client, monkeypatch):
-    # With SMALLTALK_BLOCK_ENABLED explicitly on (simulated via the check's
-    # own return value, not the env var — see smalltalk_classifier's own
-    # tests for the threshold/env-var logic itself), a should_block=True
-    # result upgrades COURSE_QUESTION to the OUT_OF_SCOPE short-circuit.
-    from app.routing import smalltalk_classifier
-    from app.services import hermes_client
-
-    async def _fake_check(question):
-        return {"checked": True, "similarity": 0.95, "should_block": True}
-
-    async def _fail_if_called(*args, **kwargs):
-        raise AssertionError("Hermes must not be called when smalltalk blocking fires")
-
-    monkeypatch.setattr(smalltalk_classifier, "check", _fake_check)
-    monkeypatch.setattr(hermes_client, "stream_chat", _fail_if_called)
-
-    resp = client.post(
-        "/api/hermes/chat",
-        json={"question": "hi", "user_id": "test-student", "course_slug": "js-fundamentals"},
-    )
-    assert resp.status_code == 200
-    events = _sse_events(resp.text)
-    tokens = "".join(e["value"] for e in events if e.get("type") == "token")
-    assert "ask me about a course" in tokens
 
 
 def test_course_question_backfills_skill_graph(client, monkeypatch):

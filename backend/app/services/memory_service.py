@@ -2,9 +2,9 @@
 Persistent, session-spanning memory for the Hermes tutor.
 
 This is the HindSight-style capability — "the tutor remembers the student across
-sessions" — implemented deterministically in the governance layer so it is
-reliable on a small sovereign model (a 3B model can't be trusted to drive a
-memory tool itself; a GPU model via HindSight-native is the production path).
+sessions" — implemented deterministically in the governance layer rather than
+left to the model to drive through a memory tool, so recall never depends on
+the model choosing to call one.
 
 Rides on the same document store as the audit log (Firestore in prod, in-memory
 locally). Two collections:
