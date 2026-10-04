@@ -17,9 +17,11 @@ used and production data is never read or written:
 With --full every question runs as a fresh student ("<uid>-q1", "<uid>-q2", …, each
 given the same --enroll), so no answer sees memory of an earlier question's turn.
 
---full and --enroll exit 2 unless the in-memory store is active; lookup-only (no
-flags) may run anywhere and only reads. Exits 1 if any expected case doesn't match
-or, under --full, any turn ends in an error event.
+--full and --enroll exit 2 unless the in-memory store is active. Lookup-only (no
+flags) may run anywhere, but it is not strictly read-only: against a production
+DATABASE_URL, retrieval may upsert missing chunk embeddings into rag_chunks
+(idempotent — the same rows the app itself would write). Exits 1 if any expected
+case doesn't match or, under --full, any turn ends in an error event.
 """
 import asyncio
 import sys

@@ -1,8 +1,8 @@
 """Measure transcript/catalog similarity scores on labelled questions and pick
 course_lookup thresholds from the data (same method Lab used for its 0.64).
 
-Run from backend/ (blank DATABASE_URL keeps it off the production DB):
-    env DATABASE_URL= .venv/bin/python scripts/calibrate_lookup.py
+Run from backend/ (the script blanks DATABASE_URL itself, so it never touches the production DB):
+    .venv/bin/python scripts/calibrate_lookup.py
 """
 import asyncio
 import os
@@ -12,6 +12,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from dotenv import load_dotenv  # noqa: E402
 
+# Never touch production: blank DATABASE_URL before .env loads (load_dotenv doesn't
+# override a set var) and before any app module reads it — the in-memory store is used.
+os.environ["DATABASE_URL"] = ""
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 if not os.getenv("OPENAI_API_KEY"):
