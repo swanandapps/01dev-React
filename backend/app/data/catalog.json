@@ -1,0 +1,738 @@
+[
+  {
+    "id": 1,
+    "slug": "programming-language",
+    "title": "Build a Programming Language",
+    "description": "Dive into the genesis of syntax with 'Building a Programming Language'. This isn't about tweaking what's already there; it's about architecting something groundbreaking. Unearth the foundational elements of language design—parsing, compiling, and interpreting. We'll navigate through abstract syntax trees, tokenization, and grammars, turning them into tools you wield with precision",
+    "launched": false,
+    "url": "/course/1",
+    "modules": [
+      {
+        "title": "First Principles: Human Language",
+        "description": "Discover the art of crafting a library that's as plug-and-play as it gets."
+      },
+      {
+        "title": "C++, Java Language Designs",
+        "description": "Uncover the architectural marvels of JavaScript's initial release."
+      },
+      {
+        "title": "Machine Code, Bytecode, Your code.",
+        "description": "Inject your genius into JS's prototype."
+      },
+      {
+        "title": "Javascript Architecture",
+        "description": "Craft functions like mask, shorten, highlight."
+      },
+      {
+        "title": "Compiler, Interpretor & Transpiler",
+        "description": "Navigate the tricky waters of window pollution."
+      },
+      {
+        "title": "Design a Language Grammer",
+        "description": "Tackle the client-side marvel with Window."
+      },
+      {
+        "title": "Lexical Analysis",
+        "description": "Tackle the client-side marvel with Window."
+      },
+      {
+        "title": "Build Abstract Syntax Tree",
+        "description": "Tackle the client-side marvel with Window."
+      },
+      {
+        "title": "Interpret a Language AST",
+        "description": "Tackle the client-side marvel with Window."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - Introduction",
+        "subchapters": [
+          "1.1 - Language History"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Human Languages",
+        "subchapters": [
+          "2.1 - Libraries: First Principles"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Is Programming Language a Syntax?",
+        "subchapters": [
+          "2.1 - Libraries: First Principles"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Language Components",
+        "subchapters": [
+          "2.1 - Libraries: First Principles"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Language Processors",
+        "subchapters": [
+          "2.1 - Libraries: First Principles"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Compilers vs Interpreters vs Transpilers",
+        "subchapters": [
+          "2.1 - Libraries: First Principles"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "custom-library",
+    "title": "Build a Custom Library",
+    "description": "Peek under the hood of standard JS libraries and you'll find a world of potential waiting in 'Build a Custom JS Library'. It's not just about bending existing tools to your will; it's about building them from scratch. You'll dive deep into the mechanics of JavaScript, understanding the core principles that make frameworks tick. We're talking closures, callbacks, and prototypes that become your everyday tools for innovation.",
+    "launched": true,
+    "url": "/course/2",
+    "modules": [
+      {
+        "title": "Library: First Principles",
+        "description": "Start your Open Source Journey by building a library for People. Discover the art of crafting a library in Js 1.0 to Js 10.0."
+      },
+      {
+        "title": "Architecture: The Js 1.0",
+        "description": "We Study the Books and Blogs written by Brandon Eich himself, The Creator of Javascript."
+      },
+      {
+        "title": "Plugging to Js Prototype",
+        "description": "Inject your genius into JS's prototype. It's where your methods become part of something bigger."
+      },
+      {
+        "title": "Library Design",
+        "description": "Start from simple functions like mask, shorten, highlight using regular expressions to create more advanced functions."
+      },
+      {
+        "title": "Window Pollution, Once and for all!",
+        "description": "Navigate the tricky waters of window pollution. Clean code, clean conscience."
+      },
+      {
+        "title": "NPM Package Development",
+        "description": "You know `npm init`, You know `npm install` but do you know `npm link`?"
+      },
+      {
+        "title": "ES Modules, New kid on the block",
+        "description": "Meet ES Modules, the cool new kid in town for JavaScript modules."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - Introduction",
+        "subchapters": [
+          "1.1 - What is this course",
+          "1.2 - What will we build",
+          "1.3 - Mental Models We Will Be Using"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Libraries: First Principles",
+        "subchapters": [
+          "2.1 - What are Libraries and their Types"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Welcome Prototype",
+        "subchapters": [
+          "3.1 - The Js v1.0",
+          "3.2 - Nature Inherites So Does Javascript",
+          "3.3 - Meditate on Javascript",
+          "3.4 - What is this Prototype",
+          "3.5 - Prototype Enables Inheritance",
+          "3.6 - Hacking Javascript's Prototype"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Adding Methods to Our Library",
+        "subchapters": [
+          "4.1 - Creating Methods",
+          "4.2 - What are Regular Expressions?",
+          "4.3 - Methods Using Regular Expressions",
+          "4.4 - Organising The Library",
+          "4.5 - Testing The Library"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Goodbye Prototype",
+        "subchapters": [
+          "5.1 - Prototype, a Hero Turned Villain",
+          "5.2 - When to Use Prototype and When To Not",
+          "5.3 - Summary So Far"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Welcome Window",
+        "subchapters": [
+          "6.1 - What is Window",
+          "6.2 - Register Library to Window",
+          "6.5 - IIFE, To The Rescue"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Making Library Backend Compatible",
+        "subchapters": [
+          "7.1 - Registering Library to Global Object",
+          "7.2 - Root, To The Rescue"
+        ]
+      },
+      {
+        "name": "Chapter 8 - How to Develop NPM Package",
+        "subchapters": [
+          "8.1 - The `npm link` command",
+          "8.2 - Testing Our NPM Package"
+        ]
+      },
+      {
+        "name": "Chapter 9 - Welcome ES Modules",
+        "subchapters": [
+          "9.1 - Window is good but ..."
+        ]
+      },
+      {
+        "name": "Chapter 10 - ES Modules",
+        "subchapters": [
+          "10.1 - What Are ES Modules",
+          "10.2 - Creating ESM Based Library",
+          "10.3 - Testing Library on Backend"
+        ]
+      },
+      {
+        "name": "Chapter 11 - Publishing Our Library as NPM Package",
+        "subchapters": [
+          "11.1 - Publishing using `np`",
+          "11.2 - More methods and Testing Library on Frontend Application"
+        ]
+      },
+      {
+        "name": "Chapter 12 - Finale",
+        "subchapters": [
+          "12.1 - How Axios Library Uses 3 Methods We Learned",
+          "12.2 - Complete Course Summary",
+          "12.3 - Where from Here?"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "product-engineering",
+    "title": "Product Engineering Essentials",
+    "description": "This is a 0.1% DEV track.",
+    "launched": false,
+    "url": "/course/4",
+    "modules": [
+      {
+        "title": "Language Fundamentals Mastery",
+        "description": "Deepen your understanding of JavaScript's core concepts."
+      },
+      {
+        "title": "Asynchronous Programming Paradigms",
+        "description": "Explore the world of asynchronous JavaScript."
+      },
+      {
+        "title": "Functional Programming Techniques",
+        "description": "Elevate your coding skills by embracing functional programming principles."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - The Engineer's Mindset",
+        "subchapters": [
+          "1.1 - Why Most Engineers Stop at the Surface",
+          "1.2 - First Principles Thinking for Engineers",
+          "1.3 - Reading Specs and Source Code"
+        ]
+      },
+      {
+        "name": "Chapter 2 - JavaScript Architecture",
+        "subchapters": [
+          "2.1 - The Wave Model of JavaScript",
+          "2.2 - How JS 1.0 Was Designed",
+          "2.3 - Why JavaScript Evolved This Way"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Prototypes and Inheritance",
+        "subchapters": [
+          "3.1 - [[PROTOTYPE]] Under the Hood",
+          "3.2 - The Prototype Chain Visualized",
+          "3.3 - Hacking Prototype"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Asynchronous JavaScript",
+        "subchapters": [
+          "4.1 - The Event Loop: First Principles",
+          "4.2 - Callbacks, Promises, and Async/Await Internals",
+          "4.3 - The Microtask Queue"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Functional Programming Patterns",
+        "subchapters": [
+          "5.1 - Pure Functions and Immutability",
+          "5.2 - Function Composition",
+          "5.3 - Closures as State"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Production Engineering",
+        "subchapters": [
+          "6.1 - Code Review Culture",
+          "6.2 - Performance Profiling",
+          "6.3 - Ship It: From PR to Production"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "state-management",
+    "title": "Build a State Management Library",
+    "description": "You use Pinia, Redux, Zustand every day — but do you actually know how they work? In 'Build a State Management Library' we strip it all down and build one from first principles. Reactivity, computed values, actions, middleware, time-travel debugging — all engineered by you, from scratch, in plain JavaScript.",
+    "launched": false,
+    "url": "/course/5",
+    "modules": [
+      {
+        "title": "Reactive State Fundamentals",
+        "description": "Understand what makes state reactive and build the core observer/subscriber engine using JavaScript Proxy."
+      },
+      {
+        "title": "Computed State & Derived Values",
+        "description": "Implement lazy memoized computed properties that recompute only when their dependencies change."
+      },
+      {
+        "title": "Actions & Mutations",
+        "description": "Design explicit mutation patterns and async actions with optimistic updates and rollback support."
+      },
+      {
+        "title": "Middleware & Plugins",
+        "description": "Build a plugin system — implement a logger plugin and a localStorage persistence plugin from scratch."
+      },
+      {
+        "title": "Time-Travel Debugging",
+        "description": "Store state snapshots and implement undo/redo — understand how Redux DevTools works under the hood."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - State: First Principles",
+        "subchapters": [
+          "1.1 - What is State and Why It's Hard",
+          "1.2 - How Redux, Zustand, Pinia Work Under the Hood",
+          "1.3 - What We Will Build"
+        ]
+      },
+      {
+        "name": "Chapter 2 - JavaScript Proxy",
+        "subchapters": [
+          "2.1 - Proxy: The Intercept Layer",
+          "2.2 - The Reflect API",
+          "2.3 - Building a Reactive Primitive"
+        ]
+      },
+      {
+        "name": "Chapter 3 - The Core Store",
+        "subchapters": [
+          "3.1 - State Container Architecture",
+          "3.2 - Subscriptions and Listeners",
+          "3.3 - getState, setState, subscribe"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Computed Properties",
+        "subchapters": [
+          "4.1 - Derived State: The Problem",
+          "4.2 - Dependency Tracking with WeakMap",
+          "4.3 - Lazy Memoization"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Actions and Async",
+        "subchapters": [
+          "5.1 - Explicit Mutations",
+          "5.2 - Async Actions with Optimistic Updates",
+          "5.3 - Rollback on Failure"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Middleware System",
+        "subchapters": [
+          "6.1 - The Middleware Pattern",
+          "6.2 - Building a Logger Plugin",
+          "6.3 - Persistence Plugin (localStorage)"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Time-Travel Debugging",
+        "subchapters": [
+          "7.1 - Snapshot-Based State History",
+          "7.2 - Undo / Redo Implementation",
+          "7.3 - How Redux DevTools Works Under the Hood"
+        ]
+      },
+      {
+        "name": "Chapter 8 - Finale",
+        "subchapters": [
+          "8.1 - Comparing Our Library to Zustand",
+          "8.2 - Publishing as an NPM Package",
+          "8.3 - Where from Here?"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "web-framework",
+    "title": "Build a Web Framework from Scratch",
+    "description": "Express, Fastify, Hono — they all started with the same question: how does an HTTP request become a response? In this course you'll answer that question by building a complete web framework from scratch.",
+    "launched": false,
+    "url": "/course/6",
+    "modules": [
+      {
+        "title": "HTTP from Scratch",
+        "description": "Understand the HTTP wire format at the TCP level."
+      },
+      {
+        "title": "Routing Engine",
+        "description": "Build a radix-tree based router with static routes, dynamic :param matching, wildcards."
+      },
+      {
+        "title": "Middleware Pipeline",
+        "description": "Implement the middleware chain pattern — understand how next() works."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - HTTP: First Principles",
+        "subchapters": [
+          "1.1 - What is HTTP and Why It Was Invented",
+          "1.2 - The HTTP Wire Format",
+          "1.3 - Headers, Body, and Status Codes"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Building the HTTP Server",
+        "subchapters": [
+          "2.1 - Node.js net.createServer()",
+          "2.2 - Parsing Raw HTTP Requests",
+          "2.3 - Sending Raw HTTP Responses"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Routing Engine",
+        "subchapters": [
+          "3.1 - Naive String Matching",
+          "3.2 - Radix Tree Architecture",
+          "3.3 - Dynamic :params and Wildcards"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Middleware Pipeline",
+        "subchapters": [
+          "4.1 - What is Middleware",
+          "4.2 - The next() Pattern",
+          "4.3 - Error-Handling Middleware"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Request & Response Abstractions",
+        "subchapters": [
+          "5.1 - The req Object",
+          "5.2 - The res Object",
+          "5.3 - JSON, HTML, and Binary Responses"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Plugins and Extensions",
+        "subchapters": [
+          "6.1 - Plugin Architecture",
+          "6.2 - Body Parser from Scratch",
+          "6.3 - Static File Server"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Finale",
+        "subchapters": [
+          "7.1 - How Fastify Routes 30x Faster than Express",
+          "7.2 - Comparing Our Framework to Express",
+          "7.3 - Where from Here?"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "js-engine",
+    "title": "JavaScript Engine Internals",
+    "description": "Every time you write JavaScript, V8 is making thousands of decisions about your code. JIT compilation, hidden classes, deoptimization, garbage collection — these aren't black-box magic, they're engineering decisions you can understand.",
+    "launched": false,
+    "url": "/course/7",
+    "modules": [
+      {
+        "title": "Parsing & The AST",
+        "description": "Trace source code through the tokenizer and parser."
+      },
+      {
+        "title": "Ignition: The Bytecode Interpreter",
+        "description": "Read V8 bytecode, understand the register machine."
+      },
+      {
+        "title": "TurboFan: The JIT Compiler",
+        "description": "Understand type feedback, speculative optimization, and deoptimization."
+      },
+      {
+        "title": "Hidden Classes & Object Shapes",
+        "description": "Learn how V8 creates hidden classes for your objects."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - Inside V8: The Big Picture",
+        "subchapters": [
+          "1.1 - What Happens When You Run JavaScript",
+          "1.2 - The V8 Pipeline Overview",
+          "1.3 - Setting Up: --print-bytecode and --trace-opt"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Parsing and the AST",
+        "subchapters": [
+          "2.1 - Tokenization in V8",
+          "2.2 - The Abstract Syntax Tree",
+          "2.3 - Lazy Parsing: V8's First Optimization"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Ignition: The Bytecode Interpreter",
+        "subchapters": [
+          "3.1 - What is Bytecode",
+          "3.2 - Reading V8 Bytecode",
+          "3.3 - Registers and the Accumulator"
+        ]
+      },
+      {
+        "name": "Chapter 4 - TurboFan: JIT Compilation",
+        "subchapters": [
+          "4.1 - What is JIT Compilation",
+          "4.2 - Type Feedback and Speculation",
+          "4.3 - Deoptimization: When JIT Bails Out"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Hidden Classes and Shapes",
+        "subchapters": [
+          "5.1 - How V8 Represents Objects",
+          "5.2 - Shape Transitions",
+          "5.3 - Inline Caches (IC)"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Garbage Collection",
+        "subchapters": [
+          "6.1 - The V8 Heap Layout",
+          "6.2 - Minor GC: Scavenger",
+          "6.3 - Major GC: Mark-Sweep-Compact"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Writing V8-Friendly Code",
+        "subchapters": [
+          "7.1 - Monomorphic vs Polymorphic Code",
+          "7.2 - What Triggers Deoptimization",
+          "7.3 - Profiling with --prof"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "real-time",
+    "title": "Build a Real-Time System",
+    "description": "WebSockets, pub/sub, presence detection, Redis Streams — real-time systems have a reputation for being hard. In 'Build a Real-Time System' you'll build one from scratch.",
+    "launched": false,
+    "url": "/course/8",
+    "modules": [
+      {
+        "title": "TCP & The WebSocket Upgrade",
+        "description": "Go below the WebSocket API — understand the HTTP Upgrade handshake."
+      },
+      {
+        "title": "Building the WebSocket Server",
+        "description": "Accept connections, maintain a client registry, broadcast messages."
+      },
+      {
+        "title": "Pub/Sub Architecture",
+        "description": "Build in-memory pub/sub with rooms and channels."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 1 - Real-Time: First Principles",
+        "subchapters": [
+          "1.1 - What Makes a System Real-Time",
+          "1.2 - Polling vs Long-Polling vs WebSockets",
+          "1.3 - What We Will Build"
+        ]
+      },
+      {
+        "name": "Chapter 2 - TCP and the WebSocket Handshake",
+        "subchapters": [
+          "2.1 - TCP: The Foundation",
+          "2.2 - The HTTP Upgrade Request",
+          "2.3 - The WebSocket Frame Format"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Building the WebSocket Server",
+        "subchapters": [
+          "3.1 - Accepting Connections",
+          "3.2 - The Client Registry",
+          "3.3 - Broadcasting Messages"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Pub/Sub Architecture",
+        "subchapters": [
+          "4.1 - Rooms and Channels",
+          "4.2 - Subscribe and Unsubscribe",
+          "4.3 - Message Fan-Out"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Presence and Heartbeats",
+        "subchapters": [
+          "5.1 - Detecting Disconnections",
+          "5.2 - Ping/Pong Protocol",
+          "5.3 - Presence Lists"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Redis Integration",
+        "subchapters": [
+          "6.1 - Why In-Memory Pub/Sub Doesn't Scale",
+          "6.2 - Redis Pub/Sub",
+          "6.3 - Redis Streams for Persistent Events"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Scaling Horizontally",
+        "subchapters": [
+          "7.1 - The Sticky Sessions Problem",
+          "7.2 - Redis as the Message Broker",
+          "7.3 - Load Balancing WebSocket Connections"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "javascript-deep-dive",
+    "title": "JavaScript Deep Dive",
+    "description": "Go beneath the syntax and understand how JavaScript actually works — prototype inheritance, the V8 engine and hidden classes, and the event loop that keeps everything responsive. This course builds the mental models that separate engineers who use JavaScript from engineers who understand it.",
+    "launched": false,
+    "url": "/course/9",
+    "modules": [
+      {
+        "title": "Prototype Inheritance",
+        "description": "How objects delegate to their prototype, and why it's delegation not copying."
+      },
+      {
+        "title": "V8 Hidden Classes",
+        "description": "How V8 optimizes property access and how to avoid deopts."
+      },
+      {
+        "title": "The Event Loop",
+        "description": "Tasks vs microtasks, and why a resolved Promise beats setTimeout(0)."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 4 - Objects & Inheritance",
+        "subchapters": [
+          "4.1 - Prototype Inheritance"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Inside the Engine",
+        "subchapters": [
+          "5.1 - V8 Engine and Hidden Classes"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Concurrency",
+        "subchapters": [
+          "6.1 - The Event Loop and Microtasks"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "web-apis",
+    "title": "Web APIs and Real-Time",
+    "description": "Learn how the web moves data in real time. Start at the HTTP/WebSocket boundary — the Upgrade handshake — and understand when to reach for long-polling versus a full-duplex WebSocket connection, and what each one really costs.",
+    "launched": false,
+    "url": "/course/10",
+    "modules": [
+      {
+        "title": "The Upgrade Handshake",
+        "description": "How an HTTP request becomes a WebSocket connection."
+      },
+      {
+        "title": "Long-Polling vs WebSockets",
+        "description": "The real cost of each transport and when to use which."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 2 - The WebSocket Boundary",
+        "subchapters": [
+          "2.2 - WebSocket Handshake"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Choosing a Transport",
+        "subchapters": [
+          "3.1 - Long-Polling vs WebSockets"
+        ]
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "react-perf",
+    "title": "React Performance Patterns",
+    "description": "Make React fast on purpose. Understand what actually triggers re-renders, how memoization and computed state cut wasted work, and how React.memo, useCallback, and useMemo fit together — including the reference-equality traps that quietly defeat them.",
+    "launched": false,
+    "url": "/course/11",
+    "modules": [
+      {
+        "title": "Memoization & Computed State",
+        "description": "Recompute only when dependencies change."
+      },
+      {
+        "title": "React.memo & useCallback",
+        "description": "Skip re-renders by keeping props referentially stable."
+      }
+    ],
+    "chapters": [
+      {
+        "name": "Chapter 3 - Cutting Wasted Work",
+        "subchapters": [
+          "3.2 - Memoization and Computed State"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Stable References",
+        "subchapters": [
+          "4.1 - React.memo and useCallback"
+        ]
+      }
+    ]
+  }
+]
