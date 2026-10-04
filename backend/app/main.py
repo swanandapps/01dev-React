@@ -23,10 +23,10 @@ from app.services.vector_store import vector_store
 from app.services import (
     study_guide_service, question_service, adaptive_service,
     course_insight_service,
-    tutor_service, journey_service, enrollment_service,
+    journey_service, enrollment_service,
     audit_service, memory_service,
     eval_service, pii, chat_pipeline,
-    skill_graph_service, catalog_index,
+    skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.services.course_lookup import ChatScope
@@ -155,13 +155,34 @@ async def course_insight(req: CourseInsightRequest):
 
 
 @app.post("/api/ai/tutor/stream")
-async def tutor_stream_endpoint(req: TutorRequest):
-    messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    return StreamingResponse(
-        tutor_service.tutor_stream(req.user_id, req.course_id, messages, req.lecture),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+async def tutor_stream_endpoint(req: TutorRequest, student_id: str = Depends(current_student)):
+    """The tutor inside the video player: same pipeline as the Ask page, scoped to
+    the course + lecture being watched. History is the running message list the
+    client sends; req.user_id is ignored (identity comes from the login token)."""
+    headers = {"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
+
+    async def one(event: dict):
+        yield chat_pipeline.sse(event)
+
+    if not catalog_service.by_slug(req.course_id):
+        return StreamingResponse(one({"type": "error", "message": "Unknown course"}),
+                                 media_type="text/event-stream", headers=headers)
+    msgs = [{"role": m.role, "content": m.content} for m in req.messages if m.role in ("user", "assistant")]
+    if not msgs or msgs[-1]["role"] != "user" or not msgs[-1]["content"].strip():
+        return StreamingResponse(one({"type": "error", "message": "Ask a question first"}),
+                                 media_type="text/event-stream", headers=headers)
+
+    turn = chat_pipeline.TurnRequest(
+        question=msgs[-1]["content"], student_id=student_id,
+        scope=ChatScope(course_slug=req.course_id, lecture_title=req.lecture or None),
+        history=msgs[:-1][-12:], memory_slug=req.course_id,
     )
+
+    async def gen():
+        async for event in chat_pipeline.chat_turn(turn):
+            yield chat_pipeline.sse(event)
+
+    return StreamingResponse(gen(), media_type="text/event-stream", headers=headers)
 
 
 @app.post("/api/hermes/chat")
