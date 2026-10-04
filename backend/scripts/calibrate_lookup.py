@@ -49,14 +49,22 @@ LABELLED = [
 ]
 
 
-def best_threshold(pos: list[float], neg: list[float]) -> tuple[float, float]:
-    best = (0.0, -1.0)
-    for i in range(10, 81):
+def best_threshold(pos: list[float], neg: list[float]) -> tuple[float, float, float, float]:
+    """Return (threshold, accuracy, lo, hi): the midpoint of the first contiguous run
+    of grid thresholds (0.10–0.80, step 0.01) that reach the maximum accuracy, so the
+    chosen value sits mid-gap rather than just above the highest negative."""
+    def acc(i: int) -> float:
         t = i / 100
-        acc = (sum(s >= t for s in pos) + sum(s < t for s in neg)) / (len(pos) + len(neg))
-        if acc > best[1]:
-            best = (t, acc)
-    return best
+        return (sum(s >= t for s in pos) + sum(s < t for s in neg)) / (len(pos) + len(neg))
+
+    grid = range(10, 81)
+    scores = {i: acc(i) for i in grid}
+    best = max(scores.values())
+    lo = hi = min(i for i in grid if scores[i] == best)
+    while hi + 1 in scores and scores[hi + 1] == best:
+        hi += 1
+    mid = round((lo + hi) / 2)  # integer hundredths: deterministic, no float-rounding surprises
+    return mid / 100, best, lo / 100, hi / 100
 
 
 async def main() -> None:
@@ -69,10 +77,10 @@ async def main() -> None:
     print(f"{'question':55} {'T?':3} {'C?':3} {'t_score':>8} {'c_score':>8}")
     for q, it, ic, ts, cs in rows:
         print(f"{q[:55]:55} {'Y' if it else '-':3} {'Y' if ic else '-':3} {ts:8.3f} {cs:8.3f}")
-    t_thr, t_acc = best_threshold([r[3] for r in rows if r[1]], [r[3] for r in rows if not r[1]])
-    c_thr, c_acc = best_threshold([r[4] for r in rows if r[2]], [r[4] for r in rows if not r[2]])
-    print(f"\nTRANSCRIPT_THRESHOLD = {t_thr:.2f}   (accuracy {t_acc:.0%})")
-    print(f"CATALOG_THRESHOLD    = {c_thr:.2f}   (accuracy {c_acc:.0%})")
+    t_thr, t_acc, t_lo, t_hi = best_threshold([r[3] for r in rows if r[1]], [r[3] for r in rows if not r[1]])
+    c_thr, c_acc, c_lo, c_hi = best_threshold([r[4] for r in rows if r[2]], [r[4] for r in rows if not r[2]])
+    print(f"\nTRANSCRIPT_THRESHOLD = {t_thr:.2f}   (accuracy {t_acc:.0%}, max-accuracy range {t_lo:.2f}–{t_hi:.2f})")
+    print(f"CATALOG_THRESHOLD    = {c_thr:.2f}   (accuracy {c_acc:.0%}, max-accuracy range {c_lo:.2f}–{c_hi:.2f})")
 
 
 if __name__ == "__main__":
