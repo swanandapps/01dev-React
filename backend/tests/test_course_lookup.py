@@ -101,3 +101,37 @@ def test_lecture_mode_facts_include_lecture_and_weak_concepts():
     facts = cl.render_facts(lookup, scope, weak_concepts=["useCallback (40%)"])
     assert "MODE: in-lecture" in facts and "4.1 - React.memo and useCallback" in facts
     assert "useCallback (40%)" in facts
+
+
+JS_CHUNK = _chunk("javascript-deep-dive", "JavaScript Deep Dive", "3.2 - Closures")
+
+
+async def test_case_follows_top_ranked_hit_in_unowned_lecture(patch_sources):
+    # Watching React Perf (11, not owned) while owning JS Deep Dive (9): the current
+    # lecture ranks first and is NOT enrolled, so the case must not be ENROLLED_MATCH.
+    patch_sources(transcripts=[(MEMO_CHUNK, 0.5), (JS_CHUNK, 0.8)], enrolled_ids=[9])
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
+    out = await cl.course_lookup("what does this mean", "s", scope)
+    assert out.hits[0].course_slug == "react-perf"
+    assert out.case == cl.LookupCase.NOT_ENROLLED_MATCH
+
+
+async def test_same_lecture_title_in_another_course_gets_no_lecture_boost(patch_sources):
+    # Generic title "1.1 - Introduction" exists in Custom Library too; scope is React Perf.
+    other_intro = _chunk("custom-library", "Build a Custom Library", "1.1 - Introduction")
+    patch_sources(transcripts=[(other_intro, 0.8), (MEMO_CHUNK, 0.5)])
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="1.1 - Introduction")
+    out = await cl.course_lookup("q", "s", scope)
+    assert out.hits[0].course_slug == "react-perf"
+
+
+async def test_malformed_enrollment_doc_does_not_fail_the_turn(patch_sources, monkeypatch):
+    patch_sources(transcripts=[(MEMO_CHUNK, 0.6)])
+
+    async def malformed(student_id):
+        return [{"title": "no id"}]
+
+    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", malformed)
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.NOT_ENROLLED_MATCH
+    assert out.enrolled_titles == []

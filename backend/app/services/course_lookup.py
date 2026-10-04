@@ -14,6 +14,7 @@ from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
 
 # Set from measured data by scripts/calibrate_lookup.py (Task 9) — see spec §4.3.
+# Calibrated for OpenAI embeddings; the no-key keyword/hash fallback (local dev) is not comparable.
 TRANSCRIPT_THRESHOLD = 0.35
 CATALOG_THRESHOLD = 0.35
 MAX_HITS = 5
@@ -69,10 +70,10 @@ async def _transcript_hits(question: str, top_k: int = 8):
 async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
     try:
         courses = await enrollment_service.get_enrolled_courses(student_id)
+        return {c["id"] for c in courses}, [c["title"] for c in courses]
     except Exception as e:  # noqa: BLE001 — unknown enrollment = not enrolled; never fail the turn
-        print(f"[course_lookup] enrollment lookup failed: {e}")
+        print(f"[course_lookup] enrollment lookup failed: {e!r}")
         return set(), []
-    return {c["id"] for c in courses}, [c["title"] for c in courses]
 
 
 async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatScope()) -> CourseLookup:
@@ -104,8 +105,8 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
         ))
 
     def rank(h: Hit):
-        in_lecture = bool(scope.lecture_title) and h.title == scope.lecture_title
         in_course = bool(scope.course_slug) and h.course_slug == scope.course_slug
+        in_lecture = in_course and bool(scope.lecture_title) and h.title == scope.lecture_title
         return (in_lecture, in_course, h.enrolled, h.score)
 
     hits.sort(key=rank, reverse=True)
@@ -113,7 +114,7 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
 
     if not hits:
         case = LookupCase.NO_MATCH
-    elif any(h.enrolled for h in hits):
+    elif hits[0].enrolled:  # the best-ranked hit decides (spec §4.3)
         case = LookupCase.ENROLLED_MATCH
     else:
         case = LookupCase.NOT_ENROLLED_MATCH
