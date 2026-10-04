@@ -14,6 +14,9 @@ used and production data is never read or written:
                  backend/.env) and print the answer (long ones cut to head … tail) and first-token latency.
   --whole        with --full, print whole answers, uncut.
 
+With --full every question runs as a fresh student ("<uid>-q1", "<uid>-q2", …, each
+given the same --enroll), so no answer sees memory of an earlier question's turn.
+
 Exits 1 if any expected case doesn't match.
 """
 import asyncio
@@ -59,30 +62,38 @@ async def main() -> None:
     uid = positional[0] if positional else DEMO_UID
     full = "--full" in sys.argv
 
+    ids: list[int] = []
     if enroll_arg is not None:
         if not isinstance(store, InMemoryStore):
             print(f"demo_check: --enroll only runs against the in-memory store, not "
                   f"{type(store).__name__}. Re-run with `env DATABASE_URL= ...`.")
             sys.exit(2)
         ids = [int(x) for x in enroll_arg.split(",") if x.strip()]
-        for cid in ids:
-            course = catalog_service.get(cid)
-            if not course:
-                print(f"demo_check: no catalog course with id {cid}")
-                sys.exit(2)
-            await enrollment_service.enroll(uid, cid, course["title"])
+        if any(catalog_service.get(cid) is None for cid in ids):
+            print(f"demo_check: unknown catalog course id in {ids}")
+            sys.exit(2)
     check = enroll_arg is not None and sorted(ids) == DEMO_ENROLL
+
+    async def seed(student: str) -> None:
+        for cid in ids:
+            await enrollment_service.enroll(student, cid, catalog_service.get(cid)["title"])
+
+    await seed(uid)
 
     enrolled = await enrollment_service.get_enrolled_courses(uid)
     print(f"store: {type(store).__name__} · student {uid}")
     print(f"enrolled in: {[c['title'] for c in enrolled] or 'NOTHING'}")
-    print(f"expected-case checks: {'on' if check else 'off (only with --enroll 9,11)'}\n")
+    print(f"expected-case checks: {'on' if check else 'off (only with --enroll 9,11)'}")
+    print(f"memory: {'fresh student per question (' + uid + '-qN)' if full else 'n/a (lookup only)'}\n")
 
     failures = 0
-    for q, scope, expected in QUESTIONS:
+    for i, (q, scope, expected) in enumerate(QUESTIONS, 1):
+        student = f"{uid}-q{i}" if full else uid
+        if student != uid:
+            await seed(student)
         # Same query the chat uses: in the player the lecture title rides along.
         lookup_q = f"{scope.lecture_title} {q}" if scope.lecture_title else q
-        lk = await course_lookup(lookup_q, uid, scope)
+        lk = await course_lookup(lookup_q, student, scope)
         ok = not check or expected is None or lk.case == expected
         failures += not ok
         top = f"{lk.hits[0].course_title} → {lk.hits[0].title} ({lk.hits[0].score:.2f})" if lk.hits else "-"
@@ -90,7 +101,7 @@ async def main() -> None:
         print(f"[{'ok' if ok else 'FAIL'}] {lk.case.value:18} {q[:42]:42} top: {top}{exp}")
         if full:
             t0, first, text = time.perf_counter(), None, []
-            req = chat_pipeline.TurnRequest(question=q, student_id=uid, scope=scope, history=[],
+            req = chat_pipeline.TurnRequest(question=q, student_id=student, scope=scope, history=[],
                                             memory_slug=scope.course_slug or "all-courses")
             async for e in chat_pipeline.chat_turn(req):
                 if e["type"] == "token":

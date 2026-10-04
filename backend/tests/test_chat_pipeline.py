@@ -49,12 +49,48 @@ def _req(q="how do I publish an npm library", history=None):
 
 
 async def test_order_sources_first_then_tokens_then_done(wired, monkeypatch):
-    _agent(monkeypatch, wired)
+    answer = "Short answer. See the01.dev/course/2."
+    _agent(monkeypatch, wired, events=[{"type": "token", "value": answer}])
     events = [e async for e in chat_pipeline.chat_turn(_req())]
     assert [e["type"] for e in events] == ["sources", "token", "done"]
     assert events[0]["sources"][0]["course_id"] == "custom-library"
     assert "CASE: NOT_ENROLLED_MATCH" in wired["system"]
-    assert wired["recorded"] == [("alice", "all-courses", "how do I publish an npm library", "Short answer.")]
+    assert wired["recorded"] == [("alice", "all-courses", "how do I publish an npm library", answer)]
+
+
+POINTER = ("\n\nThis is covered in depth in Build a Custom Library → 8.1 - The npm link command. "
+           "You're not enrolled in it yet; you can find it at the01.dev/course/2.")
+
+
+async def test_not_enrolled_answer_without_the_course_url_gets_the_pointer_appended(wired, monkeypatch):
+    _agent(monkeypatch, wired)  # "Short answer." — no course url
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    tokens = [e["value"] for e in events if e["type"] == "token"]
+    assert tokens == ["Short answer.", POINTER]
+    assert events[-1]["type"] == "done"
+    assert wired["recorded"][0][3] == "Short answer." + POINTER
+
+
+async def test_not_enrolled_answer_that_already_has_the_course_url_gets_no_pointer(wired, monkeypatch):
+    _agent(monkeypatch, wired, events=[{"type": "token", "value": "Find it at the01."},
+                                       {"type": "token", "value": "dev/course/2."}])
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    assert [e["value"] for e in events if e["type"] == "token"] == ["Find it at the01.", "dev/course/2."]
+    assert wired["recorded"][0][3] == "Find it at the01.dev/course/2."
+
+
+@pytest.mark.parametrize("case,enrolled", [(cl.LookupCase.ENROLLED_MATCH, True), (cl.LookupCase.NO_MATCH, False)])
+async def test_pointer_is_never_appended_outside_not_enrolled(wired, monkeypatch, case, enrolled):
+    async def lookup(question, student_id, scope=cl.ChatScope()):
+        hit = cl.Hit(source="transcript", course_id=2, course_slug="custom-library",
+                     course_title="Build a Custom Library", title="8.1 - The npm link command", score=0.6,
+                     enrolled=enrolled, text="npm link", url="/course/2")
+        return cl.CourseLookup(case=case, hits=[hit] if case != cl.LookupCase.NO_MATCH else [], enrolled_titles=[])
+    monkeypatch.setattr(chat_pipeline, "course_lookup", lookup)
+    _agent(monkeypatch, wired)
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    assert [e["value"] for e in events if e["type"] == "token"] == ["Short answer."]
+    assert wired["recorded"][0][3] == "Short answer."
 
 
 async def test_pii_is_scrubbed_everywhere(wired, monkeypatch):
@@ -99,7 +135,7 @@ async def test_lookup_failure_sends_only_a_generic_error(wired, monkeypatch):
 
 
 async def test_audit_failure_does_not_fail_the_turn(wired, monkeypatch):
-    _agent(monkeypatch, wired)
+    _agent(monkeypatch, wired, events=[{"type": "token", "value": "See the01.dev/course/2."}])
     async def boom(**kw):
         raise RuntimeError("audit store down")
     monkeypatch.setattr(audit_service, "log_event", boom)

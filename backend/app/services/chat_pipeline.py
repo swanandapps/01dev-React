@@ -11,7 +11,7 @@ from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
 from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
-from app.services.course_lookup import ChatScope, course_lookup, render_facts, to_cards
+from app.services.course_lookup import ChatScope, CourseLookup, LookupCase, course_lookup, render_facts, to_cards
 from app.services.llm import GEN_MODEL
 
 CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
@@ -38,6 +38,17 @@ def _sources(cards: list[dict]) -> dict:
 
 def _card_key(card: dict) -> tuple:
     return (card.get("course_id"), card.get("lecture_id"), card.get("start_time"))
+
+
+def _missing_pointer(lookup: CourseLookup, answer: str) -> Optional[str]:
+    """The not-enrolled course pointer, if the model left it out (prompt alone isn't reliable)."""
+    if lookup.case != LookupCase.NOT_ENROLLED_MATCH:
+        return None
+    hit = next((h for h in lookup.hits if not h.enrolled and h.url), None)
+    if hit is None or f"the01.dev{hit.url}" in answer:
+        return None
+    return (f"\n\nThis is covered in depth in {hit.course_title} → {hit.title}. "
+            f"You're not enrolled in it yet; you can find it at the01.dev{hit.url}.")
 
 
 async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> AsyncIterator[dict]:
@@ -91,6 +102,10 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         yield {"type": "error", "message": _ERROR}
         return
 
+    pointer = _missing_pointer(lookup, "".join(answer))
+    if pointer:
+        answer.append(pointer)
+        yield {"type": "token", "value": pointer}
     if extra:
         # The client replaces its card list on each sources event, so send the full deduped list.
         yield _sources(cards + extra)
