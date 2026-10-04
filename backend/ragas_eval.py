@@ -8,7 +8,7 @@ reference answers from the eval set, and scores them on the full RAGAS quadrant:
   - answer relevancy   (does the answer actually address the question?)
   - context recall     (did retrieval surface everything the gold answer needs?)
 
-These feed the same grounding signal the GEPA loop optimises.
+Each run is recorded in the eval history (app/eval/results_store.py).
 
 Run (isolated venv):  .ragas-venv/bin/python ragas_eval.py
 """

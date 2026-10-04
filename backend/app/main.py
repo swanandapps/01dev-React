@@ -29,17 +29,18 @@ from app.services import (
     course_insight_service,
     tutor_service, journey_service, enrollment_service,
     hermes_client, audit_service, memory_service,
-    eval_service, gepa_service, context_builder, pii,
+    eval_service, context_builder, pii,
     skill_graph_service,
 )
 from app.services.otel import get_tracer, init_tracing
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.services.lab.routes import router as lab_router
-# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
-# run/approve, eval history, lab audit) are gated behind a shared secret — see
+# Admin/audit/compliance routes (audit log, memory transparency+erase, eval
+# RAG outputs + history, lab audit) are gated behind a shared secret — see
 # app/deps.py for require_admin_key and why it lives there, not here.
 from app.deps import require_admin_key
+from app.grounding import loader
 
 _MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 
@@ -175,8 +176,8 @@ async def hermes_chat(req: Request):
     `agentic` flag, plus a backend similarity-score threshold deciding whether to
     answer or decline) when Hermes ran on a local model too slow/unreliable for
     real-time chat. Hermes now runs on the same OpenAI model either way, so that
-    split no longer has a reason to exist; SOUL.md's own "don't answer outside the
-    course material" instruction is the guardrail now, not a backend score check.
+    split no longer has a reason to exist; the grounding prompt
+    (app/grounding/grounding_prompt.md) is the guardrail now, not a backend score check.
 
     Either way the tutor REMEMBERS the student: prior turns are threaded (multi-turn)
     and a running profile is injected, then this exchange is persisted for next time.
@@ -270,9 +271,9 @@ async def hermes_chat(req: Request):
         history.append({"role": "user", "content": t.get("question", "")})
         history.append({"role": "assistant", "content": t.get("answer", "")})
 
-    # Persona comes from the SOUL — the identity GEPA evolves (and the audit fingerprints).
-    # SOUL.md's own "Avoid" section carries the "don't answer outside the course
-    # material" guardrail; Hermes enforces that itself now, not a backend score check.
+    # Persona comes from the grounding prompt (app/grounding/grounding_prompt.md),
+    # which the audit log fingerprints. Its rules carry the grounding guardrail;
+    # the model enforces that itself now, not a backend score check.
     #
     # "all-courses" is a frontend sentinel (the global Ask page has no course
     # selector) meaning "no specific course chosen" — NOT a real course name.
@@ -280,7 +281,7 @@ async def hermes_chat(req: Request):
     # confusing the model into treating it as an actual enrolled course (it
     # answered "you're enrolled in the course called all-courses" when asked).
     if course_slug == "all-courses":
-        persona = gepa_service.read_soul() + (
+        persona = loader.read_grounding_prompt() + (
             "\nYou help students with ANY course on the01.dev — you are not scoped to a "
             "single course in this conversation. Use search_course_content freely across "
             "all courses and mention which course an answer came from. If asked what "
@@ -288,7 +289,7 @@ async def hermes_chat(req: Request):
             "get_enrolled_courses tool — you DO have this data now, don't decline or guess."
         )
     else:
-        persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
+        persona = loader.read_grounding_prompt() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
     # NOTE: this deliberately puts the raw student_id (currently the student's
     # actual email) in the LLM-bound prompt, verbatim, OUTSIDE the pii.scrub()
     # choke point above ("no student PII reaches any downstream surface" per
@@ -398,35 +399,16 @@ async def hermes_memory_erase(student_id: str):
     return await memory_service.erase(student_id)
 
 
-@app.post("/api/hermes/gepa/run", dependencies=[Depends(require_admin_key)])
-async def gepa_run():
-    """Run one GEPA evolution round → a human-reviewable proposal. Applies nothing."""
-    return await gepa_service.run_round()
-
-
-@app.post("/api/hermes/gepa/approve", dependencies=[Depends(require_admin_key)])
-async def gepa_approve(req: Request):
-    """HUMAN gate — apply an approved SOUL evolution (the only path that mutates the SOUL)."""
-    body = await req.json()
-    return await gepa_service.approve(body.get("proposal_id", ""))
-
-
-@app.get("/api/hermes/gepa/proposals", dependencies=[Depends(require_admin_key)])
-async def gepa_proposals():
-    """The evolution history — proposals, their before/after scores, and what was applied."""
-    return gepa_service.proposals()
-
-
 @app.get("/api/hermes/eval/rag-outputs", dependencies=[Depends(require_admin_key)])
 async def eval_rag_outputs():
     """The tutor's RAG triples {question, answer, contexts} over the eval set — the input the
     isolated RAGAS harness scores (faithfulness / answer-relevancy / context-precision)."""
-    return await eval_service.collect_rag_outputs(gepa_service.read_soul())
+    return await eval_service.collect_rag_outputs(loader.read_grounding_prompt())
 
 
 @app.get("/api/hermes/eval/history", dependencies=[Depends(require_admin_key)])
 async def eval_history(kind: str | None = None, limit: int = 50):
-    """The recorded eval / RAGAS / GEPA results over time — the quality trend."""
+    """The recorded eval / RAGAS results over time — the quality trend."""
     from app.eval import results_store
     return results_store.history(kind, limit)
 

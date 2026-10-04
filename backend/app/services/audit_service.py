@@ -3,28 +3,17 @@ EU AI Act audit log for the tutoring agent.
 
 Every agent interaction is recorded with the metadata a regulator (or an
 incident review) needs: who, what, when, which model/provider answered, and the
-SHA of the SOUL.md identity that was active. Rides on the existing document
+fingerprint of the grounding prompt that was active. Rides on the existing document
 store (Firestore in prod, in-memory locally) — same pattern as the rest of the app.
 """
 
-import hashlib
-import os
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
+from app.grounding.loader import prompt_fingerprint
 from app.services.store import store
 
-_SOUL_PATH = Path(os.path.expanduser("~/.hermes/SOUL.md"))
 _AUDIT_COLLECTION = "audit_log"
-
-
-def soul_hash() -> str:
-    """Short SHA-256 of the active SOUL.md — pins which agent identity answered."""
-    try:
-        return hashlib.sha256(_SOUL_PATH.read_bytes()).hexdigest()[:12]
-    except OSError:
-        return "unknown"
 
 
 async def log_event(
@@ -49,7 +38,8 @@ async def log_event(
             "question": question[:500],
             "model": model,
             "provider": provider,
-            "soul_md_hash": soul_hash(),
+            # fingerprint of app/grounding/grounding_prompt.md
+            "soul_md_hash": prompt_fingerprint(),
             "risk_level": risk_level,
             "outcome": outcome,
             "created_at": ts,

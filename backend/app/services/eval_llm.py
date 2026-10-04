@@ -1,6 +1,5 @@
 """
-Shared LLM selection for the eval / self-improvement tools (GEPA, eval_service,
-accuracy). Uses OpenAI — the same model family the product ships on — so the
+Shared LLM selection for the eval tools (eval_service, accuracy). Uses OpenAI — the same model family the product ships on — so the
 eval suite runs anywhere (CI, cloud).
 
   EVAL_MODEL=gpt-4.1-mini       (the judge / generator model)
