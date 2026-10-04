@@ -179,3 +179,43 @@ async def test_ask_scope_lookup_uses_the_bare_question(wired, monkeypatch):
     _agent(monkeypatch, wired)
     [e async for e in chat_pipeline.chat_turn(_req("how do I publish an npm library"))]
     assert wired["lookup_q"] == ["how do I publish an npm library"]
+
+
+def _not_enrolled(*hits):
+    async def lookup(question, student_id, scope=cl.ChatScope()):
+        return cl.CourseLookup(case=cl.LookupCase.NOT_ENROLLED_MATCH, hits=list(hits), enrolled_titles=[])
+    return lookup
+
+
+def _hit(course_id, title, url, enrolled=False):
+    return cl.Hit(source="catalog", course_id=course_id, course_slug=None, course_title=title, title=title,
+                  score=0.5, enrolled=enrolled, url=url)
+
+
+async def _tokens(monkeypatch, wired, answer, *hits):
+    monkeypatch.setattr(chat_pipeline, "course_lookup", _not_enrolled(*hits))
+    _agent(monkeypatch, wired, events=[{"type": "token", "value": answer}])
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    return [e["value"] for e in events if e["type"] == "token"]
+
+
+async def test_pointer_to_another_not_enrolled_hit_counts(wired, monkeypatch):
+    toks = await _tokens(monkeypatch, wired, "See the01.dev/course/1.",
+                         _hit(2, "Build a Custom Library", "/course/2"), _hit(1, "Build a Programming Language", "/course/1"))
+    assert toks == ["See the01.dev/course/1."]
+
+
+async def test_url_check_is_boundary_aware(wired, monkeypatch):
+    toks = await _tokens(monkeypatch, wired, "See the01.dev/course/20.", _hit(2, "Build a Custom Library", "/course/2"))
+    assert len(toks) == 2 and toks[1].endswith("the01.dev/course/2.")
+
+
+async def test_answer_that_already_says_not_enrolled_gets_no_pointer(wired, monkeypatch):
+    toks = await _tokens(monkeypatch, wired, "You're Not Enrolled in Build a Custom Library yet.",
+                         _hit(2, "Build a Custom Library", "/course/2"))
+    assert toks == ["You're Not Enrolled in Build a Custom Library yet."]
+
+
+async def test_no_pointer_when_the_not_enrolled_hit_has_no_url(wired, monkeypatch):
+    toks = await _tokens(monkeypatch, wired, "Short answer.", _hit(2, "Build a Custom Library", None))
+    assert toks == ["Short answer."]

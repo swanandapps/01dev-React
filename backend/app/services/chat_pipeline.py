@@ -6,6 +6,7 @@ The endpoints differ only in ChatScope and where history comes from.
 import contextlib
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import AsyncIterator, Optional
 
@@ -42,11 +43,12 @@ def _card_key(card: dict) -> tuple:
 
 def _missing_pointer(lookup: CourseLookup, answer: str) -> Optional[str]:
     """The not-enrolled course pointer, if the model left it out (prompt alone isn't reliable)."""
-    if lookup.case != LookupCase.NOT_ENROLLED_MATCH:
+    if lookup.case != LookupCase.NOT_ENROLLED_MATCH or "not enrolled" in answer.lower():
         return None
-    hit = next((h for h in lookup.hits if not h.enrolled and h.url), None)
-    if hit is None or f"the01.dev{hit.url}" in answer:
+    linked = [h for h in lookup.hits if not h.enrolled and h.url]
+    if not linked or any(re.search(re.escape(f"the01.dev{h.url}") + r"(?!\d)", answer) for h in linked):
         return None
+    hit = linked[0]
     return (f"\n\nThis is covered in depth in {hit.course_title} → {hit.title}. "
             f"You're not enrolled in it yet; you can find it at the01.dev{hit.url}.")
 

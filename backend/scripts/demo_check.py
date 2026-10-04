@@ -6,10 +6,10 @@ used and production data is never read or written:
 
   env DATABASE_URL= .venv/bin/python scripts/demo_check.py [student_id] [--enroll 9,11] [--full]
 
-  --enroll 9,11  seed enrollments (catalog course ids) for the student first; refused
-                 (exit 2) unless the in-memory store is active. 9,11 simulates the demo
-                 account: JavaScript Deep Dive + React Performance Patterns, not
-                 Build a Custom Library — and turns on the expected-case checks.
+  --enroll 9,11  seed enrollments (catalog course ids) for the student first. 9,11
+                 simulates the demo account: JavaScript Deep Dive + React Performance
+                 Patterns, not Build a Custom Library — and turns on the expected-case
+                 checks.
   --full         also run each question through the full tutor (real OpenAI key from
                  backend/.env) and print the answer (long ones cut to head … tail) and first-token latency.
   --whole        with --full, print whole answers, uncut.
@@ -17,7 +17,9 @@ used and production data is never read or written:
 With --full every question runs as a fresh student ("<uid>-q1", "<uid>-q2", …, each
 given the same --enroll), so no answer sees memory of an earlier question's turn.
 
-Exits 1 if any expected case doesn't match.
+--full and --enroll exit 2 unless the in-memory store is active; lookup-only (no
+flags) may run anywhere and only reads. Exits 1 if any expected case doesn't match
+or, under --full, any turn ends in an error event.
 """
 import asyncio
 import sys
@@ -62,15 +64,22 @@ async def main() -> None:
     uid = positional[0] if positional else DEMO_UID
     full = "--full" in sys.argv
 
+    # --full writes audit/memory/skill rows and --enroll writes enrollments: never outside
+    # the in-memory store. Checked before any store or OpenAI call.
+    if (full or enroll_arg is not None) and not isinstance(store, InMemoryStore):
+        print(f"demo_check: --full and --enroll only run against the in-memory store, not "
+              f"{type(store).__name__}. Re-run with `env DATABASE_URL= ...`.")
+        sys.exit(2)
+
     ids: list[int] = []
     if enroll_arg is not None:
-        if not isinstance(store, InMemoryStore):
-            print(f"demo_check: --enroll only runs against the in-memory store, not "
-                  f"{type(store).__name__}. Re-run with `env DATABASE_URL= ...`.")
-            sys.exit(2)
-        ids = [int(x) for x in enroll_arg.split(",") if x.strip()]
-        if any(catalog_service.get(cid) is None for cid in ids):
-            print(f"demo_check: unknown catalog course id in {ids}")
+        try:
+            ids = [int(x) for x in enroll_arg.split(",") if x.strip()]
+        except ValueError:
+            ids = []
+        if not ids or any(catalog_service.get(cid) is None for cid in ids):
+            print(f"demo_check: --enroll takes comma-separated catalog course ids, e.g. --enroll 9,11 "
+                  f"(got {enroll_arg!r}; valid ids: {[c['id'] for c in catalog_service.all_courses()]})")
             sys.exit(2)
     check = enroll_arg is not None and sorted(ids) == DEMO_ENROLL
 
@@ -109,6 +118,7 @@ async def main() -> None:
                     text.append(e["value"])
                 elif e["type"] == "error":
                     text.append(f"[error: {e.get('message')}]")
+                    failures += 1
             answer = " ".join("".join(text).split())
             if len(answer) > 600 and "--whole" not in sys.argv:
                 answer = f"{answer[:330]} … {answer[-250:]}"  # keep the end: pointer / citation live there
