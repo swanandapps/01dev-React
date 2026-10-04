@@ -11,9 +11,6 @@ from app.services.grounding import (
     INSUFFICIENT_CONTEXT_ANSWER,
 )
 
-# Back-compat: main.py imports `_build_sources` from here.
-_build_sources = build_sources
-
 
 async def ask(request: AskRequest) -> AskResponse:
     # Reuses the shared retrieval; keeps this route's knowledge-graph enrichment.

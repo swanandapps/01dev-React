@@ -18,16 +18,16 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.models import (
-    AskRequest, AskResponse, Course, QuizSubmit,
+    AskRequest, AskResponse, Course,
     AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest, TutorRequest,
     EnrolledCourse, EnrollRequest,
 )
 from app.services.vector_store import vector_store
-from app.services.rag_service import ask, ask_stream, _build_sources
+from app.services.rag_service import ask, ask_stream
 from app.services.store import store
 from app.services import (
-    study_guide_service, question_service, quiz_service, adaptive_service,
-    knowledge_graph_service, recommendation_service, course_insight_service,
+    study_guide_service, question_service, adaptive_service,
+    course_insight_service,
     tutor_service, journey_service, enrollment_service,
     hermes_client, audit_service, memory_service,
     eval_service, gepa_service, context_builder, pii,
@@ -116,28 +116,10 @@ async def study_guide_generate(course_id: str):
     return await study_guide_service.ensure_generated(course_id)
 
 
-@app.get("/api/ai/questions/{course_id}")
-async def questions_status(course_id: str):
-    return await question_service.get_status(course_id)
-
-
 @app.post("/api/ai/questions/{course_id}/generate")
 async def questions_generate(course_id: str):
     _require_course(course_id)
     return await question_service.ensure_generated(course_id)
-
-
-@app.post("/api/ai/quiz-session")
-async def save_quiz_session(submit: QuizSubmit):
-    session = await quiz_service.save_session(submit)
-    # Completing a quiz changes performance → invalidate cached recommendations.
-    await recommendation_service.invalidate(submit.user_id)
-    return session
-
-
-@app.get("/api/ai/quiz-sessions")
-async def list_quiz_sessions(user_id: str):
-    return await quiz_service.list_sessions(user_id)
 
 
 @app.post("/api/ai/adaptive/start")
@@ -151,22 +133,6 @@ async def adaptive_answer(req: AdaptiveAnswerRequest):
     return await adaptive_service.answer(
         req.session_id, req.question_id, req.correct, req.concept, req.time_taken_ms
     )
-
-
-@app.get("/api/ai/knowledge-graph/{course_id}")
-async def knowledge_graph(course_id: str):
-    return await knowledge_graph_service.get_graph(course_id)
-
-
-@app.post("/api/ai/knowledge-graph/{course_id}/build")
-async def knowledge_graph_build(course_id: str):
-    _require_course(course_id)
-    return await knowledge_graph_service.ensure_built(course_id)
-
-
-@app.get("/api/ai/recommendations")
-async def recommendations(user_id: str):
-    return await recommendation_service.get_recommendations(user_id)
 
 
 @app.get("/api/ai/journey")

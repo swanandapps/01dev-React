@@ -6,7 +6,7 @@ The quiz flow speaks the same contract the frontend already knows
 previously a standalone FastAPI app (lesson_service/main.py, never deployed);
 it is now a router on the main backend so one service serves everything.
 
-Phase 3 adds `/generate` and `/library`: the student's output selection
+Phase 3 adds `/generate`: the student's output selection
 (quiz/flashcards/summary/study_plan) fans out through artifacts_graph.py's
 unified graph, then — if quiz was selected — hands off to the same lesson
 graph the quiz-only /lessons endpoints already use, unchanged.
@@ -334,11 +334,6 @@ async def generate_outputs(req: GenerateReq):
     body["lesson_id"] = lesson_id
     body["proposed_objectives"] = view.get("plan", {}).get("objectives", [])
     return body
-
-
-@router.get("/library")
-async def get_library(student_id: str, limit: int = 50):
-    return await artifact_store.library(student_id, limit)
 
 
 @router.get("/audit", dependencies=[Depends(require_admin_key)])
