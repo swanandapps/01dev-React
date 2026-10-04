@@ -57,6 +57,12 @@ class CourseLookup:
     enrolled_titles: list[str]
 
 
+def _norm(s: str) -> str:
+    """Compare titles loosely: the player's names use backticks ("The `npm link` command")
+    where transcripts don't, and spacing/case drift between the two."""
+    return " ".join(s.replace("`", "").split()).casefold()
+
+
 def _mmss(seconds: int) -> str:
     m, s = divmod(int(seconds), 60)
     return f"{m:02d}:{s:02d}"
@@ -108,7 +114,7 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
 
     def rank(h: Hit):
         in_course = bool(scope.course_slug) and h.course_slug == scope.course_slug
-        in_lecture = in_course and bool(scope.lecture_title) and h.title == scope.lecture_title
+        in_lecture = in_course and bool(scope.lecture_title) and _norm(h.title) == _norm(scope.lecture_title)
         return (in_lecture, in_course, h.enrolled, h.score)
 
     hits.sort(key=rank, reverse=True)

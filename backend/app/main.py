@@ -29,7 +29,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services.course_lookup import ChatScope
+from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
@@ -164,7 +164,8 @@ async def tutor_stream_endpoint(req: TutorRequest, student_id: str = Depends(cur
     async def one(event: dict):
         yield chat_pipeline.sse(event)
 
-    if not catalog_service.by_slug(req.course_id):
+    course = catalog_service.by_slug(req.course_id)
+    if not course:
         return StreamingResponse(one({"type": "error", "message": "Unknown course"}),
                                  media_type="text/event-stream", headers=headers)
     msgs = [{"role": m.role, "content": m.content} for m in req.messages if m.role in ("user", "assistant")]
@@ -172,15 +173,26 @@ async def tutor_stream_endpoint(req: TutorRequest, student_id: str = Depends(cur
         return StreamingResponse(one({"type": "error", "message": "Ask a question first"}),
                                  media_type="text/event-stream", headers=headers)
 
+    # CoursePlayerPage sends the course title as `lecture` when no lecture is selected.
+    lecture = req.lecture.strip()
+    if lecture and norm_title(lecture) == norm_title(course.get("title", "")):
+        lecture = ""
     turn = chat_pipeline.TurnRequest(
         question=msgs[-1]["content"], student_id=student_id,
-        scope=ChatScope(course_slug=req.course_id, lecture_title=req.lecture or None),
+        scope=ChatScope(course_slug=req.course_id, lecture_title=lecture or None),
         history=msgs[:-1][-12:], memory_slug=req.course_id,
     )
+    tracer = get_tracer()
 
     async def gen():
-        async for event in chat_pipeline.chat_turn(turn):
-            yield chat_pipeline.sse(event)
+        span = tracer.start_span("chat_turn")
+        span.set_attribute("route", "player")
+        span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])
+        try:
+            async for event in chat_pipeline.chat_turn(turn):
+                yield chat_pipeline.sse(event)
+        finally:
+            span.end()
 
     return StreamingResponse(gen(), media_type="text/event-stream", headers=headers)
 

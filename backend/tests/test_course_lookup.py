@@ -135,3 +135,12 @@ async def test_malformed_enrollment_doc_does_not_fail_the_turn(patch_sources, mo
     out = await cl.course_lookup("q", "s")
     assert out.case == cl.LookupCase.NOT_ENROLLED_MATCH
     assert out.enrolled_titles == []
+
+
+async def test_lecture_boost_survives_backticks_and_spacing_in_player_title(patch_sources):
+    # tracks.ts names it "8.1 - The `npm link` command"; the transcript says "8.1 - The npm link command".
+    other = _chunk("custom-library", "Build a Custom Library", "7.2 - Publishing to npm")
+    patch_sources(transcripts=[(other, 0.8), (NPM_CHUNK, 0.5)])
+    scope = cl.ChatScope(course_slug="custom-library", lecture_title="8.1 -  The `npm link` Command")
+    out = await cl.course_lookup("what does this mean", "s", scope)
+    assert out.hits[0].title == "8.1 - The npm link command"

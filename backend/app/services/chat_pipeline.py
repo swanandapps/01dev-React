@@ -50,7 +50,10 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         print(f"[chat_turn] audit failed: {e!r}")
 
     try:
-        lookup = await course_lookup(question, req.student_id, req.scope)
+        # In the player, vague questions ("Give me an example") only find the right
+        # transcript when the lecture title rides along; agent/audit/memory keep the bare question.
+        lookup_q = f"{req.scope.lecture_title} {question}" if req.scope.lecture_title else question
+        lookup = await course_lookup(lookup_q, req.student_id, req.scope)
         weak = (await journey_service.weak_concepts_for_course(req.student_id, req.scope.course_slug)
                 if req.scope.course_slug else None)
         memory = await memory_service.memory_context(req.student_id, req.memory_slug)

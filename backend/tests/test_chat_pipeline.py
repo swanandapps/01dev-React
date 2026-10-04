@@ -125,3 +125,21 @@ async def test_memory_block_reaches_the_system_prompt(wired, monkeypatch):
     monkeypatch.setattr(memory_service, "memory_context", memory_context)
     [e async for e in chat_pipeline.chat_turn(_req())]
     assert "STUDENT MEMORY: likes analogies" in wired["system"]
+
+
+async def test_lecture_scope_grounds_lookup_in_lecture_title_but_agent_gets_bare_question(wired, monkeypatch):
+    _agent(monkeypatch, wired)
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
+    req = chat_pipeline.TurnRequest(question="Give me an example", student_id="alice", scope=scope,
+                                    history=[], memory_slug="react-perf")
+    [e async for e in chat_pipeline.chat_turn(req)]
+    assert wired["lookup_q"] == ["4.1 - React.memo and useCallback Give me an example"]
+    assert wired["agent_q"] == ["Give me an example"]
+    assert wired["audit"][0]["question"] == "Give me an example"
+    assert wired["recorded"][0][2] == "Give me an example"
+
+
+async def test_ask_scope_lookup_uses_the_bare_question(wired, monkeypatch):
+    _agent(monkeypatch, wired)
+    [e async for e in chat_pipeline.chat_turn(_req("how do I publish an npm library"))]
+    assert wired["lookup_q"] == ["how do I publish an npm library"]

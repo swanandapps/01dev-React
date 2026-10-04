@@ -57,4 +57,19 @@ def test_unknown_course_and_no_user_message_are_sse_errors(client):
     r = client.post("/api/ai/tutor/stream", json=_body(course_id="nope"))
     assert _events(r.text) == [{"type": "error", "message": "Unknown course"}]
     r = client.post("/api/ai/tutor/stream", json=_body(messages=[{"role": "assistant", "content": "hi"}]))
-    assert _events(r.text)[0]["type"] == "error"
+    assert _events(r.text) == [{"type": "error", "message": "Ask a question first"}]
+
+
+def test_course_title_fallback_is_not_treated_as_a_lecture(client, monkeypatch):
+    # CoursePlayerPage sends the course title as `lecture` when no lecture is selected.
+    seen = {}
+
+    async def fake_turn(req, model=None):
+        seen["req"] = req
+        yield {"type": "done"}
+    monkeypatch.setattr(chat_pipeline, "chat_turn", fake_turn)
+    body = _body(course_id="custom-library")
+    body["lecture"] = "Build a  custom library"
+    client.post("/api/ai/tutor/stream", json=body)
+    assert seen["req"].scope.course_slug == "custom-library"
+    assert seen["req"].scope.lecture_title is None
