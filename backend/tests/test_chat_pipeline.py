@@ -210,12 +210,39 @@ async def test_url_check_is_boundary_aware(wired, monkeypatch):
     assert len(toks) == 2 and toks[1].endswith("the01.dev/course/2.")
 
 
-async def test_answer_that_already_says_not_enrolled_gets_no_pointer(wired, monkeypatch):
+async def test_not_enrolled_wording_without_any_course_url_still_gets_the_pointer(wired, monkeypatch):
     toks = await _tokens(monkeypatch, wired, "You're Not Enrolled in Build a Custom Library yet.",
                          _hit(2, "Build a Custom Library", "/course/2"))
-    assert toks == ["You're Not Enrolled in Build a Custom Library yet."]
+    assert len(toks) == 2 and toks[1].endswith("the01.dev/course/2.")
+
+
+async def test_not_enrolled_wording_with_some_course_url_gets_no_pointer(wired, monkeypatch):
+    answer = "You're not enrolled in that one yet; see the01.dev/course/7."
+    toks = await _tokens(monkeypatch, wired, answer, _hit(2, "Build a Custom Library", "/course/2"))
+    assert toks == [answer]
+
+
+async def test_no_pointer_to_the_course_the_student_is_watching(wired, monkeypatch):
+    # Player on a not-enrolled preview: the pointer would name the page they're already on.
+    _agent(monkeypatch, wired)  # "Short answer." — no url
+    req = chat_pipeline.TurnRequest(question="what is npm link", student_id="alice",
+                                    scope=cl.ChatScope(course_slug="custom-library", lecture_title="8.1 - npm link"),
+                                    history=[], memory_slug="custom-library")
+    events = [e async for e in chat_pipeline.chat_turn(req)]
+    assert [e["value"] for e in events if e["type"] == "token"] == ["Short answer."]
 
 
 async def test_no_pointer_when_the_not_enrolled_hit_has_no_url(wired, monkeypatch):
     toks = await _tokens(monkeypatch, wired, "Short answer.", _hit(2, "Build a Custom Library", None))
     assert toks == ["Short answer."]
+
+
+async def test_memory_block_lists_topics_without_a_greeting_instruction(monkeypatch):
+    from app.services import memory_service as ms
+
+    async def get(collection, doc_id):
+        return {"turn_count": 4, "topics": ["npm link", "react memo"]}
+    monkeypatch.setattr(ms.store, "get", get)
+    block = await ms.memory_context("alice", "all-courses")
+    assert "4 prior exchange(s)" in block and "- npm link" in block and "- react memo" in block
+    assert "greet" not in block.lower()

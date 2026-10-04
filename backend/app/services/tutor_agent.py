@@ -18,6 +18,7 @@ from langchain_openai import ChatOpenAI
 
 from app.services import (catalog_service, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
+from app.services.course_lookup import TRANSCRIPT_THRESHOLD
 from app.services import tool_descriptions as D
 from app.services.llm import GEN_MODEL
 
@@ -55,7 +56,8 @@ async def search_course_content(
     query: Annotated[str, "What to look up — the student's follow-up question or the concept."],
     runtime: ToolRuntime[ChatContext],
 ) -> tuple[str, list[dict]]:
-    results = await grounding.retrieve(query, top_k=5)
+    # Same bar as course_lookup: weak matches would surface as citation cards for unrelated lectures.
+    results = [r for r in await grounding.retrieve(query, top_k=5) if r.score >= TRANSCRIPT_THRESHOLD]
     if not results:
         return "No matching course content.", []
     enrolled_ids = await _enrolled_ids(runtime.context.student_id)
@@ -130,9 +132,16 @@ async def stream_answer(*, system_prompt: str, history: list[dict], question: st
     messages = [HumanMessage(t["content"]) if t["role"] == "user" else AIMessage(t["content"])
                 for t in history if t.get("role") in ("user", "assistant")]
     messages.append(HumanMessage(question))
+    spoke = after_tool = False
     async for chunk, meta in agent.astream({"messages": messages}, context=ChatContext(student_id=student_id),
                                            stream_mode="messages"):
         if isinstance(chunk, AIMessageChunk) and meta.get("langgraph_node") == "model" and chunk.text:
+            if spoke and after_tool:
+                # "Let me check." + tool call, then the answer: keep them from running together.
+                yield {"type": "token", "value": "\n\n"}
+            spoke, after_tool = True, False
             yield {"type": "token", "value": chunk.text}
-        elif isinstance(chunk, ToolMessage) and chunk.artifact:
-            yield {"type": "cards", "cards": list(chunk.artifact)}
+        elif isinstance(chunk, ToolMessage):
+            after_tool = True
+            if chunk.artifact:
+                yield {"type": "cards", "cards": list(chunk.artifact)}

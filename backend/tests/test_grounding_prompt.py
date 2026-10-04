@@ -19,6 +19,21 @@ def test_fingerprint_is_stable_and_short():
     assert len(loader.prompt_fingerprint()) == 12
 
 
-def test_falls_back_when_file_missing(monkeypatch, tmp_path):
+def test_falls_back_when_file_missing(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(loader, "PROMPT_PATH", tmp_path / "missing.md")
     assert loader.read_grounding_prompt() == loader.FALLBACK_PROMPT
+    out = capsys.readouterr().out
+    assert len(out.strip().splitlines()) == 1 and "FALLBACK" in out.upper() and "missing.md" in out
+
+
+def test_falls_back_with_a_warning_when_file_empty(monkeypatch, tmp_path, capsys):
+    empty = tmp_path / "empty.md"
+    empty.write_text("  \n")
+    monkeypatch.setattr(loader, "PROMPT_PATH", empty)
+    assert loader.read_grounding_prompt() == loader.FALLBACK_PROMPT
+    assert len(capsys.readouterr().out.strip().splitlines()) == 1
+
+
+def test_no_warning_when_the_prompt_file_is_read(capsys):
+    loader.read_grounding_prompt()
+    assert capsys.readouterr().out == ""

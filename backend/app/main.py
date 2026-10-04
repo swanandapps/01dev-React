@@ -218,8 +218,11 @@ async def hermes_chat(req: Request, student_id: str = Depends(current_student)):
     if intent in (Intent.QUIZ_GENERATE, Intent.OUT_OF_SCOPE):
         message = (build_handoff_message(course_slug) if intent == Intent.QUIZ_GENERATE
                    else "Hey, I'm Dev — ask me about a course or a technical concept and I'll help!")
-        await audit_service.log_event(student_id=student_id, course_slug=course_slug, question=scrubbed,
-                                      model="rule-based-router", provider="none")
+        try:
+            await audit_service.log_event(student_id=student_id, course_slug=course_slug, question=scrubbed,
+                                          model="rule-based-router", provider="none")
+        except Exception as e:  # noqa: BLE001 — audit is best-effort, same as chat_turn
+            print(f"[hermes_chat] audit failed: {e!r}")
 
         async def gen_handoff():
             yield chat_pipeline.sse({"type": "sources", "sources": [], "insufficient_context": False,

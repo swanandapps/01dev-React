@@ -41,14 +41,18 @@ def _card_key(card: dict) -> tuple:
     return (card.get("course_id"), card.get("lecture_id"), card.get("start_time"))
 
 
-def _missing_pointer(lookup: CourseLookup, answer: str) -> Optional[str]:
+def _missing_pointer(lookup: CourseLookup, answer: str, scope: ChatScope) -> Optional[str]:
     """The not-enrolled course pointer, if the model left it out (prompt alone isn't reliable)."""
-    if lookup.case != LookupCase.NOT_ENROLLED_MATCH or "not enrolled" in answer.lower():
+    if lookup.case != LookupCase.NOT_ENROLLED_MATCH:
+        return None
+    if "not enrolled" in answer.lower() and "the01.dev/course/" in answer:
         return None
     linked = [h for h in lookup.hits if not h.enrolled and h.url]
     if not linked or any(re.search(re.escape(f"the01.dev{h.url}") + r"(?!\d)", answer) for h in linked):
         return None
     hit = linked[0]
+    if scope.course_slug and hit.course_slug == scope.course_slug:
+        return None  # watching that course's preview — don't point at the page they're on
     return (f"\n\nThis is covered in depth in {hit.course_title} → {hit.title}. "
             f"You're not enrolled in it yet; you can find it at the01.dev{hit.url}.")
 
@@ -104,7 +108,7 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         yield {"type": "error", "message": _ERROR}
         return
 
-    pointer = _missing_pointer(lookup, "".join(answer))
+    pointer = _missing_pointer(lookup, "".join(answer), req.scope)
     if pointer:
         answer.append(pointer)
         yield {"type": "token", "value": pointer}

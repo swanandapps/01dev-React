@@ -155,3 +155,49 @@ async def test_record_skill_observation_returns_error_json_instead_of_raising(mo
         concept="react-memo", course_id="react-perf", confidence="strong", note="n",
         runtime=SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice")))
     assert json.loads(out) == {"error": "confidence must be one of weak/developing/strong"}
+
+
+async def test_follow_up_search_drops_results_below_the_transcript_threshold(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.models import SearchResult, TranscriptChunk
+    from app.services import course_lookup, enrollment_service
+
+    def chunk(cid, lecture):
+        return TranscriptChunk(chunk_id=cid, course_id="react-perf", course_title="React Performance Patterns",
+                               lecture_id=cid, lecture_title=lecture, text="body", start_time=0, end_time=30)
+
+    async def fake_retrieve(q, top_k=5):
+        return [SearchResult(chunk=chunk("weak", "9.9 - Unrelated"), score=0.30),
+                SearchResult(chunk=chunk("good", "4.1 - React.memo"), score=0.70)]
+
+    async def no_enrollments(student_id):
+        return []
+
+    assert 0.30 < course_lookup.TRANSCRIPT_THRESHOLD <= 0.70
+    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", no_enrollments)
+    runtime = SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice"))
+    content, cards = await tutor_agent.search_course_content.coroutine(query="memo", runtime=runtime)
+    assert [c["lecture_title"] for c in cards] == ["4.1 - React.memo"]
+    assert "9.9 - Unrelated" not in content and "4.1 - React.memo" in content
+
+    async def only_weak(q, top_k=5):
+        return [SearchResult(chunk=chunk("weak", "9.9 - Unrelated"), score=0.30)]
+    monkeypatch.setattr(grounding, "retrieve", only_weak)
+    assert await tutor_agent.search_course_content.coroutine(query="memo", runtime=runtime) == \
+        ("No matching course content.", [])
+
+
+async def test_text_before_and_after_a_tool_call_is_separated(monkeypatch):
+    async def fake_metrics(user_id):
+        return {"quizzes": 3}
+
+    monkeypatch.setattr(journey_service, "get_metrics", fake_metrics)
+    model = FakeToolModel(messages=iter([
+        AIMessage("Let me check.", tool_calls=[{"name": "get_learning_metrics", "args": {}, "id": "c1"}]),
+        AIMessage("You have taken 3 quizzes."),
+    ]))
+    events = await _collect(tutor_agent.stream_answer(
+        system_prompt="sys", history=[], question="how many quizzes?", student_id="alice", model=model))
+    assert "".join(e["value"] for e in events if e["type"] == "token") == "Let me check.\n\nYou have taken 3 quizzes."

@@ -18,9 +18,14 @@ FALLBACK_PROMPT = (
 
 def read_grounding_prompt() -> str:
     try:
-        return PROMPT_PATH.read_text().strip() or FALLBACK_PROMPT
-    except OSError:
-        return FALLBACK_PROMPT
+        text = PROMPT_PATH.read_text().strip()
+        reason = "is empty"
+    except OSError as e:
+        text, reason = "", f"unreadable ({e.__class__.__name__})"
+    if text:
+        return text
+    print(f"[grounding] WARNING: {PROMPT_PATH} {reason}; using FALLBACK_PROMPT", flush=True)
+    return FALLBACK_PROMPT
 
 
 def prompt_fingerprint() -> str:

@@ -57,6 +57,17 @@ def test_quiz_request_is_handed_off_without_the_agent(client, monkeypatch):
     assert r.status_code == 200 and tokens.strip()
 
 
+def test_quiz_hand_off_survives_an_audit_failure(client, monkeypatch):
+    async def audit_down(**kw):
+        raise RuntimeError("store unavailable")
+    monkeypatch.setattr(audit_service, "log_event", audit_down)
+    r = client.post("/api/hermes/chat", json={"question": "quiz me on closures", "course_slug": "all-courses"})
+    events = _events(r.text)
+    assert r.status_code == 200
+    assert [e["type"] for e in events][0] == "sources" and events[-1]["type"] == "done"
+    assert "".join(e.get("value", "") for e in events if e["type"] == "token").strip()
+
+
 def test_empty_question_is_400(client):
     assert client.post("/api/hermes/chat", json={"question": "  "}).status_code == 400
 

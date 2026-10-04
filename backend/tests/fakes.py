@@ -19,14 +19,14 @@ class FakeToolModel(GenericFakeChatModel):
         msg = AIMessage(content=msg) if isinstance(msg, str) else msg
         if msg.tool_calls:
             chunk = ChatGenerationChunk(message=AIMessageChunk(
-                content="", id=msg.id, chunk_position="last",
+                content=msg.content, id=msg.id, chunk_position="last",
                 tool_call_chunks=[
                     {"name": t["name"], "args": json.dumps(t["args"]), "id": t["id"], "index": i}
                     for i, t in enumerate(msg.tool_calls)
                 ],
             ))
             if run_manager:
-                run_manager.on_llm_new_token("", chunk=chunk)
+                run_manager.on_llm_new_token(msg.content, chunk=chunk)
             yield chunk
             return
         words = msg.content.split(" ")

@@ -83,7 +83,7 @@ async def memory_context(student_id: str, course_slug: str) -> str:
     return (
         "=== STUDENT MEMORY (returning learner) ===\n"
         f"You have helped this student across {prof['turn_count']} prior exchange(s). "
-        "Greet them as a returning student and build on what they've already explored. "
+        "Build on what they've already explored. "
         "If they revisit something, acknowledge it. Recently they asked you about:\n" + lines
     )
 
