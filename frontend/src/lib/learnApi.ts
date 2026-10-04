@@ -2,6 +2,7 @@ import type {
   Course, StudyGuideStatus, QuestionStatus, AdaptiveResponse,
   CourseInsight, Journey, EnrolledCourse,
 } from "../types/learn";
+import { authHeaders } from "./authHeaders";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -97,7 +98,7 @@ export async function streamTutor(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify(body),
   });
   if (!res.ok || !res.body) {

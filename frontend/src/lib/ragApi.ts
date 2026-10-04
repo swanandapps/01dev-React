@@ -1,4 +1,5 @@
 import type { RagSourceCard } from "../types/rag";
+import { authHeaders } from "./authHeaders";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -73,7 +74,7 @@ export async function askHermesStream(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/hermes/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({
       question,
       user_id: opts.userId,
