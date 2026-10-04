@@ -15,8 +15,9 @@ from app.services.vector_store import vector_store
 
 # Set from measured data by scripts/calibrate_lookup.py (Task 9) — see spec §4.3.
 # Calibrated for OpenAI embeddings; the no-key keyword/hash fallback (local dev) is not comparable.
-TRANSCRIPT_THRESHOLD = 0.35
-CATALOG_THRESHOLD = 0.35
+# calibrated 2026-10-04 on 23 labelled questions (scripts/calibrate_lookup.py): transcript acc 100%, catalog acc 100%
+TRANSCRIPT_THRESHOLD = 0.48
+CATALOG_THRESHOLD = 0.21
 MAX_HITS = 5
 
 
