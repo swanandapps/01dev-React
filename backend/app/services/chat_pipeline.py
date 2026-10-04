@@ -3,6 +3,7 @@
 PII scrub → audit → course_lookup (always, in code) → tutor agent → save to memory.
 The endpoints differ only in ChatScope and where history comes from.
 """
+import contextlib
 import json
 import os
 from dataclasses import dataclass
@@ -41,39 +42,55 @@ def _card_key(card: dict) -> tuple:
 
 async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> AsyncIterator[dict]:
     question, _ = pii.scrub(req.question)
-    await audit_service.log_event(student_id=req.student_id, course_slug=req.memory_slug,
-                                  question=question, model=GEN_MODEL, provider=PROVIDER)
+    history_in = [{**t, "content": pii.scrub(t.get("content", ""))[0]} for t in req.history]
+    try:
+        await audit_service.log_event(student_id=req.student_id, course_slug=req.memory_slug,
+                                      question=question, model=GEN_MODEL, provider=PROVIDER)
+    except Exception as e:  # noqa: BLE001 — audit is best-effort; never fail the turn over it
+        print(f"[chat_turn] audit failed: {e!r}")
 
-    lookup = await course_lookup(question, req.student_id, req.scope)
-    weak = (await journey_service.weak_concepts_for_course(req.student_id, req.scope.course_slug)
-            if req.scope.course_slug else None)
-    memory = await memory_service.memory_context(req.student_id, req.memory_slug)
-    system = "\n\n".join(p for p in (read_grounding_prompt(), render_facts(lookup, req.scope, weak), memory) if p)
-    history, _fit = context_builder.build(system, req.history, question, CONTEXT_LIMIT)
+    try:
+        lookup = await course_lookup(question, req.student_id, req.scope)
+        weak = (await journey_service.weak_concepts_for_course(req.student_id, req.scope.course_slug)
+                if req.scope.course_slug else None)
+        memory = await memory_service.memory_context(req.student_id, req.memory_slug)
+        system = "\n\n".join(p for p in (read_grounding_prompt(), render_facts(lookup, req.scope, weak), memory) if p)
+        history, _fit = context_builder.build(system, history_in, question, CONTEXT_LIMIT)
+        cards = to_cards(lookup)
+    except Exception as e:  # noqa: BLE001 — never leak internal errors to the student
+        print(f"[chat_turn] preparing the turn failed: {e!r}")
+        yield {"type": "error", "message": _ERROR}
+        return
+    if _fit["fill_pct"] >= 80 or _fit["dropped_turns"]:
+        print(f"[chat_turn] context {_fit['fill_pct']}% "
+              f"({_fit['prompt_tokens_est']}/{_fit['limit']} tok), dropped {_fit['dropped_turns']} old turn(s)"
+              f"{' — essentials OVER limit' if _fit['over_limit'] else ''}")
 
-    cards = to_cards(lookup)
     yield _sources(cards)
     seen = {_card_key(c) for c in cards}
     extra: list[dict] = []
     answer: list[str] = []
     try:
-        async for event in tutor_agent.stream_answer(system_prompt=system, history=history, question=question,
-                                                     student_id=req.student_id, model=model):
-            if event["type"] == "token":
-                answer.append(event["value"])
-                yield event
-            elif event["type"] == "cards":
-                for c in event["cards"]:
-                    if _card_key(c) not in seen:
-                        seen.add(_card_key(c))
-                        extra.append(c)
+        async with contextlib.aclosing(tutor_agent.stream_answer(
+                system_prompt=system, history=history, question=question,
+                student_id=req.student_id, model=model)) as stream:
+            async for event in stream:
+                if event["type"] == "token":
+                    answer.append(event["value"])
+                    yield event
+                elif event["type"] == "cards":
+                    for c in event["cards"]:
+                        if _card_key(c) not in seen:
+                            seen.add(_card_key(c))
+                            extra.append(c)
     except Exception as e:  # noqa: BLE001 — never leak provider errors to the student
         print(f"[chat_turn] agent failed: {e!r}")
         yield {"type": "error", "message": _ERROR}
         return
 
     if extra:
-        yield _sources(extra)
+        # The client replaces its card list on each sources event, so send the full deduped list.
+        yield _sources(cards + extra)
     try:
         await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer))
     except Exception as e:  # noqa: BLE001 — never fail the answer over memory persistence
