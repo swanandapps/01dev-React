@@ -20,15 +20,21 @@ Modes:
                        app will show. Touches nothing outside this process.
   --apply --yes        against the real store from backend/.env (Postgres only):
                        1. BACKUP every doc it will delete or overwrite to
-                          backend/data/demo_backups/{uid}-{utc-ts}.json, re-read and verify it
-                       2. RESET: delete the uid-scoped docs (concept_performance,
-                          quiz_sessions, adaptive_sessions, student_turns, student_profile,
-                          recommendations cache) and the 4 demo courses' questions /
-                          concepts / concept_relationships
-                       3. WRITE the fresh data and print counts per collection.
+                          backend/data/demo_backups/{uid}-{utc-ts}.json, re-read and verify
+                          it, then print the path + planned write/delete counts
+                       2. UPSERT every fresh doc (write FIRST, so the shared questions /
+                          concepts docs are never missing on a live store)
+                       3. DELETE stale docs in scope that the fresh set doesn't reuse:
+                          the uid's concept_performance, quiz_sessions, adaptive_sessions,
+                          student_turns, student_profile, recommendations cache, and the 4
+                          demo courses' questions / concepts / concept_relationships
+                       4. VERIFY each demo course's bank + graph tags equal taxonomy.json.
+                       On a failure mid-way it prints the backup path and how to recover.
                        Never touches enrollments, audit_log, lab_artifacts,
                        chat_citations, or any other student. Idempotent.
-  --apply without --yes refuses (exit 2).
+  --restore FILE --yes put a backup back (Postgres only): set every backed-up doc, then
+                       delete seed-written docs the backup doesn't contain.
+  --apply / --restore without --yes refuse (exit 2).
 
 Run: cd backend && .venv/bin/python scripts/seed_demo_account.py --dry-run
 """
@@ -215,7 +221,8 @@ async def _docs_where(st, col: str, field: str | None = None, value=None, prefix
         pool = await get_pool()
         if prefix is not None:
             rows = await pool.fetch(
-                "select doc_id, data from docs where collection=$1 and left(doc_id, length($2)) = $2", col, prefix)
+                "select doc_id, data from docs where collection=$1 and left(doc_id, length($2::text)) = $2::text",
+                col, prefix)
         else:
             rows = await pool.fetch(
                 "select doc_id, data from docs where collection=$1 and data->>$2 = $3", col, field, str(value))
@@ -245,7 +252,29 @@ async def find_targets(st, uid: str, slugs: list[str]) -> dict:
     return {col: docs for col, docs in t.items() if docs}
 
 
-def _write_backup(backup_dir: Path, uid: str, targets: dict) -> Path:
+async def find_overwrites(st, docs: dict, already: dict) -> dict:
+    """Existing docs at a FRESH doc id that the scoped queries didn't catch (e.g. a
+    legacy doc without course_id) — the upsert will overwrite them, so back them up."""
+    found: dict = defaultdict(dict)
+    for col, items in docs.items():
+        for doc_id in items:
+            if doc_id in already.get(col, {}):
+                continue
+            existing = await st.get(col, doc_id)
+            if existing is not None:
+                found[col][doc_id] = existing
+    return dict(found)
+
+
+def _merge(*parts: dict) -> dict:
+    out: dict = defaultdict(dict)
+    for part in parts:
+        for col, items in part.items():
+            out[col].update(items)
+    return {c: d for c, d in out.items() if d}
+
+
+def _write_backup(backup_dir: Path, uid: str, seed_now: datetime, backed_up: dict) -> Path:
     backup_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     path = backup_dir / f"{uid}-{ts}.json"
@@ -255,32 +284,96 @@ def _write_backup(backup_dir: Path, uid: str, targets: dict) -> Path:
         n += 1
     payload = {
         "uid": uid, "created_at": datetime.now(timezone.utc).isoformat(),
-        "counts": {c: len(d) for c, d in targets.items()}, "docs": targets,
+        # the `now` the seed was built with — restore recomputes the exact fresh set from it
+        "seed_now": seed_now.isoformat(),
+        "counts": {c: len(d) for c, d in backed_up.items()}, "docs": backed_up,
     }
     path.write_text(json.dumps(payload, indent=1, ensure_ascii=False))
     return path
 
 
-def _verify_backup(path: Path, targets: dict) -> None:
+def _verify_backup(path: Path, backed_up: dict) -> None:
     loaded = json.loads(path.read_text())
-    if loaded.get("docs") != json.loads(json.dumps(targets)):
-        raise RuntimeError(f"backup {path} does not round-trip — aborting before any delete")
+    if loaded.get("docs") != json.loads(json.dumps(backed_up)):
+        raise RuntimeError(f"backup {path} does not round-trip — aborting before any write or delete")
+
+
+def _keys(docs: dict) -> set:
+    return {(c, d) for c, items in docs.items() for d in items}
+
+
+async def verify_course_docs(st, taxonomy: dict) -> dict:
+    """Re-read each demo course's bank + graph and check its tags/edges equal taxonomy.json."""
+    ok = {}
+    for slug, course in taxonomy.items():
+        tags = {c["name"] for c in course["concepts"]}
+        edges = {(r["source"], r["target"], r["type"]) for r in course["relationships"]}
+        bank = await st.get("questions", slug) or {}
+        bank_tags = {q.get("concept") for q in bank.get("questions", [])}
+        graph_tags = {c.get("name") for c in await st.query("concepts", "course_id", slug)}
+        graph_edges = {(r.get("source"), r.get("target"), r.get("type"))
+                       for r in await st.query("concept_relationships", "course_id", slug)}
+        ok[slug] = bank_tags == tags and graph_tags == tags and graph_edges == edges
+    return ok
+
+
+def _restore_hint(path: Path) -> str:
+    return (f"originals are in {path}; re-running `--apply --yes` is safe; "
+            f"or restore with `--restore {path} --yes`")
 
 
 async def apply(st, uid: str, now: datetime, backup_dir: Path = BACKUP_DIR, fixtures: dict | None = None) -> dict:
-    """BACKUP -> verify -> RESET -> WRITE. Raises (deleting nothing) if the backup fails."""
+    """BACKUP (verified) -> UPSERT every fresh doc -> DELETE stale docs not in the fresh
+    set -> VERIFY course tags. Writing first means the shared questions/concepts docs
+    are never missing on a live store (a request in that gap would start a background
+    LLM build that could overwrite the tag-locked bank). Nothing is mutated if the
+    backup can't be written and read back."""
     fx = fixtures or load_fixtures()
     docs = build_docs(uid, now, fx)
+    fresh = _keys(docs)
     targets = await find_targets(st, uid, list(fx["taxonomy"]))
-    path = _write_backup(backup_dir, uid, targets)
-    _verify_backup(path, targets)
-    deleted = {}
-    for col, items in targets.items():
-        for doc_id in items:
+    backed_up = _merge(targets, await find_overwrites(st, docs, targets))
+    path = _write_backup(backup_dir, uid, now, backed_up)
+    _verify_backup(path, backed_up)
+
+    stale = {(c, d) for c, d in _keys(targets) if (c, d) not in fresh}
+    print(f"backup:  {path} (verified)")
+    print("planned writes:  " + ", ".join(f"{c}={len(d)}" for c, d in docs.items()))
+    print("planned deletes: " + (", ".join(f"{c}={n}" for c, n in sorted(Counter(c for c, _ in stale).items())) or "none"))
+
+    try:
+        counts = await write_all(st, docs)
+        deleted: Counter = Counter()
+        for col, doc_id in sorted(stale):
             await st.delete(col, doc_id)
-        deleted[col] = len(items)
-    counts = await write_all(st, docs)
-    return {"backup_path": str(path), "deleted": deleted, "counts": counts}
+            deleted[col] += 1
+        verify = await verify_course_docs(st, fx["taxonomy"])
+    except BaseException:
+        print(f"FAILED mid-apply — {_restore_hint(path)}")
+        raise
+    print("verify course tags vs taxonomy.json: "
+          + ", ".join(f"{s}={'OK' if v else 'FAIL'}" for s, v in verify.items()))
+    return {"backup_path": str(path), "deleted": dict(deleted), "counts": counts, "verify": verify}
+
+
+async def restore(st, backup_path: Path, fixtures: dict | None = None) -> dict:
+    """Put a backup back: `set` every backed-up doc, then delete the docs the seed
+    wrote (fresh set recomputed from the fixtures + the backup's seed_now) that the
+    backup doesn't contain. Docs outside the seed's scope are never touched."""
+    payload = json.loads(Path(backup_path).read_text())
+    uid, seed_now = payload["uid"], datetime.fromisoformat(payload["seed_now"])
+    backed_up = payload["docs"]
+    written = 0
+    for col, items in backed_up.items():
+        for doc_id, data in items.items():
+            await st.set(col, doc_id, data)
+            written += 1
+    have = _keys(backed_up)
+    removed = 0
+    for col, doc_id in sorted(_keys(build_docs(uid, seed_now, fixtures)) - have):
+        await st.delete(col, doc_id)
+        removed += 1
+    return {"restored": written, "removed_seed_docs": removed}
 
 
 # ---------------------------------------------------------------- report
@@ -397,16 +490,42 @@ async def _dry_run(uid: str) -> int:
     return 0
 
 
-async def _apply(uid: str) -> int:
+def _target_label() -> str:
+    """host/db of DATABASE_URL — never the user or password."""
+    import urllib.parse as up
+
+    u = up.urlsplit(os.getenv("DATABASE_URL", ""))
+    return f"{u.hostname or '?'}{u.path or '/?'}"
+
+
+async def _real_store():
     from app.services.store import PostgresStore, store
 
     if not isinstance(store, PostgresStore):
-        print(f"REFUSING: --apply needs the Postgres store (DATABASE_URL); got {type(store).__name__}.", file=sys.stderr)
+        print(f"REFUSING: needs the Postgres store (DATABASE_URL); got {type(store).__name__}.", file=sys.stderr)
+        return None
+    print(f"target:  postgres {_target_label()}")
+    return store
+
+
+async def _apply(uid: str) -> int:
+    store = await _real_store()
+    if store is None:
         return 1
     result = await apply(store, uid, datetime.now(timezone.utc))
-    print(f"backup:  {result['backup_path']}")
-    print("deleted: " + ", ".join(f"{c}={n}" for c, n in result["deleted"].items()))
+    print("deleted: " + (", ".join(f"{c}={n}" for c, n in result["deleted"].items()) or "none"))
     print("written: " + ", ".join(f"{c}={n}" for c, n in result["counts"].items()))
+    return 0 if all(result["verify"].values()) else 3
+
+
+async def _restore(path: Path) -> int:
+    payload = json.loads(path.read_text())  # fail fast on a bad file, before touching the store
+    store = await _real_store()
+    if store is None:
+        return 1
+    print(f"restoring {sum(len(d) for d in payload['docs'].values())} doc(s) from {path}")
+    result = await restore(store, path)
+    print(f"restored: {result['restored']}   removed seed-written docs: {result['removed_seed_docs']}")
     return 0
 
 
@@ -414,25 +533,28 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Seed the demo student's account.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="in-memory seed + report (default)")
-    mode.add_argument("--apply", action="store_true", help="backup, reset and write the real store")
-    parser.add_argument("--yes", action="store_true", help="confirm --apply")
+    mode.add_argument("--apply", action="store_true", help="backup, write fresh, delete stale in the real store")
+    mode.add_argument("--restore", metavar="BACKUP_JSON", help="put a --apply backup back (Postgres only)")
+    parser.add_argument("--yes", action="store_true", help="confirm --apply / --restore")
     args = parser.parse_args(argv)
 
-    if args.apply and not args.yes:
-        print("REFUSING: --apply rewrites the demo account in the real store; re-run with --apply --yes.",
-              file=sys.stderr)
+    if (args.apply or args.restore) and not args.yes:
+        what = "--apply" if args.apply else f"--restore {args.restore}"
+        print(f"REFUSING: {what} rewrites the demo account in the real store; add --yes.", file=sys.stderr)
         return 2
-    if args.apply:
+    if args.apply or args.restore:
         from dotenv import load_dotenv
 
         load_dotenv(BACKEND / ".env")
-        return asyncio.run(_apply(DEMO_UID))
+        if args.apply:
+            return asyncio.run(_apply(DEMO_UID))
+        return asyncio.run(_restore(Path(args.restore)))
     _force_offline_env()
     return asyncio.run(_dry_run(DEMO_UID))
 
 
 if __name__ == "__main__":
     sys.path.insert(0, str(BACKEND))
-    if "--apply" not in sys.argv[1:]:
+    if not {"--apply", "--restore"} & set(sys.argv[1:]):
         _force_offline_env()  # before ANY app module can be imported
     sys.exit(main())

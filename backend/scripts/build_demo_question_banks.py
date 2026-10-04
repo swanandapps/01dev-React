@@ -149,13 +149,14 @@ def missing_buckets(buckets: dict, tags: list[str]) -> dict:
 
 
 def finalize(buckets: dict, slug: str, tags: list[str]) -> list[dict]:
-    """PER_DIFFICULTY per (tag, difficulty) in tag order, ids {slug}-q{n},
+    """PER_DIFFICULTY per (tag, difficulty) in tag order, ids {slug}-t{n} ("t" = taxonomy-locked; never
+    collides with the app's {slug}-q{n} ids, which other students' quiz answers reference),
     options deterministically shuffled so the answer isn't always option 0."""
     out: list[dict] = []
     for t in tags:
         for d in DIFFICULTIES:
             for q in buckets[(t, d)][:PER_DIFFICULTY]:
-                qid = f"{slug}-q{len(out) + 1}"
+                qid = f"{slug}-t{len(out) + 1}"
                 correct = str(q["options"][q["correct_index"]]).strip()
                 opts = [str(o).strip() for o in q["options"]]
                 random.Random(qid).shuffle(opts)

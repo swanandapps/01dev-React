@@ -88,7 +88,7 @@ def test_every_bank_question_is_valid():
         lectures = {c["lecture_title"] for c in chunks if c["course_id"] == slug}
         per = defaultdict(int)
         for n, q in enumerate(bank["questions"], start=1):
-            assert q["id"] == f"{slug}-q{n}"
+            assert q["id"] == f"{slug}-t{n}"
             assert q["question"].strip() and q["explanation"].strip()
             assert len(q["options"]) == 4 and len({o.strip().lower() for o in q["options"]}) == 4
             assert isinstance(q["correct_index"], int) and 0 <= q["correct_index"] <= 3
@@ -237,22 +237,39 @@ def test_event_loop_improves_across_sessions():
     assert len(accs) >= 3 and accs[-1] > accs[0]
 
 
-# ---- apply: backup -> reset -> write ---------------------------------------
+# ---- apply: backup -> upsert fresh -> delete stale -> verify ----------------
+
+def test_bank_ids_never_use_the_apps_q_scheme():
+    """Other students' quiz answers reference old app-generated `{slug}-q{n}` ids;
+    a seeded bank reusing them would mark those questions 'seen' for them."""
+    import re
+
+    for slug, bank in _load("question_banks.json").items():
+        for q in bank["questions"]:
+            assert not re.search(r"-q\d+$", q["id"]), q["id"]
+
 
 class RecordingStore(InMemoryStore):
-    """Records mutations; delete() asserts a backup file already exists."""
+    """Records mutations; every set/delete asserts a backup file already exists."""
 
-    def __init__(self, backup_dir: Path):
+    def __init__(self, backup_dir: Path, fail_on_set_after: int | None = None):
         super().__init__()
         self.backup_dir = backup_dir
         self.calls: list = []
+        self.fail_on_set_after = fail_on_set_after
+
+    def _backup_exists(self):
+        assert list(self.backup_dir.glob("*.json")), "store mutated before backup was written"
 
     async def set(self, collection, doc_id, data):
+        self._backup_exists()
+        if self.fail_on_set_after is not None and len([c for c in self.calls if c[0] == "set"]) >= self.fail_on_set_after:
+            raise ConnectionError("db went away")
         self.calls.append(("set", collection, doc_id))
         await super().set(collection, doc_id, data)
 
     async def delete(self, collection, doc_id):
-        assert list(self.backup_dir.glob("*.json")), "delete before backup was written"
+        self._backup_exists()
         self.calls.append(("delete", collection, doc_id))
         await super().delete(collection, doc_id)
 
@@ -261,7 +278,7 @@ async def _populate_other_data(st):
     """Data that must survive: another student, another course, untouched collections."""
     other = {
         ("concept_performance", "other__event-loop"): {"user_id": "other", "concept": "event-loop", "attempts": 3, "correct": 1, "accuracy": 0.333},
-        ("quiz_sessions", "q-other"): {"session_id": "q-other", "user_id": "other", "course_id": "react-perf", "score": 1, "total": 2, "answers": [], "completed_at": "2026-09-01T10:00:00+00:00"},
+        ("quiz_sessions", "q-other"): {"session_id": "q-other", "user_id": "other", "course_id": "react-perf", "score": 1, "total": 2, "answers": [{"question_id": "react-perf-q1"}], "completed_at": "2026-09-01T10:00:00+00:00"},
         ("student_turns", "other__2026-09-01T10:00:00+00:00"): {"student_id": "other", "course_slug": "react-perf", "question": "q", "answer": "a", "created_at": "2026-09-01T10:00:00+00:00"},
         ("student_profile", "other"): {"student_id": "other", "turn_count": 1, "topics": ["q"]},
         ("questions", "programming-language"): {"course_id": "programming-language", "questions": []},
@@ -281,6 +298,7 @@ async def _populate_stale_demo_data(st):
     """What an older seed / real usage left behind for the demo uid + demo courses."""
     stale = {
         ("concept_performance", f"{UID}__useMemo hook"): {"user_id": UID, "concept": "useMemo hook", "attempts": 2, "correct": 1, "accuracy": 0.5},
+        ("concept_performance", f"{UID}__event-loop"): {"user_id": UID, "concept": "event-loop", "attempts": 5, "correct": 2, "accuracy": 0.4},
         ("quiz_sessions", "3f0c-uuid"): {"session_id": "3f0c-uuid", "user_id": UID, "course_id": "react-perf", "score": 1, "total": 2, "answers": [], "completed_at": "2026-09-30T10:00:00+00:00"},
         ("student_turns", f"{UID}__2026-09-30T10:00:00+00:00"): {"student_id": UID, "course_slug": "react-perf", "question": "old", "answer": "old", "created_at": "2026-09-30T10:00:00+00:00"},
         ("student_profile", UID): {"student_id": UID, "turn_count": 99, "topics": ["old"]},
@@ -289,50 +307,81 @@ async def _populate_stale_demo_data(st):
         ("questions", "react-perf"): {"course_id": "react-perf", "questions": [{"id": "react-perf-q1", "concept": "useMemo hook"}]},
         ("concepts", "react-perf::useMemo hook"): {"course_id": "react-perf", "name": "useMemo hook", "description": ""},
         ("concept_relationships", "react-perf::rel0"): {"course_id": "react-perf", "source": "x", "target": "y", "type": "related_to"},
+        # legacy doc at a FRESH id but outside the scoped queries (no course_id):
+        # it will be overwritten, so it must still be backed up
+        ("concepts", "react-perf::react-memo"): {"name": "react-memo", "description": "legacy, no course_id"},
     }
     for (col, doc_id), data in stale.items():
         await InMemoryStore.set(st, col, doc_id, data)
     return stale
 
 
-async def test_apply_backs_up_then_resets_only_demo_scope_then_writes(tmp_path):
+def _fresh_keys():
+    return {(c, d) for c, docs in seed.build_docs(UID, NOW).items() for d in docs}
+
+
+def _state(st):
+    return json.loads(json.dumps({c: d for c, d in st._db.items() if d}))
+
+
+async def test_apply_backs_up_writes_fresh_then_deletes_only_stale(tmp_path, capsys):
     st = RecordingStore(tmp_path)
     other = await _populate_other_data(st)
     stale = await _populate_stale_demo_data(st)
 
     result = await seed.apply(st, UID, NOW, backup_dir=tmp_path)
 
-    # backup holds every stale doc, and is parseable
+    # backup holds every doc that gets deleted OR overwritten (incl. the legacy fresh-id doc)
     backup = json.loads(Path(result["backup_path"]).read_text())
     for (col, doc_id), data in stale.items():
-        assert backup["docs"][col][doc_id] == data
-    # stale docs that the fresh write doesn't reuse are gone
-    for col, doc_id in [("concept_performance", f"{UID}__useMemo hook"), ("quiz_sessions", "3f0c-uuid"),
-                        ("student_turns", f"{UID}__2026-09-30T10:00:00+00:00"), ("adaptive_sessions", "as-1"),
-                        ("recommendations", UID), ("concepts", "react-perf::useMemo hook"),
-                        ("concept_relationships", "react-perf::rel0")]:
-        assert await st.get(col, doc_id) is None, (col, doc_id)
+        assert backup["docs"][col][doc_id] == data, (col, doc_id)
+    assert backup["seed_now"] == NOW.isoformat()
+    # order: every fresh upsert happens before the first stale delete
+    kinds = [k for k, _, _ in st.calls]
+    first_delete = kinds.index("delete")
+    assert "set" not in kinds[first_delete:]
+    fresh = _fresh_keys()
+    assert {(c, d) for k, c, d in st.calls if k == "set"} == fresh
+    # nothing in the fresh set is ever deleted
+    deleted = {(c, d) for k, c, d in st.calls if k == "delete"}
+    assert not deleted & fresh
+    # stale docs not reused by the fresh set are gone
+    for key in [("concept_performance", f"{UID}__useMemo hook"), ("quiz_sessions", "3f0c-uuid"),
+                ("student_turns", f"{UID}__2026-09-30T10:00:00+00:00"), ("adaptive_sessions", "as-1"),
+                ("recommendations", UID), ("concepts", "react-perf::useMemo hook"),
+                ("concept_relationships", "react-perf::rel0")]:
+        assert key in deleted and await st.get(*key) is None, key
     # everything outside the demo scope is untouched
     for (col, doc_id), data in other.items():
         assert await st.get(col, doc_id) == data, (col, doc_id)
-    touched = {(c, d) for _, c, d in st.calls}
-    assert not touched & set(other)
-    # all deletes happen before any write
-    kinds = [k for k, _, _ in st.calls]
-    assert "set" in kinds and kinds.index("set") > max(i for i, k in enumerate(kinds) if k == "delete")
-    # fresh data present
+    assert not {(c, d) for _, c, d in st.calls} & set(other)
+    # fresh data present + post-write tag verification passed
     assert (await st.get("questions", "react-perf"))["questions"][0]["concept"] == "shallow-equality"
+    assert result["verify"] == {s: True for s in SLUGS}
     assert result["counts"]["quiz_sessions"] == len(seed.build_docs(UID, NOW)["quiz_sessions"])
+    out = capsys.readouterr().out
+    assert result["backup_path"] in out and "planned" in out.lower()
+    assert out.index("planned") < out.index("verify")
+
+
+async def test_verify_course_docs_flags_a_tag_mismatch(tmp_path):
+    st = RecordingStore(tmp_path)
+    await seed.apply(st, UID, NOW, backup_dir=tmp_path)
+    await st.delete("concepts", "web-apis::long-polling")
+    bank = await st.get("questions", "react-perf")
+    bank["questions"][0]["concept"] = "useMemo hook"
+    result = await seed.verify_course_docs(st, seed.load_fixtures()["taxonomy"])
+    assert result == {"react-perf": False, "javascript-deep-dive": True, "web-apis": False, "custom-library": True}
 
 
 async def test_apply_is_idempotent(tmp_path):
     st = RecordingStore(tmp_path)
     await _populate_other_data(st)
     first = await seed.apply(st, UID, NOW, backup_dir=tmp_path)
-    snapshot = json.loads(json.dumps(st._db))
+    snapshot = _state(st)
     second = await seed.apply(st, UID, NOW, backup_dir=tmp_path)
     assert first["counts"] == second["counts"]
-    assert json.loads(json.dumps(st._db)) == snapshot
+    assert _state(st) == snapshot
     # a later run (different "now") still leaves no duplicate turns or sessions
     third = await seed.apply(st, UID, NOW + timedelta(hours=5), backup_dir=tmp_path)
     assert third["counts"] == first["counts"]
@@ -340,19 +389,62 @@ async def test_apply_is_idempotent(tmp_path):
     assert len(await st.query("quiz_sessions", "user_id", UID)) == first["counts"]["quiz_sessions"]
 
 
-async def test_apply_aborts_before_deleting_if_backup_unreadable(tmp_path, monkeypatch):
+async def test_apply_aborts_before_any_mutation_if_backup_unreadable(tmp_path, monkeypatch):
     st = RecordingStore(tmp_path)
     await _populate_stale_demo_data(st)
     monkeypatch.setattr(seed, "_verify_backup", lambda path, docs: (_ for _ in ()).throw(RuntimeError("bad backup")))
     with pytest.raises(RuntimeError):
         await seed.apply(st, UID, NOW, backup_dir=tmp_path)
-    assert not [c for c in st.calls if c[0] == "delete"]
+    assert st.calls == []
+
+
+async def test_apply_failure_mid_write_prints_restore_path_and_reraises(tmp_path, capsys):
+    st = RecordingStore(tmp_path, fail_on_set_after=5)
+    await _populate_stale_demo_data(st)
+    with pytest.raises(ConnectionError):
+        await seed.apply(st, UID, NOW, backup_dir=tmp_path)
+    out = capsys.readouterr().out
+    backup = next(tmp_path.glob("*.json"))
+    assert f"originals are in {backup}" in out
+    assert "--apply --yes" in out and f"--restore {backup} --yes" in out
+    assert not [c for c in st.calls if c[0] == "delete"]  # failed before any stale delete
+
+
+async def test_restore_round_trips_to_the_original_state(tmp_path):
+    st = RecordingStore(tmp_path)
+    other = await _populate_other_data(st)
+    await _populate_stale_demo_data(st)
+    original = _state(st)
+
+    result = await seed.apply(st, UID, NOW, backup_dir=tmp_path)
+    assert _state(st) != original
+    await seed.restore(st, Path(result["backup_path"]))
+
+    assert _state(st) == original
+    for (col, doc_id), data in other.items():
+        assert await st.get(col, doc_id) == data
+
+
+async def test_restore_from_an_empty_account_removes_all_seeded_docs(tmp_path):
+    st = RecordingStore(tmp_path)
+    other = await _populate_other_data(st)
+    original = _state(st)
+    result = await seed.apply(st, UID, NOW, backup_dir=tmp_path)
+    await seed.restore(st, Path(result["backup_path"]))
+    assert _state(st) == original
+    assert set(other) == {(c, d) for c, docs in _state(st).items() for d in docs}
 
 
 def test_apply_without_yes_refuses():
     assert seed.main(["--apply"]) == 2
 
 
-def test_apply_and_dry_run_are_exclusive():
+def test_restore_without_yes_refuses(tmp_path):
+    assert seed.main(["--restore", str(tmp_path / "x.json")]) == 2
+
+
+def test_modes_are_exclusive():
     with pytest.raises(SystemExit):
         seed.main(["--apply", "--yes", "--dry-run"])
+    with pytest.raises(SystemExit):
+        seed.main(["--apply", "--restore", "x.json", "--yes"])
