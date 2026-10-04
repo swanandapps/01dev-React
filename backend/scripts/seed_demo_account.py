@@ -1,226 +1,438 @@
 """
-One-off seed: populates real progress/mastery/memory data for the operator's
-own account so the demo has something real to query — grounded ONLY in the
-actual seed transcript content (backend/app/data/seed_transcripts.json),
-never invented facts, so nothing the tutor later says about this history is
-fabricated.
+Seed the demo student's account so every surface tells ONE consistent story:
+the dashboard (/api/ai/journey), adaptive practice, course insight and the chat
+tools (get_learning_metrics / get_learning_strengths / weak_concepts_for_course /
+search_history) — and so the course-level data (question banks + concept maps)
+uses the SAME concept tags as the student's performance rows.
 
-Firestore enrollment (PrevCourses) is handled separately via the REST API +
-gcloud access token, not here — this script only touches Postgres.
+Inputs (all reviewable, committed data — nothing is invented here):
+  app/data/demo/taxonomy.json        fixed concept tags + prerequisite edges per course
+  app/data/demo/question_banks.json  tag-locked banks (scripts/build_demo_question_banks.py)
+  app/data/demo/demo_student.json    the story: session plan, chat turns, chat observations
 
-Two real Firebase accounts exist for the operator (swanandkadam828@gmail.com
-and beingswanand@gmail.com) — seeded both since it wasn't clear which one a
-given browser session is actually signed in as, and re-running is idempotent.
+concept_performance is NEVER typed: it's aggregated from the generated sessions'
+answers (attempts/correct/accuracy/last_seen), so the dashboard and the session
+history can't disagree. No timestamp is ever in the future.
 
-Run: backend/.venv/bin/python scripts/seed_demo_account.py <student_id>
+Modes:
+  --dry-run (default)  forces an in-memory store (DATABASE_URL / Firebase / OpenAI
+                       blanked BEFORE app modules load), seeds, and prints what the
+                       app will show. Touches nothing outside this process.
+  --apply --yes        against the real store from backend/.env (Postgres only):
+                       1. BACKUP every doc it will delete or overwrite to
+                          backend/data/demo_backups/{uid}-{utc-ts}.json, re-read and verify it
+                       2. RESET: delete the uid-scoped docs (concept_performance,
+                          quiz_sessions, adaptive_sessions, student_turns, student_profile,
+                          recommendations cache) and the 4 demo courses' questions /
+                          concepts / concept_relationships
+                       3. WRITE the fresh data and print counts per collection.
+                       Never touches enrollments, audit_log, lab_artifacts,
+                       chat_citations, or any other student. Idempotent.
+  --apply without --yes refuses (exit 2).
+
+Run: cd backend && .venv/bin/python scripts/seed_demo_account.py --dry-run
 """
+import argparse
 import asyncio
+import json
+import os
 import sys
-from datetime import datetime, timedelta, timezone
+from collections import Counter, defaultdict
+from datetime import datetime, time, timedelta, timezone
+from pathlib import Path
 
-from dotenv import load_dotenv
-load_dotenv()
+BACKEND = Path(__file__).resolve().parent.parent
+DEMO_DIR = BACKEND / "app" / "data" / "demo"
+BACKUP_DIR = BACKEND / "data" / "demo_backups"
+DEMO_UID = "x94FcfXU7KRrobyOA4UHDukbRoC2"
 
-from app.services.store import store  # noqa: E402
-
-STUDENT_ID = sys.argv[1] if len(sys.argv) > 1 else "x94FcfXU7KRrobyOA4UHDukbRoC2"
-
-
-def _iso(days_ago: float) -> str:
-    return (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
-
-
-# ── React Performance Patterns — COMPLETE ──────────────────────────────────
-REACT_PERF = "react-perf"
-REACT_PERF_TITLE = "React Performance Patterns"
-REACT_PERF_CONCEPTS = [
-    {"name": "shallow-equality", "description": "Primitives compare by value; objects, arrays, and functions compare by reference."},
-    {"name": "use-callback", "description": "useCallback keeps a function reference stable across renders as long as its dependencies don't change."},
-    {"name": "use-memo", "description": "useMemo memoizes a computed value and only recomputes it when its dependencies change."},
-    {"name": "react-memo", "description": "React.memo skips a component's re-render when its props are shallowly equal to the previous render."},
-]
-REACT_PERF_RELS = [
-    ("shallow-equality", "react-memo", "prerequisite_of"),
-    ("use-callback", "react-memo", "prerequisite_of"),
-    ("use-memo", "use-callback", "related_to"),
-]
-# (concept, attempts, correct, days_ago last_seen) — mastered, history spread over ~3 weeks
-REACT_PERF_PERF = [
-    ("shallow-equality", 6, 5, 6),
-    ("use-callback", 7, 6, 5),
-    ("use-memo", 8, 7, 5),
-    ("react-memo", 9, 8, 4),
-]
-REACT_PERF_TURNS = [
-    (21, "Why does my component still re-render even though I wrapped it in React.memo?",
-     "React.memo only skips a re-render when props are shallowly equal to the previous render. "
-     "If a parent passes a new function or object literal as a prop on every render, React.memo "
-     "sees a new reference and re-renders anyway — wrap that callback in useCallback so the "
-     "reference stays stable. (React Performance Patterns, 4.1 - React.memo and useCallback)"),
-    (14, "What's the difference between useMemo and useCallback?",
-     "useMemo memoizes a computed value; useCallback memoizes the function reference itself. "
-     "You reach for useCallback specifically when passing a callback into a child wrapped in "
-     "React.memo, so the child doesn't see a new reference every render. "
-     "(3.2 - Memoization and Computed State)"),
-    (5, "When should I use useMemo for a filtered list?",
-     "If a filtered/sorted list is derived from a large array and the filter criteria haven't "
-     "changed since the last render, useMemo avoids redoing that work. "
-     "(3.2 - Memoization and Computed State)"),
-]
-
-# ── JavaScript Deep Dive — IN PROGRESS ─────────────────────────────────────
-JS_DEEP = "javascript-deep-dive"
-JS_DEEP_TITLE = "JavaScript Deep Dive"
-JS_DEEP_CONCEPTS = [
-    {"name": "prototype-inheritance", "description": "Every object has an internal link to another object, its prototype, and property lookups walk that chain."},
-    {"name": "class-syntax-sugar", "description": "The `class` keyword is syntactic sugar over the same prototype chain — Dog.prototype gets Animal.prototype as its prototype."},
-    {"name": "v8-hidden-classes", "description": "V8 creates an internal hidden class describing an object's shape; adding properties in a different order produces a different hidden class."},
-    {"name": "event-loop", "description": "A single call stack plus a macrotask queue (setTimeout, etc.) — the next macrotask runs once the stack empties."},
-    {"name": "microtask-queue", "description": "Promises resolve into a separate, higher-priority microtask queue that fully drains before the next macrotask runs."},
-]
-JS_DEEP_RELS = [
-    ("prototype-inheritance", "class-syntax-sugar", "prerequisite_of"),
-    ("event-loop", "microtask-queue", "prerequisite_of"),
-    ("v8-hidden-classes", "prototype-inheritance", "related_to"),
-]
-# Deliberately mixed + incomplete — mid-course, real gaps for the demo to surface
-JS_DEEP_PERF = [
-    ("prototype-inheritance", 6, 5, 0.3),   # strong, active today
-    ("class-syntax-sugar", 4, 2, 0.4),      # weak, active today — despite a strong prerequisite
-    ("event-loop", 5, 2, 1.2),              # weak, active yesterday
-    # v8-hidden-classes, microtask-queue: not attempted yet — no row (accuracy reads as null)
-]
-JS_DEEP_TURNS = [
-    (1.3, "How does the event loop decide what runs next?",
-     "JS has a call stack plus a macrotask queue for things like setTimeout callbacks — once "
-     "the stack empties, the next macrotask runs. (6.1 - The Event Loop and Microtasks)"),
-    (0.5, "Why does my Promise .then() run before my setTimeout even though the timeout was 0ms?",
-     "Promises resolve into the microtask queue, which fully drains after every task and before "
-     "the next macrotask — so a resolved promise's .then always beats a setTimeout(fn, 0). "
-     "(6.1 - The Event Loop and Microtasks)"),
-    (0.2, "What even is prototype inheritance in JS?",
-     "Every object has an internal link to another object, its prototype. A property lookup that "
-     "misses on the object walks up this chain until it hits Object.prototype. "
-     "(4.1 - Prototype Inheritance)"),
-]
-
-QUIZ_SESSIONS = [
-    # (course_id, course_title, days_ago, breakdown[(concept, attempts, correct)])
-    (REACT_PERF, REACT_PERF_TITLE, 14, [
-        ("shallow-equality", 3, 2), ("use-callback", 3, 3), ("use-memo", 3, 2), ("react-memo", 3, 3),
-    ]),
-    (REACT_PERF, REACT_PERF_TITLE, 4, [
-        ("shallow-equality", 3, 3), ("use-callback", 4, 3), ("use-memo", 5, 5), ("react-memo", 6, 5),
-    ]),
-    (JS_DEEP, JS_DEEP_TITLE, 1.2, [
-        ("prototype-inheritance", 6, 5), ("class-syntax-sugar", 4, 2), ("event-loop", 5, 2),
-    ]),
+# adaptive_service's accuracy bands — the difficulty a real run would have served
+_BAND_MS = {"easy": 21000, "medium": 33000, "hard": 46000}
+WRITE_ORDER = [
+    "questions", "concepts", "concept_relationships",
+    "quiz_sessions", "concept_performance", "student_turns", "student_profile",
 ]
 
 
-async def seed_knowledge_graph(course_id: str, concepts: list[dict], rels: list[tuple]) -> None:
-    for c in concepts:
-        doc_id = f"{course_id}::{c['name']}"
-        await store.set("concepts", doc_id, {"course_id": course_id, **c})
-    for source, target, rel_type in rels:
-        doc_id = f"{course_id}::{source}->{target}"
-        await store.set("concept_relationships", doc_id, {
-            "course_id": course_id, "source": source, "target": target, "type": rel_type,
-        })
-    print(f"  concepts + relationships seeded for {course_id}")
+# ---------------------------------------------------------------- fixtures
+
+def load_fixtures() -> dict:
+    load = lambda name: json.loads((DEMO_DIR / name).read_text())  # noqa: E731
+    return {
+        "taxonomy": load("taxonomy.json")["courses"],
+        "banks": load("question_banks.json"),
+        "student": load("demo_student.json"),
+    }
 
 
-async def seed_perf_by_days(rows: list[tuple]) -> None:
-    for concept, attempts, correct, days_ago in rows:
-        doc_id = f"{STUDENT_ID}__{concept}"
-        await store.set("concept_performance", doc_id, {
-            "user_id": STUDENT_ID, "concept": concept,
-            "attempts": attempts, "correct": correct,
-            "accuracy": round(correct / attempts, 3),
-            "last_seen": _iso(days_ago),
-        })
-    print(f"  concept_performance seeded ({len(rows)} concepts)")
+def _at(now: datetime, days_ago: int, hour: int, minute: int) -> datetime:
+    """UTC timestamp `days_ago` days before now's UTC date at hh:mm — clamped so
+    it is never later than now - 30 min, and a days_ago=0 event stays today."""
+    now = now.astimezone(timezone.utc)
+    day = now.date() - timedelta(days=days_ago)
+    t = datetime.combine(day, time(hour, minute), tzinfo=timezone.utc)
+    limit = now - timedelta(minutes=30)
+    if t > limit:
+        midnight = datetime.combine(now.date(), time(0), tzinfo=timezone.utc)
+        t = limit if limit >= midnight or days_ago > 0 else midnight + (now - midnight) / 2
+    return t
 
 
-async def seed_turns(course_slug: str, turns: list[tuple]) -> None:
-    topics: list[str] = []
-    first_seen = None
-    last_seen = None
-    for days_ago, question, answer in turns:
-        ts = _iso(days_ago)
-        if first_seen is None or ts < first_seen:
-            first_seen = ts
-        if last_seen is None or ts > last_seen:
-            last_seen = ts
-        await store.set("student_turns", f"{STUDENT_ID}__{ts}", {
-            "student_id": STUDENT_ID, "course_slug": course_slug,
-            "question": question[:500], "answer": answer[:1500],
-            "created_at": ts, "pii_redacted": [],
-        })
-        topics.append(question[:80])
-
-    prof = await store.get("student_profile", STUDENT_ID) or {"first_seen": first_seen, "turn_count": 0, "topics": []}
-    merged_topics = (prof.get("topics", []) + topics)[-8:]
-    await store.set("student_profile", STUDENT_ID, {
-        "student_id": STUDENT_ID,
-        "first_seen": min(prof.get("first_seen", first_seen), first_seen),
-        "last_seen": max(prof.get("last_seen", last_seen), last_seen),
-        "turn_count": int(prof.get("turn_count", 0)) + len(turns),
-        "topics": merged_topics,
-    })
-    print(f"  {len(turns)} memory turns seeded for {course_slug}")
+def _band(accuracy):
+    if accuracy is None or accuracy < 0.5:
+        return "easy"
+    return "medium" if accuracy < 0.8 else "hard"
 
 
-async def seed_quiz_sessions() -> None:
-    for i, (course_id, course_title, days_ago, breakdown_raw) in enumerate(QUIZ_SESSIONS):
-        # Scoped by STUDENT_ID — an earlier version of this script used a
-        # student-agnostic doc_id here, so seeding a second account silently
-        # overwrote the first account's quiz_sessions (store.set is an
-        # upsert keyed by doc_id). Caught via the live dashboard showing
-        # Concepts Mastered correctly (that collection IS student-scoped)
-        # but Quizzes/Streak/Avg Score all zero (quiz_sessions had been
-        # clobbered by the second run).
-        session_id = f"seed-{STUDENT_ID}-{course_id}-{i}"
-        breakdown = [
-            {"concept": c, "attempts": a, "correct": k, "accuracy": round(k / a, 3)}
-            for c, a, k in breakdown_raw
-        ]
-        breakdown.sort(key=lambda b: b["accuracy"])
+# ---------------------------------------------------------------- build (pure)
+
+def build_docs(uid: str, now: datetime, fixtures: dict | None = None) -> dict:
+    """Every doc the seed writes, as {collection: {doc_id: data}}. Pure."""
+    fx = fixtures or load_fixtures()
+    tax, banks, student = fx["taxonomy"], fx["banks"], fx["student"]
+    docs: dict = {c: {} for c in WRITE_ORDER}
+
+    # course-level: banks + knowledge graph on the fixed tags
+    lecture_for: dict = {}
+    for slug, course in tax.items():
+        docs["questions"][slug] = banks[slug]
+        for q in banks[slug]["questions"]:
+            lecture_for.setdefault((slug, q["concept"], q["difficulty"]), q["lecture"])
+        for c in course["concepts"]:
+            docs["concepts"][f"{slug}::{c['name']}"] = {
+                "course_id": slug, "name": c["name"], "description": c["description"]}
+        for r in course["relationships"]:
+            docs["concept_relationships"][f"{slug}::{r['source']}->{r['target']}"] = {
+                "course_id": slug, "source": r["source"], "target": r["target"], "type": r["type"]}
+
+    # sessions, chronological; answers replay adaptive's per-answer bookkeeping
+    plan = sorted(student["sessions"], key=lambda s: (-s["days_ago"], s["utc_hour"], s["utc_minute"]))
+    running: dict = defaultdict(lambda: [0, 0])          # concept -> [attempts, correct]
+    perf: dict = {}
+    for i, s in enumerate(plan):
+        slug = s["course_slug"]
+        sid = f"seed-{uid}-{slug}-{i}"
+        completed = _at(now, s["days_ago"], s["utc_hour"], s["utc_minute"]).isoformat()
         answers = []
-        for c, a, k in breakdown_raw:
-            for n in range(a):
+        for c in s["concepts"]:
+            concept, total, n_correct = c["concept"], c["total"], c["correct"]
+            for n in range(total):
+                correct = n >= total - n_correct          # misses first, then it clicks
+                att, cor = running[concept]
+                diff = _band(cor / att if att else None)
                 answers.append({
-                    "question_id": f"{session_id}-{c}-{n}", "concept": c, "difficulty": "",
-                    "correct": n < k, "time_taken_ms": 8000 + n * 500, "lecture": "",
+                    # Deliberately NOT bank ids: the whole bank stays "unseen", so
+                    # adaptive start() never triggers an LLM top_up with invented tags.
+                    "question_id": f"{sid}-a{len(answers) + 1}",
+                    "concept": concept,
+                    "difficulty": diff,
+                    "correct": correct,
+                    "time_taken_ms": _BAND_MS[diff] + ((i * 7 + len(answers) * 13) % 10) * 1000,
+                    "lecture": lecture_for.get((slug, concept, diff), ""),
                 })
-        score = sum(1 for x in answers if x["correct"])
-        await store.set("quiz_sessions", session_id, {
-            "session_id": session_id, "user_id": STUDENT_ID, "course_id": course_id,
-            "course_title": course_title, "score": score, "total": len(answers),
-            "answers": answers, "concept_breakdown": breakdown,
-            "completed_at": _iso(days_ago),
+                running[concept][0] += 1
+                running[concept][1] += 1 if correct else 0
+                row = perf.setdefault(concept, {"course_id": slug, "last_seen": ""})
+                row["last_seen"] = max(row["last_seen"], completed)
+        agg: dict = defaultdict(lambda: [0, 0])
+        for a in answers:
+            agg[a["concept"]][0] += 1
+            agg[a["concept"]][1] += 1 if a["correct"] else 0
+        breakdown = sorted(
+            ({"concept": c, "attempts": a, "correct": k, "accuracy": round(k / a, 3)} for c, (a, k) in agg.items()),
+            key=lambda b: b["accuracy"],
+        )
+        docs["quiz_sessions"][sid] = {
+            "session_id": sid, "user_id": uid, "course_id": slug,
+            "course_title": tax[slug]["title"],
+            "score": sum(1 for a in answers if a["correct"]), "total": len(answers),
+            "answers": answers, "concept_breakdown": breakdown, "completed_at": completed,
+        }
+
+    for concept, (att, cor) in running.items():
+        docs["concept_performance"][f"{uid}__{concept}"] = {
+            "user_id": uid, "concept": concept, "attempts": att, "correct": cor,
+            "accuracy": round(cor / att, 3), "last_seen": perf[concept]["last_seen"],
+            "course_id": perf[concept]["course_id"],
+        }
+
+    # chat observations: the same fields skill_graph_service.record_observation writes
+    for o in student.get("chat_observations", []):
+        doc_id = f"{uid}__{o['concept']}"
+        row = docs["concept_performance"].get(doc_id) or {
+            "user_id": uid, "concept": o["concept"], "attempts": 0, "correct": 0, "accuracy": 0.0,
+            "course_id": o["course_slug"], "created_by": "chat_observation"}
+        row.update({
+            "chat_confidence": o["confidence"],
+            "chat_confidence_note": o["note"],
+            "chat_confidence_updated_at": _at(now, o["days_ago"], o["utc_hour"], o["utc_minute"]).isoformat(),
         })
-    print(f"  {len(QUIZ_SESSIONS)} quiz_sessions seeded")
+        docs["concept_performance"][doc_id] = row
+
+    # chat memory: turns + a profile consistent with them (memory_service shapes)
+    turns = sorted(
+        ({**t, "ts": _at(now, t["days_ago"], t["utc_hour"], t["utc_minute"]).isoformat()} for t in student["chat_turns"]),
+        key=lambda t: t["ts"],
+    )
+    for t in turns:
+        docs["student_turns"][f"{uid}__{t['ts']}"] = {
+            "student_id": uid, "course_slug": t["course_slug"],
+            "question": t["question"][:500], "answer": t["answer"][:1500],
+            "created_at": t["ts"], "pii_redacted": [],
+        }
+    if turns:
+        docs["student_profile"][uid] = {
+            "student_id": uid, "first_seen": turns[0]["ts"], "last_seen": turns[-1]["ts"],
+            "turn_count": len(turns), "topics": [t["question"][:80] for t in turns][-8:],
+        }
+    return docs
 
 
-async def main():
-    print(f"Seeding demo data for student_id={STUDENT_ID}")
+# ---------------------------------------------------------------- store I/O
 
-    print(f"\n[{REACT_PERF}] complete course")
-    await seed_knowledge_graph(REACT_PERF, REACT_PERF_CONCEPTS, REACT_PERF_RELS)
-    await seed_perf_by_days(REACT_PERF_PERF)
-    await seed_turns(REACT_PERF, REACT_PERF_TURNS)
+async def write_all(st, docs: dict) -> dict:
+    counts = {}
+    for col in WRITE_ORDER:
+        for doc_id, data in docs.get(col, {}).items():
+            await st.set(col, doc_id, data)
+        counts[col] = len(docs.get(col, {}))
+    return counts
 
-    print(f"\n[{JS_DEEP}] in-progress course")
-    await seed_knowledge_graph(JS_DEEP, JS_DEEP_CONCEPTS, JS_DEEP_RELS)
-    await seed_perf_by_days([(c, a, k, d) for c, a, k, d in JS_DEEP_PERF])
-    await seed_turns(JS_DEEP, JS_DEEP_TURNS)
 
-    print("\n[quiz_sessions]")
-    await seed_quiz_sessions()
+async def _docs_where(st, col: str, field: str | None = None, value=None, prefix: str | None = None) -> dict:
+    """{doc_id: data} matching data[field] == value, or doc_id starting with prefix.
+    The store interface doesn't expose doc ids, so this reads them per backend."""
+    from app.services.store import InMemoryStore, PostgresStore
 
-    print("\nDone.")
+    if isinstance(st, InMemoryStore):
+        items = st._db.get(col, {}).items()
+        if prefix is not None:
+            return {k: v for k, v in items if k.startswith(prefix)}
+        return {k: v for k, v in items if v.get(field) == value}
+    if isinstance(st, PostgresStore):
+        from app.services.db import get_pool
+
+        pool = await get_pool()
+        if prefix is not None:
+            rows = await pool.fetch(
+                "select doc_id, data from docs where collection=$1 and left(doc_id, length($2)) = $2", col, prefix)
+        else:
+            rows = await pool.fetch(
+                "select doc_id, data from docs where collection=$1 and data->>$2 = $3", col, field, str(value))
+        return {r["doc_id"]: r["data"] for r in rows}
+    raise RuntimeError(f"unsupported store backend for --apply: {type(st).__name__}")
+
+
+async def find_targets(st, uid: str, slugs: list[str]) -> dict:
+    """Every existing doc the reset will delete: uid-scoped + the demo courses' docs."""
+    t: dict = defaultdict(dict)
+    t["concept_performance"].update(await _docs_where(st, "concept_performance", "user_id", uid))
+    t["concept_performance"].update(await _docs_where(st, "concept_performance", prefix=f"{uid}__"))
+    t["quiz_sessions"].update(await _docs_where(st, "quiz_sessions", "user_id", uid))
+    t["adaptive_sessions"].update(await _docs_where(st, "adaptive_sessions", "user_id", uid))
+    t["student_turns"].update(await _docs_where(st, "student_turns", "student_id", uid))
+    t["student_turns"].update(await _docs_where(st, "student_turns", prefix=f"{uid}__"))
+    for col in ("student_profile", "recommendations"):
+        doc = await st.get(col, uid)
+        if doc is not None:
+            t[col][uid] = doc
+    for slug in slugs:
+        doc = await st.get("questions", slug)
+        if doc is not None:
+            t["questions"][slug] = doc
+        t["concepts"].update(await _docs_where(st, "concepts", "course_id", slug))
+        t["concept_relationships"].update(await _docs_where(st, "concept_relationships", "course_id", slug))
+    return {col: docs for col, docs in t.items() if docs}
+
+
+def _write_backup(backup_dir: Path, uid: str, targets: dict) -> Path:
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    path = backup_dir / f"{uid}-{ts}.json"
+    n = 1
+    while path.exists():
+        path = backup_dir / f"{uid}-{ts}-{n}.json"
+        n += 1
+    payload = {
+        "uid": uid, "created_at": datetime.now(timezone.utc).isoformat(),
+        "counts": {c: len(d) for c, d in targets.items()}, "docs": targets,
+    }
+    path.write_text(json.dumps(payload, indent=1, ensure_ascii=False))
+    return path
+
+
+def _verify_backup(path: Path, targets: dict) -> None:
+    loaded = json.loads(path.read_text())
+    if loaded.get("docs") != json.loads(json.dumps(targets)):
+        raise RuntimeError(f"backup {path} does not round-trip — aborting before any delete")
+
+
+async def apply(st, uid: str, now: datetime, backup_dir: Path = BACKUP_DIR, fixtures: dict | None = None) -> dict:
+    """BACKUP -> verify -> RESET -> WRITE. Raises (deleting nothing) if the backup fails."""
+    fx = fixtures or load_fixtures()
+    docs = build_docs(uid, now, fx)
+    targets = await find_targets(st, uid, list(fx["taxonomy"]))
+    path = _write_backup(backup_dir, uid, targets)
+    _verify_backup(path, targets)
+    deleted = {}
+    for col, items in targets.items():
+        for doc_id in items:
+            await st.delete(col, doc_id)
+        deleted[col] = len(items)
+    counts = await write_all(st, docs)
+    return {"backup_path": str(path), "deleted": deleted, "counts": counts}
+
+
+# ---------------------------------------------------------------- report
+
+def _pct(x) -> str:
+    return "n/a" if x is None else f"{round(x * 100)}%"
+
+
+def _p(line: str = "") -> None:
+    print(line)
+
+
+async def print_report(uid: str, docs: dict) -> None:
+    """Print what the app's own read paths return for the seeded data."""
+    from app.models import MCQQuestion
+    from app.services import adaptive_service, journey_service
+
+    m = await journey_service.get_metrics(uid)
+    _p("== get_metrics (dashboard tiles / get_learning_metrics) ==")
+    for k, v in m.items():
+        _p(f"  {k:26s} {v}")
+
+    sessions = sorted(docs["quiz_sessions"].values(), key=lambda s: s["completed_at"])
+    ratio = lambda xs: sum(s["score"] for s in xs) / max(sum(s["total"] for s in xs), 1)  # noqa: E731
+    half = len(sessions) // 2
+    _p(f"  score trend (journey's halves)  {_pct(ratio(sessions[:half]))} -> {_pct(ratio(sessions[half:]))}"
+       f"   first 3: {_pct(ratio(sessions[:3]))}   last 5: {_pct(ratio(sessions[-5:]))}")
+    hours = Counter(datetime.fromisoformat(s["completed_at"]).hour for s in sessions)
+    _p(f"  session UTC hours  {dict(sorted(hours.items()))}  (journey labels part-of-day from the UTC hour)")
+
+    j = await journey_service.get_journey(uid)
+    active = [h for h in j["heatmap"] if h["count"]]
+    _p(f"  heatmap: {len(active)} active day(s) in the last {len(j['heatmap'])}; "
+       f"first {active[0]['date'] if active else '-'}, last {active[-1]['date'] if active else '-'}")
+    _p("  last 14 days: " + "".join("#" if h["count"] else "." for h in j["heatmap"][-14:]) + "  (rightmost = today)")
+
+    sw = await journey_service.get_strengths_weaknesses(uid)
+    _p("\n== get_strengths_weaknesses ==")
+    _p("  strengths:  " + ", ".join(f"{s['concept']} {_pct(s['accuracy'])} ({s['attempts']})" for s in sw["strengths"]))
+    _p("  weaknesses: " + ", ".join(f"{w['concept']} {_pct(w['accuracy'])} ({w['attempts']})" for w in sw["weaknesses"]))
+    _p(f"  concepts_attempted: {sw['concepts_attempted']}")
+
+    rep = await journey_service.get_strengths_report(uid)
+    _p("\n== get_strengths_report (get_learning_strengths: weak + prerequisites) ==")
+    for w in rep["weaknesses"]:
+        pre = ", ".join(
+            f"{p['concept']} {_pct(p['accuracy'])}" + (f" [chat: {p['chat_confidence']}]" if p.get("chat_confidence") else "")
+            for p in w["prerequisites"]) or "none"
+        _p(f"  {w['concept']:24s} {_pct(w['accuracy']):>4s}  course={w['course_id']}  prerequisites: {pre}")
+
+    _p("\n== weak_concepts_for_course (chat hint, accuracy < 70%) ==")
+    for slug in docs["questions"]:
+        _p(f"  {slug:22s} {await journey_service.weak_concepts_for_course(uid, slug)}")
+
+    _p("\n== course insight signals (concept_performance filtered by the bank's tags) ==")
+    perf = {p["concept"]: p for p in docs["concept_performance"].values()}
+    for slug, bank in docs["questions"].items():
+        tags = sorted({q["concept"] for q in bank["questions"]})
+        cs = [s for s in sessions if s["course_id"] == slug]
+        avg = sum(s["score"] / max(s["total"], 1) for s in cs) / len(cs) if cs else None
+        strong = [f"{c} {_pct(perf[c]['accuracy'])}" for c in tags if c in perf and perf[c]["accuracy"] >= 0.8]
+        weak = [f"{c} {_pct(perf[c]['accuracy'])}" for c in tags if c in perf and perf[c]["accuracy"] < 0.8]
+        _p(f"  {slug}: {len(cs)} session(s), avg {_pct(avg)} | strong: {', '.join(strong) or '-'} | weak: {', '.join(weak) or '-'}")
+
+    _p("\n== question banks + adaptive practice first pick ==")
+    for slug, bank in docs["questions"].items():
+        qs = [MCQQuestion(**q) for q in bank["questions"]]
+        seen = await adaptive_service._seen_question_ids(uid, slug)
+        unseen = len([q for q in qs if q.id not in seen])
+        first = await adaptive_service._pick_next(uid, slug, qs, [], seen)
+        by_tag = Counter(q.concept for q in qs)
+        _p(f"  {slug:22s} {len(qs)} questions {dict(by_tag)}")
+        _p(f"  {'':22s} unseen {unseen}/{len(qs)} (top_up fires below {adaptive_service.LOW_UNSEEN}); "
+           f"first pick: {first.concept} / {first.difficulty}")
+
+    turns = sorted(docs["student_turns"].values(), key=lambda t: t["created_at"])
+    prof = docs["student_profile"].get(uid, {})
+    _p("\n== chat memory ==")
+    _p(f"  student_turns: {len(turns)}   profile.turn_count: {prof.get('turn_count')}   "
+       f"first_seen {prof.get('first_seen', '')[:10]}  last_seen {prof.get('last_seen', '')[:10]}")
+    for t in turns:
+        _p(f"  {t['created_at'][:16]}  [{t['course_slug']}] {t['question'][:70]}")
+    kitchen = next((t for t in turns if "restaurant" in t["answer"].lower()), None)
+    if kitchen:
+        _p(f"  restaurant-kitchen analogy turn: {kitchen['created_at'][:10]} ({kitchen['course_slug']})")
+    obs = [p for p in docs["concept_performance"].values() if p.get("chat_confidence")]
+    for o in obs:
+        _p(f"  chat observation: {o['concept']} = {o['chat_confidence']} — \"{o['chat_confidence_note']}\"")
+    _p("  (search_history is Postgres full-text search — not exercised by --dry-run)")
+
+    _p("\n== docs written (in-memory) ==")
+    _p("  " + ", ".join(f"{c}={len(d)}" for c, d in docs.items()))
+
+
+# ---------------------------------------------------------------- entry points
+
+def _force_offline_env() -> None:
+    for var in ("DATABASE_URL", "FIREBASE_SERVICE_ACCOUNT_JSON", "GOOGLE_APPLICATION_CREDENTIALS", "OPENAI_API_KEY"):
+        os.environ[var] = ""
+    os.environ["LANGSMITH_TRACING"] = "false"
+
+
+async def _dry_run(uid: str) -> int:
+    from app.services.store import InMemoryStore, store
+
+    if not isinstance(store, InMemoryStore):
+        print(f"REFUSING: dry-run store is {type(store).__name__}, expected InMemoryStore.", file=sys.stderr)
+        return 1
+    now = datetime.now(timezone.utc)
+    docs = build_docs(uid, now)
+    await write_all(store, docs)
+    print(f"DRY RUN — in-memory store, nothing persisted. uid={uid} now={now.isoformat(timespec='seconds')}\n")
+    await print_report(uid, docs)
+    return 0
+
+
+async def _apply(uid: str) -> int:
+    from app.services.store import PostgresStore, store
+
+    if not isinstance(store, PostgresStore):
+        print(f"REFUSING: --apply needs the Postgres store (DATABASE_URL); got {type(store).__name__}.", file=sys.stderr)
+        return 1
+    result = await apply(store, uid, datetime.now(timezone.utc))
+    print(f"backup:  {result['backup_path']}")
+    print("deleted: " + ", ".join(f"{c}={n}" for c, n in result["deleted"].items()))
+    print("written: " + ", ".join(f"{c}={n}" for c, n in result["counts"].items()))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Seed the demo student's account.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="in-memory seed + report (default)")
+    mode.add_argument("--apply", action="store_true", help="backup, reset and write the real store")
+    parser.add_argument("--yes", action="store_true", help="confirm --apply")
+    args = parser.parse_args(argv)
+
+    if args.apply and not args.yes:
+        print("REFUSING: --apply rewrites the demo account in the real store; re-run with --apply --yes.",
+              file=sys.stderr)
+        return 2
+    if args.apply:
+        from dotenv import load_dotenv
+
+        load_dotenv(BACKEND / ".env")
+        return asyncio.run(_apply(DEMO_UID))
+    _force_offline_env()
+    return asyncio.run(_dry_run(DEMO_UID))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.path.insert(0, str(BACKEND))
+    if "--apply" not in sys.argv[1:]:
+        _force_offline_env()  # before ANY app module can be imported
+    sys.exit(main())

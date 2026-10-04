@@ -16,3 +16,6 @@ __pycache__/
 
 # runtime data
 data/eval_results/
+
+# demo-account seed backups (real student data) — never commit
+data/demo_backups/
