@@ -5,14 +5,17 @@ import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
 import { recordLectureView, getCourses } from "../lib/learnApi";
+import { FlaskConical } from "lucide-react";
+import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
 import type { Course } from "../types/learn";
 
 export default function CoursePlayerPage() {
   const { courseid } = useParams<{ courseid: string }>();
   const [searchParams] = useSearchParams();
-  const { isCourseBought, currentuser } = useUserSessionStore();
+  const { isCourseBought, currentuser, isUserLoggedIn } = useUserSessionStore();
   const userId = (currentuser?.uid as string) || "anonymous";
+  const [labOpen, setLabOpen] = useState(false);
 
   const track = tracks.find((t) => t.id === Number(courseid));
 
@@ -197,6 +200,25 @@ export default function CoursePlayerPage() {
 
       {aiCourse && (
         <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title} />
+      )}
+
+      {aiCourse && isUserLoggedIn && (
+        <button
+          onClick={() => setLabOpen(true)}
+          className="fixed bottom-24 right-6 z-40 flex items-center gap-2 bg-teal-600/20 hover:bg-teal-600/30 border border-teal-500/30 text-teal-200 text-sm font-medium rounded-full pl-4 pr-5 py-2.5 shadow-lg shadow-black/40 transition-colors"
+        >
+          <FlaskConical className="w-4 h-4" /> Lab
+        </button>
+      )}
+
+      {labOpen && aiCourse && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+             onClick={() => setLabOpen(false)}>
+          <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6"
+               onClick={(e) => e.stopPropagation()}>
+            <LabStudio studentId={userId} courseId={aiCourse.course_id} onClose={() => setLabOpen(false)} />
+          </div>
+        </div>
       )}
     </div>
   );

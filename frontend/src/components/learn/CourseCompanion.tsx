@@ -84,7 +84,7 @@ export function CourseCompanion({
              onClick={() => setTool(null)}>
           <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6"
                onClick={(e) => e.stopPropagation()}>
-            <LabStudio studentId={userId} onClose={() => setTool(null)} />
+            <LabStudio studentId={userId} courseId={course.course_id} onClose={() => setTool(null)} />
           </div>
         </div>
       )}
