@@ -132,7 +132,7 @@ def _compute_metrics(sessions: list[dict], perf: list[dict]):
         "avg_score": avg_score,
         "active_days": len(day_set),
         "streak": _streak(day_set),
-        "courses_engaged": len({s.get("course_id") for s in sessions}),
+        "courses_engaged": len({s.get("course_id") for s in sessions if s.get("course_id")}),
         "concepts_practiced": len(practiced),
         "concepts_mastered": len(mastered),
         "concepts_weak": len(weak),

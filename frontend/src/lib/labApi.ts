@@ -4,6 +4,7 @@
 //
 // Contract implemented by backend/app/services/lab.
 import type { Objective } from "../types/lab";
+import { authHeaders } from "./authHeaders";
 
 // Same base-URL resolution as notesQuizApiLang.ts: strip any trailing slash
 // from VITE_RAG_API_URL so a `.../` env value can't turn this into
@@ -29,7 +30,7 @@ export type GenerateResponse = {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify(body),
   });
   if (!res.ok) {

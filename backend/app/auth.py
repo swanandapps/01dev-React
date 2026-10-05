@@ -65,3 +65,11 @@ async def current_student(authorization: str = Header(default="")) -> str:
 def _unavailable(exc: Exception):
     print(f"[auth] token verification unavailable: {exc!r}", flush=True)
     raise HTTPException(status_code=503, detail="The tutor is temporarily unavailable. Please try again.")
+
+
+async def optional_student(authorization: str = Header(default="")) -> str | None:
+    """Like current_student, but anonymous callers get None. A token that is
+    present but invalid is still a 401 (never silently downgraded to anonymous)."""
+    if not authorization.strip():
+        return None
+    return await current_student(authorization)

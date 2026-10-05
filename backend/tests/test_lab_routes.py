@@ -153,35 +153,3 @@ def test_artifacts_endpoints_are_not_exposed_in_phase_1(client):
     # artifacts_graph.py ships with the package but is deliberately unwired
     # until Phase 3, when it is reshaped into the unified sequenced graph.
     assert client.post("/api/lab/artifacts/start", json={"docId": "x"}).status_code == 404
-
-
-def test_phase_1_writes_nothing_to_the_learner_model(client, monkeypatch):
-    # HARD CONSTRAINT: the Phase 1 quiz flow writes nothing to our learner
-    # model.
-    # concept_performance / quiz_sessions coupling lands in Phase 2, together
-    # with the concept resolver — writing them before the resolver exists
-    # would start fragmenting concepts immediately.
-    from app.services import store as store_mod
-
-    writes: list[tuple] = []
-
-    async def spy_set(collection, doc_id, data):
-        writes.append((collection, doc_id))
-
-    async def spy_update(collection, doc_id, changes):
-        writes.append((collection, doc_id))
-
-    monkeypatch.setattr(store_mod.store, "set", spy_set)
-    monkeypatch.setattr(store_mod.store, "update", spy_update)
-
-    doc_id = client.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
-    lesson = client.post("/api/lab/lessons", json={"docId": doc_id}).json()
-    lid = lesson["id"]
-    client.post(f"/api/lab/lessons/{lid}/approve",
-                json={"objectives": lesson["plan"]["objectives"], "questionsPerQuiz": 1})
-    client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 1, "total": 1})
-    client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 1, "total": 1})
-
-    touched = {c for c, _ in writes}
-    assert "concept_performance" not in touched, f"Phase 1 must not write concepts: {writes}"
-    assert "quiz_sessions" not in touched, f"Phase 1 must not write sessions: {writes}"

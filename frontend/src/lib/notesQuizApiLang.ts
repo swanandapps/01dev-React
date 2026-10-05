@@ -1,5 +1,6 @@
 // Lab quiz client for the backend's LangGraph flow at /api/lab (backend/app/services/lab/routes.py).
 
+import { authHeaders } from "./authHeaders";
 import type { AnswerResult, LessonView, Objective } from "../types/lab";
 export type { Difficulty, Objective, Question, Quiz, Result, Summary, LessonStatus, LessonView, AnswerResult } from "../types/lab";
 
@@ -13,7 +14,7 @@ const BASE = import.meta.env.VITE_QUIZME_LANG_URL || `${RAG_API_URL}/api/lab`;
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -24,7 +25,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${BASE}${path}`, { headers: await authHeaders() });
   if (!res.ok) throw new Error(`Lab API error ${res.status}`);
   return res.json();
 }
@@ -36,7 +37,7 @@ export async function uploadText(text: string, title?: string): Promise<{ docId:
 export async function uploadPdf(file: File): Promise<{ docId: string }> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${BASE}/upload`, { method: "POST", body: form });
+  const res = await fetch(`${BASE}/upload`, { method: "POST", headers: await authHeaders(), body: form });
   if (!res.ok) {
     const text = await res.text().catch(() => "Unknown error");
     throw new Error(`Lab API error ${res.status}: ${text}`);

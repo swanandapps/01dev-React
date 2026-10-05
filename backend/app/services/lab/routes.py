@@ -11,26 +11,33 @@ Phase 3 adds `/generate`: the student's output selection
 unified graph, then — if quiz was selected — hands off to the same lesson
 graph the quiz-only /lessons endpoints already use, unchanged.
 
-Phase 1 writes NOTHING to concept_performance or quiz_sessions — see the spec:
-the external service this replaces writes nothing to the learner model, so a
-parity migration must not either. That coupling lands in Phase 2 alongside the
-concept resolver.
+Phase 2: a quiz submit by a signed-in student (Firebase token via
+`optional_student`, never the request body) is graded server-side and written to
+the learner model — concept_performance + one quiz_sessions row per objective,
+with concepts canonicalised by concept_resolver. Anonymous submits write nothing.
 """
 import io
+import logging
 import os
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from langgraph.types import Command
 from pydantic import BaseModel
 
+from app.auth import optional_student
 from app.deps import require_admin_key
+from app.services import adaptive_service, concept_resolver, recommendation_service
 from app.services.lab import artifact_store
 from app.services.lab.artifacts_graph import build_lab_graph
 from app.services.lab.generators import OUTPUT_TYPES
 from app.services.lab.graph import build_graph
 from app.services.lab.llm import tutor_answer
+from app.services.store import store
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/lab", tags=["lab"])
 
@@ -151,6 +158,83 @@ def _state_values(lesson_id: str) -> dict:
     return snap.values
 
 
+def _breakdown(answers: list[dict]) -> list[dict]:
+    agg: dict[str, dict] = {}
+    for a in answers:
+        row = agg.setdefault(a["concept"], {"attempts": 0, "correct": 0})
+        row["attempts"] += 1
+        row["correct"] += 1 if a["correct"] else 0
+    out = [{"concept": c, "attempts": r["attempts"], "correct": r["correct"],
+            "accuracy": round(r["correct"] / r["attempts"], 3)} for c, r in agg.items()]
+    out.sort(key=lambda r: r["accuracy"])
+    return out
+
+
+async def _record_learner_model(student_id: str | None, lesson_id: str, v: dict,
+                                answers: list[AnswerResult]) -> None:
+    """Fold one submitted objective into the learner model.
+
+    Grading is server-side: correctness is `selected_index == correctIndex` from
+    graph state and the concept comes from graph state, so a client can't forge
+    either. Writes the same two collections a course quiz does (concept_performance
+    via adaptive_service, quiz_sessions) so Lab results move the same dashboard.
+    Idempotent per objective: the session id is deterministic and an existing
+    row means every write is skipped.
+    """
+    quiz = v.get("quiz")
+    if not student_id or not answers or not quiz:
+        return
+    qs = quiz.get("questions", [])
+    obj_index = v.get("objective_index", 0)
+    session_id = f"lab-{lesson_id}-o{obj_index}"
+    if await store.get("quiz_sessions", session_id):
+        return
+
+    fallback = (v.get("current_objective") or {}).get("title", "")
+    seen: set[int] = set()
+    graded: list[tuple[int, str, bool]] = []  # (question_index, raw_concept, correct)
+    for a in answers:
+        i = a.question_index
+        if not 0 <= i < len(qs) or i in seen:
+            continue
+        seen.add(i)
+        q = qs[i]
+        raw = (q.get("concept") or "").strip() or fallback
+        graded.append((i, raw, a.selected_index == q.get("correctIndex")))
+    if not graded:
+        return
+
+    course_id = v.get("course_id")
+    canonical: dict[str, str] = {}
+    for _, raw, _ in graded:
+        if raw not in canonical:
+            canonical[raw] = await concept_resolver.resolve(raw, course_id)
+
+    for _, raw, correct in graded:
+        await adaptive_service._update_perf(student_id, canonical[raw], correct)
+
+    recs = [{"concept": canonical[raw], "correct": correct} for _, raw, correct in graded]
+    await store.set("quiz_sessions", session_id, {
+        "session_id": session_id,
+        "user_id": student_id,
+        "course_id": None,
+        "course_title": v.get("title") or "Your own material",
+        "source": "self_study",
+        "doc_id": v.get("doc_id"),
+        "doc_title": v.get("title") or "",
+        "score": sum(1 for _, _, c in graded if c),
+        "total": len(graded),
+        "answers": [
+            {"question_id": f"{lesson_id}-{i}", "concept": canonical[raw], "raw_concept": raw,
+             "difficulty": "", "correct": correct, "time_taken_ms": 0, "lecture": ""}
+            for i, raw, correct in graded
+        ],
+        "concept_breakdown": _breakdown(recs),
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    })
+    await recommendation_service.invalidate(student_id)
+
+
 @router.get("/health")
 async def health():
     return {"status": "ok", "service": "lab", "orchestrator": "langgraph",
@@ -219,14 +303,15 @@ async def upload_pdf(request: Request, file: UploadFile = File(...)):
 
 
 @router.post("/lessons")
-async def start_lesson(req: StartReq):
+async def start_lesson(req: StartReq, uid: str | None = Depends(optional_student)):
     doc = DOCS.get(req.docId)
     if not doc:
         raise HTTPException(status_code=404, detail="Unknown docId")
     lesson_id = uuid.uuid4().hex[:12]
     values = await run_in_threadpool(
         GRAPH.invoke,
-        {"doc": doc["text"], "title": doc["title"], "results": []},
+        {"doc": doc["text"], "title": doc["title"], "results": [],
+         "doc_id": req.docId, "student_id": uid},
         _cfg(lesson_id),
     )
     return lesson_view(lesson_id, values)
@@ -251,14 +336,21 @@ async def approve_lesson(lesson_id: str, req: ApproveReq):
 
 
 @router.post("/lessons/{lesson_id}/submit")
-async def submit_result(lesson_id: str, req: SubmitReq):
-    _state_values(lesson_id)
+async def submit_result(lesson_id: str, req: SubmitReq,
+                        uid: str | None = Depends(optional_student)):
+    v = _state_values(lesson_id)  # captured BEFORE resuming: the graph moves on
     _audit("objective_submitted", lesson_id, score=req.score, total=req.total)
     values = await run_in_threadpool(
         GRAPH.invoke,
         Command(resume={"score": req.score, "total": req.total}),
         _cfg(lesson_id),
     )
+    owner = v.get("student_id")
+    if uid and (not owner or owner == uid):
+        try:
+            await _record_learner_model(uid, lesson_id, v, req.answers)
+        except Exception:  # noqa: BLE001 — never fail a quiz over analytics
+            log.exception("lab learner-model write failed for lesson %s", lesson_id)
     return lesson_view(lesson_id, values)
 
 
@@ -272,7 +364,7 @@ async def ask(lesson_id: str, req: AskReq):
 
 
 @router.post("/generate")
-async def generate_outputs(req: GenerateReq):
+async def generate_outputs(req: GenerateReq, uid: str | None = Depends(optional_student)):
     """Fan out to the selected artifacts, persist them, then start the quiz
     if it was chosen.
 
@@ -328,15 +420,13 @@ async def generate_outputs(req: GenerateReq):
         return body
 
     # Quiz selected: start the lesson graph, which owns the objectives HITL gate.
-    # Deliberately passes doc_id, which start_lesson()'s GRAPH.invoke() above
-    # (the production /lessons call) does not: that LessonState channel exists
-    # specifically so this Lab flow can carry provenance through to the quiz
-    # tail. Its absence from /lessons is the production baseline, not an
-    # oversight here -- this is an intentional divergence, not a drift.
+    # doc_id and the verified student_id ride along so the submit route can
+    # attribute the learner-model write to this document and owner.
     lesson_id = uuid.uuid4().hex[:12]
     lesson_values = await run_in_threadpool(
         GRAPH.invoke,
-        {"doc": doc["text"], "title": doc["title"], "results": [], "doc_id": req.docId},
+        {"doc": doc["text"], "title": doc["title"], "results": [], "doc_id": req.docId,
+         "student_id": uid},
         _cfg(lesson_id),
     )
     view = lesson_view(lesson_id, lesson_values)
