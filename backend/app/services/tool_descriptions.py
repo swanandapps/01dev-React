@@ -69,6 +69,9 @@ EXPLAIN_CONCEPT = (
     "not remember quizzing themselves on their own notes. merged_tags lists loosely-named tags (with "
     "counts) that were treated as THIS concept (e.g. their notes said \"useCallback hook\"). Mention them "
     "when explaining a surprising score; if the student says those are different things, tell them "
-    "that's useful and worth flagging. attempts 0 means no graded attempts exist — say so rather than "
-    "guessing. concept is the name as reported by get_learning_strengths."
+    "that's useful and worth flagging. matched_concepts names the stored concepts that were counted (a loose "
+    "name like \"React.memo\" can cover several, e.g. react-memo-purpose and react-memo-behavior) — name "
+    "them. If attempts is 0 and known_concepts is present, the name didn't match: call again with the "
+    "closest name from known_concepts before saying there are no attempts. concept is the name as "
+    "reported by get_learning_strengths."
 )

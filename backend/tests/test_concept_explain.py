@@ -120,3 +120,55 @@ async def test_lecture_session_is_labelled_as_a_lecture_source(store):
     })
     out = await concept_explain.explain_concept("s1", "react-memo")
     assert [(s["label"], s["source"]) for s in out["sources"]] == [("4.1 - React.memo and useCallback", "lecture")]
+
+
+async def _lab_session(store, sid, answers):
+    await store.set("quiz_sessions", sid, {
+        "user_id": "s1", "course_id": None, "course_title": "Your own material",
+        "doc_id": sid, "doc_title": f"Doc {sid}", "source": "self_study",
+        "completed_at": "2026-10-05T00:00:00+00:00", "answers": answers,
+    })
+
+
+async def test_loose_name_counts_the_students_concepts_that_contain_it(store):
+    # The model asks about "React.memo"; the resolver stored the student's
+    # attempts under more specific canonical names. Exact-only matching said
+    # "no attempts" — reproduced live against the real tutor.
+    await _lab_session(store, "a", [
+        {"concept": "react-memo-purpose", "correct": True},
+        {"concept": "react-memo-behavior", "correct": False},
+        {"concept": "use-callback-basics", "correct": True},
+    ])
+
+    out = await concept_explain.explain_concept("s1", "React.memo")
+
+    assert (out["attempts"], out["correct"]) == (2, 1)
+    assert out["matched_concepts"] == ["react-memo-behavior", "react-memo-purpose"]
+
+
+async def test_exact_match_wins_over_containment(store):
+    await _lab_session(store, "a", [
+        {"concept": "react-memo", "correct": True},
+        {"concept": "react-memo-purpose", "correct": False},
+    ])
+
+    out = await concept_explain.explain_concept("s1", "react-memo")
+
+    assert (out["attempts"], out["correct"]) == (1, 1)
+    assert out["matched_concepts"] == ["react-memo"]
+
+
+async def test_no_match_returns_the_students_own_concept_names(store):
+    await _lab_session(store, "a", [
+        {"concept": "react-memo-purpose", "correct": True},
+        {"concept": "react-memo-purpose", "correct": True},
+        {"concept": "use-callback-basics", "correct": False},
+    ])
+    await store.set("quiz_sessions", "other", {
+        "user_id": "s2", "answers": [{"concept": "secret-topic", "correct": True}]})
+
+    out = await concept_explain.explain_concept("s1", "event loop")
+
+    assert out["attempts"] == 0
+    assert out["matched_concepts"] == []
+    assert out["known_concepts"] == ["react-memo-purpose", "use-callback-basics"]

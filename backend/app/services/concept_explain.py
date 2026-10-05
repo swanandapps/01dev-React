@@ -5,7 +5,11 @@ concept_performance is only a running counter, so it cannot explain itself.
 But quiz_sessions already records every answer with its concept, so the
 attribution exists; this module is the read path over it. No new collection.
 
-Matching is by slugify() equality against the student's own answers. This is a
+Matching is against the student's own answers only. Exact slugify() equality
+wins; failing that, every concept of theirs whose slug words contain the asked
+name's words (or vice versa) is counted — the model asks about "React.memo"
+while the resolver stored "react-memo-purpose". If nothing matches,
+`known_concepts` lists their real names so the model can ask again. This is a
 READ path: it never calls concept_resolver.resolve(), which can create nodes.
 
 `merged_tags` are the loosely-named tags (`raw_concept` on this student's own
@@ -18,15 +22,32 @@ from app.services.concept_resolver import slugify
 from app.services.store import store
 
 
+KNOWN_CONCEPTS_LIMIT = 20
+
+
+def _matching_slugs(target: str, slugs: set[str]) -> set[str]:
+    if target in slugs:
+        return {target}
+    words = set(target.split("-"))
+    return {s for s in slugs
+            if words <= set(s.split("-")) or set(s.split("-")) <= words}
+
+
 async def explain_concept(user_id: str, concept: str) -> dict:
-    target = slugify(concept)
     sessions = await store.query("quiz_sessions", "user_id", user_id)
+    counts: dict[str, int] = {}
+    for s in sessions:
+        for a in s.get("answers", []):
+            slug = slugify(a.get("concept", ""))
+            if slug:
+                counts[slug] = counts.get(slug, 0) + 1
+    targets = _matching_slugs(slugify(concept), set(counts))
 
     buckets: dict[tuple, dict] = {}
     merged: dict[str, int] = {}
     attempts = correct = 0
     for s in sessions:
-        matching = [a for a in s.get("answers", []) if slugify(a.get("concept", "")) == target]
+        matching = [a for a in s.get("answers", []) if slugify(a.get("concept", "")) in targets]
         if not matching:
             continue
         source = s.get("source", "course")
@@ -50,13 +71,14 @@ async def explain_concept(user_id: str, concept: str) -> dict:
                 b["correct"] += 1
                 correct += 1
             raw = (a.get("raw_concept") or "").strip()
-            if raw and slugify(raw) != target:
+            if raw and slugify(raw) not in targets:
                 merged[raw] = merged.get(raw, 0) + 1
         if done > b["last_at"]:
             b["last_at"] = done
 
-    return {
+    out = {
         "concept": concept,
+        "matched_concepts": sorted(targets),
         "attempts": attempts,
         "correct": correct,
         "accuracy": round(correct / attempts, 3) if attempts else None,
@@ -64,3 +86,7 @@ async def explain_concept(user_id: str, concept: str) -> dict:
         "merged_tags": [{"candidate": c, "count": n}
                         for c, n in sorted(merged.items(), key=lambda kv: (-kv[1], kv[0]))],
     }
+    if not targets:
+        out["known_concepts"] = [c for c, _ in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+                                 ][:KNOWN_CONCEPTS_LIMIT]
+    return out
