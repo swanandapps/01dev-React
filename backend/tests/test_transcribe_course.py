@@ -199,3 +199,56 @@ def test_offset_segments_shifts_times():
     segs = [{"start": 0.0, "end": 2.5, "text": "a"}]
     assert tc.offset_segments(segs, 1000.0) == [{"start": 1000.0, "end": 1002.5, "text": "a"}]
     assert segs[0]["start"] == 0.0
+
+
+def _stub_run(monkeypatch, tmp_path, fail_ids):
+    monkeypatch.setattr(tc, "CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(tc, "_make_client", lambda: object())
+
+    def fake(client, lec, cache):
+        if lec.lecture_id in fail_ids:
+            raise RuntimeError("boom")
+        return [{"start": 0.0, "end": 50.0, "text": "hello"}]
+    monkeypatch.setattr(tc, "transcribe_lecture", fake)
+
+
+def test_failed_lecture_means_no_review_json(tmp_path, monkeypatch):
+    _stub_run(monkeypatch, tmp_path, {"custom-library-10-0"})
+    assert tc.main(["custom-library"]) == 1
+    d = tmp_path / "cache" / "custom-library"
+    assert not (d / "review.json").exists()
+    assert (d / "review-incomplete.json").exists()
+
+
+def test_clean_full_run_writes_review_json_and_merge_accepts_it(tmp_path, monkeypatch):
+    _stub_run(monkeypatch, tmp_path, set())
+    assert tc.main(["custom-library"]) == 0
+    assert (tmp_path / "cache" / "custom-library" / "review.json").exists()
+    seed = tmp_path / "seed.json"
+    seed.write_text("[]")
+    monkeypatch.setattr(tc, "SEED_PATH", seed)
+    assert tc.main(["custom-library", "--merge"]) == 0
+    assert len(json.loads(seed.read_text())) == 34
+
+
+def test_merge_refuses_a_review_missing_a_lecture(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    (cache / "custom-library").mkdir(parents=True)
+    (cache / "custom-library" / "review.json").write_text(
+        json.dumps([{"chunk_id": "custom-library-10-0-0", "course_id": "custom-library",
+                     "lecture_id": "custom-library-10-0"}]))
+    seed = tmp_path / "seed.json"
+    seed.write_text("[]")
+    monkeypatch.setattr(tc, "CACHE_DIR", cache)
+    monkeypatch.setattr(tc, "SEED_PATH", seed)
+    assert tc.main(["custom-library", "--merge"]) == 2
+    assert seed.read_text() == "[]"
+
+
+def test_empty_whisper_result_is_failure_and_not_cached(tmp_path, monkeypatch):
+    lec = tc.Lecture("c", 0, 0, "ch", "n", "x")
+    (tmp_path / "c-0-0.mp3").write_bytes(b"x")
+    monkeypatch.setattr(tc, "whisper_segments", lambda client, audio: [])
+    with pytest.raises(RuntimeError):
+        tc.transcribe_lecture(object(), lec, tmp_path)
+    assert not (tmp_path / "c-0-0.whisper.json").exists()

@@ -263,8 +263,18 @@ def transcribe_lecture(client, lecture: Lecture, cache: Path) -> list[dict]:
             if not piece.exists():
                 extract_audio(str(audio), piece, offset, length)
             segments += offset_segments(whisper_segments(client, piece), offset)
+    if not segments:  # never cache an empty result — it would never be retried
+        raise RuntimeError("Whisper returned no segments")
     seg_path.write_text(json.dumps(segments, indent=1))
     return segments
+
+
+def _make_client():
+    from dotenv import load_dotenv
+    from openai import OpenAI
+
+    load_dotenv(BACKEND / ".env")
+    return OpenAI()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -281,16 +291,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"no {review} — run a full transcription first")
             return 2
         new_chunks = json.loads(review.read_text())
+        track_id, _ = find_course(json.loads(CATALOG_PATH.read_text()), args.course_slug)
+        expected = {l.lecture_id for l in parse_course_lectures(TRACKS_PATH.read_text(), track_id, args.course_slug)}
+        missing = sorted(expected - {c["lecture_id"] for c in new_chunks})
+        if missing:
+            print(f"{review} is missing {len(missing)} lecture(s): {missing} — refusing to merge")
+            return 2
         seed = json.loads(SEED_PATH.read_text())
         merged = merge_into_seed(seed, args.course_slug, new_chunks)
         SEED_PATH.write_text(json.dumps(merged, indent=2))
         print(f"merged {len(new_chunks)} {args.course_slug} chunks; seed now {len(merged)} chunks")
         return 0
 
-    from dotenv import load_dotenv
-    from openai import OpenAI
-
-    load_dotenv(BACKEND / ".env")
     track_id, course_title = find_course(json.loads(CATALOG_PATH.read_text()), args.course_slug)
     lectures = parse_course_lectures(TRACKS_PATH.read_text(), track_id, args.course_slug)
     only = {x.strip() for x in args.only.split(",") if x.strip()}
@@ -299,7 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"unknown lecture ids: {sorted(unknown)}")
         return 2
     cache.mkdir(parents=True, exist_ok=True)
-    client = OpenAI()
+    client = _make_client()
 
     chunks: list[dict] = []
     failed: list[tuple[Lecture, str]] = []
@@ -320,7 +332,9 @@ def main(argv: list[str] | None = None) -> int:
         last = lec_chunks[-1]["end_time"] if lec_chunks else 0
         print(f"ok    {lec.lecture_id:24} {lec.name[:55]:55} {len(lec_chunks):3} chunks  ends {last // 60:02d}:{last % 60:02d}")
 
-    out = cache / ("review-partial.json" if only else "review.json")
+    # Only a fully successful full run may produce review.json (the one --merge reads).
+    name = "review-partial.json" if only else ("review-incomplete.json" if failed else "review.json")
+    out = cache / name
     out.write_text(json.dumps(chunks, indent=2))
     print(f"\nwrote {len(chunks)} chunks → {out}")
     for lec in empty:
