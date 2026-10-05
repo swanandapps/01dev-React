@@ -246,7 +246,9 @@ def transcribe_lecture(client, lecture: Lecture, cache: Path) -> list[dict]:
     """Segments for one lecture, from cache when present."""
     seg_path = cache / f"{lecture.lecture_id}.whisper.json"
     if seg_path.exists():
-        return json.loads(seg_path.read_text())
+        cached = json.loads(seg_path.read_text())
+        if cached:  # a cached [] is a miss — re-transcribe
+            return cached
     audio = cache / f"{lecture.lecture_id}.mp3"
     if not audio.exists():
         tmp = cache / f"{lecture.lecture_id}.partial.mp3"
@@ -333,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ok    {lec.lecture_id:24} {lec.name[:55]:55} {len(lec_chunks):3} chunks  ends {last // 60:02d}:{last % 60:02d}")
 
     # Only a fully successful full run may produce review.json (the one --merge reads).
-    name = "review-partial.json" if only else ("review-incomplete.json" if failed else "review.json")
+    name = "review-partial.json" if only else ("review-incomplete.json" if failed or empty else "review.json")
     out = cache / name
     out.write_text(json.dumps(chunks, indent=2))
     print(f"\nwrote {len(chunks)} chunks → {out}")
@@ -341,7 +343,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"EMPTY {lec.lecture_id} {lec.name} (no speech segments)")
     for lec, err in failed:
         print(f"FAILED {lec.lecture_id} {lec.name}: {err}")
-    return 1 if failed else 0
+    return 1 if failed or empty else 0
 
 
 if __name__ == "__main__":

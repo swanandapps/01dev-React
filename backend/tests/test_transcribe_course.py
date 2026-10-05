@@ -252,3 +252,24 @@ def test_empty_whisper_result_is_failure_and_not_cached(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError):
         tc.transcribe_lecture(object(), lec, tmp_path)
     assert not (tmp_path / "c-0-0.whisper.json").exists()
+
+
+def test_lecture_with_no_chunks_means_incomplete_and_exit_1(tmp_path, monkeypatch):
+    monkeypatch.setattr(tc, "CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(tc, "_make_client", lambda: object())
+    monkeypatch.setattr(tc, "transcribe_lecture",
+                        lambda client, lec, cache: [{"start": 0.0, "end": 3.0, "text": "  "}])
+    assert tc.main(["custom-library"]) == 1
+    d = tmp_path / "cache" / "custom-library"
+    assert not (d / "review.json").exists()
+    assert (d / "review-incomplete.json").exists()
+
+
+def test_cached_empty_whisper_json_is_retranscribed(tmp_path, monkeypatch):
+    lec = tc.Lecture("c", 0, 0, "ch", "n", "x")
+    (tmp_path / "c-0-0.whisper.json").write_text("[]")
+    (tmp_path / "c-0-0.mp3").write_bytes(b"x")
+    segs = [{"start": 0.0, "end": 2.0, "text": "hi"}]
+    monkeypatch.setattr(tc, "whisper_segments", lambda client, audio: segs)
+    assert tc.transcribe_lecture(object(), lec, tmp_path) == segs
+    assert json.loads((tmp_path / "c-0-0.whisper.json").read_text()) == segs
