@@ -1,0 +1,63 @@
+"""
+"Why is this my strong topic?" — answered from data already stored.
+
+concept_performance is only a running counter, so it cannot explain itself.
+But quiz_sessions already records every answer with its concept, so the
+attribution exists; this module is the read path over it. No new collection.
+
+Matching is by slugify() equality against the student's own answers. This is a
+READ path: it never calls concept_resolver.resolve(), which can create nodes.
+
+`merged_tags` are the loosely-named tags (`raw_concept` on this student's own
+answers) that were folded into the concept, which makes a merge auditable AND
+contestable: if the student says "those aren't the same thing", that is the best
+possible signal to split. The global concept_resolutions log is deliberately not
+read — it carries no student id, so using it would leak other students' notes.
+"""
+from app.services.concept_resolver import slugify
+from app.services.store import store
+
+
+async def explain_concept(user_id: str, concept: str) -> dict:
+    target = slugify(concept)
+    sessions = await store.query("quiz_sessions", "user_id", user_id)
+
+    buckets: dict[str, dict] = {}
+    merged: dict[str, int] = {}
+    attempts = correct = 0
+    for s in sessions:
+        matching = [a for a in s.get("answers", []) if slugify(a.get("concept", "")) == target]
+        if not matching:
+            continue
+        source = s.get("source", "course")
+        # Lab sessions carry a generic course_title ("Your own material"); the
+        # document title is the meaningful label for self-study.
+        if source == "self_study":
+            label = s.get("doc_title") or s.get("course_title")
+        else:
+            label = s.get("course_title") or s.get("doc_title")
+        label = label or "Unknown source"
+        done = s.get("completed_at", "")
+        b = buckets.setdefault(label, {
+            "label": label, "source": source, "attempts": 0, "correct": 0, "last_at": done})
+        for a in matching:
+            b["attempts"] += 1
+            attempts += 1
+            if a.get("correct"):
+                b["correct"] += 1
+                correct += 1
+            raw = (a.get("raw_concept") or "").strip()
+            if raw and slugify(raw) != target:
+                merged[raw] = merged.get(raw, 0) + 1
+        if done > b["last_at"]:
+            b["last_at"] = done
+
+    return {
+        "concept": concept,
+        "attempts": attempts,
+        "correct": correct,
+        "accuracy": round(correct / attempts, 3) if attempts else None,
+        "sources": sorted(buckets.values(), key=lambda b: (-b["attempts"], b["label"])),
+        "merged_tags": [{"candidate": c, "count": n}
+                        for c, n in sorted(merged.items(), key=lambda kv: (-kv[1], kv[0]))],
+    }
