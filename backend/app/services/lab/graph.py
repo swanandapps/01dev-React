@@ -29,6 +29,7 @@ from .llm import gen_objectives, gen_quiz, gen_summary
 class LessonState(TypedDict, total=False):
     doc: str
     doc_id: str
+    course_id: str | None                   # set when the doc is a course lecture
     student_id: str | None                  # verified uid of the lesson owner, if signed in
     title: str
     proposed_objectives: list[dict]

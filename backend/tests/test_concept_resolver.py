@@ -89,13 +89,16 @@ async def test_below_threshold_creates_a_new_node(store, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_new_node_from_a_lecture_source_attaches_to_that_course(store, monkeypatch):
+async def test_new_node_from_a_lecture_source_stays_out_of_the_fixed_taxonomy(store, monkeypatch):
     _stub_embeddings(monkeypatch, {"Fiber Architecture": [0.0, 1.0, 0.0]})
 
     assert await concept_resolver.resolve("Fiber Architecture", course_id="react-perf") \
         == "fiber-architecture"
     node = await store.get("concepts", "react-perf::fiber-architecture")
-    assert node["course_id"] == "react-perf"
+    # course_id=X means "part of course X's fixed taxonomy" to question_service,
+    # knowledge_graph_service etc. A discovered concept must not join it.
+    assert node["course_id"] is None
+    assert node["source_course_id"] == "react-perf"
 
 
 @pytest.mark.asyncio

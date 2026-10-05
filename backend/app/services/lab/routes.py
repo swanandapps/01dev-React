@@ -27,15 +27,18 @@ from fastapi.concurrency import run_in_threadpool
 from langgraph.types import Command
 from pydantic import BaseModel
 
-from app.auth import optional_student
+from app.auth import current_student, optional_student
 from app.deps import require_admin_key
-from app.services import adaptive_service, concept_resolver, recommendation_service
+from app.services import (
+    adaptive_service, catalog_service, concept_resolver, enrollment_service, recommendation_service,
+)
 from app.services.lab import artifact_store
 from app.services.lab.artifacts_graph import build_lab_graph
 from app.services.lab.generators import OUTPUT_TYPES
 from app.services.lab.graph import build_graph
 from app.services.lab.llm import tutor_answer
 from app.services.store import store
+from app.services.vector_store import vector_store
 
 log = logging.getLogger(__name__)
 
@@ -62,6 +65,10 @@ MAX_PDF_BYTES = 10 * 1024 * 1024  # 10 MB, checked before parsing
 class UploadTextReq(BaseModel):
     text: str
     title: str | None = None
+
+
+class UploadLectureReq(BaseModel):
+    lecture_id: str
 
 
 class StartReq(BaseModel):
@@ -219,7 +226,7 @@ async def _record_learner_model(student_id: str | None, lesson_id: str, v: dict,
         "user_id": student_id,
         "course_id": None,
         "course_title": v.get("title") or "Your own material",
-        "source": "self_study",
+        "source": "lecture" if course_id else "self_study",
         "doc_id": v.get("doc_id"),
         "doc_title": v.get("title") or "",
         "score": sum(1 for _, _, c in graded if c),
@@ -372,6 +379,40 @@ async def ask(lesson_id: str, req: AskReq):
     return {"answer": answer}
 
 
+@router.get("/lectures")
+async def list_course_lectures(course_id: str):
+    """Which lectures of this course have transcripts the Lab can use (titles
+    only). `course_id` is the transcript slug, e.g. "react-perf"."""
+    return vector_store.get_course_lectures(course_id)
+
+
+@router.post("/upload-lecture")
+async def upload_lecture(req: UploadLectureReq, uid: str = Depends(current_student)):
+    """Use an indexed course lecture as the material — no upload needed.
+
+    Transcripts are paid content, so the caller must be signed in and enrolled
+    in the lecture's course. Enrollments use the numeric catalog id while the
+    transcript's course_id is the slug; catalog_service bridges the two.
+    `course_id` is stored on the doc so a quiz built from it resolves concepts
+    with the lecture's course as their origin.
+    """
+    meta = vector_store.get_lecture_meta(req.lecture_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Unknown lecture")
+    course = catalog_service.by_slug(meta.get("course_id") or "")
+    enrolled = {c.get("id") for c in await enrollment_service.get_enrolled_courses(uid)}
+    if not course or course["id"] not in enrolled:
+        raise HTTPException(status_code=403, detail="Enroll in this course to use its lectures")
+    text = (vector_store.get_lecture_transcript(req.lecture_id) or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="lecture has no transcript text")
+    doc_id = uuid.uuid4().hex[:12]
+    title = meta.get("lecture_title") or req.lecture_id
+    DOCS[doc_id] = {"text": text[:MAX_TEXT_CHARS], "title": title,
+                    "course_id": meta.get("course_id"), "source": "lecture"}
+    return {"docId": doc_id, "title": title, "course_id": meta.get("course_id")}
+
+
 @router.post("/generate")
 async def generate_outputs(req: GenerateReq, uid: str | None = Depends(optional_student)):
     """Fan out to the selected artifacts, persist them, then start the quiz
@@ -435,7 +476,7 @@ async def generate_outputs(req: GenerateReq, uid: str | None = Depends(optional_
     lesson_values = await run_in_threadpool(
         GRAPH.invoke,
         {"doc": doc["text"], "title": doc["title"], "results": [], "doc_id": req.docId,
-         "student_id": uid},
+         "student_id": uid, "course_id": doc.get("course_id")},
         _cfg(lesson_id),
     )
     view = lesson_view(lesson_id, lesson_values)

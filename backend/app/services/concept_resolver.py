@@ -334,7 +334,12 @@ async def resolve(candidate, course_id: str | None = None) -> str:
     # 3. create a new node — the graph grows to fit the student
     scope = course_id or _SELF_STUDY_SCOPE
     doc = {
-        "course_id": course_id,     # None for self-study, deliberately not a string
+        # ALWAYS None: any node with course_id=X is read as part of course X's
+        # fixed taxonomy (question_service, knowledge_graph_service, skill graph,
+        # seed_demo_account). Discovered concepts must not join it; the origin is
+        # recorded separately. Never a sentinel string either.
+        "course_id": None,
+        "source_course_id": course_id,
         "name": slug,
         "description": "",
         "created_by": "student_content",
