@@ -115,12 +115,12 @@ def test_approve_then_submit_walks_the_quiz_to_completion(client):
     assert v["quiz"]["questions"][0]["explanation"], "interactive UI needs explanation"
 
     # finish objective 1 → still quizzing, now on objective 2
-    v = client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 2, "total": 2}).json()
+    v = client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 2, "total": 2, "objective_index": 0}).json()
     assert v["status"] == "quizzing"
     assert v["objectiveIndex"] == 1
 
     # finish objective 2 → complete, with a summary
-    v = client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 2, "total": 2}).json()
+    v = client.post(f"/api/lab/lessons/{lid}/submit", json={"score": 2, "total": 2, "objective_index": 1}).json()
     assert v["status"] == "complete"
     assert v["summary"]["overall"] == "Good work."
 

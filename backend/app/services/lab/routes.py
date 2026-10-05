@@ -82,6 +82,10 @@ class AnswerResult(BaseModel):
 class SubmitReq(BaseModel):
     score: int
     total: int
+    # Index of the objective whose quiz is being submitted. A stale or repeated
+    # submit (double-click, retry) names an objective the lesson already moved
+    # past and is rejected with 409 before anything is resumed or written.
+    objective_index: int = 0
     # First attempt per question, in any order. Optional so an older client that
     # sends only score/total keeps working (it just writes nothing to the
     # learner model). Identity is NEVER read from the body.
@@ -95,7 +99,6 @@ class AskReq(BaseModel):
 class GenerateReq(BaseModel):
     docId: str
     outputs: list[str]
-    student_id: str = ""
 
 
 # Langfuse tracing for the graph run: one trace per lesson, span per node,
@@ -210,9 +213,6 @@ async def _record_learner_model(student_id: str | None, lesson_id: str, v: dict,
         if raw not in canonical:
             canonical[raw] = await concept_resolver.resolve(raw, course_id)
 
-    for _, raw, correct in graded:
-        await adaptive_service._update_perf(student_id, canonical[raw], correct)
-
     recs = [{"concept": canonical[raw], "correct": correct} for _, raw, correct in graded]
     await store.set("quiz_sessions", session_id, {
         "session_id": session_id,
@@ -232,6 +232,13 @@ async def _record_learner_model(student_id: str | None, lesson_id: str, v: dict,
         "concept_breakdown": _breakdown(recs),
         "completed_at": datetime.now(timezone.utc).isoformat(),
     })
+    # Write-first claim: the session row is the idempotency marker, so it goes
+    # BEFORE the perf updates. A failure partway through under-counts (and is
+    # logged by the caller) instead of double-counting on retry. Not atomic: the
+    # store has no create-if-absent primitive, so two truly concurrent POSTs for
+    # the same objective can still both pass the existence check above.
+    for _, raw, correct in graded:
+        await adaptive_service._update_perf(student_id, canonical[raw], correct)
     await recommendation_service.invalidate(student_id)
 
 
@@ -339,6 +346,8 @@ async def approve_lesson(lesson_id: str, req: ApproveReq):
 async def submit_result(lesson_id: str, req: SubmitReq,
                         uid: str | None = Depends(optional_student)):
     v = _state_values(lesson_id)  # captured BEFORE resuming: the graph moves on
+    if req.objective_index != v.get("objective_index", 0):
+        raise HTTPException(status_code=409, detail="Objective already submitted")
     _audit("objective_submitted", lesson_id, score=req.score, total=req.total)
     values = await run_in_threadpool(
         GRAPH.invoke,
@@ -395,13 +404,13 @@ async def generate_outputs(req: GenerateReq, uid: str | None = Depends(optional_
     values = await run_in_threadpool(
         LAB_GRAPH.invoke,
         {"document": doc["text"], "doc_id": req.docId, "doc_title": doc["title"],
-         "student_id": req.student_id, "outputs_requested": wanted, "artifacts": {}},
+         "student_id": uid or "", "outputs_requested": wanted, "artifacts": {}},
         _cfg(f"lab-{run_id}"),
     )
     artifacts = values.get("artifacts", {})
     for artifact_type, content in artifacts.items():
         await artifact_store.save(
-            req.student_id, req.docId, doc["title"], artifact_type, content,
+            uid or "", req.docId, doc["title"], artifact_type, content,
         )
 
     # Chosen failure semantics, not yet made idempotent: artifacts are

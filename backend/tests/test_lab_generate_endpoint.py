@@ -28,6 +28,8 @@ def client(monkeypatch):
     })
     # rebuild the graph so the patched generate is picked up by fresh nodes
     monkeypatch.setattr(routes, "LAB_GRAPH", artifacts_graph.build_lab_graph())
+    from app.auth import optional_student
+    monkeypatch.setitem(app.dependency_overrides, optional_student, lambda: "s1")
     return TestClient(app), s
 
 
@@ -204,6 +206,8 @@ def test_generate_with_no_student_id_persists_nothing(client):
     route doesn't work around that (e.g. by defaulting to some sentinel id)."""
     from app.services.lab.artifact_store import COLLECTION
 
+    from app.auth import optional_student
+    app.dependency_overrides[optional_student] = lambda: None
     c, store = client
     doc = c.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
     r = c.post("/api/lab/generate", json={"docId": doc, "outputs": ["summary"]})
@@ -234,3 +238,12 @@ def test_upload_pdf_content_length_rejects_before_reading_body(monkeypatch):
                     files={"file": ("notes.pdf", oversize, "application/pdf")})
     assert r.status_code == 400
     assert not called, "body must be rejected via Content-Length before being read"
+
+
+def test_artifacts_are_saved_under_the_token_uid_not_the_body(client):
+    from app.services.lab.artifact_store import COLLECTION
+
+    c, store = client  # fixture's token uid is "s1"
+    doc = c.post("/api/lab/upload-text", json={"text": "Closures."}).json()["docId"]
+    c.post("/api/lab/generate", json={"docId": doc, "outputs": ["summary"], "student_id": "victim"})
+    assert {r["student_id"] for r in store._db.get(COLLECTION, {}).values()} == {"s1"}

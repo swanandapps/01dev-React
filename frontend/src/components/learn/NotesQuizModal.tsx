@@ -174,7 +174,8 @@ export function NotesQuizModal({
     if (correct && last) {
       setQuizBusy(true);
       try {
-        const view = await api.submitResult(lesson.id, firstTry, lesson.quiz.questions.length, answerLog);
+        const view = await api.submitResult(lesson.id, firstTry, lesson.quiz.questions.length, answerLog,
+          lesson.objectiveIndex ?? 0);
         applyLesson(view);
       } catch (e) {
         setError((e as Error).message);

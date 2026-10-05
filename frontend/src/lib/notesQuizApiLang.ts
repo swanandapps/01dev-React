@@ -66,8 +66,11 @@ export function submitResult(
   score: number,
   total: number,
   answers: AnswerResult[] = [],
+  objectiveIndex = 0,
 ): Promise<LessonView> {
-  return post<LessonView>(`/lessons/${id}/submit`, { score, total, answers });
+  return post<LessonView>(`/lessons/${id}/submit`, {
+    score, total, answers, objective_index: objectiveIndex,
+  });
 }
 
 export function askTutor(id: string, question: string): Promise<{ answer: string }> {

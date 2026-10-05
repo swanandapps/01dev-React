@@ -155,3 +155,50 @@ def test_courses_engaged_ignores_courseless_sessions():
         [{**base, "course_id": None}, {**base, "course_id": "c1"}], [])
     metrics = out[0] if isinstance(out, tuple) else out
     assert metrics["courses_engaged"] == 1
+
+
+async def test_stale_resubmit_is_409_and_the_next_objective_still_records(env, monkeypatch):
+    from app.services.lab import graph as lab_graph
+    c, s, _ = env
+    monkeypatch.setattr(lab_graph, "gen_objectives", lambda doc, title: [
+        {"id": "o1", "title": "A", "difficulty": "beginner", "focus": "a"},
+        {"id": "o2", "title": "B", "difficulty": "beginner", "focus": "b"}])
+    doc = c.post("/api/lab/upload-text", json={"text": "x", "title": "T"}).json()["docId"]
+    lesson = c.post("/api/lab/lessons", json={"docId": doc}).json()
+    lid = lesson["id"]
+    c.post(f"/api/lab/lessons/{lid}/approve",
+           json={"objectives": lesson["plan"]["objectives"], "questionsPerQuiz": 3})
+    body = {"score": 2, "total": 3, "answers": ANSWERS, "objective_index": 0}
+    assert c.post(f"/api/lab/lessons/{lid}/submit", json=body).status_code == 200
+    perf_before = await s.get("concept_performance", "s1__react-memo")
+    assert c.post(f"/api/lab/lessons/{lid}/submit", json=body).status_code == 409
+    assert await s.get("concept_performance", "s1__react-memo") == perf_before
+    assert len(await s.query("quiz_sessions", "user_id", "s1")) == 1
+    assert lab_routes._state_values(lid)["objective_index"] == 1  # graph not advanced again
+    r = c.post(f"/api/lab/lessons/{lid}/submit", json={**body, "objective_index": 1})
+    assert r.status_code == 200
+    ids = sorted(x["session_id"] for x in await s.query("quiz_sessions", "user_id", "s1"))
+    assert ids == [f"lab-{lid}-o0", f"lab-{lid}-o1"]
+
+
+async def test_partial_perf_failure_leaves_the_claim_and_retry_adds_nothing(env, monkeypatch):
+    c, s, _ = env
+    lid = _start(c)
+    v = lab_routes._state_values(lid)
+    answers = [lab_routes.AnswerResult(**a) for a in ANSWERS]
+    real = adaptive_service._update_perf
+    calls = []
+
+    async def flaky(uid, concept, correct):
+        calls.append(concept)
+        if len(calls) == 2:
+            raise RuntimeError("db blip")
+        await real(uid, concept, correct)
+
+    monkeypatch.setattr(adaptive_service, "_update_perf", flaky)
+    with pytest.raises(RuntimeError):
+        await lab_routes._record_learner_model("s1", lid, v, answers)
+    assert len(await s.query("quiz_sessions", "user_id", "s1")) == 1  # claim exists
+    n = len(calls)
+    await lab_routes._record_learner_model("s1", lid, v, answers)  # retry
+    assert len(calls) == n  # no further perf writes

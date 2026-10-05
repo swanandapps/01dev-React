@@ -108,7 +108,7 @@ export function LabStudio({
         if (!text) throw new Error("Please enter some notes or a topic.");
         docId = (await quizApi.uploadText(text, topic.trim() || undefined)).docId;
       }
-      const res = await generateOutputs(docId, selected, studentId);
+      const res = await generateOutputs(docId, selected);
       setArtifacts(res.artifacts ?? {});
       setLessonId(res.lesson_id);
       setStep("results");

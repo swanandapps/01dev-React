@@ -43,13 +43,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 export function generateOutputs(
   docId: string,
   outputs: OutputType[],
-  studentId = "",
 ): Promise<GenerateResponse> {
-  return post<GenerateResponse>("/generate", {
-    docId,
-    outputs,
-    student_id: studentId,
-  });
+  return post<GenerateResponse>("/generate", { docId, outputs });
 }
 
 export const OUTPUT_LABELS: Record<OutputType, { label: string; blurb: string }> = {
