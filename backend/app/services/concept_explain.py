@@ -22,7 +22,7 @@ async def explain_concept(user_id: str, concept: str) -> dict:
     target = slugify(concept)
     sessions = await store.query("quiz_sessions", "user_id", user_id)
 
-    buckets: dict[str, dict] = {}
+    buckets: dict[tuple, dict] = {}
     merged: dict[str, int] = {}
     attempts = correct = 0
     for s in sessions:
@@ -32,13 +32,16 @@ async def explain_concept(user_id: str, concept: str) -> dict:
         source = s.get("source", "course")
         # Lab sessions carry a generic course_title ("Your own material"); the
         # document title is the meaningful label for self-study.
-        if source == "self_study":
+        if source in ("self_study", "lecture"):
             label = s.get("doc_title") or s.get("course_title")
         else:
             label = s.get("course_title") or s.get("doc_title")
         label = label or "Unknown source"
+        # Key on the source's identity, not its label: a course titled "X" and a
+        # Lab doc titled "X" are different sources. Label only as a last resort.
+        key = (source, s.get("doc_id") or s.get("course_id") or label)
         done = s.get("completed_at", "")
-        b = buckets.setdefault(label, {
+        b = buckets.setdefault(key, {
             "label": label, "source": source, "attempts": 0, "correct": 0, "last_at": done})
         for a in matching:
             b["attempts"] += 1

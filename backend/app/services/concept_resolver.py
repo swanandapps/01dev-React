@@ -1,9 +1,11 @@
 """
 One concept space, resolved rather than siloed.
 
-Every concept write goes through here — the graded course quiz
-(adaptive_service), Hermes's chat observations (skill_graph_service
-.record_observation), and Lab quizzes built from a student's own material.
+Concept writes from open-vocabulary sources go through here: the Lab submit
+path (quizzes built from a student's own material), Hermes's chat observations
+(skill_graph_service.record_observation), and lecture-sourced Lab sessions.
+Graded course quizzes (adaptive_service) deliberately do NOT — they key on the
+course's fixed taxonomy.
 
 The product requirement this serves: a student studying closures from their own
 notes should move the *existing* `closures` weights, while a student studying
@@ -92,7 +94,9 @@ robustness the first fix-round didn't cover):
   trusted rather than treated as stale; only an explicit mismatch forces
   re-embed.
 """
+import asyncio
 import hashlib
+import logging
 import re
 import unicodedata
 from datetime import datetime, timezone
@@ -100,7 +104,12 @@ from datetime import datetime, timezone
 from app.services.embeddings import embedding_service
 from app.services.store import store
 
+logger = logging.getLogger(__name__)
+
 CONCEPTS = "concepts"
+# Per-call cap on any embedding request made by resolve(). An embeddings outage
+# or hang must degrade to "slug, no node" rather than stall a chat turn / Lab submit.
+EMBED_TIMEOUT_S = 5.0
 RESOLUTIONS = "concept_resolutions"
 SIMILARITY_THRESHOLD = 0.64
 
@@ -193,7 +202,7 @@ async def _try_backfill(doc_id: str, node: dict):
     embedding branch, never a crash; that property must survive a failed
     backfill attempt too."""
     try:
-        vec = await embedding_service.embed(node.get("name", ""))
+        vec = await asyncio.wait_for(embedding_service.embed(node.get("name", "")), EMBED_TIMEOUT_S)
         await store.set(CONCEPTS, doc_id, {
             **node,
             "embedding": vec,
@@ -275,7 +284,16 @@ async def resolve(candidate, course_id: str | None = None) -> str:
 
     if candidate_is_embeddable:
         did_compare = True
-        candidate_vec = await embedding_service.embed(candidate)
+        try:
+            candidate_vec = await asyncio.wait_for(embedding_service.embed(candidate), EMBED_TIMEOUT_S)
+        except Exception as e:  # incl. asyncio.TimeoutError
+            logger.warning("concept_resolver: embed failed (%s); falling back to slug %r, no node created",
+                           type(e).__name__, slug)
+            try:
+                await _log(candidate, slug, "embed_failed", None, used_fallback_slug=used_fallback_slug)
+            except Exception:
+                pass
+            return slug
         candidate_dim = len(candidate_vec)
 
         # 2. embedding compare against cached concept embeddings. Cold pool

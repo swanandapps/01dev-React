@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from app.auth import optional_student
 from app.main import app
-from app.services import adaptive_service, concept_resolver, journey_service
+from app.services import adaptive_service, concept_resolver, journey_service, recommendation_service
 from app.services.lab import routes as lab_routes
 from app.services.store import InMemoryStore
 
@@ -19,6 +19,7 @@ def env(monkeypatch):
     s = InMemoryStore()
     monkeypatch.setattr(lab_routes, "store", s)
     monkeypatch.setattr(adaptive_service, "store", s)
+    monkeypatch.setattr(recommendation_service, "store", s)  # invalidate() deletes from it
     resolved = []
 
     async def fake_resolve(candidate, course_id=None):
@@ -202,3 +203,21 @@ async def test_partial_perf_failure_leaves_the_claim_and_retry_adds_nothing(env,
     n = len(calls)
     await lab_routes._record_learner_model("s1", lid, v, answers)  # retry
     assert len(calls) == n  # no further perf writes
+
+
+async def test_submit_after_completion_is_rejected_without_a_duplicate_session(env):
+    c, s, _ = env
+    lid = _start(c)
+    ok = c.post(f"/api/lab/lessons/{lid}/submit", json={"score": 2, "total": 3, "answers": ANSWERS})
+    assert ok.status_code == 200 and ok.json()["status"] == "complete"
+    before = await s.query("quiz_sessions", "user_id", "s1")
+    perf_before = (await s.get("concept_performance", "s1__react-memo"))["attempts"]
+
+    # objective_index defaults to 0 and the lesson has moved past it, so craft a replay
+    # that still passes the index check by pinning the state's own index.
+    idx = lab_routes._state_values(lid).get("objective_index", 0)
+    r = c.post(f"/api/lab/lessons/{lid}/submit",
+               json={"score": 2, "total": 3, "answers": ANSWERS, "objective_index": idx})
+    assert r.status_code == 409
+    assert await s.query("quiz_sessions", "user_id", "s1") == before
+    assert (await s.get("concept_performance", "s1__react-memo"))["attempts"] == perf_before

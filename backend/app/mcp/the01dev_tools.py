@@ -317,7 +317,8 @@ async def explain_concept(concept: str, student_id: str) -> dict:
 
     Returns total `attempts`/`correct`/`accuracy` plus `sources`: one entry per
     course or per piece of the student's own uploaded material, each with its own
-    attempts/correct. `source` is "course" or "self_study" — say which, plainly,
+    attempts/correct. `source` is "course", "lecture" (a course lecture studied in the Lab) or
+    "self_study" — say which, plainly,
     because a student may not remember quizzing themselves on their own notes.
 
     `merged_tags` lists loosely-named tags (with counts) that were treated as THIS

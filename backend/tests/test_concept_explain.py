@@ -92,3 +92,31 @@ async def test_unknown_concept_reports_no_attempts(store):
     assert out["sources"] == []
     assert out["accuracy"] is None
     assert out["merged_tags"] == []
+
+
+async def test_course_and_lab_doc_with_the_same_title_stay_separate_sources(store):
+    await store.set("quiz_sessions", "course-1", {
+        "user_id": "s1", "course_id": "react-perf", "course_title": "X",
+        "completed_at": "2026-09-01T00:00:00+00:00",
+        "answers": [{"concept": "react-memo", "correct": True}],
+    })
+    await store.set("quiz_sessions", "lab-1", {
+        "user_id": "s1", "course_id": None, "course_title": "Your own material",
+        "doc_id": "d1", "doc_title": "X", "source": "self_study",
+        "completed_at": "2026-09-18T00:00:00+00:00",
+        "answers": [{"concept": "react-memo", "correct": False}],
+    })
+    out = await concept_explain.explain_concept("s1", "react-memo")
+    assert len(out["sources"]) == 2
+    assert {(s["label"], s["source"]) for s in out["sources"]} == {("X", "course"), ("X", "self_study")}
+
+
+async def test_lecture_session_is_labelled_as_a_lecture_source(store):
+    await store.set("quiz_sessions", "lab-2", {
+        "user_id": "s1", "course_id": None, "course_title": "4.1 - React.memo and useCallback",
+        "doc_id": "d2", "doc_title": "4.1 - React.memo and useCallback", "source": "lecture",
+        "completed_at": "2026-09-19T00:00:00+00:00",
+        "answers": [{"concept": "react-memo", "correct": True}],
+    })
+    out = await concept_explain.explain_concept("s1", "react-memo")
+    assert [(s["label"], s["source"]) for s in out["sources"]] == [("4.1 - React.memo and useCallback", "lecture")]

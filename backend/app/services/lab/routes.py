@@ -355,6 +355,8 @@ async def submit_result(lesson_id: str, req: SubmitReq,
     v = _state_values(lesson_id)  # captured BEFORE resuming: the graph moves on
     if req.objective_index != v.get("objective_index", 0):
         raise HTTPException(status_code=409, detail="Objective already submitted")
+    if v.get("status") != "quizzing":
+        raise HTTPException(status_code=409, detail="Lesson is not awaiting a quiz submission")
     _audit("objective_submitted", lesson_id, score=req.score, total=req.total)
     values = await run_in_threadpool(
         GRAPH.invoke,

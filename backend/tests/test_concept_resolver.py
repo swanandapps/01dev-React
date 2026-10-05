@@ -513,3 +513,53 @@ async def test_stale_model_tag_triggers_reembed_even_with_matching_dim(store, mo
     node = await store.get("concepts", "react-perf::event-loop")
     assert node["embedding"] == [0.0, 0.0, 1.0]
     assert node["embedding_model"] != "stale-model-v0"
+
+
+@pytest.mark.asyncio
+async def test_embed_outage_falls_back_to_slug_without_creating_a_node(store, monkeypatch):
+    async def down(text):
+        raise RuntimeError("embeddings are down")
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", down)
+
+    assert await concept_resolver.resolve("Kubernetes Pods") == "kubernetes-pods"  # must not raise
+    assert await store.list_all("concepts") == []
+    logged = await store.list_all("concept_resolutions")
+    assert [e["method"] for e in logged] == ["embed_failed"]
+
+
+@pytest.mark.asyncio
+async def test_embed_hang_times_out_and_falls_back_quickly(store, monkeypatch):
+    import asyncio
+    import time
+
+    async def hang(text):
+        await asyncio.sleep(30)
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", hang)
+    monkeypatch.setattr(concept_resolver, "EMBED_TIMEOUT_S", 0.05)
+
+    t0 = time.monotonic()
+    assert await concept_resolver.resolve("Kubernetes Pods") == "kubernetes-pods"
+    assert time.monotonic() - t0 < 2
+    assert await store.list_all("concepts") == []
+
+
+@pytest.mark.asyncio
+async def test_backfill_embed_hang_is_bounded_too(store, monkeypatch):
+    import asyncio
+
+    await store.set("concepts", "react-perf::closures", {"course_id": "react-perf", "name": "closures"})
+
+    async def slow_for_pool_node(text):
+        if text == "closures":
+            await asyncio.sleep(30)
+        return [0.0, 1.0, 0.0]
+
+    from app.services import embeddings
+    monkeypatch.setattr(embeddings.embedding_service, "embed", slow_for_pool_node)
+    monkeypatch.setattr(concept_resolver, "EMBED_TIMEOUT_S", 0.05)
+
+    assert await concept_resolver.resolve("Something Else Entirely") == "something-else-entirely"

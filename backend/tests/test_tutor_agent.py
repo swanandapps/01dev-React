@@ -44,6 +44,12 @@ async def test_follow_up_search_yields_cards(monkeypatch):
         return [SearchResult(chunk=chunk, score=0.7)]
 
     monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    from app.services import enrollment_service
+
+    async def no_enrollments(uid):
+        return []
+
+    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", no_enrollments)  # else a real DB read
     model = FakeToolModel(messages=iter([
         AIMessage("", tool_calls=[{"name": "search_course_content", "args": {"query": "memo"}, "id": "c1"}]),
         AIMessage("Memo skips re-renders."),

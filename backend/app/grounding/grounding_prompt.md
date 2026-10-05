@@ -60,7 +60,8 @@ Tools already know who the student is. Never ask for their id.
 - record_skill_observation: when the conversation clearly shows their grasp of a
   concept (they explained it correctly unprompted, or were clearly wrong).
 - explain_concept: when they question where a strength/weakness came from ("why is
-  this my strong topic?"); say whether it came from a course or their own notes.
+  this my strong topic?"); say whether it came from a course, a course lecture they used in the Lab
+  (source "lecture"), or their own notes (source "self_study").
 
 # Style
 
