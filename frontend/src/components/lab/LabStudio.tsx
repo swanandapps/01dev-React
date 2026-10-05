@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Upload, NotebookPen, Loader2, Sparkles, ChevronRight, Check, RotateCcw,
-  FlaskConical, X,
+  FlaskConical, X, Video,
 } from "lucide-react";
 import * as quizApi from "../../lib/notesQuizApiLang";
-import { generateOutputs, OUTPUT_LABELS } from "../../lib/labApi";
-import type { LabArtifacts, OutputType } from "../../lib/labApi";
+import { generateOutputs, getLectures, uploadLecture, OUTPUT_LABELS } from "../../lib/labApi";
+import type { LabArtifacts, Lecture, OutputType } from "../../lib/labApi";
 import { ArtifactView } from "./ArtifactView";
 import { NotesQuizModal } from "../learn/NotesQuizModal";
 
-type InputMode = "text" | "pdf";
+type InputMode = "text" | "pdf" | "lecture";
 type Step = "input" | "generating" | "results";
 
 const ALL_OUTPUTS: OutputType[] = ["quiz", "flashcards", "summary", "study_plan"];
@@ -54,15 +54,17 @@ function StudioHeader({
 export function LabStudio({
   studentId,
   onClose,
-  lectureText,
+  courseId,
 }: {
   studentId: string;
   onClose: () => void;
-  lectureText?: string;
+  courseId?: string;
 }) {
-  const [mode, setMode] = useState<InputMode>("text");
+  const [mode, setMode] = useState<InputMode>(courseId ? "lecture" : "text");
   const [topic, setTopic] = useState("");
-  const [notes, setNotes] = useState(lectureText ?? "");
+  const [notes, setNotes] = useState("");
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [lectureId, setLectureId] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -89,11 +91,27 @@ export function LabStudio({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  // In a course, ask the backend which lectures have transcripts.
+  useEffect(() => {
+    if (!courseId) return;
+    getLectures(courseId)
+      .then((ls) => {
+        setLectures(ls);
+        if (ls.length) setLectureId(ls[0].lecture_id);
+      })
+      .catch(() => setLectures([]));
+  }, [courseId]);
+
   const toggle = (t: OutputType) =>
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
   const canSubmit =
-    selected.length > 0 && (mode === "pdf" ? !!pdfFile : !!(notes.trim() || topic.trim()));
+    selected.length > 0 &&
+    (mode === "pdf"
+      ? !!pdfFile
+      : mode === "lecture"
+      ? !!lectureId
+      : !!(notes.trim() || topic.trim()));
 
   async function handleGenerate() {
     setError("");
@@ -103,6 +121,9 @@ export function LabStudio({
       if (mode === "pdf") {
         if (!pdfFile) throw new Error("Please choose a PDF file.");
         docId = (await quizApi.uploadPdf(pdfFile)).docId;
+      } else if (mode === "lecture") {
+        if (!lectureId) throw new Error("Please pick a lecture.");
+        docId = (await uploadLecture(lectureId)).docId;
       } else {
         const text = notes.trim() || topic.trim();
         if (!text) throw new Error("Please enter some notes or a topic.");
@@ -123,7 +144,7 @@ export function LabStudio({
     setArtifacts({});
     setLessonId(null);
     setError("");
-    setNotes(lectureText ?? "");
+    setNotes("");
     setTopic("");
     setPdfFile(null);
     setFileName("");
@@ -164,8 +185,8 @@ export function LabStudio({
       ? "Working through your material…"
       : step === "results"
       ? "Here's what we made"
-      : lectureText
-      ? "Using this lecture's transcript"
+      : courseId
+      ? "Use a lecture from this course, or your own material"
       : "Bring your material, then pick what to make";
 
   return (
@@ -180,9 +201,9 @@ export function LabStudio({
 
       {step === "input" && (
         <>
-          {!lectureText && (
+          {(
             <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
-              {(["text", "pdf"] as InputMode[]).map((m) => (
+              {(["text", "pdf", ...(courseId ? (["lecture"] as const) : [])] as InputMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
@@ -192,20 +213,20 @@ export function LabStudio({
                       : "text-zinc-400 hover:text-zinc-200"
                   }`}
                 >
-                  {m === "pdf" ? <Upload className="w-3.5 h-3.5" /> : <NotebookPen className="w-3.5 h-3.5" />}
-                  {m === "pdf" ? "Upload PDF" : "Type notes / topic"}
+                  {m === "pdf" ? (
+                    <Upload className="w-3.5 h-3.5" />
+                  ) : m === "lecture" ? (
+                    <Video className="w-3.5 h-3.5" />
+                  ) : (
+                    <NotebookPen className="w-3.5 h-3.5" />
+                  )}
+                  {m === "pdf" ? "Upload PDF" : m === "lecture" ? "This course" : "Type notes / topic"}
                 </button>
               ))}
             </div>
           )}
 
-          {lectureText && (
-            <p className="text-xs text-indigo-300 bg-indigo-950/30 border border-indigo-800/40 rounded-xl px-4 py-3">
-              Using this lecture's transcript as your material — no upload needed.
-            </p>
-          )}
-
-          {mode === "text" ? (
+          {mode === "text" && (
             <div className="flex flex-col gap-3">
               <div>
                 <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wide">
@@ -231,7 +252,9 @@ export function LabStudio({
                 />
               </div>
             </div>
-          ) : (
+          )}
+
+          {mode === "pdf" && (
             <div
               onClick={() => fileRef.current?.click()}
               className="border-2 border-dashed border-zinc-700 hover:border-indigo-500/50 rounded-xl p-10 text-center cursor-pointer transition-colors"
@@ -252,6 +275,30 @@ export function LabStudio({
                   if (f) { setPdfFile(f); setFileName(f.name); }
                 }}
               />
+            </div>
+          )}
+
+          {mode === "lecture" && (
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
+                Pick a lecture
+              </label>
+              {lectures.length === 0 ? (
+                <p className="text-sm text-zinc-500 bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-3">
+                  No transcripts are available for this course yet — paste notes or upload a PDF instead.
+                </p>
+              ) : (
+                <select
+                  value={lectureId}
+                  onChange={(e) => setLectureId(e.target.value)}
+                  className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 outline-none focus:border-indigo-500/60"
+                >
+                  {lectures.map((l) => (
+                    <option key={l.lecture_id} value={l.lecture_id}>{l.lecture_title}</option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-zinc-600">Uses the lecture's transcript — nothing to upload.</p>
             </div>
           )}
 

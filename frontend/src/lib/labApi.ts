@@ -53,3 +53,19 @@ export const OUTPUT_LABELS: Record<OutputType, { label: string; blurb: string }>
   summary: { label: "Quick revision", blurb: "A short summary to re-read" },
   study_plan: { label: "Study plan", blurb: "An ordered roadmap to work through" },
 };
+
+export type Lecture = { lecture_id: string; lecture_title: string };
+
+export async function getLectures(courseId: string): Promise<Lecture[]> {
+  const res = await fetch(`${BASE}/lectures?course_id=${encodeURIComponent(courseId)}`, {
+    headers: { ...(await authHeaders()) },
+  });
+  if (!res.ok) throw new Error(`Lab API error ${res.status}`);
+  return res.json();
+}
+
+export function uploadLecture(
+  lectureId: string,
+): Promise<{ docId: string; title: string; course_id: string }> {
+  return post("/upload-lecture", { lecture_id: lectureId });
+}
