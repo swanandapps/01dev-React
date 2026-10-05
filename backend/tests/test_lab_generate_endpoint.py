@@ -174,26 +174,6 @@ def test_generate_unknown_doc_is_404(client):
     assert r.status_code == 404
 
 
-def test_library_returns_the_students_artifacts(client):
-    c, _ = client
-    doc = c.post("/api/lab/upload-text",
-                 json={"text": "Closures.", "title": "Notes"}).json()["docId"]
-    c.post("/api/lab/generate", json={
-        "docId": doc, "outputs": ["summary"], "student_id": "s1"})
-    lib = c.get("/api/lab/library?student_id=s1").json()
-    assert len(lib) == 1
-    assert lib[0]["artifact_type"] == "summary"
-    assert lib[0]["doc_title"] == "Notes"
-
-
-def test_library_is_empty_for_another_student(client):
-    c, _ = client
-    doc = c.post("/api/lab/upload-text", json={"text": "C."}).json()["docId"]
-    c.post("/api/lab/generate", json={
-        "docId": doc, "outputs": ["summary"], "student_id": "s1"})
-    assert c.get("/api/lab/library?student_id=s2").json() == []
-
-
 def test_generate_actually_calls_save_for_each_artifact(client):
     """Not just a shape check: prove persistence is happening. Store must
     contain one row per generated artifact, keyed under lab_artifacts, and

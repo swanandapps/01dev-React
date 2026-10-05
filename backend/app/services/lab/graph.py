@@ -1,11 +1,10 @@
-"""The Lab quiz flow as a LangGraph StateGraph — a 1:1 re-implementation of the Mastra/
-Memorang V2 lesson workflow, on a local sovereign model.
+"""The Lab quiz flow as a LangGraph StateGraph.
 
-Mastra  → LangGraph mapping:
-  workflow step         → graph node
-  suspend()/resume()    → interrupt() + Command(resume=…) with a checkpointer
-  agent call            → node calling the local model (see llm.py)
-  workflow state         → StateGraph channels (durable via the checkpointer)
+How it is built:
+  each step             → graph node
+  human-in-the-loop     → interrupt() + Command(resume=…) with a checkpointer
+  model call            → node calling the model (see llm.py)
+  lesson state          → StateGraph channels (durable via the checkpointer)
 
 Flow:
   plan_objectives → await_approval(HITL) → generate_quiz → await_submit(HITL)
@@ -44,7 +43,7 @@ class LessonState(TypedDict, total=False):
 
 # ── Nodes ────────────────────────────────────────────────────────────────────
 def plan_objectives(state: LessonState) -> dict:
-    """Planner: draft objectives from the material (Mastra's plan step)."""
+    """Planner: draft objectives from the material."""
     proposed = gen_objectives(state["doc"], state.get("title"))
     return {"proposed_objectives": proposed, "status": "awaiting_approval"}
 

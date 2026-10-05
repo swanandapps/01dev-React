@@ -1,0 +1,60 @@
+{
+  "_comment": "Fixed concept taxonomy for the demo courses. The question banks (question_banks.json), the demo student's quiz sessions (demo_student.json) and the knowledge graph (concepts + concept_relationships) all use exactly these tags. Edge source->target with type prerequisite_of means source must be understood before target.",
+  "courses": {
+    "react-perf": {
+      "title": "React Performance Patterns",
+      "concepts": [
+        {"name": "shallow-equality", "description": "Primitives compare by value; objects, arrays, and functions compare by reference."},
+        {"name": "react-memo", "description": "React.memo skips a component's re-render when its props are shallowly equal to the previous render."},
+        {"name": "use-callback", "description": "useCallback keeps a function reference stable across renders as long as its dependencies don't change."},
+        {"name": "use-memo", "description": "useMemo memoizes a computed value and only recomputes it when its dependencies change."}
+      ],
+      "relationships": [
+        {"source": "shallow-equality", "target": "react-memo", "type": "prerequisite_of"},
+        {"source": "use-callback", "target": "react-memo", "type": "prerequisite_of"},
+        {"source": "use-memo", "target": "use-callback", "type": "related_to"}
+      ]
+    },
+    "javascript-deep-dive": {
+      "title": "JavaScript Deep Dive",
+      "concepts": [
+        {"name": "prototype-inheritance", "description": "Every object has an internal link to another object, its prototype, and property lookups walk that chain."},
+        {"name": "class-syntax-sugar", "description": "The `class` keyword is syntactic sugar over the same prototype chain — Dog.prototype gets Animal.prototype as its prototype."},
+        {"name": "v8-hidden-classes", "description": "V8 creates an internal hidden class describing an object's shape; adding properties in a different order produces a different hidden class."},
+        {"name": "event-loop", "description": "A single call stack plus a macrotask queue (setTimeout, etc.) — the next macrotask runs once the stack empties."},
+        {"name": "microtask-queue", "description": "Promises resolve into a separate, higher-priority microtask queue that fully drains before the next macrotask runs."}
+      ],
+      "relationships": [
+        {"source": "prototype-inheritance", "target": "class-syntax-sugar", "type": "prerequisite_of"},
+        {"source": "event-loop", "target": "microtask-queue", "type": "prerequisite_of"},
+        {"source": "v8-hidden-classes", "target": "prototype-inheritance", "type": "related_to"}
+      ]
+    },
+    "web-apis": {
+      "title": "Web APIs and Real-Time",
+      "concepts": [
+        {"name": "http-upgrade", "description": "A WebSocket starts life as an ordinary HTTP GET carrying an Upgrade: websocket header asking the server to switch protocols."},
+        {"name": "websocket-handshake", "description": "The server answers 101 Switching Protocols with a Sec-WebSocket-Accept derived from the client's key, after which the connection is full-duplex."},
+        {"name": "long-polling", "description": "The client sends a request the server deliberately holds open until data is available, then immediately re-requests — a simulated push."},
+        {"name": "polling-vs-websockets", "description": "Long-polling pays a full HTTP request per message with a reconnect gap; a WebSocket keeps one long-lived full-duplex connection with tiny framing overhead."}
+      ],
+      "relationships": [
+        {"source": "http-upgrade", "target": "websocket-handshake", "type": "prerequisite_of"},
+        {"source": "websocket-handshake", "target": "polling-vs-websockets", "type": "prerequisite_of"},
+        {"source": "long-polling", "target": "polling-vs-websockets", "type": "prerequisite_of"}
+      ]
+    },
+    "custom-library": {
+      "title": "Build a Custom Library",
+      "concepts": [
+        {"name": "global-symlinks", "description": "Running npm link inside a library registers it by creating a global symlink from the package into the global node_modules."},
+        {"name": "npm-link", "description": "npm link is a two-step process: npm link in the library, then npm link <package-name> in the consuming project."},
+        {"name": "local-package-testing", "description": "Testing a library in a real consuming project without publishing to npm, rebuilding (or watch mode) so the consumer never imports stale output."}
+      ],
+      "relationships": [
+        {"source": "global-symlinks", "target": "npm-link", "type": "prerequisite_of"},
+        {"source": "npm-link", "target": "local-package-testing", "type": "prerequisite_of"}
+      ]
+    }
+  }
+}

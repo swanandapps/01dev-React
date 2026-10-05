@@ -169,7 +169,7 @@ class TutorTurn(BaseModel):
 
 
 class TutorRequest(BaseModel):
-    user_id: str = "anonymous"
+    user_id: str = "anonymous"  # ignored by the server; identity comes from the login token
     course_id: str
     messages: List[TutorTurn]
     lecture: str = ""  # the lecture the student is currently watching, if any

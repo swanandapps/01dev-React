@@ -8,8 +8,8 @@ import os
 
 from fastapi import Header, HTTPException
 
-# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
-# run/approve, eval history, lab audit) have no per-user auth model yet — gate
+# Admin/audit/compliance routes (audit log, memory transparency+erase, eval
+# RAG outputs + history, lab audit) have no per-user auth model yet — gate
 # them with a shared secret instead of leaving them open on a public URL.
 # Unset locally on purpose (dev convenience); Railway sets a real value.
 _ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")

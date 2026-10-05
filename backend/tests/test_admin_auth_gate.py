@@ -54,28 +54,25 @@ def test_chat_route_unaffected_by_admin_key(monkeypatch):
     # /api/hermes/chat must NOT require the admin key — it's a student-facing
     # route, not an admin one. Guard against accidentally gating it too.
     monkeypatch.setattr(app_deps, "_ADMIN_API_KEY", "secret-123")
-    from app.services import audit_service, hermes_client, memory_service
+    from app.auth import current_student
+    from app.services import audit_service, chat_pipeline, memory_service, skill_graph_service
 
-    async def _fake_stream_chat(question, system=None, history=None):
+    async def _fake_chat_turn(req, model=None):
         yield {"type": "done"}
 
-    async def _noop_log_event(**kwargs):
+    async def _noop(*args, **kwargs):
         return None
-
-    async def _empty_memory_context(*args, **kwargs):
-        return ""
 
     async def _empty_recent_turns(*args, **kwargs):
         return []
 
-    async def _noop_record_turn(*args, **kwargs):
-        return None
-
-    monkeypatch.setattr(hermes_client, "stream_chat", _fake_stream_chat)
-    monkeypatch.setattr(audit_service, "log_event", _noop_log_event)
-    monkeypatch.setattr(memory_service, "memory_context", _empty_memory_context)
+    monkeypatch.setattr(chat_pipeline, "chat_turn", _fake_chat_turn)
+    monkeypatch.setattr(audit_service, "log_event", _noop)
     monkeypatch.setattr(memory_service, "recent_turns", _empty_recent_turns)
-    monkeypatch.setattr(memory_service, "record_turn", _noop_record_turn)
+    monkeypatch.setattr(skill_graph_service, "ensure_populated", _noop)
+    # Student auth is the login token, not the admin key — stub it so this test
+    # isolates the admin-key question.
+    monkeypatch.setitem(app_main.app.dependency_overrides, current_student, lambda: "x")
 
     client = TestClient(app_main.app)
     resp = client.post(

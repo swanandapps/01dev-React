@@ -1,9 +1,7 @@
 """Structured generators for the Lab LangGraph pipeline.
 
-Faithful re-implementation of what the Mastra/Memorang V2 agents produced —
-objectives, per-objective quizzes, a Socratic tutor nudge, and a final summary —
-but every call hits the LOCAL model (Ollama, OpenAI-compatible). Swap base_url
-to a vLLM GPU node for production; the interface is identical.
+Generates objectives, per-objective quizzes, a Socratic tutor nudge, and a
+final summary — each as one JSON-mode OpenAI chat-completion call.
 
 Sync client on purpose: langgraph 1.2.x propagates the interrupt()/HITL config
 context only on the synchronous graph path, so nodes (and thus these calls) are
@@ -24,7 +22,7 @@ from .schemas import Objective, PerObjective, Question, Summary
 
 
 def _make_client():
-    """OpenAI in production; local model in dev (LESSON_PROVIDER=ollama).
+    """OpenAI client + model (LESSON_MODEL, default gpt-4.1-mini).
     Uses the Langfuse-instrumented OpenAI drop-in when LANGFUSE keys are set, so
     every Lab model call is traced to Langfuse."""
     if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
@@ -32,16 +30,8 @@ def _make_client():
     else:
         from openai import OpenAI
 
-    use_openai = bool(os.getenv("OPENAI_API_KEY")) and os.getenv("LESSON_PROVIDER", "openai") != "ollama"
-    if use_openai:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60.0, max_retries=3)
-        model = os.getenv("LESSON_MODEL", "gpt-4.1-mini")
-    else:
-        client = OpenAI(
-            base_url=os.getenv("OLLAMA_URL", "http://localhost:11434/v1"),
-            api_key=os.getenv("OLLAMA_KEY", "ollama"),
-        )
-        model = os.getenv("LESSON_MODEL", "qwen2.5:3b")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), timeout=60.0, max_retries=3)
+    model = os.getenv("LESSON_MODEL", "gpt-4.1-mini")
     return client, model
 
 
@@ -62,7 +52,7 @@ DIFFICULTIES = {"beginner", "intermediate", "advanced"}
 
 
 def _chat_json(system: str, user: str, max_tokens: int = 900) -> dict:
-    """One JSON-mode call to the local model, with a single defensive retry."""
+    """One JSON-mode call to the model, with a single defensive retry."""
     for attempt in range(2):
         client, model = _get_client()
         resp = client.chat.completions.create(
@@ -93,7 +83,7 @@ def _chat_json(system: str, user: str, max_tokens: int = 900) -> dict:
 
 # ── Objectives (the planner) ────────────────────────────────────────────────
 def gen_objectives(document: str, title: str | None) -> list[dict]:
-    """Draft 3-4 learning objectives from the material. Mirrors the Mastra planner."""
+    """Draft 3-4 learning objectives from the material (the planner step)."""
     sys = (
         "You are a study planner. From the material, propose 3-4 focused learning "
         "objectives ordered from foundational to advanced. Return ONLY JSON: "

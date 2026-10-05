@@ -4,12 +4,9 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
-import json
 from contextlib import asynccontextmanager
 import os
 import hashlib
-
-from opentelemetry import trace as otel_trace
 
 import razorpay
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -18,36 +15,30 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.models import (
-    AskRequest, AskResponse, Course, QuizSubmit,
+    Course,
     AdaptiveStartRequest, AdaptiveAnswerRequest, CourseInsightRequest, TutorRequest,
     EnrolledCourse, EnrollRequest,
 )
 from app.services.vector_store import vector_store
-from app.services.rag_service import ask, ask_stream, _build_sources
-from app.services.store import store
 from app.services import (
-    study_guide_service, question_service, quiz_service, adaptive_service,
-    knowledge_graph_service, recommendation_service, course_insight_service,
-    tutor_service, journey_service, enrollment_service,
-    hermes_client, audit_service, memory_service,
-    eval_service, gepa_service, context_builder, pii,
-    skill_graph_service,
+    study_guide_service, question_service, adaptive_service,
+    course_insight_service,
+    journey_service, enrollment_service,
+    audit_service, memory_service,
+    eval_service, pii, chat_pipeline,
+    skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
+from app.services.course_lookup import ChatScope, _norm as norm_title
+from app.auth import current_student
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
-from app.routing import smalltalk_classifier
 from app.services.lab.routes import router as lab_router
-# Admin/audit/compliance routes (audit log, memory transparency+erase, GEPA
-# run/approve, eval history, lab audit) are gated behind a shared secret — see
+# Admin/audit/compliance routes (audit log, memory transparency+erase, eval
+# RAG outputs + history, lab audit) are gated behind a shared secret — see
 # app/deps.py for require_admin_key and why it lives there, not here.
 from app.deps import require_admin_key
-
-# _TUTOR_PROVIDER only feeds /health's status field now — the chat endpoint always
-# routes through Hermes (see hermes_chat's docstring for why the old direct-to-OpenAI
-# path was retired).
-_TUTOR_PROVIDER = os.getenv("TUTOR_PROVIDER", "openai" if os.getenv("OPENAI_API_KEY") else "ollama")
-_MODEL_CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
+from app.grounding import loader
 
 RZP_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
 RZP_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
@@ -63,6 +54,10 @@ class PaymentRequest(BaseModel):
 async def lifespan(app: FastAPI):
     init_tracing()  # OpenTelemetry → OTLP/SigNoz (no-op unless configured)
     await vector_store.initialize()
+    try:
+        await catalog_index.ensure_built()
+    except Exception as e:  # noqa: BLE001 — built lazily on first lookup instead
+        print(f"[startup] catalog index build failed, will retry on first lookup: {e}")
     yield
 
 
@@ -91,7 +86,7 @@ async def health():
         "status": status,
         "chunks_indexed": len(vector_store.chunks),
         "db": ("ok" if db_ok else "unreachable") if os.getenv("DATABASE_URL") else "in-memory",
-        "tutor_provider": _TUTOR_PROVIDER,
+        "tutor_provider": "langchain-agent",
     }
 
 
@@ -116,28 +111,10 @@ async def study_guide_generate(course_id: str):
     return await study_guide_service.ensure_generated(course_id)
 
 
-@app.get("/api/ai/questions/{course_id}")
-async def questions_status(course_id: str):
-    return await question_service.get_status(course_id)
-
-
 @app.post("/api/ai/questions/{course_id}/generate")
 async def questions_generate(course_id: str):
     _require_course(course_id)
     return await question_service.ensure_generated(course_id)
-
-
-@app.post("/api/ai/quiz-session")
-async def save_quiz_session(submit: QuizSubmit):
-    session = await quiz_service.save_session(submit)
-    # Completing a quiz changes performance → invalidate cached recommendations.
-    await recommendation_service.invalidate(submit.user_id)
-    return session
-
-
-@app.get("/api/ai/quiz-sessions")
-async def list_quiz_sessions(user_id: str):
-    return await quiz_service.list_sessions(user_id)
 
 
 @app.post("/api/ai/adaptive/start")
@@ -151,22 +128,6 @@ async def adaptive_answer(req: AdaptiveAnswerRequest):
     return await adaptive_service.answer(
         req.session_id, req.question_id, req.correct, req.concept, req.time_taken_ms
     )
-
-
-@app.get("/api/ai/knowledge-graph/{course_id}")
-async def knowledge_graph(course_id: str):
-    return await knowledge_graph_service.get_graph(course_id)
-
-
-@app.post("/api/ai/knowledge-graph/{course_id}/build")
-async def knowledge_graph_build(course_id: str):
-    _require_course(course_id)
-    return await knowledge_graph_service.ensure_built(course_id)
-
-
-@app.get("/api/ai/recommendations")
-async def recommendations(user_id: str):
-    return await recommendation_service.get_recommendations(user_id)
 
 
 @app.get("/api/ai/journey")
@@ -194,263 +155,113 @@ async def course_insight(req: CourseInsightRequest):
 
 
 @app.post("/api/ai/tutor/stream")
-async def tutor_stream_endpoint(req: TutorRequest):
-    messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    return StreamingResponse(
-        tutor_service.tutor_stream(req.user_id, req.course_id, messages, req.lecture),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+async def tutor_stream_endpoint(req: TutorRequest, student_id: str = Depends(current_student)):
+    """The tutor inside the video player: same pipeline as the Ask page, scoped to
+    the course + lecture being watched. History is the running message list the
+    client sends; req.user_id is ignored (identity comes from the login token)."""
+    headers = {"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
+
+    async def one(event: dict):
+        yield chat_pipeline.sse(event)
+
+    course = catalog_service.by_slug(req.course_id)
+    if not course:
+        return StreamingResponse(one({"type": "error", "message": "Unknown course"}),
+                                 media_type="text/event-stream", headers=headers)
+    msgs = [{"role": m.role, "content": m.content} for m in req.messages if m.role in ("user", "assistant")]
+    if not msgs or msgs[-1]["role"] != "user" or not msgs[-1]["content"].strip():
+        return StreamingResponse(one({"type": "error", "message": "Ask a question first"}),
+                                 media_type="text/event-stream", headers=headers)
+
+    # CoursePlayerPage sends the course title as `lecture` when no lecture is selected.
+    lecture = req.lecture.strip()
+    if lecture and norm_title(lecture) == norm_title(course.get("title", "")):
+        lecture = ""
+    turn = chat_pipeline.TurnRequest(
+        question=msgs[-1]["content"], student_id=student_id,
+        scope=ChatScope(course_slug=req.course_id, lecture_title=lecture or None),
+        history=msgs[:-1][-12:], memory_slug=req.course_id,
     )
+    tracer = get_tracer()
 
+    async def gen():
+        span = tracer.start_span("chat_turn")
+        span.set_attribute("route", "player")
+        span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])
+        try:
+            async for event in chat_pipeline.chat_turn(turn):
+                yield chat_pipeline.sse(event)
+        finally:
+            span.end()
 
-@app.post("/api/ai/ask", response_model=AskResponse)
-async def ask_question(request: AskRequest):
-    return await ask(request)
-
-
-@app.post("/api/ai/ask/stream")
-async def ask_question_stream(request: AskRequest):
-    return StreamingResponse(
-        ask_stream(request),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # disable proxy buffering so tokens flush immediately
-        },
-    )
+    return StreamingResponse(gen(), media_type="text/event-stream", headers=headers)
 
 
 @app.post("/api/hermes/chat")
-async def hermes_chat(req: Request):
-    """Governance layer for the Hermes tutor: access gate + EU-AI-Act audit +
-    session-spanning memory + streaming proxy to the Hermes agent (:8642).
+async def hermes_chat(req: Request, student_id: str = Depends(current_student)):
+    """The Ask page chat. URL kept for frontend compatibility (rename later).
 
-    Every question that isn't one of the two fixed-answer intents (quiz hand-off,
-    progress lookup) goes to Hermes. Hermes drives its own retrieval via the
-    search_course_content/search_history MCP tools and decides for itself how many
-    tool calls a question needs — that decision used to be made here (a client-supplied
-    `agentic` flag, plus a backend similarity-score threshold deciding whether to
-    answer or decline) when Hermes ran on a local model too slow/unreliable for
-    real-time chat. Hermes now runs on the same OpenAI model either way, so that
-    split no longer has a reason to exist; SOUL.md's own "don't answer outside the
-    course material" instruction is the guardrail now, not a backend score check.
-
-    Either way the tutor REMEMBERS the student: prior turns are threaded (multi-turn)
-    and a running profile is injected, then this exchange is persisted for next time.
+    Fixed-answer intents (quiz hand-off, empty/gibberish) answer here; everything else
+    runs chat_pipeline.chat_turn: course lookup in code first, then the tutor agent.
+    Identity comes from the verified login token, never the request body.
     """
     body = await req.json()
     question = (body.get("question") or "").strip()
-    student_id = body.get("user_id") or req.headers.get("X-Student-Id") or ""
-    course_slug = body.get("course_slug") or req.headers.get("X-Course-Slug") or "js-fundamentals"
-
-    # 1. Access gate.
-    if not student_id:
-        raise HTTPException(status_code=403, detail="Sign in to use the AI tutor")
+    course_slug = body.get("course_slug") or "all-courses"
     if not question:
         raise HTTPException(status_code=400, detail="Empty question")
 
-    # PII scrub at request entry — the single choke point. The redacted question is
-    # what we send to the model, embed, trace, audit, AND persist, so no student PII
-    # reaches any downstream surface. (regex tier; Presidio is the drop-in upgrade.)
-    question, pii_kinds = pii.scrub(question)
-
-    intent = classify(question)
-
-    # Small-talk check — only ever upgrades COURSE_QUESTION to OUT_OF_SCOPE,
-    # and only when SMALLTALK_BLOCK_ENABLED=true (default off; see
-    # smalltalk_classifier's docstring — ships observing real similarity
-    # scores before ever acting on them). The score is logged either way.
-    smalltalk = {"checked": False, "similarity": 0.0, "should_block": False}
-    if intent == Intent.COURSE_QUESTION:
-        try:
-            smalltalk = await smalltalk_classifier.check(question)
-        except Exception as e:  # noqa: BLE001 — this check must never break a chat turn
-            print(f"[hermes_chat] smalltalk check failed: {e}")
-        if smalltalk["should_block"]:
-            intent = Intent.OUT_OF_SCOPE
-
-    # OTel parent span for the whole request (no-op unless tracing configured).
-    # Started manually + ended in gen()'s finally so it spans the streamed generation.
-    tracer = get_tracer()
-    span = tracer.start_span("hermes_chat")
-    span.set_attribute("course_slug", course_slug)
-    span.set_attribute("intent", intent.value)
-    span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])  # hashed, no PII
-    if pii_kinds:  # audit trail: WHAT kinds were redacted, never the values
-        span.set_attribute("pii_redacted", ",".join(pii_kinds))
-    if smalltalk["checked"]:
-        span.set_attribute("smalltalk_similarity", smalltalk["similarity"])
+    scrubbed, _ = pii.scrub(question)
+    intent = classify(scrubbed)
+    headers = {"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
 
     if intent in (Intent.QUIZ_GENERATE, Intent.OUT_OF_SCOPE):
-        if intent == Intent.QUIZ_GENERATE:
-            outcome, model_label, audit_provider = "quiz_handoff", "rule-based-router", "none"
-            message = build_handoff_message(course_slug)
-        else:
-            outcome, model_label, audit_provider = "out_of_scope_handoff", "rule-based-router", "none"
-            message = "Hey, I'm Dev — ask me about a course or a technical concept and I'll help!"
-
-        span.set_attribute("outcome", outcome)
-        await audit_service.log_event(
-            student_id=student_id, course_slug=course_slug, question=question,
-            model=model_label, provider=audit_provider,
-        )
+        message = (build_handoff_message(course_slug) if intent == Intent.QUIZ_GENERATE
+                   else "Hey, I'm Dev — ask me about a course or a technical concept and I'll help!")
+        try:
+            await audit_service.log_event(student_id=student_id, course_slug=course_slug, question=scrubbed,
+                                          model="rule-based-router", provider="none")
+        except Exception as e:  # noqa: BLE001 — audit is best-effort, same as chat_turn
+            print(f"[hermes_chat] audit failed: {e!r}")
 
         async def gen_handoff():
-            try:
-                yield f"data: {json.dumps({'type': 'sources', 'sources': [], 'insufficient_context': False, 'offer_general': False})}\n\n"
-                for word in message.split(" "):
-                    yield f"data: {json.dumps({'type': 'token', 'value': word + ' '})}\n\n"
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
-            finally:
-                span.end()
+            yield chat_pipeline.sse({"type": "sources", "sources": [], "insufficient_context": False,
+                                     "offer_general": False})
+            for word in message.split(" "):
+                yield chat_pipeline.sse({"type": "token", "value": word + " "})
+            yield chat_pipeline.sse({"type": "done"})
 
-        return StreamingResponse(
-            gen_handoff(),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
-        )
+        return StreamingResponse(gen_handoff(), media_type="text/event-stream", headers=headers)
 
-    # Every remaining intent goes to Hermes — see the docstring for why there's no
-    # longer a separate direct-to-OpenAI path here.
-
-    # Back-fill the skill graph only for intents that actually touch it
-    # (COURSE_QUESTION/fallthrough) — QUIZ_GENERATE/OUT_OF_SCOPE already
-    # returned above and never reach here. Runs inside the traced span (4
-    # sequential DB queries in steady state) so its latency shows up if chat
-    # latency regresses, instead of being invisible before the span started.
     try:
-        created = await skill_graph_service.ensure_populated(student_id, course_slug)
-        span.set_attribute("skill_graph.backfilled_concepts", created)
-    except Exception as e:  # noqa: BLE001 — back-fill is never allowed to break a chat turn
-        print(f"[hermes_chat] ensure_populated failed for {student_id}/{course_slug}: {e}")
+        await skill_graph_service.ensure_populated(student_id, course_slug)
+    except Exception as e:  # noqa: BLE001 — back-fill never breaks a chat turn
+        print(f"[hermes_chat] ensure_populated failed: {e}")
 
-    tutor_client = hermes_client
-    tutor_model, tutor_provider = os.getenv("HERMES_MODEL_LABEL", "gpt-4.1-mini"), "hermes (agent loop)"
-    span.set_attribute("provider", tutor_provider)
-
-    # 2. EU AI Act audit — before inference.
-    await audit_service.log_event(
-        student_id=student_id, course_slug=course_slug, question=question,
-        model=tutor_model, provider=tutor_provider,
-    )
-
-    # 3. Session-spanning memory: what we remember + the last few turns (multi-turn).
-    mem = await memory_service.memory_context(student_id, course_slug)
     prior = await memory_service.recent_turns(student_id, course_slug, limit=3)
     history: list[dict] = []
     for t in prior:
-        history.append({"role": "user", "content": t.get("question", "")})
-        history.append({"role": "assistant", "content": t.get("answer", "")})
+        history += [{"role": "user", "content": t.get("question", "")},
+                    {"role": "assistant", "content": t.get("answer", "")}]
 
-    # Persona comes from the SOUL — the identity GEPA evolves (and the audit fingerprints).
-    # SOUL.md's own "Avoid" section carries the "don't answer outside the course
-    # material" guardrail; Hermes enforces that itself now, not a backend score check.
-    #
-    # "all-courses" is a frontend sentinel (the global Ask page has no course
-    # selector) meaning "no specific course chosen" — NOT a real course name.
-    # Interpolating it into "You are tutoring the 'all-courses' course" was
-    # confusing the model into treating it as an actual enrolled course (it
-    # answered "you're enrolled in the course called all-courses" when asked).
-    if course_slug == "all-courses":
-        persona = gepa_service.read_soul() + (
-            "\nYou help students with ANY course on the01.dev — you are not scoped to a "
-            "single course in this conversation. Use search_course_content freely across "
-            "all courses and mention which course an answer came from. If asked what "
-            "courses the student is enrolled in or has access to, use the "
-            "get_enrolled_courses tool — you DO have this data now, don't decline or guess."
-        )
-    else:
-        persona = gepa_service.read_soul() + f"\nYou are tutoring the '{course_slug}' course on the01.dev. "
-    # NOTE: this deliberately puts the raw student_id (currently the student's
-    # actual email) in the LLM-bound prompt, verbatim, OUTSIDE the pii.scrub()
-    # choke point above ("no student PII reaches any downstream surface" per
-    # that comment — this line is the one exception). Accepted for now because
-    # this is a single known user and the only downstream party is the LLM
-    # provider itself, not a third party beyond it. Revisit before multi-tenant.
-    persona += (
-        f"\nFor any tool that takes student_id or course_id, use exactly "
-        f"student_id=\"{student_id}\" and course_id=\"{course_slug}\" — never guess or ask the "
-        f"student for these, you already have them."
+    turn = chat_pipeline.TurnRequest(
+        question=question, student_id=student_id,
+        scope=ChatScope(course_slug=None if course_slug == "all-courses" else course_slug),
+        history=history, memory_slug=course_slug,
     )
-    # Memory goes up front (prominent) so it isn't overridden by the tool-use rule below.
-    memory_block = (mem + "\n\n") if mem else ""
-
-    # Hermes resolves search_course_content's tool call internally — this backend
-    # never sees it — so the MCP tool itself persists the source cards it built
-    # (chat_citations/{student_id}) for this handler to read back after the
-    # stream completes. Clear any stale entry from a prior turn first so an
-    # empty read after this turn reliably means "no course content was cited",
-    # not "still showing what the last turn cited".
-    await store.delete("chat_citations", student_id)
-    sources: list[dict] = []
-    system = (
-        persona + "\n\n" + memory_block +
-        "Use the search_course_content tool to check for relevant course material first. "
-        "When it finds something relevant, ground your answer in it and cite the lecture. "
-        "When it doesn't, still answer the question yourself — not having a course on "
-        "something is never a reason to decline. "
-        "When the student refers to how you previously taught them something "
-        "(e.g. 'like you taught me closures'), call the search_history tool to "
-        "retrieve those past exchanges and mirror that explanation's style. "
-        "For general facts about the student, use the STUDENT MEMORY above."
-    )
-    span.set_attribute("outcome", "hermes")
-
-    # Context Builder — RESOLVE step: fit the prompt to the window, trimming the
-    # OLDEST turns first so nothing is silently truncated. Reports what it dropped.
-    history, _fit = context_builder.build(system or "", history, question, _MODEL_CONTEXT_LIMIT)
-    span.set_attribute("context.prompt_tokens_est", _fit["prompt_tokens_est"])
-    span.set_attribute("context.limit", _fit["limit"])
-    span.set_attribute("context.fill_pct", _fit["fill_pct"])
-    span.set_attribute("context.dropped_turns", _fit["dropped_turns"])
-    span.set_attribute("context.over_limit", _fit["over_limit"])
-    if _fit["fill_pct"] >= 80 or _fit["dropped_turns"]:
-        print(f"[hermes_chat] context {_fit['fill_pct']}% "
-              f"({_fit['prompt_tokens_est']}/{_fit['limit']} tok), dropped {_fit['dropped_turns']} old turn(s)"
-              f"{' — essentials OVER limit' if _fit['over_limit'] else ''}")
-
-    # 4. Stream, accumulate the answer, then persist the turn.
+    tracer = get_tracer()
 
     async def gen():
+        span = tracer.start_span("chat_turn")
+        span.set_attribute("route", "ask")
+        span.set_attribute("student", hashlib.sha256(student_id.encode()).hexdigest()[:12])
         try:
-            sources_payload = {
-                "type": "sources", "sources": sources,
-                "insufficient_context": False, "offer_general": False,
-            }
-            yield f"data: {json.dumps(sources_payload)}\n\n"
-            answer_parts: list[str] = []
-            # llm_generate span as an explicit child of the parent (manual parent
-            # context avoids OTel current-context leakage across generator yields).
-            gspan = tracer.start_span("llm_generate", context=otel_trace.set_span_in_context(span))
-            gspan.set_attribute("provider", tutor_provider)
-            try:
-                async for event in tutor_client.stream_chat(question, system=system, history=history):
-                    if event.get("type") == "token":
-                        answer_parts.append(event.get("value", ""))
-                    yield f"data: {json.dumps(event)}\n\n"
-            finally:
-                gspan.set_attribute("answer_chars", len("".join(answer_parts)))
-                gspan.end()
-            try:
-                cited = await store.get("chat_citations", student_id)
-                cards = (cited or {}).get("cards") or []
-                if cards:
-                    yield f"data: {json.dumps({'type': 'sources', 'sources': cards, 'insufficient_context': False, 'offer_general': False})}\n\n"
-            except Exception:  # noqa: BLE001 — citations are an enhancement, never block the answer
-                pass
-            try:
-                await memory_service.record_turn(student_id, course_slug, question, "".join(answer_parts))
-            except Exception:  # noqa: BLE001 — never fail the response over memory persistence
-                pass
+            async for event in chat_pipeline.chat_turn(turn):
+                yield chat_pipeline.sse(event)
         finally:
-            span.end()  # close the parent span after the full stream completes
+            span.end()
 
-    return StreamingResponse(
-        gen(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
-    )
+    return StreamingResponse(gen(), media_type="text/event-stream", headers=headers)
 
 
 @app.get("/api/hermes/audit", dependencies=[Depends(require_admin_key)])
@@ -471,35 +282,16 @@ async def hermes_memory_erase(student_id: str):
     return await memory_service.erase(student_id)
 
 
-@app.post("/api/hermes/gepa/run", dependencies=[Depends(require_admin_key)])
-async def gepa_run():
-    """Run one GEPA evolution round → a human-reviewable proposal. Applies nothing."""
-    return await gepa_service.run_round()
-
-
-@app.post("/api/hermes/gepa/approve", dependencies=[Depends(require_admin_key)])
-async def gepa_approve(req: Request):
-    """HUMAN gate — apply an approved SOUL evolution (the only path that mutates the SOUL)."""
-    body = await req.json()
-    return await gepa_service.approve(body.get("proposal_id", ""))
-
-
-@app.get("/api/hermes/gepa/proposals", dependencies=[Depends(require_admin_key)])
-async def gepa_proposals():
-    """The evolution history — proposals, their before/after scores, and what was applied."""
-    return gepa_service.proposals()
-
-
 @app.get("/api/hermes/eval/rag-outputs", dependencies=[Depends(require_admin_key)])
 async def eval_rag_outputs():
     """The tutor's RAG triples {question, answer, contexts} over the eval set — the input the
     isolated RAGAS harness scores (faithfulness / answer-relevancy / context-precision)."""
-    return await eval_service.collect_rag_outputs(gepa_service.read_soul())
+    return await eval_service.collect_rag_outputs(loader.read_grounding_prompt())
 
 
 @app.get("/api/hermes/eval/history", dependencies=[Depends(require_admin_key)])
 async def eval_history(kind: str | None = None, limit: int = 50):
-    """The recorded eval / RAGAS / GEPA results over time — the quality trend."""
+    """The recorded eval / RAGAS results over time — the quality trend."""
     from app.eval import results_store
     return results_store.history(kind, limit)
 

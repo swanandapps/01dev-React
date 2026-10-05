@@ -1,7 +1,8 @@
 import type {
-  Course, StudyGuideStatus, QuestionStatus, QuizSubmit, QuizSession, AdaptiveResponse,
-  RecommendationsResponse, CourseInsight, Journey, EnrolledCourse,
+  Course, StudyGuideStatus, QuestionStatus, AdaptiveResponse,
+  CourseInsight, Journey, EnrolledCourse,
 } from "../types/learn";
+import { authHeaders } from "./authHeaders";
 
 const API_BASE = import.meta.env.VITE_RAG_API_URL || "http://localhost:8080";
 
@@ -26,28 +27,8 @@ export function generateStudyGuide(courseId: string): Promise<StudyGuideStatus> 
   return getJson<StudyGuideStatus>(`/api/ai/study-guide/${courseId}/generate`, { method: "POST" });
 }
 
-export function getQuestions(courseId: string): Promise<QuestionStatus> {
-  return getJson<QuestionStatus>(`/api/ai/questions/${courseId}`);
-}
-
 export function generateQuestions(courseId: string): Promise<QuestionStatus> {
   return getJson<QuestionStatus>(`/api/ai/questions/${courseId}/generate`, { method: "POST" });
-}
-
-export function saveQuizSession(submit: QuizSubmit): Promise<QuizSession> {
-  return getJson<QuizSession>("/api/ai/quiz-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(submit),
-  });
-}
-
-export function listQuizSessions(userId: string): Promise<QuizSession[]> {
-  return getJson<QuizSession[]>(`/api/ai/quiz-sessions?user_id=${encodeURIComponent(userId)}`);
-}
-
-export function getRecommendations(userId: string): Promise<RecommendationsResponse> {
-  return getJson<RecommendationsResponse>(`/api/ai/recommendations?user_id=${encodeURIComponent(userId)}`);
 }
 
 export function getJourney(userId: string): Promise<Journey> {
@@ -105,11 +86,6 @@ export function recordLectureView(lectureTitle: string): void {
   }
 }
 
-// Knowledge graph is internal; we only trigger its build on access.
-export function buildKnowledgeGraph(courseId: string): Promise<{ status: string }> {
-  return getJson<{ status: string }>(`/api/ai/knowledge-graph/${courseId}/build`, { method: "POST" });
-}
-
 // Stream a tutor reply over SSE. Resolves when the stream ends.
 export async function streamTutor(
   body: {
@@ -122,7 +98,7 @@ export async function streamTutor(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify(body),
   });
   if (!res.ok || !res.body) {

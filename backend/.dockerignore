@@ -1,0 +1,11 @@
+# Build context hygiene for backend/Dockerfile (`COPY . .`).
+# demo-account seed backups hold real student data — never ship them in an image
+data/demo_backups/
+# secrets
+.env*
+# local virtualenvs + caches (the image installs requirements.txt itself)
+.venv*/
+.mcp-venv/
+.lesson-venv/
+.ragas-venv/
+**/__pycache__/

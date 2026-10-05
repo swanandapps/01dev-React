@@ -1,0 +1,1474 @@
+{
+  "react-perf": {
+    "course_id": "react-perf",
+    "course_title": "React Performance Patterns",
+    "questions": [
+      {
+        "id": "react-perf-t1",
+        "question": "According to the lecture, how do primitives compare in shallow equality?",
+        "options": [
+          "By value",
+          "By memory address",
+          "By type only",
+          "By reference"
+        ],
+        "correct_index": 0,
+        "explanation": "Primitives compare by value in shallow equality as stated in the lecture.",
+        "concept": "shallow-equality",
+        "difficulty": "easy",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t2",
+        "question": "How do objects, arrays, and functions compare in shallow equality?",
+        "options": [
+          "By type",
+          "By reference",
+          "By content",
+          "By value"
+        ],
+        "correct_index": 1,
+        "explanation": "Objects, arrays, and functions compare by reference in shallow equality.",
+        "concept": "shallow-equality",
+        "difficulty": "easy",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t3",
+        "question": "If a parent component creates a new object literal on every render and passes it as a prop, what will React.memo do?",
+        "options": [
+          "Throw an error",
+          "Skip the child re-render",
+          "Memoize the object automatically",
+          "Re-render the child component"
+        ],
+        "correct_index": 3,
+        "explanation": "React.memo re-renders because the new object literal has a new reference failing shallow equality.",
+        "concept": "shallow-equality",
+        "difficulty": "medium",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t4",
+        "question": "Why does React.memo re-render a child if a new function is passed as a prop every time?",
+        "options": [
+          "Because functions are always memoized",
+          "Because functions compare by value and the value changes",
+          "Because React.memo ignores functions",
+          "Because functions compare by reference and the reference changes"
+        ],
+        "correct_index": 3,
+        "explanation": "Functions compare by reference, so a new function instance causes React.memo to re-render.",
+        "concept": "shallow-equality",
+        "difficulty": "medium",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t5",
+        "question": "What is a pitfall of relying on shallow equality when passing props to React.memo components?",
+        "options": [
+          "Primitives are compared by reference causing bugs",
+          "New object or function references cause unnecessary re-renders",
+          "React.memo cannot memoize primitive props",
+          "React.memo does deep equality checks causing slowdowns"
+        ],
+        "correct_index": 1,
+        "explanation": "New references for objects or functions cause React.memo to re-render despite unchanged data.",
+        "concept": "shallow-equality",
+        "difficulty": "hard",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t6",
+        "question": "Why might React.memo fail to optimize a child component even if props appear unchanged?",
+        "options": [
+          "Because shallow equality fails when new references are passed for objects or functions",
+          "Because React.memo requires deep equality checking",
+          "Because React.memo ignores props on every render",
+          "Because React.memo only works for primitive props"
+        ],
+        "correct_index": 0,
+        "explanation": "React.memo relies on shallow equality and fails if new references are passed as props.",
+        "concept": "shallow-equality",
+        "difficulty": "hard",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t7",
+        "question": "What does React.memo do by default when a component's props have not changed?",
+        "options": [
+          "Throws an error",
+          "Always re-renders the component",
+          "Removes the component from the DOM",
+          "Skips the component's re-render"
+        ],
+        "correct_index": 3,
+        "explanation": "React.memo skips re-rendering when props are shallowly equal to the previous render.",
+        "concept": "react-memo",
+        "difficulty": "easy",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t8",
+        "question": "When does React.memo cause a component to re-render?",
+        "options": [
+          "Only on initial mount",
+          "When props are not shallowly equal to previous props",
+          "Never re-renders after first render",
+          "When the component state changes"
+        ],
+        "correct_index": 1,
+        "explanation": "React.memo re-renders if props differ by shallow equality from the previous render.",
+        "concept": "react-memo",
+        "difficulty": "easy",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t9",
+        "question": "If a child component wrapped in React.memo receives a new function prop on every parent render, what happens?",
+        "options": [
+          "The child re-renders because the function reference changes",
+          "The child skips re-render because functions are ignored",
+          "The child memoizes the function automatically",
+          "The child throws an error"
+        ],
+        "correct_index": 0,
+        "explanation": "New function references cause React.memo to re-render the child component.",
+        "concept": "react-memo",
+        "difficulty": "medium",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t10",
+        "question": "How can you prevent a React.memo child from re-rendering due to a changing callback prop?",
+        "options": [
+          "Use useMemo instead of useCallback",
+          "Pass a new function on every render",
+          "Avoid passing callbacks as props",
+          "Wrap the callback in useCallback to keep its reference stable"
+        ],
+        "correct_index": 3,
+        "explanation": "useCallback keeps the function reference stable, preventing unnecessary re-renders.",
+        "concept": "react-memo",
+        "difficulty": "medium",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t11",
+        "question": "According to the lecture's rule of thumb, when is it worth wrapping a child component in React.memo?",
+        "options": [
+          "When the child is expensive to render — otherwise memoizing just adds overhead for no benefit",
+          "Always, because React.memo guarantees the child never re-renders",
+          "Only when every prop is a primitive, because React.memo cannot compare objects at all",
+          "Whenever the parent uses useMemo, because React.memo then deep-compares every prop"
+        ],
+        "correct_index": 0,
+        "explanation": "The lecture's rule of thumb: memoizing is only worth it when the child is expensive to render or the reference is consumed by a memoized child; wrapping everything adds overhead for no benefit.",
+        "concept": "react-memo",
+        "difficulty": "hard",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t12",
+        "question": "Why is React.memo ineffective if the parent passes new object or function literals every render?",
+        "options": [
+          "Because React.memo does deep equality checks",
+          "Because React.memo only works with primitive props",
+          "Because React.memo ignores props",
+          "Because shallow equality fails and React.memo re-renders the child"
+        ],
+        "correct_index": 3,
+        "explanation": "New references cause shallow equality to fail, defeating React.memo optimization.",
+        "concept": "react-memo",
+        "difficulty": "hard",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t13",
+        "question": "What does useCallback do in React?",
+        "options": [
+          "Forces a component to re-render",
+          "Keeps a function reference stable across renders if dependencies don't change",
+          "Creates a new function on every render",
+          "Memoizes a computed value"
+        ],
+        "correct_index": 1,
+        "explanation": "useCallback memoizes a function reference and returns the same function unless dependencies change.",
+        "concept": "use-callback",
+        "difficulty": "easy",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t14",
+        "question": "When should you use useCallback according to the lecture?",
+        "options": [
+          "When you want to recompute a value every render",
+          "When you want to create a new function every render",
+          "When passing callbacks to memoized child components",
+          "When memoizing computed values"
+        ],
+        "correct_index": 2,
+        "explanation": "useCallback is needed to keep callbacks stable when passed to React.memo children.",
+        "concept": "use-callback",
+        "difficulty": "easy",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t15",
+        "question": "If a parent component passes a callback prop wrapped in useCallback to a React.memo child, what is the effect?",
+        "options": [
+          "The child always re-renders",
+          "The callback is recomputed every render",
+          "The child sees a stable prop and can skip re-rendering",
+          "The child throws an error"
+        ],
+        "correct_index": 2,
+        "explanation": "useCallback keeps the function reference stable, enabling React.memo to skip re-render.",
+        "concept": "use-callback",
+        "difficulty": "medium",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t16",
+        "question": "What happens if you don't use useCallback when passing a callback to a React.memo child?",
+        "options": [
+          "The child re-renders because it receives a new function reference every render",
+          "The child never re-renders",
+          "The callback is ignored",
+          "The child memoizes the callback automatically"
+        ],
+        "correct_index": 0,
+        "explanation": "Without useCallback, a new function reference causes React.memo to re-render the child.",
+        "concept": "use-callback",
+        "difficulty": "medium",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t17",
+        "question": "What is a potential pitfall of overusing useCallback everywhere?",
+        "options": [
+          "It adds overhead and dependency bugs for no benefit",
+          "It memoizes computed values instead of functions",
+          "It prevents all re-renders",
+          "It guarantees better performance always"
+        ],
+        "correct_index": 0,
+        "explanation": "Overusing useCallback adds overhead and can cause bugs without improving performance.",
+        "concept": "use-callback",
+        "difficulty": "hard",
+        "lecture": "4.1 - React.memo and useCallback"
+      },
+      {
+        "id": "react-perf-t18",
+        "question": "Why is useCallback necessary in combination with React.memo?",
+        "options": [
+          "To create new functions every render",
+          "To force component re-renders",
+          "To keep function references stable so React.memo can skip re-renders",
+          "To memoize computed values"
+        ],
+        "correct_index": 2,
+        "explanation": "useCallback keeps the function reference stable, which is required for React.memo optimizations.",
+        "concept": "use-callback",
+        "difficulty": "hard",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t19",
+        "question": "What is the primary purpose of useMemo in React?",
+        "options": [
+          "Memoizing a computed value and recomputing only when dependencies change",
+          "Always recomputing a value every render",
+          "Forcing a component to re-render",
+          "Memoizing a function reference"
+        ],
+        "correct_index": 0,
+        "explanation": "useMemo memoizes computed values and only recomputes them when dependencies change.",
+        "concept": "use-memo",
+        "difficulty": "easy",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t20",
+        "question": "When is useMemo particularly valuable?",
+        "options": [
+          "For memoizing callbacks passed to children",
+          "For forcing updates on every render",
+          "For expensive computed state derived from props or state that would otherwise recalculate every render",
+          "For creating new objects every render"
+        ],
+        "correct_index": 2,
+        "explanation": "useMemo avoids recomputing expensive derived state when inputs have not changed.",
+        "concept": "use-memo",
+        "difficulty": "easy",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t21",
+        "question": "If you have a filtered and sorted list derived from a large array, how does useMemo help?",
+        "options": [
+          "It memoizes the filter and sort functions",
+          "It skips recomputing the filter and sort if dependencies haven't changed",
+          "It recomputes filter and sort on every render",
+          "It prevents the component from rendering"
+        ],
+        "correct_index": 1,
+        "explanation": "useMemo prevents redundant filter and sort computations if dependencies are unchanged.",
+        "concept": "use-memo",
+        "difficulty": "medium",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t22",
+        "question": "What happens if you do not use useMemo for expensive computations in React?",
+        "options": [
+          "The computation is memoized by default",
+          "The computation is skipped automatically",
+          "The component never re-renders",
+          "The computation runs on every render even if inputs haven't changed"
+        ],
+        "correct_index": 3,
+        "explanation": "Without useMemo, expensive computations run on every render regardless of input changes.",
+        "concept": "use-memo",
+        "difficulty": "medium",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t23",
+        "question": "What is a main pitfall of overusing useMemo everywhere without profiling?",
+        "options": [
+          "It prevents all re-renders",
+          "It guarantees better performance in all cases",
+          "It memoizes function references instead of values",
+          "It adds overhead from dependency comparisons that can be slower than recomputing"
+        ],
+        "correct_index": 3,
+        "explanation": "Overusing useMemo adds overhead that can degrade performance if not needed.",
+        "concept": "use-memo",
+        "difficulty": "hard",
+        "lecture": "3.2 - Memoization and Computed State"
+      },
+      {
+        "id": "react-perf-t24",
+        "question": "Why might useMemo not improve performance if used excessively?",
+        "options": [
+          "Because the cost of dependency comparison can outweigh recomputation savings",
+          "Because useMemo disables React.memo",
+          "Because useMemo memoizes functions instead of values",
+          "Because useMemo always recomputes values"
+        ],
+        "correct_index": 0,
+        "explanation": "Dependency comparisons add overhead that can make useMemo slower than recomputing.",
+        "concept": "use-memo",
+        "difficulty": "hard",
+        "lecture": "3.2 - Memoization and Computed State"
+      }
+    ],
+    "model": "gpt-4.1-mini",
+    "generated_at": "2026-10-04T17:39:38.621833+00:00"
+  },
+  "javascript-deep-dive": {
+    "course_id": "javascript-deep-dive",
+    "course_title": "JavaScript Deep Dive",
+    "questions": [
+      {
+        "id": "javascript-deep-dive-t1",
+        "question": "What happens when you access a property that does not exist directly on a JavaScript object?",
+        "options": [
+          "JavaScript throws an error immediately.",
+          "JavaScript copies the property from another object.",
+          "JavaScript creates the property on the object automatically.",
+          "JavaScript looks up the property on the object's prototype chain until found or null is reached."
+        ],
+        "correct_index": 3,
+        "explanation": "JavaScript walks up the prototype chain automatically until it finds the property or reaches null.",
+        "concept": "prototype-inheritance",
+        "difficulty": "easy",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t2",
+        "question": "What is the internal link every JavaScript object has to another object called?",
+        "options": [
+          "__proto__",
+          "hidden class",
+          "constructor",
+          "prototype"
+        ],
+        "correct_index": 0,
+        "explanation": "Every JavaScript object has an internal link called __proto__ pointing to its prototype.",
+        "concept": "prototype-inheritance",
+        "difficulty": "easy",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t3",
+        "question": "If object A has object B as its prototype, and you call a method on A that does not exist on A, what happens?",
+        "options": [
+          "JavaScript copies the method from B to A.",
+          "JavaScript stops searching and returns undefined immediately.",
+          "JavaScript delegates the lookup to B's properties and methods at runtime.",
+          "JavaScript throws a reference error."
+        ],
+        "correct_index": 2,
+        "explanation": "The prototype chain acts as a delegation chain, so lookup is delegated to B at runtime.",
+        "concept": "prototype-inheritance",
+        "difficulty": "medium",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t4",
+        "question": "How does prototype inheritance help with memory efficiency in JavaScript?",
+        "options": [
+          "Prototype chains are copied into each object at creation.",
+          "Each object stores its own copy of all methods.",
+          "All instances share one copy of inherited methods instead of each having their own copy.",
+          "Properties are copied to each instance only when accessed."
+        ],
+        "correct_index": 2,
+        "explanation": "Prototype inheritance delegates lookups so methods are shared, saving memory.",
+        "concept": "prototype-inheritance",
+        "difficulty": "medium",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t5",
+        "question": "What is the role of the 'instanceof' operator in relation to prototype chains?",
+        "options": [
+          "It creates a new instance of a class.",
+          "It checks if an object was derived from a particular constructor by walking the prototype chain.",
+          "It modifies the prototype chain of an object.",
+          "It copies prototype properties to the object."
+        ],
+        "correct_index": 1,
+        "explanation": "'instanceof' relies on the prototype chain to verify inheritance from a constructor.",
+        "concept": "prototype-inheritance",
+        "difficulty": "hard",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t6",
+        "question": "What issue might arise if you accidentally shadow a prototype method on an object?",
+        "options": [
+          "JavaScript will throw an error when accessing the method.",
+          "The object's own property will hide the prototype method, leading to unexpected behavior.",
+          "The prototype chain will be broken.",
+          "The prototype method will override the object's property."
+        ],
+        "correct_index": 1,
+        "explanation": "Shadowing means the object's own property hides the prototype method during lookup.",
+        "concept": "prototype-inheritance",
+        "difficulty": "hard",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t7",
+        "question": "What does the 'class' keyword in JavaScript do under the hood?",
+        "options": [
+          "It creates a new inheritance mechanism unrelated to prototypes.",
+          "It disables prototype inheritance.",
+          "It copies methods to each instance explicitly.",
+          "It sets up prototype chains and is syntactic sugar over prototype-based inheritance."
+        ],
+        "correct_index": 3,
+        "explanation": "The class keyword is syntactic sugar that sets up prototype chains behind the scenes.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "easy",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t8",
+        "question": "When you write 'class Dog extends Animal', what prototype relationship is established?",
+        "options": [
+          "Dog.prototype has Animal.prototype as its prototype.",
+          "Animal.prototype has Dog.prototype as its prototype.",
+          "Dog and Animal prototypes are unrelated.",
+          "Dog.prototype copies Animal.prototype methods."
+        ],
+        "correct_index": 0,
+        "explanation": "Dog.prototype's prototype is set to Animal.prototype to establish inheritance.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "easy",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t9",
+        "question": "How would you explain the relationship between class syntax and prototype inheritance to a beginner?",
+        "options": [
+          "Class syntax is unrelated to prototypes and uses a different mechanism.",
+          "Class syntax creates copies of methods for each object instead of using prototypes.",
+          "Class syntax disables prototype inheritance.",
+          "Class syntax is just a nicer way to write code that uses prototype chains underneath."
+        ],
+        "correct_index": 3,
+        "explanation": "Class syntax is syntactic sugar over prototype chains, making code easier to write and read.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "medium",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t10",
+        "question": "If you override a method in a subclass declared with class syntax, how does JavaScript find the method when called on an instance?",
+        "options": [
+          "It first looks on the instance's own properties, then on the subclass prototype, then up the prototype chain.",
+          "It copies the superclass method to the instance.",
+          "It always calls the method on the superclass prototype.",
+          "It throws an error if the method is overridden."
+        ],
+        "correct_index": 0,
+        "explanation": "JavaScript walks the prototype chain from instance to subclass prototype to superclass prototype.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "medium",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t11",
+        "question": "Why is the class keyword considered only syntactic sugar and not a new inheritance model?",
+        "options": [
+          "Because it uses a hidden class instead of prototypes.",
+          "Because it sets up the same prototype chain mechanism as traditional constructor functions.",
+          "Because it disables prototype inheritance.",
+          "Because it copies properties instead of delegating."
+        ],
+        "correct_index": 1,
+        "explanation": "Class syntax uses the same prototype chain mechanism, just with nicer syntax.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "hard",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t12",
+        "question": "What would happen if Dog.prototype did not have Animal.prototype as its prototype in class inheritance?",
+        "options": [
+          "Instances of Dog would not inherit methods from Animal, breaking expected inheritance.",
+          "Dog.prototype would copy Animal.prototype methods instead.",
+          "Dog would still inherit Animal's methods correctly.",
+          "JavaScript would throw an error at runtime."
+        ],
+        "correct_index": 0,
+        "explanation": "Without linking Dog.prototype to Animal.prototype, inheritance from Animal is broken.",
+        "concept": "class-syntax-sugar",
+        "difficulty": "hard",
+        "lecture": "4.1 - Prototype Inheritance"
+      },
+      {
+        "id": "javascript-deep-dive-t13",
+        "question": "What does V8 create internally to describe the shape of an object?",
+        "options": [
+          "A prototype chain",
+          "A call stack",
+          "A hidden class",
+          "A dictionary mode"
+        ],
+        "correct_index": 2,
+        "explanation": "V8 creates hidden classes internally to represent object shapes for optimization.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "easy",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t14",
+        "question": "When you add a new property to an object in V8, what happens to the hidden class?",
+        "options": [
+          "The object switches to dictionary mode immediately.",
+          "The property is added without changing the hidden class.",
+          "The hidden class remains unchanged.",
+          "V8 creates a new hidden class and transitions the object to it."
+        ],
+        "correct_index": 3,
+        "explanation": "Adding a property causes V8 to create a new hidden class and transition the object.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "easy",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t15",
+        "question": "If object A adds properties x then y, and object B adds y then x, what does V8 do?",
+        "options": [
+          "Copies properties from one object to another.",
+          "Throws an error for inconsistent property order.",
+          "Assigns different hidden classes to A and B due to different property addition order.",
+          "Assigns the same hidden class to both objects."
+        ],
+        "correct_index": 2,
+        "explanation": "Different property addition order causes different hidden classes in V8.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "medium",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t16",
+        "question": "Why is it bad to add properties dynamically after object construction in V8?",
+        "options": [
+          "Because it deletes existing properties.",
+          "Because it causes hidden class transitions that hurt performance in hot code paths.",
+          "Because it breaks the prototype chain.",
+          "Because it throws runtime errors."
+        ],
+        "correct_index": 1,
+        "explanation": "Dynamic property addition triggers hidden class transitions, slowing performance.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "medium",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t17",
+        "question": "What is the recommended practice to optimize object property access in V8?",
+        "options": [
+          "Avoid setting properties to null.",
+          "Use the delete operator frequently.",
+          "Add properties dynamically in conditionals.",
+          "Initialize all object properties in the constructor in the same order every time."
+        ],
+        "correct_index": 3,
+        "explanation": "Consistent property initialization order allows V8 to share hidden classes and optimize access.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "hard",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t18",
+        "question": "Why should you avoid using the delete operator on object properties in V8?",
+        "options": [
+          "Because it causes syntax errors.",
+          "Because it forces V8 to switch to slower dictionary mode.",
+          "Because it breaks the prototype chain.",
+          "Because it deletes the hidden class."
+        ],
+        "correct_index": 1,
+        "explanation": "Deleting properties forces V8 to use dictionary mode, reducing performance.",
+        "concept": "v8-hidden-classes",
+        "difficulty": "hard",
+        "lecture": "5.1 - V8 Engine and Hidden Classes"
+      },
+      {
+        "id": "javascript-deep-dive-t19",
+        "question": "What components make up the event loop in JavaScript?",
+        "options": [
+          "Multiple call stacks and a microtask queue.",
+          "A single call stack and a macrotask queue.",
+          "A hidden class and a prototype chain.",
+          "A call stack and multiple threads."
+        ],
+        "correct_index": 1,
+        "explanation": "The event loop consists of a single call stack plus a macrotask queue.",
+        "concept": "event-loop",
+        "difficulty": "easy",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t20",
+        "question": "When does the event loop take the next macrotask from the queue?",
+        "options": [
+          "When the call stack is empty.",
+          "While the call stack is busy.",
+          "Immediately after the current function call.",
+          "After the microtask queue is empty but before the call stack empties."
+        ],
+        "correct_index": 0,
+        "explanation": "The event loop runs the next macrotask only after the call stack empties.",
+        "concept": "event-loop",
+        "difficulty": "easy",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t21",
+        "question": "If a long synchronous task runs on the call stack, what is the effect on the page?",
+        "options": [
+          "The microtask queue runs before the long task.",
+          "The page updates continuously.",
+          "The event loop runs other tasks in parallel.",
+          "The page freezes because the event loop cannot process other tasks."
+        ],
+        "correct_index": 3,
+        "explanation": "Long synchronous work blocks the call stack, freezing the page.",
+        "concept": "event-loop",
+        "difficulty": "medium",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t22",
+        "question": "How does the event loop handle tasks from the macrotask queue?",
+        "options": [
+          "It runs each macrotask to completion before moving to the next.",
+          "It interrupts macrotasks to run microtasks.",
+          "It runs multiple macrotasks concurrently.",
+          "It runs macrotasks only after microtasks are empty."
+        ],
+        "correct_index": 0,
+        "explanation": "Each macrotask is run to completion before the event loop processes the next one.",
+        "concept": "event-loop",
+        "difficulty": "medium",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t23",
+        "question": "What is the consequence of scheduling many microtasks that schedule more microtasks?",
+        "options": [
+          "The call stack empties faster.",
+          "The event loop switches to multiple threads.",
+          "The macrotask queue runs first.",
+          "The microtask queue can starve the macrotask queue and block rendering."
+        ],
+        "correct_index": 3,
+        "explanation": "Microtasks have higher priority and can starve macrotasks if scheduled continuously.",
+        "concept": "event-loop",
+        "difficulty": "hard",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t24",
+        "question": "Why is it important that tasks run to completion in the event loop?",
+        "options": [
+          "Because tasks run in parallel threads.",
+          "Because tasks are copied before running.",
+          "Because tasks are never interrupted, preventing inconsistent state.",
+          "Because tasks can be paused and resumed arbitrarily."
+        ],
+        "correct_index": 2,
+        "explanation": "Tasks run to completion to avoid interruption and maintain consistent state.",
+        "concept": "event-loop",
+        "difficulty": "hard",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t25",
+        "question": "Which queue do promises use to schedule their callbacks?",
+        "options": [
+          "The hidden class queue",
+          "The macrotask queue",
+          "The microtask queue",
+          "The call stack"
+        ],
+        "correct_index": 2,
+        "explanation": "Promises schedule callbacks in the microtask queue, which has higher priority.",
+        "concept": "microtask-queue",
+        "difficulty": "easy",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t26",
+        "question": "When does the microtask queue run in relation to the macrotask queue?",
+        "options": [
+          "Only when the call stack is empty.",
+          "Before every macrotask starts.",
+          "Only after all macrotasks complete.",
+          "After every macrotask finishes and before the next macrotask runs."
+        ],
+        "correct_index": 3,
+        "explanation": "The microtask queue fully drains after each macrotask and before the next macrotask.",
+        "concept": "microtask-queue",
+        "difficulty": "easy",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t27",
+        "question": "Why does a resolved Promise's .then callback run before a setTimeout callback scheduled at the same time?",
+        "options": [
+          "Because promises use the macrotask queue.",
+          "Because setTimeout is synchronous.",
+          "Because setTimeout callbacks run immediately.",
+          "Because microtasks have higher priority and run before macrotasks."
+        ],
+        "correct_index": 3,
+        "explanation": "Microtasks (Promise callbacks) run before macrotasks (setTimeout callbacks).",
+        "concept": "microtask-queue",
+        "difficulty": "medium",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t28",
+        "question": "What happens if microtasks schedule more microtasks continuously?",
+        "options": [
+          "The microtasks are discarded.",
+          "The event loop switches to macrotasks immediately.",
+          "The microtask queue can starve the macrotask queue, blocking rendering.",
+          "The call stack empties faster."
+        ],
+        "correct_index": 2,
+        "explanation": "Continuous microtask scheduling can starve macrotasks, blocking rendering.",
+        "concept": "microtask-queue",
+        "difficulty": "medium",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t29",
+        "question": "How does 'await' relate to microtasks in JavaScript?",
+        "options": [
+          "'await' blocks the call stack synchronously.",
+          "'await' runs code in the macrotask queue.",
+          "'await' is syntax sugar over .then, so code after await runs as a microtask.",
+          "'await' disables the microtask queue."
+        ],
+        "correct_index": 2,
+        "explanation": "'await' uses Promise.then internally, scheduling continuation as a microtask.",
+        "concept": "microtask-queue",
+        "difficulty": "hard",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      },
+      {
+        "id": "javascript-deep-dive-t30",
+        "question": "What is a potential pitfall of microtask starvation in the event loop?",
+        "options": [
+          "Rendering and macrotasks get blocked, causing UI freezes.",
+          "Microtasks run slower than macrotasks.",
+          "Microtasks are ignored by the event loop.",
+          "The call stack overflows immediately."
+        ],
+        "correct_index": 0,
+        "explanation": "Starving macrotasks with microtasks blocks rendering and UI updates.",
+        "concept": "microtask-queue",
+        "difficulty": "hard",
+        "lecture": "6.1 - The Event Loop and Microtasks"
+      }
+    ],
+    "model": "gpt-4.1-mini",
+    "generated_at": "2026-10-04T17:40:03.616329+00:00"
+  },
+  "web-apis": {
+    "course_id": "web-apis",
+    "course_title": "Web APIs and Real-Time",
+    "questions": [
+      {
+        "id": "web-apis-t1",
+        "question": "What type of HTTP request initiates a WebSocket connection?",
+        "options": [
+          "PUT",
+          "POST",
+          "GET",
+          "DELETE"
+        ],
+        "correct_index": 2,
+        "explanation": "A WebSocket connection begins with a regular HTTP GET request including the Upgrade: websocket header.",
+        "concept": "http-upgrade",
+        "difficulty": "easy",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t2",
+        "question": "Which header must be included in the initial HTTP request to ask the server to switch to a WebSocket connection?",
+        "options": [
+          "Accept-Encoding: gzip",
+          "Content-Type: application/json",
+          "Connection: close",
+          "Upgrade: websocket"
+        ],
+        "correct_index": 3,
+        "explanation": "The client includes the Upgrade: websocket header to request the server to upgrade the HTTP connection to a WebSocket.",
+        "concept": "http-upgrade",
+        "difficulty": "easy",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t3",
+        "question": "You inspect the very first request a browser sends when it opens a WebSocket. Which description matches what the lecture says you'll see?",
+        "options": [
+          "An HTTP GET carrying an Upgrade: websocket header and a randomly generated, base64-encoded Sec-WebSocket-Key header",
+          "An HTTP POST whose body already contains the first WebSocket frame",
+          "An HTTP GET carrying a Sec-WebSocket-Accept header that the browser computed with SHA-1",
+          "A raw frame sent straight to the ws:// URL with no HTTP headers at all"
+        ],
+        "correct_index": 0,
+        "explanation": "The handshake begins as a regular HTTP GET that includes Upgrade: websocket and a Sec-WebSocket-Key, a randomly generated base64-encoded value; Sec-WebSocket-Accept is the server's response header.",
+        "concept": "http-upgrade",
+        "difficulty": "medium",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t4",
+        "question": "In a scenario where a WebSocket URL starts with ws://, what protocol does the initial handshake use?",
+        "options": [
+          "FTP",
+          "HTTPS",
+          "HTTP",
+          "SMTP"
+        ],
+        "correct_index": 2,
+        "explanation": "The initial handshake for a WebSocket connection uses HTTP even if the URL starts with ws://.",
+        "concept": "http-upgrade",
+        "difficulty": "medium",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t5",
+        "question": "A WebSocket URL starts with ws:// or wss://, yet the very first thing the browser sends is an HTTP GET request. Why?",
+        "options": [
+          "The GET downloads a WebSocket protocol handler, after which the browser opens a new TCP connection to the ws:// URL",
+          "ws:// and wss:// are aliases for http:// and https://, so the connection stays plain HTTP request-response",
+          "The browser first fetches its Sec-WebSocket-Key from the server over HTTP, then connects separately over ws://",
+          "The handshake itself travels over HTTP: the GET carries Upgrade: websocket, asking the server to upgrade that same HTTP connection to a persistent WebSocket connection"
+        ],
+        "correct_index": 3,
+        "explanation": "The lecture explains that the handshake starts as a regular HTTP GET with an Upgrade: websocket header — the browser asks the server to upgrade this HTTP connection — which is why ws:// URLs still begin with an HTTP handshake.",
+        "concept": "http-upgrade",
+        "difficulty": "hard",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t6",
+        "question": "What could be a pitfall if a proxy server does not support the Upgrade: websocket header in the initial HTTP request?",
+        "options": [
+          "The server will ignore the header and accept the connection",
+          "The WebSocket connection will silently downgrade to HTTP/2",
+          "The client will retry with a POST request",
+          "The handshake will fail and the connection won't upgrade"
+        ],
+        "correct_index": 3,
+        "explanation": "If a proxy does not support Upgrade: websocket, the handshake fails and the connection cannot upgrade to WebSocket.",
+        "concept": "http-upgrade",
+        "difficulty": "hard",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t7",
+        "question": "What HTTP status code does the server send to confirm it is switching protocols to WebSocket?",
+        "options": [
+          "500 Internal Server Error",
+          "404 Not Found",
+          "101 Switching Protocols",
+          "200 OK"
+        ],
+        "correct_index": 2,
+        "explanation": "The server responds with 101 Switching Protocols to confirm the upgrade to WebSocket.",
+        "concept": "websocket-handshake",
+        "difficulty": "easy",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t8",
+        "question": "What header does the server send in response to the Sec-WebSocket-Key to confirm the handshake?",
+        "options": [
+          "Upgrade",
+          "Connection",
+          "Sec-WebSocket-Key",
+          "Sec-WebSocket-Accept"
+        ],
+        "correct_index": 3,
+        "explanation": "The server sends Sec-WebSocket-Accept derived from the client's key to confirm the handshake.",
+        "concept": "websocket-handshake",
+        "difficulty": "easy",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t9",
+        "question": "If a client receives a Sec-WebSocket-Accept header that does not match the expected value, what should it do?",
+        "options": [
+          "Reject the connection as invalid",
+          "Proceed with the connection",
+          "Retry the handshake",
+          "Ignore the header and send data"
+        ],
+        "correct_index": 0,
+        "explanation": "The client verifies the Sec-WebSocket-Accept to ensure it's talking to a genuine server and rejects invalid responses.",
+        "concept": "websocket-handshake",
+        "difficulty": "medium",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t10",
+        "question": "After the handshake completes, what kind of communication does the WebSocket connection support?",
+        "options": [
+          "Client-to-server requests only",
+          "Full-duplex communication in both directions",
+          "Server-to-client responses only",
+          "Unidirectional broadcast from server"
+        ],
+        "correct_index": 1,
+        "explanation": "Once the handshake completes, the connection is full-duplex allowing both sides to send frames anytime.",
+        "concept": "websocket-handshake",
+        "difficulty": "medium",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t11",
+        "question": "Why does the server concatenate a fixed GUID string to the Sec-WebSocket-Key before hashing it?",
+        "options": [
+          "To convert the key to lowercase",
+          "To create a unique accept token for validation",
+          "To compress the key for faster transmission",
+          "To encrypt the key for security"
+        ],
+        "correct_index": 1,
+        "explanation": "The server concatenates a fixed GUID to the key and hashes it to create a unique Sec-WebSocket-Accept for validation.",
+        "concept": "websocket-handshake",
+        "difficulty": "hard",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t12",
+        "question": "What is a potential pitfall if a client does not verify the Sec-WebSocket-Accept header properly?",
+        "options": [
+          "The connection might be vulnerable to man-in-the-middle attacks",
+          "The handshake will automatically retry",
+          "The client will send duplicate frames",
+          "The server will close the connection immediately"
+        ],
+        "correct_index": 0,
+        "explanation": "Not verifying Sec-WebSocket-Accept can cause the client to connect to a misconfigured proxy or attacker, risking security.",
+        "concept": "websocket-handshake",
+        "difficulty": "hard",
+        "lecture": "2.2 - WebSocket Handshake"
+      },
+      {
+        "id": "web-apis-t13",
+        "question": "In long-polling, what does the server do with the client's HTTP request?",
+        "options": [
+          "Sends a 404 error",
+          "Responds immediately with cached data",
+          "Holds the request open until data is available",
+          "Closes the connection immediately"
+        ],
+        "correct_index": 2,
+        "explanation": "The server deliberately holds the client's request open until new data is available in long-polling.",
+        "concept": "long-polling",
+        "difficulty": "easy",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t14",
+        "question": "What happens immediately after the server responds to a long-polling request with data?",
+        "options": [
+          "The client closes the connection",
+          "The server upgrades the connection to WebSocket",
+          "The client stops requesting data",
+          "The client sends another request to wait for more data"
+        ],
+        "correct_index": 3,
+        "explanation": "After receiving data, the client instantly sends another request to simulate a continuous connection.",
+        "concept": "long-polling",
+        "difficulty": "easy",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t15",
+        "question": "If a client wants to simulate a push notification using HTTP but cannot use WebSockets, which method should it use?",
+        "options": [
+          "HTTP/2 Server Push",
+          "Long-polling",
+          "FTP",
+          "Polling"
+        ],
+        "correct_index": 1,
+        "explanation": "Long-polling simulates push by holding requests open and immediately re-requesting after a response.",
+        "concept": "long-polling",
+        "difficulty": "medium",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t16",
+        "question": "How does long-polling affect server resource usage compared to WebSockets in a high-frequency update scenario?",
+        "options": [
+          "It uses the same resources as WebSockets",
+          "It reduces CPU usage by caching responses",
+          "It uses fewer resources because connections close quickly",
+          "It uses more resources due to repeated HTTP requests"
+        ],
+        "correct_index": 3,
+        "explanation": "Long-polling uses more resources because each message requires a full HTTP request and response cycle.",
+        "concept": "long-polling",
+        "difficulty": "medium",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t17",
+        "question": "What is a drawback of long-polling related to the timing of messages?",
+        "options": [
+          "The server can push data without client requests",
+          "There is a gap between responses during client reconnects",
+          "Messages are sent in both directions simultaneously",
+          "Messages are delivered instantly without delay"
+        ],
+        "correct_index": 1,
+        "explanation": "Long-polling has a gap between responses where the client reconnects, causing latency.",
+        "concept": "long-polling",
+        "difficulty": "hard",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t18",
+        "question": "Why might long-polling fail or perform poorly behind some proxies?",
+        "options": [
+          "Proxies upgrade the connection to WebSocket automatically",
+          "Proxies cache all long-polling responses",
+          "Proxies block all HTTP GET requests",
+          "Proxies may close idle connections before data arrives"
+        ],
+        "correct_index": 3,
+        "explanation": "Some proxies close idle connections held open by long-polling, disrupting the simulated push mechanism.",
+        "concept": "long-polling",
+        "difficulty": "hard",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t19",
+        "question": "Which method uses a single long-lived full-duplex connection with minimal framing overhead?",
+        "options": [
+          "Long-polling",
+          "WebSocket",
+          "HTTP/1.1 keep-alive",
+          "Polling"
+        ],
+        "correct_index": 1,
+        "explanation": "WebSocket uses one long-lived full-duplex connection with tiny framing overhead after the handshake.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "easy",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t20",
+        "question": "What is a characteristic of long-polling compared to WebSockets in terms of HTTP requests?",
+        "options": [
+          "Long-polling sends no HTTP requests",
+          "Long-polling uses UDP packets instead of HTTP",
+          "Long-polling uses a single HTTP request for all messages",
+          "Long-polling sends one HTTP request per message"
+        ],
+        "correct_index": 3,
+        "explanation": "Long-polling sends a full HTTP request for each message, unlike WebSocket's persistent connection.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "easy",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t21",
+        "question": "In a chat application with frequent bidirectional messages, which method is more efficient and why?",
+        "options": [
+          "WebSocket, because it uses multiple TCP connections",
+          "Long-polling, because it works through old proxies",
+          "Long-polling, because it uses simple HTTP requests",
+          "WebSocket, because it maintains a single full-duplex connection with low overhead"
+        ],
+        "correct_index": 3,
+        "explanation": "WebSocket is more efficient for frequent bidirectional traffic due to its single persistent connection and low framing overhead.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "medium",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t22",
+        "question": "Why might long-polling still be used despite WebSockets' efficiency advantages?",
+        "options": [
+          "It uses less bandwidth for high-frequency updates",
+          "It has lower latency than WebSockets",
+          "It is simpler and works through old proxies",
+          "It supports full-duplex communication"
+        ],
+        "correct_index": 2,
+        "explanation": "Long-polling is simpler and compatible with old proxies, making it suitable for some use cases.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "medium",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t23",
+        "question": "What is a trade-off when choosing long-polling over WebSockets for real-time updates?",
+        "options": [
+          "Long-polling encrypts data by default while WebSockets do not",
+          "Long-polling requires multiple HTTP requests causing overhead and reconnect gaps",
+          "Long-polling has lower overhead but higher latency",
+          "Long-polling supports full-duplex communication unlike WebSockets"
+        ],
+        "correct_index": 1,
+        "explanation": "Long-polling pays the overhead of repeated HTTP requests and has gaps during reconnects, unlike WebSockets.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "hard",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      },
+      {
+        "id": "web-apis-t24",
+        "question": "What might happen if a WebSocket connection drops and the client falls back to long-polling?",
+        "options": [
+          "The client will gain full-duplex communication",
+          "The client will experience increased latency and overhead due to reconnects",
+          "The client will stop receiving updates",
+          "The server will close all connections immediately"
+        ],
+        "correct_index": 1,
+        "explanation": "Falling back to long-polling increases overhead and latency because of repeated HTTP requests and reconnect gaps.",
+        "concept": "polling-vs-websockets",
+        "difficulty": "hard",
+        "lecture": "3.1 - Long-Polling vs WebSockets"
+      }
+    ],
+    "model": "gpt-4.1-mini",
+    "generated_at": "2026-10-04T17:40:23.226165+00:00"
+  },
+  "custom-library": {
+    "course_id": "custom-library",
+    "course_title": "Build a Custom Library",
+    "questions": [
+      {
+        "id": "custom-library-t1",
+        "question": "What does running npm link inside a library directory do?",
+        "options": [
+          "It publishes the package to the npm registry.",
+          "It registers the package globally by creating a global symlink.",
+          "It installs the package locally in the consuming project.",
+          "It deletes the package from the global node_modules."
+        ],
+        "correct_index": 1,
+        "explanation": "Running npm link inside a library registers it by creating a global symlink from the package into the global node_modules.",
+        "concept": "global-symlinks",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t2",
+        "question": "Where is the global symlink created by npm link stored?",
+        "options": [
+          "In the global node_modules directory.",
+          "In the library's source folder.",
+          "In the npm registry.",
+          "In the local project node_modules directory."
+        ],
+        "correct_index": 0,
+        "explanation": "npm link creates a global symlink from your library package to your global node_modules.",
+        "concept": "global-symlinks",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t3",
+        "question": "If you run npm link inside your library but forget to run npm link <package-name> in your consuming project, what happens?",
+        "options": [
+          "The consuming project will use the latest published version from npm.",
+          "The library will be published automatically.",
+          "The global symlink will be removed.",
+          "The consuming project will not have the symlink and cannot use the library."
+        ],
+        "correct_index": 3,
+        "explanation": "Without both steps, the symlink does not exist in your consuming project.",
+        "concept": "global-symlinks",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t4",
+        "question": "How does npm link enable immediate reflection of library changes in the consuming project?",
+        "options": [
+          "By publishing the library to a private npm registry.",
+          "By creating a global symlink and then a local symlink in the consuming project.",
+          "By installing the latest version from npm automatically.",
+          "By copying the library files into the consuming project."
+        ],
+        "correct_index": 1,
+        "explanation": "npm link creates a global symlink and then a local symlink in the consuming project, so changes in the library source are immediately reflected.",
+        "concept": "global-symlinks",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t5",
+        "question": "After you run npm link your-package-name inside the consuming project, it gets a local symlink. What does that local symlink point to?",
+        "options": [
+          "A copy of the package downloaded from the npm registry",
+          "The library's compiled output, copied into the consuming project's node_modules",
+          "The global symlink that running npm link inside the library created in the global node_modules",
+          "A tarball of the library that npm stores in a local cache"
+        ],
+        "correct_index": 2,
+        "explanation": "The lecture explains that npm link in the library creates a global symlink in the global node_modules, and npm link package-name in the consuming project creates a local symlink pointing to that global one.",
+        "concept": "global-symlinks",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t6",
+        "question": "What is a potential issue if the global symlink created by npm link is missing or incorrectly set up?",
+        "options": [
+          "The consuming project will not have a local symlink pointing to the library, so changes won't be reflected",
+          "The consuming project will automatically download the latest version from npm",
+          "The library will be published to npm unintentionally",
+          "The TypeScript compiler will fail to run in watch mode"
+        ],
+        "correct_index": 0,
+        "explanation": "If the global symlink does not exist, the consuming project cannot create a local symlink pointing to the library, so changes in the library won't be reflected in the consuming project.",
+        "concept": "global-symlinks",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t7",
+        "question": "What are the two steps involved in using npm link correctly?",
+        "options": [
+          "Run npm link <package-name> in the consuming project, then npm link in the library.",
+          "Run npm install in the library, then npm publish.",
+          "Run npm uninstall in the consuming project, then npm link in the library.",
+          "Run npm link inside the library, then npm link <package-name> in the consuming project."
+        ],
+        "correct_index": 3,
+        "explanation": "npm link is a two-step process: npm link in the library, then npm link <package-name> in the consuming project.",
+        "concept": "npm-link",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t8",
+        "question": "Why is npm link considered essential for local library development workflows?",
+        "options": [
+          "Because it allows testing without publishing and speeds up development.",
+          "Because it deletes old versions of your library.",
+          "Because it installs dependencies faster than npm install.",
+          "Because it automatically publishes your library to npm."
+        ],
+        "correct_index": 0,
+        "explanation": "npm link is essential because it lets you develop and test your library without publishing, saving time and avoiding version bumps.",
+        "concept": "npm-link",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t9",
+        "question": "You ran npm link inside your library, but the consuming project still can't find the package. According to the lecture, what is the most likely cause?",
+        "options": [
+          "The package has to be published to npm before npm link works.",
+          "npm link only works when you use a private registry.",
+          "You must bump the library's version number before linking it.",
+          "You haven't run npm link your-package-name in the consuming project, so the local symlink doesn't exist there."
+        ],
+        "correct_index": 3,
+        "explanation": "npm link is a two-step process; without running npm link your-package-name in the consuming project, the symlink does not exist in that project.",
+        "concept": "npm-link",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t10",
+        "question": "What happens if you skip running npm link <package-name> in the consuming project after linking the library globally?",
+        "options": [
+          "The global symlink will be deleted.",
+          "The consuming project will not have the local symlink and cannot access the linked library.",
+          "The consuming project will use the stale compiled output.",
+          "The library will be automatically installed from npm."
+        ],
+        "correct_index": 1,
+        "explanation": "Without running npm link <package-name> in the consuming project, the local symlink to the global one is missing.",
+        "concept": "npm-link",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t11",
+        "question": "What is a common pitfall when using npm link with TypeScript libraries?",
+        "options": [
+          "Running npm link in the wrong order.",
+          "Forgetting to publish the library to npm.",
+          "Installing dependencies twice.",
+          "Not rebuilding or running the compiler in watch mode causes stale output to be imported."
+        ],
+        "correct_index": 3,
+        "explanation": "If you do not rebuild or run the compiler in watch mode, the consuming project imports stale compiled output.",
+        "concept": "npm-link",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t12",
+        "question": "Why must npm link be run inside the library directory before linking it in the consuming project?",
+        "options": [
+          "To create the global symlink that the consuming project will link to.",
+          "To install dependencies in the consuming project.",
+          "To delete old versions of the library.",
+          "To publish the library to the npm registry."
+        ],
+        "correct_index": 0,
+        "explanation": "Running npm link inside the library creates the global symlink necessary for the consuming project to link to.",
+        "concept": "npm-link",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t13",
+        "question": "What is the main benefit of testing a local library with npm link instead of publishing it to npm?",
+        "options": [
+          "You automatically get the latest npm version.",
+          "You get better performance in production.",
+          "You avoid installing dependencies.",
+          "You can test changes immediately without publishing or version bumps."
+        ],
+        "correct_index": 3,
+        "explanation": "npm link lets you test your library in a consuming project without publishing, avoiding version bumps and speeding up development.",
+        "concept": "local-package-testing",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t14",
+        "question": "You're testing a TypeScript library in another project through npm link. What must you do so the consuming project doesn't import stale compiled output?",
+        "options": [
+          "Run npm link your-package-name again in the consuming project after every change.",
+          "Publish a new version to npm after every change.",
+          "Rebuild the library after every change, or run the compiler in watch mode.",
+          "Delete the global symlink and recreate it after every change."
+        ],
+        "correct_index": 2,
+        "explanation": "The lecture warns that with TypeScript you must rebuild the library after every change or run the compiler in watch mode, otherwise the consuming project imports stale compiled output.",
+        "concept": "local-package-testing",
+        "difficulty": "easy",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t15",
+        "question": "If you want to test a TypeScript library locally with npm link, what should you do after making changes to the source?",
+        "options": [
+          "Delete the node_modules folder.",
+          "Run npm publish to update the package.",
+          "Run npm install in the consuming project.",
+          "Rebuild the library or run the compiler in watch mode before testing."
+        ],
+        "correct_index": 3,
+        "explanation": "Rebuilding or running the compiler in watch mode ensures the consuming project does not import stale output.",
+        "concept": "local-package-testing",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t16",
+        "question": "How does npm link support simultaneous iteration on a library and consuming app?",
+        "options": [
+          "By creating symlinks so changes in the library are immediately available in the app without publishing.",
+          "By automatically publishing the library on every change.",
+          "By installing the latest npm version.",
+          "By copying the library files into the consuming app."
+        ],
+        "correct_index": 0,
+        "explanation": "npm link creates symlinks that allow immediate reflection of library changes in the consuming app without publishing.",
+        "concept": "local-package-testing",
+        "difficulty": "medium",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t17",
+        "question": "What is a trade-off when using npm link for local package testing compared to publishing to npm?",
+        "options": [
+          "You lose access to npm registry features.",
+          "You must manually rebuild or watch the library to avoid stale output, unlike publishing which provides fresh packages.",
+          "You cannot test changes immediately.",
+          "You have to publish more frequently."
+        ],
+        "correct_index": 1,
+        "explanation": "Using npm link requires rebuilding or watch mode to avoid stale output, whereas publishing provides fresh compiled packages automatically.",
+        "concept": "local-package-testing",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      },
+      {
+        "id": "custom-library-t18",
+        "question": "Why might debugging be difficult if you forget to rebuild a TypeScript library when using npm link?",
+        "options": [
+          "Because npm link deletes your source files.",
+          "Because the global symlink is removed.",
+          "Because the library is published incorrectly.",
+          "Because the consuming project imports stale compiled output, hiding your changes."
+        ],
+        "correct_index": 3,
+        "explanation": "Without rebuilding, the consuming project imports stale output, causing confusion during debugging.",
+        "concept": "local-package-testing",
+        "difficulty": "hard",
+        "lecture": "8.1 - The npm link command"
+      }
+    ],
+    "model": "gpt-4.1-mini",
+    "generated_at": "2026-10-04T17:40:39.804720+00:00"
+  }
+}

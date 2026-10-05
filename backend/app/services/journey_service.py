@@ -9,6 +9,7 @@ narrative that surfaces patterns they might not notice themselves.
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
 
+from app.services import knowledge_graph_service, skill_graph_service
 from app.services.llm import llm
 from app.services.store import store
 
@@ -72,6 +73,44 @@ async def get_strengths_weaknesses(user_id: str) -> dict:
         "weaknesses": [fmt(p) for p in weaknesses],
         "concepts_attempted": len(practiced),
     }
+
+
+async def get_strengths_report(student_id: str) -> dict:
+    """Strengths/weaknesses, each weakness enriched with its course and its
+    prerequisites' accuracy (from the course knowledge graph) — so the tutor can
+    say "you're weak on X, and its prerequisite Y is shaky too, so start there".
+    Shared by the web tutor's tool and the Hermes MCP tool."""
+    data = await get_strengths_weaknesses(student_id)
+
+    enriched_weaknesses = []
+    for w in data["weaknesses"]:
+        course_id = await knowledge_graph_service.find_course_for_concept(w["concept"])
+        prerequisites = []
+        if course_id:
+            view = await skill_graph_service.get_prerequisite_view(student_id, course_id, w["concept"])
+            prerequisites = view["prerequisites"]
+        enriched_weaknesses.append({**w, "course_id": course_id, "prerequisites": prerequisites})
+
+    return {
+        "strengths": data["strengths"],
+        "weaknesses": enriched_weaknesses,
+        "concepts_attempted": data["concepts_attempted"],
+    }
+
+
+async def weak_concepts_for_course(user_id: str, course_slug: str) -> list[str]:
+    """This student's weakest concepts (accuracy < 70%) among the concepts the
+    course's question bank covers, worst first, as "concept (NN%)" — max 5."""
+    qdoc = await store.get("questions", course_slug)
+    if not qdoc:
+        return []
+    course_concepts = {q["concept"] for q in qdoc["questions"]}
+    perf = await store.query("concept_performance", "user_id", user_id)
+    weak = sorted(
+        [p for p in perf if p["concept"] in course_concepts and p["attempts"] > 0 and p["accuracy"] < 0.7],
+        key=lambda p: p["accuracy"],
+    )
+    return [f"{p['concept']} ({round(p['accuracy']*100)}%)" for p in weak[:5]]
 
 
 def _compute_metrics(sessions: list[dict], perf: list[dict]):

@@ -1,5 +1,5 @@
 """
-Durable store for eval / RAGAS / GEPA results.
+Durable store for eval / RAGAS results.
 
 Turns "we ran it once and read the terminal" into "quality is tracked over time":
 - appends every run to an append-only history log (`data/eval_results/history.jsonl`)
@@ -18,7 +18,7 @@ _HISTORY = _DIR / "history.jsonl"
 
 
 def record(kind: str, metrics: dict, meta: dict | None = None) -> dict:
-    """Append one result row (kind = accuracy | ragas | gepa | gepa_apply)."""
+    """Append one result row (kind = accuracy | ragas)."""
     _DIR.mkdir(parents=True, exist_ok=True)
     row = {
         "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -46,7 +46,7 @@ def history(kind: str | None = None, limit: int = 50) -> list[dict]:
 def _print_trend() -> None:
     rows = history(limit=500)
     if not rows:
-        print("No results recorded yet. Run an eval (accuracy.py / ragas_eval.py / GEPA).")
+        print("No results recorded yet. Run an eval (accuracy.py / ragas_eval.py).")
         return
     by_kind: dict[str, list] = {}
     for r in rows:

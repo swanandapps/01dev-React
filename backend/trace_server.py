@@ -19,9 +19,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TOKEN = "the01dev-local"
 BASE = "http://localhost:9119"
-# Real model context window (Ollama num_ctx). Default 2048 unless you start Ollama
-# with OLLAMA_CONTEXT_LENGTH — set it here too so ctx% is honest.
-CTX = int(os.getenv("OLLAMA_CONTEXT_LENGTH", "2048"))
+# The context budget ctx% is measured against — the same MODEL_CONTEXT_LIMIT
+# (and default) the backend's context builder uses.
+CTX = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
 N = 8  # sessions to show
 
 

@@ -1,5 +1,5 @@
 """
-RAGAS evaluation of the01.dev's RAG tutor — sovereign (scored by the LOCAL model).
+RAGAS evaluation of the01.dev's RAG tutor, scored by an OpenAI judge model.
 
 Pulls the tutor's {question, answer, contexts} from the backend, adds the gold
 reference answers from the eval set, and scores them on the full RAGAS quadrant:
@@ -8,8 +8,7 @@ reference answers from the eval set, and scores them on the full RAGAS quadrant:
   - answer relevancy   (does the answer actually address the question?)
   - context recall     (did retrieval surface everything the gold answer needs?)
 
-Judged by OpenAI by default (set EVAL_PROVIDER=ollama for a fully local run).
-These feed the same grounding signal the GEPA loop optimises.
+Each run is recorded in the eval history (app/eval/results_store.py).
 
 Run (isolated venv):  .ragas-venv/bin/python ragas_eval.py
 """
@@ -35,10 +34,8 @@ from ragas.run_config import RunConfig
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 BACKEND = os.getenv("BACKEND_URL", "http://localhost:8080")
-# Judge with OpenAI (matches the shipped product); set EVAL_PROVIDER=ollama for local sovereign runs.
-_USE_OPENAI = bool(os.getenv("OPENAI_API_KEY")) and os.getenv("EVAL_PROVIDER", "openai") != "ollama"
-MODEL = os.getenv("EVAL_MODEL", "gpt-4.1-mini") if _USE_OPENAI else os.getenv("RAGAS_MODEL", "qwen2.5:7b")
-OLLAMA = os.getenv("OLLAMA_URL", "http://localhost:11434/v1")
+# Judge with OpenAI (matches the shipped product).
+MODEL = os.getenv("EVAL_MODEL", "gpt-4.1-mini")
 
 # 1. the tutor's RAG outputs (question, answer, retrieved contexts)
 raw = json.load(urllib.request.urlopen(f"{BACKEND}/api/hermes/eval/rag-outputs", timeout=180))
@@ -57,19 +54,13 @@ samples = [
     for r in raw
 ]
 dataset = EvaluationDataset.from_list(samples)
-print(f"Scoring {len(samples)} tutor answers with RAGAS — sovereign, judge model = {MODEL}\n")
+print(f"Scoring {len(samples)} tutor answers with RAGAS — judge model = {MODEL}\n")
 
-# 2. Judge model + embeddings — OpenAI (matches production), or local if EVAL_PROVIDER=ollama.
+# 2. Judge model + embeddings — OpenAI (matches production).
 #    answer-relevancy needs an embeddings model; context-recall needs the gold reference above.
-if _USE_OPENAI:
-    judge = LangchainLLMWrapper(ChatOpenAI(model=MODEL, temperature=0))
-    embeddings = LangchainEmbeddingsWrapper(
-        OpenAIEmbeddings(model=os.getenv("EVAL_EMBED_MODEL", "text-embedding-3-small")))
-else:
-    judge = LangchainLLMWrapper(ChatOpenAI(model=MODEL, base_url=OLLAMA, api_key="ollama", temperature=0))
-    embeddings = LangchainEmbeddingsWrapper(
-        OpenAIEmbeddings(model=os.getenv("RAGAS_EMBED_MODEL", "nomic-embed-text"),
-                         base_url=OLLAMA, api_key="ollama"))
+judge = LangchainLLMWrapper(ChatOpenAI(model=MODEL, temperature=0))
+embeddings = LangchainEmbeddingsWrapper(
+    OpenAIEmbeddings(model=os.getenv("EVAL_EMBED_MODEL", "text-embedding-3-small")))
 
 # 3. score
 result = evaluate(
@@ -82,8 +73,7 @@ result = evaluate(
     ],
     llm=judge,
     embeddings=embeddings,
-    # one judge call at a time (a single local model can't serve parallel jobs),
-    # with a generous per-call timeout.
+    # one judge call at a time, with a generous per-call timeout.
     run_config=RunConfig(timeout=600, max_workers=1),
 )
 

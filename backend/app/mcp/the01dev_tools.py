@@ -36,7 +36,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.vector_store import vector_store
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
-    from app.services import journey_service, knowledge_graph_service, enrollment_service
+    from app.services import journey_service, enrollment_service
     from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")
@@ -242,22 +242,7 @@ async def get_learning_strengths(student_id: str) -> dict:
         student_id: This student's id — use the exact value you were given for
             this conversation, never a different one.
     """
-    data = await journey_service.get_strengths_weaknesses(student_id)
-
-    enriched_weaknesses = []
-    for w in data["weaknesses"]:
-        course_id = await knowledge_graph_service.find_course_for_concept(w["concept"])
-        prerequisites = []
-        if course_id:
-            view = await skill_graph_service.get_prerequisite_view(student_id, course_id, w["concept"])
-            prerequisites = view["prerequisites"]
-        enriched_weaknesses.append({**w, "course_id": course_id, "prerequisites": prerequisites})
-
-    return {
-        "strengths": data["strengths"],
-        "weaknesses": enriched_weaknesses,
-        "concepts_attempted": data["concepts_attempted"],
-    }
+    return await journey_service.get_strengths_report(student_id)
 
 
 # ── Dashboard metrics (thin wrapper over journey_service.get_metrics) ─────────

@@ -1,0 +1,319 @@
+{
+  "_comment": "The demo student's story as data. Sessions are the ONLY source of graded performance: scripts/seed_demo_account.py aggregates concept_performance from these answers, so dashboard numbers and session history can't disagree. Times are UTC (13:00-16:30 UTC = evenings IST); days_ago is counted from today's UTC date and a timestamp is never in the future (today's session is clamped to now - 30 min). Per-answer difficulty is derived from the running accuracy with adaptive_service's bands (<0.5 easy, <0.8 medium, else hard).",
+  "uid": "x94FcfXU7KRrobyOA4UHDukbRoC2",
+  "sessions": [
+    {
+      "days_ago": 41,
+      "utc_hour": 13,
+      "utc_minute": 40,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "shallow-equality", "correct": 1, "total": 2},
+        {"concept": "react-memo", "correct": 1, "total": 2},
+        {"concept": "use-callback", "correct": 1, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 39,
+      "utc_hour": 15,
+      "utc_minute": 5,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "use-memo", "correct": 1, "total": 2},
+        {"concept": "shallow-equality", "correct": 1, "total": 2},
+        {"concept": "use-callback", "correct": 1, "total": 1}
+      ]
+    },
+    {
+      "days_ago": 37,
+      "utc_hour": 14,
+      "utc_minute": 20,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "react-memo", "correct": 1, "total": 2},
+        {"concept": "use-memo", "correct": 2, "total": 2},
+        {"concept": "shallow-equality", "correct": 0, "total": 1}
+      ]
+    },
+    {
+      "days_ago": 30,
+      "utc_hour": 15,
+      "utc_minute": 30,
+      "course_slug": "custom-library",
+      "concepts": [
+        {"concept": "global-symlinks", "correct": 1, "total": 2},
+        {"concept": "npm-link", "correct": 2, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 27,
+      "utc_hour": 14,
+      "utc_minute": 45,
+      "course_slug": "custom-library",
+      "concepts": [
+        {"concept": "npm-link", "correct": 2, "total": 2},
+        {"concept": "local-package-testing", "correct": 1, "total": 2},
+        {"concept": "global-symlinks", "correct": 1, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 24,
+      "utc_hour": 16,
+      "utc_minute": 25,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "prototype-inheritance", "correct": 2, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 1, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 21,
+      "utc_hour": 13,
+      "utc_minute": 15,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "prototype-inheritance", "correct": 2, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 1, "total": 2},
+        {"concept": "v8-hidden-classes", "correct": 1, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 19,
+      "utc_hour": 15,
+      "utc_minute": 50,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 1, "total": 4},
+        {"concept": "v8-hidden-classes", "correct": 1, "total": 2},
+        {"concept": "class-syntax-sugar", "correct": 1, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 17,
+      "utc_hour": 14,
+      "utc_minute": 5,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 3},
+        {"concept": "v8-hidden-classes", "correct": 2, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 15,
+      "utc_hour": 16,
+      "utc_minute": 0,
+      "course_slug": "web-apis",
+      "concepts": [
+        {"concept": "http-upgrade", "correct": 1, "total": 3},
+        {"concept": "websocket-handshake", "correct": 2, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 14,
+      "utc_hour": 13,
+      "utc_minute": 35,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 1, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 3, "total": 3},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 13,
+      "utc_hour": 15,
+      "utc_minute": 20,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "shallow-equality", "correct": 5, "total": 5},
+        {"concept": "react-memo", "correct": 5, "total": 5},
+        {"concept": "use-callback", "correct": 5, "total": 5},
+        {"concept": "use-memo", "correct": 5, "total": 5}
+      ]
+    },
+    {
+      "days_ago": 11,
+      "utc_hour": 14,
+      "utc_minute": 10,
+      "course_slug": "custom-library",
+      "concepts": [
+        {"concept": "npm-link", "correct": 6, "total": 6},
+        {"concept": "global-symlinks", "correct": 6, "total": 6},
+        {"concept": "local-package-testing", "correct": 5, "total": 5}
+      ]
+    },
+    {
+      "days_ago": 10,
+      "utc_hour": 14,
+      "utc_minute": 40,
+      "course_slug": "web-apis",
+      "concepts": [
+        {"concept": "http-upgrade", "correct": 3, "total": 3},
+        {"concept": "websocket-handshake", "correct": 3, "total": 3},
+        {"concept": "long-polling", "correct": 1, "total": 2},
+        {"concept": "polling-vs-websockets", "correct": 1, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 8,
+      "utc_hour": 13,
+      "utc_minute": 50,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 1, "total": 4},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 2},
+        {"concept": "microtask-queue", "correct": 0, "total": 4}
+      ]
+    },
+    {
+      "days_ago": 6,
+      "utc_hour": 16,
+      "utc_minute": 15,
+      "course_slug": "react-perf",
+      "concepts": [
+        {"concept": "react-memo", "correct": 5, "total": 5},
+        {"concept": "use-memo", "correct": 5, "total": 5},
+        {"concept": "use-callback", "correct": 5, "total": 5},
+        {"concept": "shallow-equality", "correct": 5, "total": 5}
+      ]
+    },
+    {
+      "days_ago": 4,
+      "utc_hour": 13,
+      "utc_minute": 50,
+      "course_slug": "web-apis",
+      "concepts": [
+        {"concept": "websocket-handshake", "correct": 3, "total": 3},
+        {"concept": "long-polling", "correct": 1, "total": 2},
+        {"concept": "polling-vs-websockets", "correct": 1, "total": 2},
+        {"concept": "http-upgrade", "correct": 3, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 3,
+      "utc_hour": 15,
+      "utc_minute": 10,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 2, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 4, "total": 4},
+        {"concept": "class-syntax-sugar", "correct": 3, "total": 4},
+        {"concept": "v8-hidden-classes", "correct": 2, "total": 2}
+      ]
+    },
+    {
+      "days_ago": 2,
+      "utc_hour": 14,
+      "utc_minute": 25,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 2, "total": 3},
+        {"concept": "microtask-queue", "correct": 1, "total": 3},
+        {"concept": "v8-hidden-classes", "correct": 2, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 4, "total": 4}
+      ]
+    },
+    {
+      "days_ago": 1,
+      "utc_hour": 16,
+      "utc_minute": 30,
+      "course_slug": "web-apis",
+      "concepts": [
+        {"concept": "http-upgrade", "correct": 4, "total": 4},
+        {"concept": "polling-vs-websockets", "correct": 1, "total": 2},
+        {"concept": "long-polling", "correct": 2, "total": 2},
+        {"concept": "websocket-handshake", "correct": 2, "total": 3}
+      ]
+    },
+    {
+      "days_ago": 0,
+      "utc_hour": 14,
+      "utc_minute": 0,
+      "course_slug": "javascript-deep-dive",
+      "concepts": [
+        {"concept": "event-loop", "correct": 3, "total": 5},
+        {"concept": "microtask-queue", "correct": 2, "total": 3},
+        {"concept": "prototype-inheritance", "correct": 4, "total": 4},
+        {"concept": "class-syntax-sugar", "correct": 2, "total": 2}
+      ]
+    }
+  ],
+  "chat_turns": [
+    {
+      "days_ago": 40,
+      "utc_hour": 15,
+      "utc_minute": 20,
+      "course_slug": "react-perf",
+      "question": "Why does my component still re-render even though I wrapped it in React.memo?",
+      "answer": "React.memo only skips a re-render when the props are shallowly equal to the previous render. Primitives compare by value, but objects, arrays and functions compare by reference — so if the parent creates a new function or object literal on every render and passes it down, React.memo sees a brand-new reference each time and re-renders anyway. Wrap that callback in useCallback so the reference stays stable. (4.1 - React.memo and useCallback)"
+    },
+    {
+      "days_ago": 36,
+      "utc_hour": 14,
+      "utc_minute": 45,
+      "course_slug": "react-perf",
+      "question": "What's the difference between useMemo and useCallback?",
+      "answer": "useMemo memoizes a computed value; useCallback memoizes the function reference itself. You reach for useCallback specifically when you pass a callback into a child wrapped in React.memo, so the child doesn't see a new reference on every parent render. Don't wrap everything, though — the dependency comparison has its own cost, so profile first. (3.2 - Memoization and Computed State)"
+    },
+    {
+      "days_ago": 29,
+      "utc_hour": 16,
+      "utc_minute": 5,
+      "course_slug": "custom-library",
+      "question": "I ran npm link in my library but my app still can't find the package. What am I missing?",
+      "answer": "npm link is a two-step process. Running npm link inside your library only registers it — it creates a global symlink from the package into your global node_modules. You then go to the consuming project and run npm link your-package-name, which creates the local symlink pointing at that global one. And if the library is TypeScript, rebuild after every change (or run the compiler in watch mode), otherwise the app imports stale compiled output. (8.1 - The npm link command)"
+    },
+    {
+      "days_ago": 19,
+      "utc_hour": 15,
+      "utc_minute": 40,
+      "course_slug": "javascript-deep-dive",
+      "question": "Is the class keyword actually different from using prototypes directly?",
+      "answer": "No — class is syntactic sugar over the same prototype chain. When you write class Dog extends Animal, JavaScript sets things up so Dog.prototype has Animal.prototype as its prototype, and instanceof walks that same chain. Methods still live once on the prototype and every instance delegates lookups to it rather than copying them. (4.1 - Prototype Inheritance)"
+    },
+    {
+      "days_ago": 13,
+      "utc_hour": 14,
+      "utc_minute": 30,
+      "course_slug": "web-apis",
+      "question": "What actually happens during the WebSocket handshake?",
+      "answer": "It starts as a normal HTTP GET with an Upgrade: websocket header and a random base64 Sec-WebSocket-Key. The server replies 101 Switching Protocols with a Sec-WebSocket-Accept header — your key plus a fixed GUID, SHA-1 hashed and base64 encoded — and the client checks that value so it knows it's talking to a real WebSocket server, not a misconfigured proxy. After the 101 the connection is full-duplex: either side can send frames at any time. (2.2 - WebSocket Handshake)"
+    },
+    {
+      "days_ago": 10,
+      "utc_hour": 15,
+      "utc_minute": 15,
+      "course_slug": "javascript-deep-dive",
+      "question": "I keep getting event loop questions wrong. Can you explain the event loop in plain English?",
+      "answer": "Picture a restaurant kitchen with exactly one chef. The chef is the call stack: they can only cook one dish at a time, and once they start a dish they finish it — that's 'run to completion', and it's why long synchronous work freezes the page. The order tickets pinned on the rail are the task queue (macrotasks): setTimeout callbacks, I/O and DOM events wait there. The rule is simple: only when the chef's hands are free — the call stack is empty — do they take the next ticket off the rail. One more piece we'll build on later: the head waiter can slip the chef urgent notes. Those are microtasks (Promise callbacks), and the chef reads every urgent note before picking up the next ticket. (6.1 - The Event Loop and Microtasks)"
+    },
+    {
+      "days_ago": 5,
+      "utc_hour": 14,
+      "utc_minute": 50,
+      "course_slug": "all-courses",
+      "question": "What should I focus on this week?",
+      "answer": "Your React Performance work is solid — the memoization concepts are consistently strong — so I'd put this week into JavaScript Deep Dive. The event loop is your shakiest area right now, and the microtask queue builds directly on it, so get the call stack / task queue model solid first (6.1 - The Event Loop and Microtasks), then move on to how Promises jump the line. A short practice session most evenings will do more than one long one."
+    },
+    {
+      "days_ago": 3,
+      "utc_hour": 16,
+      "utc_minute": 20,
+      "course_slug": "javascript-deep-dive",
+      "question": "Why does my Promise .then() run before my setTimeout(fn, 0)?",
+      "answer": "Because Promises don't use the task queue at all. A resolved Promise's .then callback goes into the separate, higher-priority microtask queue, and after every task the event loop drains that queue completely before it takes the next macrotask — so it always beats a setTimeout(fn, 0) scheduled at the same time. The code after an await runs as a microtask too. (6.1 - The Event Loop and Microtasks)"
+    }
+  ],
+  "chat_observations": [
+    {
+      "days_ago": 3,
+      "utc_hour": 16,
+      "utc_minute": 21,
+      "course_slug": "javascript-deep-dive",
+      "concept": "event-loop",
+      "confidence": "developing",
+      "note": "explained the call stack correctly but mixed up setTimeout vs Promise ordering"
+    }
+  ]
+}
