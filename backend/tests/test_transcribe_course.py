@@ -205,7 +205,7 @@ def _stub_run(monkeypatch, tmp_path, fail_ids):
     monkeypatch.setattr(tc, "CACHE_DIR", tmp_path / "cache")
     monkeypatch.setattr(tc, "_make_client", lambda: object())
 
-    def fake(client, lec, cache):
+    def fake(client, lec, cache, *_):
         if lec.lecture_id in fail_ids:
             raise RuntimeError("boom")
         return [{"start": 0.0, "end": 50.0, "text": "hello"}]
@@ -258,7 +258,7 @@ def test_lecture_with_no_chunks_means_incomplete_and_exit_1(tmp_path, monkeypatc
     monkeypatch.setattr(tc, "CACHE_DIR", tmp_path / "cache")
     monkeypatch.setattr(tc, "_make_client", lambda: object())
     monkeypatch.setattr(tc, "transcribe_lecture",
-                        lambda client, lec, cache: [{"start": 0.0, "end": 3.0, "text": "  "}])
+                        lambda client, lec, cache, *_: [{"start": 0.0, "end": 3.0, "text": "  "}])
     assert tc.main(["custom-library"]) == 1
     d = tmp_path / "cache" / "custom-library"
     assert not (d / "review.json").exists()
@@ -273,3 +273,28 @@ def test_cached_empty_whisper_json_is_retranscribed(tmp_path, monkeypatch):
     monkeypatch.setattr(tc, "whisper_segments", lambda client, audio: segs)
     assert tc.transcribe_lecture(object(), lec, tmp_path) == segs
     assert json.loads((tmp_path / "c-0-0.whisper.json").read_text()) == segs
+
+
+def test_small_max_upload_bytes_splits_into_parts_with_offsets(tmp_path, monkeypatch):
+    lec = tc.Lecture("c", 0, 0, "ch", "n", "x")
+    (tmp_path / "c-0-0.mp3").write_bytes(b"x" * 1000)
+    monkeypatch.setattr(tc, "probe_duration", lambda p: 300.0)
+    cut = []
+    monkeypatch.setattr(tc, "extract_audio",
+                        lambda src, out, offset=None, length=None: (cut.append((offset, length)), out.write_bytes(b"y"))[0])
+    monkeypatch.setattr(tc, "whisper_segments",
+                        lambda client, audio: [{"start": 0.0, "end": 5.0, "text": audio.name}])
+    segs = tc.transcribe_lecture(object(), lec, tmp_path, max_upload_bytes=400)
+    assert cut == [(0.0, 100.0), (100.0, 100.0), (200.0, 100.0)]
+    assert [s["start"] for s in segs] == [0.0, 100.0, 200.0]
+    assert [s["end"] for s in segs] == [5.0, 105.0, 205.0]
+
+
+def test_max_upload_bytes_flag_reaches_transcribe_lecture(tmp_path, monkeypatch):
+    seen = []
+    monkeypatch.setattr(tc, "CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(tc, "_make_client", lambda: object())
+    monkeypatch.setattr(tc, "transcribe_lecture",
+                        lambda client, lec, cache, limit: seen.append(limit) or [{"start": 0.0, "end": 3.0, "text": "hi"}])
+    tc.main(["custom-library", "--only", "custom-library-10-0", "--max-upload-bytes", "900000"])
+    assert seen == [900000]

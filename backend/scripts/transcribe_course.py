@@ -242,7 +242,8 @@ def whisper_segments(client, audio_path: Path) -> list[dict]:
     return [{"start": float(s.start), "end": float(s.end), "text": s.text} for s in (resp.segments or [])]
 
 
-def transcribe_lecture(client, lecture: Lecture, cache: Path) -> list[dict]:
+def transcribe_lecture(client, lecture: Lecture, cache: Path,
+                       max_upload_bytes: int = MAX_UPLOAD_BYTES) -> list[dict]:
     """Segments for one lecture, from cache when present."""
     seg_path = cache / f"{lecture.lecture_id}.whisper.json"
     if seg_path.exists():
@@ -254,8 +255,9 @@ def transcribe_lecture(client, lecture: Lecture, cache: Path) -> list[dict]:
         tmp = cache / f"{lecture.lecture_id}.partial.mp3"
         extract_audio(decode_video_url(lecture.src), tmp)
         tmp.rename(audio)
-    parts = plan_audio_parts(audio.stat().st_size, probe_duration(audio)
-                             if audio.stat().st_size >= MAX_UPLOAD_BYTES else 0.0)
+    size = audio.stat().st_size
+    parts = plan_audio_parts(size, probe_duration(audio) if size >= max_upload_bytes else 0.0,
+                             limit_bytes=max_upload_bytes)
     segments: list[dict] = []
     if len(parts) == 1:
         segments = whisper_segments(client, audio)
@@ -284,6 +286,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("course_slug")
     ap.add_argument("--only", default="", help="comma-separated lecture_ids (writes review-partial.json)")
     ap.add_argument("--merge", action="store_true", help="merge review.json into seed_transcripts.json")
+    ap.add_argument("--max-upload-bytes", type=int, default=MAX_UPLOAD_BYTES,
+                    help="split audio so each Whisper upload stays under this size (default %(default)s)")
     args = ap.parse_args(argv)
     cache = CACHE_DIR / args.course_slug
     review = cache / "review.json"
@@ -322,7 +326,7 @@ def main(argv: list[str] | None = None) -> int:
         if only and lec.lecture_id not in only:
             continue
         try:
-            segments = transcribe_lecture(client, lec, cache)
+            segments = transcribe_lecture(client, lec, cache, args.max_upload_bytes)
         except Exception as e:  # noqa: BLE001 — report and keep going
             failed.append((lec, f"{type(e).__name__}: {e}"))
             print(f"FAIL  {lec.lecture_id:24} {lec.name}  — {type(e).__name__}: {e}")
