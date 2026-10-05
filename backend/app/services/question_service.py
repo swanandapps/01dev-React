@@ -14,7 +14,9 @@ questions a given user hasn't seen yet, and only repeats as deliberate review.
 """
 
 import asyncio
+import hashlib
 import random
+import re
 from datetime import datetime, timezone
 from typing import List
 
@@ -58,6 +60,42 @@ def _norm(text: str) -> str:
     return " ".join(text.strip().lower().split())
 
 
+def _tag_key(tag: str) -> str:
+    """Forgives only case / whitespace / hyphen-underscore differences:
+    "Use Memo" and " use_memo " both key to "use-memo"; "useMemo hook" does not."""
+    return re.sub(r"[\s_-]+", "-", tag.strip().lower()).strip("-")
+
+
+async def _course_tags(course_id: str) -> list[dict]:
+    """The course's fixed concept tags from the knowledge graph ({name, description}).
+    Queried here rather than via knowledge_graph_service, which imports this module."""
+    rows = await store.query("concepts", "course_id", course_id)
+    return sorted(({"name": r["name"], "description": r.get("description") or ""}
+                   for r in rows if r.get("name")), key=lambda t: t["name"])
+
+
+def _tag_instructions(tags: list[dict], existing: list) -> str:
+    counts = {t["name"]: 0 for t in tags}
+    for q in existing:
+        if q.get("concept") in counts:
+            counts[q["concept"]] += 1
+    lines = "\n".join(f"- {t['name']}" + (f": {t['description']}" if t["description"] else "") for t in tags)
+    fewest = ", ".join(sorted(counts, key=lambda n: (counts[n], n)))
+    return (
+        "\n\nALLOWED CONCEPT TAGS (this overrides the concept-tag guidance above): the \"concept\" "
+        "field MUST be exactly one of these tags, copied verbatim. Never invent, rename or combine tags; "
+        f"questions with any other tag are discarded.\n{lines}\n"
+        f"Spread the questions across these tags, favouring the ones the bank has fewest of "
+        f"(fewest first): {fewest}"
+    )
+
+
+def _question_id(course_id: str, question: str, correct_option: str) -> str:
+    """Content-based, so a new question can never take an id that older banks
+    (and other students' recorded answers) already use."""
+    return f"{course_id}-h{hashlib.sha1((question + correct_option).encode()).hexdigest()[:10]}"
+
+
 async def get_status(course_id: str) -> dict:
     doc = await store.get(COLLECTION, course_id)
     if doc:
@@ -98,12 +136,16 @@ async def _generate(course_id: str, initial: bool) -> None:
 
         existing = [] if initial else (await store.get(COLLECTION, course_id) or {}).get("questions", [])
         avoid_norms = {_norm(q["question"]) for q in existing}
+        tags = await _course_tags(course_id)
 
         # When topping up, tell the model what already exists so it diverges.
         prompt = SYSTEM_PROMPT
         if existing:
             stems = "\n".join(f"- {q['question']}" for q in existing[-25:])
             prompt += f"\n\nDo NOT repeat or lightly reword any of these existing questions:\n{stems}"
+        # A course with a concept graph is tag-locked: the rest of the app keys on these tags.
+        if tags:
+            prompt += _tag_instructions(tags, existing)
 
         data = await llm.generate_json(
             prompt,
@@ -114,11 +156,16 @@ async def _generate(course_id: str, initial: bool) -> None:
         if not data or "questions" not in data:
             return
 
-        new = _build_questions(course_id, data["questions"], start_index=len(existing), avoid_norms=avoid_norms)
+        new = _build_questions(
+            course_id, data["questions"], avoid_norms=avoid_norms,
+            avoid_ids={q["id"] for q in existing},
+            allowed_tags=[t["name"] for t in tags] or None,
+        )
+        new = new[:max(0, MAX_BANK - len(existing))]  # existing questions are never dropped
         if not new:
             return
 
-        merged = (existing + [q.model_dump() for q in new])[:MAX_BANK]
+        merged = existing + [q.model_dump() for q in new]
         qset = QuestionSet(
             course_id=course_id,
             course_title=meta["course_title"],
@@ -133,37 +180,57 @@ async def _generate(course_id: str, initial: bool) -> None:
         _in_progress.discard(course_id)
 
 
-def _build_questions(course_id: str, raw: list, start_index: int, avoid_norms: set) -> List[MCQQuestion]:
+def _build_questions(
+    course_id: str, raw: list, avoid_norms: set, avoid_ids: set = frozenset(),
+    allowed_tags: list[str] | None = None,
+) -> List[MCQQuestion]:
+    """Validate raw LLM questions. With `allowed_tags`, a question's concept must
+    match one of them up to case/whitespace/hyphen (stored as the canonical tag);
+    anything else is dropped. Without it, concept tags are free text."""
+    canonical = {_tag_key(t): t for t in allowed_tags} if allowed_tags else None
     out: List[MCQQuestion] = []
     seen = set(avoid_norms)
+    ids = set(avoid_ids)
     for q in raw:
-        opts = q.get("options", [])
-        if len(opts) != 4:
+        if not isinstance(q, dict):
             continue
+        opts = q.get("options", [])
+        if not isinstance(opts, list) or len(opts) != 4:
+            continue
+        concept = q.get("concept") or "General"
+        if canonical is not None:
+            concept = canonical.get(_tag_key(str(concept)))
+            if concept is None:
+                continue
         norm = _norm(q.get("question", ""))
         if not norm or norm in seen:  # dedupe within batch and against the bank
             continue
-        seen.add(norm)
 
         ci = q.get("correct_index", 0)
         ci = ci if isinstance(ci, int) and 0 <= ci <= 3 else 0
         diff = q.get("difficulty", "medium")
         diff = diff if diff in ("easy", "medium", "hard") else "medium"
 
-        # Shuffle so the correct answer isn't always first.
         correct_option = opts[ci]
+        qid = _question_id(course_id, q.get("question", ""), str(correct_option))
+        if qid in ids:  # never reuse an id the bank already has
+            continue
+        seen.add(norm)
+        ids.add(qid)
+
+        # Shuffle so the correct answer isn't always first.
         shuffled = opts[:]
         random.shuffle(shuffled)
         ci = shuffled.index(correct_option)
 
         out.append(
             MCQQuestion(
-                id=f"{course_id}-q{start_index + len(out) + 1}",
+                id=qid,
                 question=q.get("question", ""),
                 options=shuffled,
                 correct_index=ci,
                 explanation=q.get("explanation", ""),
-                concept=q.get("concept", "General"),
+                concept=concept,
                 difficulty=diff,
                 lecture=q.get("lecture", ""),
             )
