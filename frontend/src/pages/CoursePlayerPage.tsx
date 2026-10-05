@@ -16,6 +16,7 @@ export default function CoursePlayerPage() {
   const { isCourseBought, currentuser, isUserLoggedIn } = useUserSessionStore();
   const userId = (currentuser?.uid as string) || "anonymous";
   const [labOpen, setLabOpen] = useState(false);
+  const [tutorOpen, setTutorOpen] = useState(false);
 
   const track = tracks.find((t) => t.id === Number(courseid));
 
@@ -199,10 +200,10 @@ export default function CoursePlayerPage() {
       </div>
 
       {aiCourse && (
-        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title} />
+        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title} onOpenChange={setTutorOpen} />
       )}
 
-      {aiCourse && isUserLoggedIn && (
+      {aiCourse && isUserLoggedIn && !tutorOpen && (
         <button
           onClick={() => setLabOpen(true)}
           className="fixed bottom-24 right-6 z-40 flex items-center gap-2 bg-teal-600/20 hover:bg-teal-600/30 border border-teal-500/30 text-teal-200 text-sm font-medium rounded-full pl-4 pr-5 py-2.5 shadow-lg shadow-black/40 transition-colors"

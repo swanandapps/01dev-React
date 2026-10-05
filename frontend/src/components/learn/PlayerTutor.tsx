@@ -21,12 +21,15 @@ export function PlayerTutor({
   course,
   userId,
   lectureTitle,
+  onOpenChange,
 }: {
   course: Course;
   userId: string;
   lectureTitle: string;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);

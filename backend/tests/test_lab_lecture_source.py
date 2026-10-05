@@ -98,9 +98,16 @@ def test_generate_passes_course_id_into_the_lesson_graph(client, monkeypatch):
     assert seen["course_id"] == "react-perf"
 
 
-def test_unknown_lecture_is_404(client):
+def test_unknown_lecture_is_403_same_as_not_enrolled(client):
     r = client.post("/api/lab/upload-lecture", json={"lecture_id": "does-not-exist"})
-    assert r.status_code == 404
+    assert r.status_code == 403
+
+
+def test_course_missing_from_catalog_is_403(client, monkeypatch):
+    from app.services import catalog_service
+    monkeypatch.setattr(catalog_service, "by_slug", lambda slug: None)
+    r = client.post("/api/lab/upload-lecture", json={"lecture_id": "react-perf-4-1"})
+    assert r.status_code == 403
 
 
 def test_lecture_with_no_extractable_transcript_is_400(client):

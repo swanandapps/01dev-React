@@ -65,6 +65,7 @@ export function LabStudio({
   const [notes, setNotes] = useState("");
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [lectureId, setLectureId] = useState("");
+  const [lecturesError, setLecturesError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -96,10 +97,15 @@ export function LabStudio({
     if (!courseId) return;
     getLectures(courseId)
       .then((ls) => {
+        setLecturesError(false);
         setLectures(ls);
-        if (ls.length) setLectureId(ls[0].lecture_id);
+        setLectureId((cur) => (ls.some((l) => l.lecture_id === cur) ? cur : ls[0]?.lecture_id ?? ""));
       })
-      .catch(() => setLectures([]));
+      .catch(() => {
+        setLectures([]);
+        setLectureId("");
+        setLecturesError(true);
+      });
   }, [courseId]);
 
   const toggle = (t: OutputType) =>
@@ -201,8 +207,7 @@ export function LabStudio({
 
       {step === "input" && (
         <>
-          {(
-            <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
+          <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
               {(["text", "pdf", ...(courseId ? (["lecture"] as const) : [])] as InputMode[]).map((m) => (
                 <button
                   key={m}
@@ -223,8 +228,7 @@ export function LabStudio({
                   {m === "pdf" ? "Upload PDF" : m === "lecture" ? "This course" : "Type notes / topic"}
                 </button>
               ))}
-            </div>
-          )}
+          </div>
 
           {mode === "text" && (
             <div className="flex flex-col gap-3">
@@ -283,7 +287,11 @@ export function LabStudio({
               <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
                 Pick a lecture
               </label>
-              {lectures.length === 0 ? (
+              {lecturesError ? (
+                <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-xl px-4 py-3">
+                  Couldn't load lectures — check your connection and reopen Lab.
+                </p>
+              ) : lectures.length === 0 ? (
                 <p className="text-sm text-zinc-500 bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-3">
                   No transcripts are available for this course yet — paste notes or upload a PDF instead.
                 </p>

@@ -396,9 +396,9 @@ async def upload_lecture(req: UploadLectureReq, uid: str = Depends(current_stude
     `course_id` is stored on the doc so a quiz built from it resolves concepts
     with the lecture's course as their origin.
     """
-    meta = vector_store.get_lecture_meta(req.lecture_id)
-    if not meta:
-        raise HTTPException(status_code=404, detail="Unknown lecture")
+    # Unknown lecture and not-enrolled return the same 403 so lecture ids can't
+    # be probed by a signed-in non-enrolled user.
+    meta = vector_store.get_lecture_meta(req.lecture_id) or {}
     course = catalog_service.by_slug(meta.get("course_id") or "")
     enrolled = {c.get("id") for c in await enrollment_service.get_enrolled_courses(uid)}
     if not course or course["id"] not in enrolled:
