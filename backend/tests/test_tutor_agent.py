@@ -201,3 +201,47 @@ async def test_text_before_and_after_a_tool_call_is_separated(monkeypatch):
     events = await _collect(tutor_agent.stream_answer(
         system_prompt="sys", history=[], question="how many quizzes?", student_id="alice", model=model))
     assert "".join(e["value"] for e in events if e["type"] == "token") == "Let me check.\n\nYou have taken 3 quizzes."
+
+
+def test_explain_concept_tool_hides_student_id_and_describes_concept():
+    props = _schema("explain_concept")
+    assert set(props) == {"concept"}
+    assert props["concept"]["description"]
+
+
+async def test_explain_concept_uses_context_student_not_model_supplied_id(monkeypatch):
+    from app.services import concept_explain
+    seen = []
+
+    async def fake_explain(user_id, concept):
+        seen.append((user_id, concept))
+        return {"concept": concept, "attempts": 2, "correct": 1, "accuracy": 0.5,
+                "sources": [], "merged_tags": []}
+
+    monkeypatch.setattr(concept_explain, "explain_concept", fake_explain)
+    model = FakeToolModel(messages=iter([
+        AIMessage("", tool_calls=[{"name": "explain_concept", "id": "c1",
+                                   "args": {"student_id": "victim", "concept": "react-memo"}}]),
+        AIMessage("Because of two attempts."),
+    ]))
+    await _collect(tutor_agent.stream_answer(
+        system_prompt="sys", history=[], question="why is memo my strong topic?",
+        student_id="alice", model=model))
+    assert seen == [("alice", "react-memo")]
+
+
+async def test_explain_concept_tool_returns_json(monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    from app.services import concept_explain
+
+    async def fake_explain(user_id, concept):
+        return {"concept": concept, "attempts": 0, "correct": 0, "accuracy": None,
+                "sources": [], "merged_tags": []}
+
+    monkeypatch.setattr(concept_explain, "explain_concept", fake_explain)
+    out = await tutor_agent.explain_concept.coroutine(
+        concept="react-memo",
+        runtime=SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice")))
+    assert json.loads(out)["attempts"] == 0

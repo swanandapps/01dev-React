@@ -59,6 +59,8 @@ Tools already know who the student is. Never ask for their id.
 - search_course_content: only for a follow-up the COURSE FACTS don't cover.
 - record_skill_observation: when the conversation clearly shows their grasp of a
   concept (they explained it correctly unprompted, or were clearly wrong).
+- explain_concept: when they question where a strength/weakness came from ("why is
+  this my strong topic?"); say whether it came from a course or their own notes.
 
 # Style
 

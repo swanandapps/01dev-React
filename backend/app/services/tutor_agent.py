@@ -16,7 +16,7 @@ from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
-from app.services import (catalog_service, enrollment_service, grounding, journey_service, memory_service,
+from app.services import (catalog_service, concept_explain, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
 from app.services.course_lookup import TRANSCRIPT_THRESHOLD
 from app.services import tool_descriptions as D
@@ -116,8 +116,16 @@ async def record_skill_observation(
         return _dump({"error": str(e)})
 
 
+@tool("explain_concept", description=D.EXPLAIN_CONCEPT)
+async def explain_concept(
+    concept: Annotated[str, "Concept name as reported by get_learning_strengths, e.g. 'react-memo'."],
+    runtime: ToolRuntime[ChatContext],
+) -> str:
+    return _dump(await concept_explain.explain_concept(runtime.context.student_id, concept))
+
+
 TOOLS = [search_course_content, get_enrolled_courses, get_learning_strengths, get_learning_metrics,
-         get_concept_confidence, search_history, record_skill_observation]
+         get_concept_confidence, search_history, record_skill_observation, explain_concept]
 
 
 @lru_cache(maxsize=1)

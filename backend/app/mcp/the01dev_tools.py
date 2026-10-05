@@ -37,6 +37,7 @@ with contextlib.redirect_stdout(sys.stderr):
     from app.services.embeddings import embedding_service
     from app.services import grounding, content, memory_service, skill_graph_service
     from app.services import journey_service, enrollment_service
+    from app.services import concept_explain
     from app.services.store import store
 
 mcp = FastMCP("the01dev-tools")
@@ -305,6 +306,32 @@ async def record_skill_observation(
         return await skill_graph_service.record_observation(student_id, course_id, concept, confidence, note)
     except ValueError as e:
         return {"error": str(e)}
+
+
+# ── Concept explainability (thin wrapper over concept_explain) ────────────────
+@mcp.tool()
+async def explain_concept(concept: str, student_id: str) -> dict:
+    """WHERE a student's score on one concept came from — use this when they ask
+    "why is this my strong/weak topic?", "I never took a course on this, why does
+    it say I'm good at it?", or otherwise question a number you reported.
+
+    Returns total `attempts`/`correct`/`accuracy` plus `sources`: one entry per
+    course or per piece of the student's own uploaded material, each with its own
+    attempts/correct. `source` is "course" or "self_study" — say which, plainly,
+    because a student may not remember quizzing themselves on their own notes.
+
+    `merged_tags` lists loosely-named tags (with counts) that were treated as THIS
+    concept. Mention them when explaining a surprising score, and if the student
+    says those are different things, tell them that's useful and worth flagging.
+
+    `attempts: 0` means no graded attempts exist; say so rather than guessing.
+
+    Args:
+        concept: The concept name to explain.
+        student_id: This student's id — use the exact value you were given for
+            this conversation, never a different one.
+    """
+    return await concept_explain.explain_concept(student_id, concept)
 
 
 if __name__ == "__main__":

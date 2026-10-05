@@ -59,3 +59,16 @@ RECORD_SKILL_OBSERVATION = (
     "or ambiguous signals — only when the conversation actually showed you something concrete. "
     "course_id is the course slug, e.g. 'react-perf'."
 )
+
+EXPLAIN_CONCEPT = (
+    "WHERE the student's score on one concept came from — use this when they ask \"why is this my "
+    "strong/weak topic?\", \"I never took a course on this, why does it say I'm good at it?\", or "
+    "otherwise question a number you reported. Returns total attempts/correct/accuracy plus sources: "
+    "one entry per course or per piece of the student's own uploaded material (Lab), each with its own "
+    "attempts/correct. source is \"course\" or \"self_study\" — say which, plainly, because a student may "
+    "not remember quizzing themselves on their own notes. merged_tags lists loosely-named tags (with "
+    "counts) that were treated as THIS concept (e.g. their notes said \"useCallback hook\"). Mention them "
+    "when explaining a surprising score; if the student says those are different things, tell them "
+    "that's useful and worth flagging. attempts 0 means no graded attempts exist — say so rather than "
+    "guessing. concept is the name as reported by get_learning_strengths."
+)
