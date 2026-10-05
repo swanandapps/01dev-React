@@ -45,6 +45,7 @@ class Question(BaseModel):
     correctIndex: int = 0
     explanation: str = ""
     hint: str = _DEFAULT_HINT
+    concept: str = ""
 
     @field_validator("question")
     @classmethod
@@ -53,6 +54,11 @@ class Question(BaseModel):
         if not v:
             raise ValueError("empty question")
         return v
+
+    @field_validator("concept", mode="before")
+    @classmethod
+    def _concept(cls, v) -> str:
+        return str(v or "").strip()  # null/missing concept must not drop the question
 
     @model_validator(mode="after")
     def _shape(self) -> "Question":

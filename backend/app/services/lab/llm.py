@@ -117,7 +117,8 @@ def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
         'option in the array. Return ONLY JSON: {"questions":[{"question":"<full question>",'
         '"options":["<full answer text>","<full answer text>","<full answer text>",'
         '"<full answer text>"],"correctIndex":<0-3>,"explanation":"<why that option is '
-        'correct>","hint":"<nudge that does NOT reveal the answer>"}]}'
+        'correct>","hint":"<nudge that does NOT reveal the answer>",'
+        '"concept":"<2-4 word name of the single concept this question tests>"}]}'
     )
     user = (
         f"OBJECTIVE: {objective.get('title')} ({objective.get('difficulty')})\n"
