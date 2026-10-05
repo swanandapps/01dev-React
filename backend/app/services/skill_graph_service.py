@@ -165,6 +165,12 @@ async def record_observation(
     # above (adaptive_service imports this module at load time) — deferred
     # here until both modules are fully loaded.
     from app.services.adaptive_service import _perf_id
+    from app.services import concept_resolver
+
+    # Land loosely-named concepts ("React.memo") on the canonical one instead of
+    # creating a near-duplicate. course_id is model-supplied and unverified, so
+    # it is deliberately NOT passed: it must never create course-scoped nodes.
+    concept = await concept_resolver.resolve(concept)
 
     doc_id = _perf_id(user_id, concept)
     chat_fields = {

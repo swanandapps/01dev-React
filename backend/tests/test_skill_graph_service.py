@@ -4,6 +4,23 @@ from app.services import skill_graph_service
 from app.services.store import InMemoryStore
 
 
+from app.services import concept_resolver as _cr
+
+_REAL_RESOLVE = _cr.resolve
+
+
+@pytest.fixture(autouse=True)
+def _identity_resolver(monkeypatch):
+    # record_observation resolves concept names; keep these tests off the real
+    # store/embeddings. Tests that exercise resolution override this.
+    from app.services import concept_resolver
+
+    async def _id(candidate, course_id=None):
+        return candidate
+
+    monkeypatch.setattr(concept_resolver, "resolve", _id)
+
+
 @pytest.mark.asyncio
 async def test_populates_a_zeroed_row_per_concept(monkeypatch):
     from app.services import knowledge_graph_service
@@ -345,3 +362,52 @@ async def test_record_observation_composes_with_get_prerequisite_view(monkeypatc
     # The graded fields on the prerequisite must have survived the observation write.
     assert scope_prereq["accuracy"] == 0.667
     assert scope_prereq["attempted"] is True
+
+
+async def test_record_observation_resolves_the_concept_name(monkeypatch):
+    # The model may name a concept loosely ("React.memo"); it must land on the
+    # canonical row rather than creating a near-duplicate.
+    from app.services import concept_resolver
+
+    real_store = InMemoryStore()
+    monkeypatch.setattr(skill_graph_service, "store", real_store)
+    calls = []
+
+    async def fake_resolve(candidate, course_id=None):
+        calls.append((candidate, course_id))
+        return "react-memo"
+
+    monkeypatch.setattr(concept_resolver, "resolve", fake_resolve)
+
+    await skill_graph_service.record_observation(
+        "s1", "react-perf", "React.memo", "strong", "explained it unprompted")
+
+    # Model-supplied course_id must never reach the resolver (R4).
+    assert calls == [("React.memo", None)]
+    assert await real_store.get("concept_performance", "s1__react-memo") is not None
+    assert await real_store.get("concept_performance", "s1__React.memo") is None
+
+
+async def test_record_observation_junk_course_id_creates_no_course_scoped_node(monkeypatch):
+    # Real resolver, in-memory store, stubbed embeddings: a junk model-supplied
+    # course_id must not leak into any created concept node.
+    from app.services import concept_resolver
+
+    from app.services import embeddings
+
+    async def fake_embed(text):
+        return [0.0, 0.0, 1.0]
+
+    monkeypatch.setattr(embeddings.embedding_service, "embed", fake_embed)
+    real_resolve = _REAL_RESOLVE
+    monkeypatch.setattr(concept_resolver, "resolve", real_resolve)  # undo autouse stub
+    real_store = InMemoryStore()
+    monkeypatch.setattr(skill_graph_service, "store", real_store)
+    monkeypatch.setattr(concept_resolver, "store", real_store)
+
+    await skill_graph_service.record_observation(
+        "s1", "all-courses", "Brand New Idea", "weak", "n")
+
+    nodes = await real_store.list_all("concepts")
+    assert nodes, "resolver should have created a node"
+    assert all(n.get("course_id") is None for n in nodes)
