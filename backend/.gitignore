@@ -19,3 +19,6 @@ data/eval_results/
 
 # demo-account seed backups (real student data) — never commit
 data/demo_backups/
+
+# transcription script cache (audio + raw whisper output)
+data/transcribe_cache/

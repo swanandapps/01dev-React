@@ -1,0 +1,11 @@
+[
+  {"start": 0.0, "end": 12.4, "text": " Welcome back."},
+  {"start": 12.4, "end": 25.0, "text": " In this lecture we publish our library."},
+  {"start": 25.0, "end": 38.2, "text": " First install np globally."},
+  {"start": 38.2, "end": 50.6, "text": " npm install --global np"},
+  {"start": 50.6, "end": 70.0, "text": " Then log in with npm login."},
+  {"start": 70.0, "end": 88.0, "text": "   "},
+  {"start": 88.0, "end": 101.0, "text": " Run np in the project root and pick the version bump."},
+  {"start": 101.0, "end": 190.0, "text": " A single very long segment that runs past the maximum on its own."},
+  {"start": 190.0, "end": 200.0, "text": " Thanks for watching."}
+]
