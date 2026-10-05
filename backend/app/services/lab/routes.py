@@ -66,9 +66,19 @@ class ApproveReq(BaseModel):
     questionsPerQuiz: int = 3
 
 
+class AnswerResult(BaseModel):
+    """One answered question: the server grades it and looks up the concept."""
+    question_index: int
+    selected_index: int
+
+
 class SubmitReq(BaseModel):
     score: int
     total: int
+    # First attempt per question, in any order. Optional so an older client that
+    # sends only score/total keeps working (it just writes nothing to the
+    # learner model). Identity is NEVER read from the body.
+    answers: list[AnswerResult] = []
 
 
 class AskReq(BaseModel):

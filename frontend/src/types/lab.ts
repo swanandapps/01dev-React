@@ -13,7 +13,10 @@ export type Question = {
   correctIndex: number;
   explanation: string;
   hint: string;
+  concept?: string;
 };
+
+export type AnswerResult = { question_index: number; selected_index: number };
 
 export type Quiz = { questions: Question[] };
 

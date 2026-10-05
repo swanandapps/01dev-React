@@ -4,7 +4,7 @@ import {
   NotebookPen,
 } from "lucide-react";
 import * as quizApi from "../../lib/notesQuizApiLang";
-import type { LessonView, Objective, Question, Difficulty } from "../../types/lab";
+import type { AnswerResult, LessonView, Objective, Question, Difficulty } from "../../types/lab";
 
 /** The Lab backend client: the LangGraph implementation served by
  *  the01dev-backend at /api/lab/*. */
@@ -56,6 +56,7 @@ export function NotesQuizModal({
   const [selected, setSelected] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [firstTry, setFirstTry] = useState(0);
+  const [answerLog, setAnswerLog] = useState<AnswerResult[]>([]);
   const [quizBusy, setQuizBusy] = useState(false);
 
   const [tutorQ, setTutorQ] = useState("");
@@ -106,6 +107,7 @@ export function NotesQuizModal({
     setSelected(null);
     setSubmitted(false);
     setFirstTry(0);
+    setAnswerLog([]);
     setTutorQ("");
     setTutorA("");
   }
@@ -154,7 +156,12 @@ export function NotesQuizModal({
   async function handleSubmitAnswer() {
     if (selected === null || !lesson?.quiz) return;
     const q = lesson.quiz.questions[qIdx];
-    if (selected === q.correctIndex) setFirstTry((n) => n + 1);
+    // Only the FIRST attempt per question counts: the retry loop after a wrong
+    // answer must not log again or re-increment firstTry.
+    if (!answerLog.some((a) => a.question_index === qIdx)) {
+      setAnswerLog((log) => [...log, { question_index: qIdx, selected_index: selected }]);
+      if (selected === q.correctIndex) setFirstTry((n) => n + 1);
+    }
     setSubmitted(true);
   }
 
@@ -167,7 +174,7 @@ export function NotesQuizModal({
     if (correct && last) {
       setQuizBusy(true);
       try {
-        const view = await api.submitResult(lesson.id, firstTry + 1, lesson.quiz.questions.length);
+        const view = await api.submitResult(lesson.id, firstTry, lesson.quiz.questions.length, answerLog);
         applyLesson(view);
       } catch (e) {
         setError((e as Error).message);

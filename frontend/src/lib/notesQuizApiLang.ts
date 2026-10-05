@@ -1,7 +1,7 @@
 // Lab quiz client for the backend's LangGraph flow at /api/lab (backend/app/services/lab/routes.py).
 
-import type { LessonView, Objective } from "../types/lab";
-export type { Difficulty, Objective, Question, Quiz, Result, Summary, LessonStatus, LessonView } from "../types/lab";
+import type { AnswerResult, LessonView, Objective } from "../types/lab";
+export type { Difficulty, Objective, Question, Quiz, Result, Summary, LessonStatus, LessonView, AnswerResult } from "../types/lab";
 
 // Lab is served by the main backend now, not a standalone :8090 service.
 // VITE_QUIZME_LANG_URL is retained as an override for pointing at a local
@@ -60,8 +60,13 @@ export function approveLesson(
   return post<LessonView>(`/lessons/${id}/approve`, { objectives, questionsPerQuiz });
 }
 
-export function submitResult(id: string, score: number, total: number): Promise<LessonView> {
-  return post<LessonView>(`/lessons/${id}/submit`, { score, total });
+export function submitResult(
+  id: string,
+  score: number,
+  total: number,
+  answers: AnswerResult[] = [],
+): Promise<LessonView> {
+  return post<LessonView>(`/lessons/${id}/submit`, { score, total, answers });
 }
 
 export function askTutor(id: string, question: string): Promise<{ answer: string }> {
