@@ -144,3 +144,49 @@ async def test_lecture_boost_survives_backticks_and_spacing_in_player_title(patc
     scope = cl.ChatScope(course_slug="custom-library", lecture_title="8.1 -  The `npm link` Command")
     out = await cl.course_lookup("what does this mean", "s", scope)
     assert out.hits[0].title == "8.1 - The npm link command"
+
+
+async def test_lecture_title_steers_the_transcript_search_but_not_the_catalog(patch_sources, monkeypatch):
+    # Live bug: in "1.1 - What is this course" of Build a Custom Library, "Give me an example"
+    # searched the catalog as "1.1 - What is this course Give me an example" and matched
+    # Product Engineering Essentials' overview (0.37) → a not-enrolled pointer to an unrelated course.
+    patch_sources()
+    seen = {}
+
+    async def fake_transcripts(question, top_k=8):
+        seen["transcript"] = question
+        return []
+
+    async def fake_catalog(query, top_k=5):
+        seen["catalog"] = query
+        return []
+
+    monkeypatch.setattr(cl, "_transcript_hits", fake_transcripts)
+    monkeypatch.setattr(cl.catalog_index, "search", fake_catalog)
+    scope = cl.ChatScope(course_slug="custom-library", lecture_title="1.1 - What is this course")
+
+    await cl.course_lookup("Give me an example", "s", scope)
+
+    assert seen == {"transcript": "1.1 - What is this course Give me an example",
+                    "catalog": "Give me an example"}
+
+
+def test_in_lecture_without_a_transcript_excerpt_gets_the_course_outline():
+    # 1.1 of Build a Custom Library has no transcript; with nothing to ground on, the
+    # tutor asked "what kind of example?" instead of answering. The catalog has the
+    # course description and chapter outline — give the model those.
+    scope = cl.ChatScope(course_slug="custom-library", lecture_title="1.1 - What is this course")
+    facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=[]), scope)
+    assert "No transcript excerpt for this lecture" in facts
+    assert "closures, callbacks, and prototypes" in facts          # course description
+    assert "Chapter 1 - Introduction" in facts                      # the lecture's chapter
+    assert "1.2 - What will we build" in facts                      # its sibling lectures
+
+
+def test_in_lecture_with_an_excerpt_from_that_lecture_skips_the_outline():
+    hit = cl.Hit(source="transcript", course_id=11, course_slug="react-perf",
+                 course_title="React Performance Patterns", title="4.1 - React.memo and useCallback",
+                 score=0.7, enrolled=True, text="memo...", lecture_id="react-perf-4-1", start_time=0, end_time=30)
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
+    facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[hit], enrolled_titles=[]), scope)
+    assert "No transcript excerpt" not in facts

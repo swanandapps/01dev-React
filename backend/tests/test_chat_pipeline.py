@@ -163,13 +163,14 @@ async def test_memory_block_reaches_the_system_prompt(wired, monkeypatch):
     assert "STUDENT MEMORY: likes analogies" in wired["system"]
 
 
-async def test_lecture_scope_grounds_lookup_in_lecture_title_but_agent_gets_bare_question(wired, monkeypatch):
+async def test_lecture_scope_passes_the_bare_question_to_lookup_and_agent(wired, monkeypatch):
+    # course_lookup adds the lecture title itself, to the transcript search only.
     _agent(monkeypatch, wired)
     scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
     req = chat_pipeline.TurnRequest(question="Give me an example", student_id="alice", scope=scope,
                                     history=[], memory_slug="react-perf")
     [e async for e in chat_pipeline.chat_turn(req)]
-    assert wired["lookup_q"] == ["4.1 - React.memo and useCallback Give me an example"]
+    assert wired["lookup_q"] == ["Give me an example"]
     assert wired["agent_q"] == ["Give me an example"]
     assert wired["audit"][0]["question"] == "Give me an example"
     assert wired["recorded"][0][2] == "Give me an example"

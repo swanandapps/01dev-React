@@ -88,7 +88,12 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     enrolled_ids, enrolled_titles = await _enrollments(student_id)
     hits: list[Hit] = []
 
-    for chunk, score in await _transcript_hits(question):
+    # In the player, vague questions ("Give me an example") only find the right
+    # transcript when the lecture title rides along. The catalog search keeps the bare
+    # question: a generic title ("1.1 - What is this course") matches other courses'
+    # overviews and turned a vague question into a pointer to an unrelated course.
+    transcript_q = f"{scope.lecture_title} {question}" if scope.lecture_title else question
+    for chunk, score in await _transcript_hits(transcript_q):
         if score < TRANSCRIPT_THRESHOLD:
             continue
         course = catalog_service.by_slug(chunk.course_id)
@@ -129,6 +134,25 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles)
 
 
+def _has_lecture_excerpt(lookup: CourseLookup, scope: ChatScope) -> bool:
+    return any(h.source == "transcript" and h.course_slug == scope.course_slug
+               and _norm(h.title) == _norm(scope.lecture_title or "") for h in lookup.hits)
+
+
+def _course_outline(course: dict, lecture_title: str) -> list[str]:
+    """What the course page says, for a lecture we hold no transcript of — so a vague
+    in-lecture question ("Give me an example") is answered on the course's topic
+    instead of with "what kind of example do you mean?"."""
+    lines = ["No transcript excerpt for this lecture. What the course page says about it:",
+             f"  Course: {course['title']} — {course.get('description', '').strip()}"]
+    for chapter in course.get("chapters", []):
+        subs = chapter.get("subchapters", [])
+        if any(_norm(t) == _norm(lecture_title) for t in subs):
+            lines.append(f"  This lecture is in {chapter['name']}: {'; '.join(subs)}")
+            break
+    return lines
+
+
 def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional[list[str]] = None) -> str:
     lines = [
         "COURSE FACTS (looked up in the01.dev's course library for this question):",
@@ -139,6 +163,8 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
         lines.append(f'MODE: in-lecture — the student is watching "{scope.lecture_title}"{where} right now.')
+        if course and not _has_lecture_excerpt(lookup, scope):
+            lines.extend(_course_outline(course, scope.lecture_title))
     if weak_concepts:
         lines.append("Weak concepts in this course: " + ", ".join(weak_concepts))
     if lookup.hits:
