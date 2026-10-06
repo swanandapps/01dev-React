@@ -289,3 +289,14 @@ def test_merge_orders_courses_by_catalog_and_keeps_custom_bytes(tmp_path):
     assert [c["course_id"] for c in data] == ["demo"] * 10 + ["custom-library"] * 2 + ["two"] * 5
     assert data[10:12] == cl  # identical and same order
     assert [c["chunk_id"] for c in data[:10]] == [f"demo-0-{l}-{n}" for l in (0, 1) for n in range(5)]
+
+
+def test_merge_never_carries_enrichment_fields(tmp_path):
+    cat, seed, src, _ = setup_merge(tmp_path)
+    staged = json.loads((src / "demo.json").read_text())
+    for c in staged:
+        c.update(summary="s", keywords=["k"], embed_text="e", content_hash="h")
+    (src / "demo.json").write_text(json.dumps(staged))
+    assert b.merge(cat, seed, src, {}) == []
+    demo = [c for c in json.loads(seed.read_text()) if c["course_id"] == "demo"]
+    assert demo and all(list(c) == b.FIELDS for c in demo)

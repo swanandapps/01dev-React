@@ -8,10 +8,19 @@ class TranscriptChunk(BaseModel):
     course_title: str
     lecture_id: str
     lecture_title: str
-    text: str
+    text: str                      # the raw transcript ("text_raw" in the retrieval spec) — never rewritten
     start_time: int
     end_time: int
     embedding: List[float] = []
+    # Retrieval v2 (derived at load by app.retrieval.enrichment; empty for un-enriched chunks)
+    chapter: str = ""
+    text_clean: str = ""           # glossary-fixed, whitespace-normalised text (shown to the model and on cards)
+    summary: str = ""
+    keywords: List[str] = []
+    questions: List[str] = []
+    embed_text: str = ""           # what is embedded: header + summary + key terms + overlap + text_clean
+    embed_model: str = ""
+    content_hash: str = ""         # sha256(embed_model + embed_text)
 
 
 class SearchResult(BaseModel):
