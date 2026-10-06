@@ -5395,7 +5395,7 @@
     "course_title": "Product Engineering Essentials",
     "lecture_id": "product-engineering-1-0",
     "lecture_title": "2.1 - The Wave Model of JavaScript",
-    "text": "Why does this matter for our link-preview widget? Because the code we write will touch several waves at once. Our `fetchPreview` function will use `async` and `await`, a recent wave. But the HTML it parses was written for the oldest waves, with missing quotes and unclosed tags, and the browser's parsing rules are designed to be forgiving in the same way early JavaScript was. And our helper that merges options might use a pattern from wave three, an old style `Object.assign`. Neither is wrong. They're just different eras living in one file. When you can name the era, you can predict the behaviour, and you know which assumptions are safe.",
+    "text": "Why does this matter for our link-preview widget? Because the code we write will touch several waves at once. Our `fetchPreview` function will use `async` and `await`, a recent wave. But the HTML it parses was written for the oldest waves, with missing quotes and unclosed tags, and the browser's parsing rules are designed to be forgiving in the same way early JavaScript was. And our helper that merges options might use a pattern from a more recent wave, `Object.assign`, which arrived with ES2015. Neither is wrong. They're just different eras living in one file. When you can name the era, you can predict the behaviour, and you know which assumptions are safe.",
     "start_time": 132,
     "end_time": 194,
     "embedding": []
@@ -9212,9 +9212,9 @@
     "course_title": "JavaScript Engine Internals",
     "lecture_id": "js-engine-2-1",
     "lecture_title": "3.2 - Reading V8 Bytecode",
-    "text": "Let me try a slightly bigger one. In the same file, add `function twice(x) { let y = x + 1; return y * 2; }` and call it. Print its bytecode with the filter set to `twice`. You will see `LdaSmi [1]`, which loads the small integer one into the accumulator. Then an `Add` using the register that holds `x`. Then a `Star` instruction, which stores the accumulator into a register for `y`. Then `LdaSmi [2]`, a `Mul` and a `Return`. Newer Node versions print the short forms like `Star0` and `Star1`, older ones print `Star r0`. Same thing.",
+    "text": "Let me try a slightly bigger one. In the same file, add `function twice(x) { let y = x + 1; return y * 2; }` and call it. Print its bytecode with the filter set to `twice`. You will see `Ldar a0`, which loads the argument `x` into the accumulator. Then `AddSmi [1]`. That is an add with a small integer literal built right into the instruction, so there is no separate load for the one. Then a `Star0` instruction, which stores the accumulator into a register for `y`. Then `MulSmi [2]`, the same idea for the multiply, and a `Return`. Because `y` is already in the accumulator after the store, V8 does not reload it. The operands in brackets also carry a feedback slot, just like before. Older Node versions print the long forms like `Star r0`, newer ones print `Star0`. Same thing.",
     "start_time": 131,
-    "end_time": 176,
+    "end_time": 180,
     "embedding": []
   },
   {
@@ -9224,8 +9224,8 @@
     "lecture_id": "js-engine-2-1",
     "lecture_title": "3.2 - Reading V8 Bytecode",
     "text": "Here is a vocabulary tip. Most mnemonics follow a pattern. Anything starting with `Lda` loads into the accumulator. Anything starting with `Sta` or `Star` stores from the accumulator. `Ldar` and `Star` move between accumulator and registers. Arithmetic like `Add`, `Sub`, `Mul` works with the accumulator. Jumps like `Jump` and `JumpIfFalse` control flow, and `JumpLoop` closes a loop. Calls use mnemonics beginning with `Call`. Once you know the pattern, unfamiliar bytecode stops looking scary. Try this yourself before the next lecture. Write a loop that sums numbers from one to ten, print its bytecode, and find the `JumpLoop` at the end. Seeing your own source reflected in these instructions is the best way to get fluent.",
-    "start_time": 176,
-    "end_time": 225,
+    "start_time": 180,
+    "end_time": 229,
     "embedding": []
   },
   {
@@ -9235,8 +9235,8 @@
     "lecture_id": "js-engine-2-1",
     "lecture_title": "3.2 - Reading V8 Bytecode",
     "text": "A practical note about the filter flag. The filter matches function names, so for anonymous arrow functions assigned to a variable, V8 usually infers the variable name and prints it. Top-level script code appears under a name like the main function of the script, and you may also see lots of other output if you leave the filter off. If your output looks empty, check your spelling first, and then check that the function was actually called, because lazy compilation means an uncalled function never gets bytecode at all. Also, do not memorize mnemonics. The list changes as V8 evolves, and engineers add new instructions to speed up common patterns. What matters is that you can read a listing, spot loads, stores, arithmetic, calls and jumps, and connect them back to your source. When you meet a mnemonic you do not know, a quick search of the V8 source for its name, or just guessing from the name, usually gets you there.",
-    "start_time": 225,
-    "end_time": 294,
+    "start_time": 229,
+    "end_time": 298,
     "embedding": []
   },
   {

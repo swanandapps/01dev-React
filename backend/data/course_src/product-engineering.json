@@ -159,7 +159,7 @@
   "course_title": "Product Engineering Essentials",
   "lecture_id": "product-engineering-1-0",
   "lecture_title": "2.1 - The Wave Model of JavaScript",
-  "text": "Why does this matter for our link-preview widget? Because the code we write will touch several waves at once. Our `fetchPreview` function will use `async` and `await`, a recent wave. But the HTML it parses was written for the oldest waves, with missing quotes and unclosed tags, and the browser's parsing rules are designed to be forgiving in the same way early JavaScript was. And our helper that merges options might use a pattern from wave three, an old style `Object.assign`. Neither is wrong. They're just different eras living in one file. When you can name the era, you can predict the behaviour, and you know which assumptions are safe.",
+  "text": "Why does this matter for our link-preview widget? Because the code we write will touch several waves at once. Our `fetchPreview` function will use `async` and `await`, a recent wave. But the HTML it parses was written for the oldest waves, with missing quotes and unclosed tags, and the browser's parsing rules are designed to be forgiving in the same way early JavaScript was. And our helper that merges options might use a pattern from a more recent wave, `Object.assign`, which arrived with ES2015. Neither is wrong. They're just different eras living in one file. When you can name the era, you can predict the behaviour, and you know which assumptions are safe.",
   "start_time": 132,
   "end_time": 194,
   "embedding": []
