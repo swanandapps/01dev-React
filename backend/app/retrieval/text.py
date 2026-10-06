@@ -32,7 +32,7 @@ its that these those there here we you he she they me my our your their them his
 her what which who whom when where why how does did doing done can could would should will
 shall may might must no so just also about into over under down than too very more most
 some any all each other such only own same both few again once lets got going gonna wanna
-like okay ok yeah um uh""".split())
+like okay ok yeah um uh vs versus""".split())
 
 
 _NO_STEM = frozenset({"series", "canvas", "alias", "status", "bus", "class", "process", "access", "address", "this", "does"})

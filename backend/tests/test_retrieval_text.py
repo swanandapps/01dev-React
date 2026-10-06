@@ -5,7 +5,7 @@ from app.retrieval.text import lexical_doc, lexical_fields, tokenize
 def test_tokenize_keeps_acronyms_and_code_tokens():
     assert tokenize("What is an IIFE?") == ["iife"]
     assert tokenize("publish with np") == ["publish", "with", "np"]
-    assert tokenize("useMemo vs React.memo") == ["usememo", "use", "memo", "vs", "react", "memo"]
+    assert tokenize("useMemo vs React.memo") == ["usememo", "use", "memo", "react", "memo"]
     assert tokenize("innerHTML") == ["innerhtml", "inner", "html"]
     assert tokenize("ES modules and npm packages") == ["es", "module", "npm", "package"]
     assert tokenize("dependencies") == ["dependency"]
@@ -31,7 +31,8 @@ def test_lexical_fields_and_weighted_doc():
 
 def test_code_keywords_are_not_stopwords():
     assert tokenize("what is this keyword") == ["this", "keyword"]
-    assert tokenize("let vs const") == ["let", "vs", "const"]
+    assert tokenize("let vs const") == ["let", "const"]
+    assert tokenize("render versus commit") == ["render", "commit"]
     assert tokenize("if else") == ["if", "else"]
 
 
