@@ -12,7 +12,7 @@ from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
 from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
-from app.services.course_lookup import (TRANSCRIPT_THRESHOLD, ChatScope, CourseLookup, LookupCase, course_lookup,
+from app.services.course_lookup import (TRANSCRIPT_THRESHOLD, _norm, ChatScope, CourseLookup, LookupCase, course_lookup,
                                         render_facts, to_cards)
 from app.services.llm import GEN_MODEL
 
@@ -68,9 +68,9 @@ def _suggest_moments(lookup, scope) -> list[dict]:
     out, seen = [], set()
     for h in lookup.hits:
         strong = h.via_title or h.score >= TRANSCRIPT_THRESHOLD
-        if h.source != "transcript" or h.course_slug != scope.course_slug or not strong or h.title in seen:
+        if h.source != "transcript" or h.course_slug != scope.course_slug or not strong or _norm(h.title) in seen:
             continue
-        seen.add(h.title)
+        seen.add(_norm(h.title))
         out.append({"lecture_title": h.title, "start_time": int(h.start_time)})
         if len(out) == MAX_SUGGESTIONS:
             break

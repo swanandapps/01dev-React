@@ -419,5 +419,5 @@ async def test_no_suggest_after_an_agent_error(wired, monkeypatch):
 def test_grounding_prompt_says_matching_moments_are_linked_under_the_answer():
     from app.grounding import loader
     text = loader.read_grounding_prompt().lower()
-    assert "links to the matching moments are shown under the answer automatically" in text
+    assert "links to the matching moments may be shown under the answer" in text
     assert "must not claim" in text
