@@ -8,8 +8,13 @@ used and production data is never read or written:
 
   --enroll 9,11  seed enrollments (catalog course ids) for the student first. 9,11
                  simulates the demo account: JavaScript Deep Dive + React Performance
-                 Patterns, not Build a Custom Library — and turns on the expected-case
-                 checks.
+                 Patterns, neither launched — and turns on the expected-case checks.
+                 Ask policy (F1): only launched AND enrolled courses are cited, so with
+                 9,11 every question is NO_MATCH. --enroll 2 (Build a Custom Library,
+                 the one launched course) is the other checked set: npm questions are
+                 ENROLLED_MATCH with a deep link. Under --full the answer is also
+                 checked: no course the student can't cite is named, and a course-2
+                 answer carries the01.dev/course/2?chapter=..&sub=..&t=.. verbatim.
   --full         also run each question through the full tutor (real OpenAI key from
                  backend/.env) and print the answer (long ones cut to head … tail) and first-token latency.
   --player       instead of the Ask questions, run in-player tutor turns on Build a Custom
@@ -44,21 +49,21 @@ from app.services.store import InMemoryStore, store  # noqa: E402
 
 DEMO_UID = "x94FcfXU7KRrobyOA4UHDukbRoC2"
 DEMO_ENROLL = [9, 11]
-E, N, X = LookupCase.ENROLLED_MATCH, LookupCase.NOT_ENROLLED_MATCH, LookupCase.NO_MATCH
+E, X = LookupCase.ENROLLED_MATCH, LookupCase.NO_MATCH
 QUESTIONS = [
-    # (question, scope, expected case with --enroll 9,11 — None = printed only)
-    ("how do I publish an npm library", ChatScope(), N),
-    ("does React.memo need useCallback", ChatScope(), E),
-    ("explain the event loop and microtasks", ChatScope(), E),
-    ("how do I write a lexer for my own language", ChatScope(), N),
-    ("how do I bake sourdough bread", ChatScope(), X),
-    ("what am I weak at?", ChatScope(), None),
-    ("what does this mean?", ChatScope("react-perf", "4.1 - React.memo and useCallback"), None),
-    # probes: where do Build a Custom Library topics land for a student who is not enrolled in it?
-    ("how does npm link work", ChatScope(), None),
-    ("what is an IIFE", ChatScope(), None),
-    ("how do I hack the prototype to add a method", ChatScope(), None),
-    ("what are ES modules", ChatScope(), None),
+    # (question, scope, expected case with --enroll 9,11, expected case with --enroll 2; None = printed only)
+    ("how do I publish an npm library", ChatScope(), X, E),
+    ("does React.memo need useCallback", ChatScope(), X, None),
+    ("explain the event loop and microtasks", ChatScope(), X, None),
+    ("how do I write a lexer for my own language", ChatScope(), X, None),
+    ("how do I bake sourdough bread", ChatScope(), X, X),
+    ("what am I weak at?", ChatScope(), None, None),
+    ("what does this mean?", ChatScope("react-perf", "4.1 - React.memo and useCallback"), None, None),
+    # probes: where do Build a Custom Library topics land?
+    ("how does npm link work", ChatScope(), X, E),
+    ("what is an IIFE", ChatScope(), None, None),
+    ("how do I hack the prototype to add a method", ChatScope(), X, None),
+    ("what are ES modules", ChatScope(), X, None),
 ]
 
 
@@ -187,7 +192,8 @@ async def main() -> None:
             print(f"demo_check: --enroll takes comma-separated catalog course ids, e.g. --enroll 9,11 "
                   f"(got {enroll_arg!r}; valid ids: {[c['id'] for c in catalog_service.all_courses()]})")
             sys.exit(2)
-    check = enroll_arg is not None and sorted(ids) == DEMO_ENROLL
+    check = enroll_arg is not None and sorted(ids) in (DEMO_ENROLL, [2])
+    col = 2 if sorted(ids) == DEMO_ENROLL else 3
 
     async def seed(student: str) -> None:
         for cid in ids:
@@ -198,11 +204,12 @@ async def main() -> None:
     enrolled = await enrollment_service.get_enrolled_courses(uid)
     print(f"store: {type(store).__name__} · student {uid}")
     print(f"enrolled in: {[c['title'] for c in enrolled] or 'NOTHING'}")
-    print(f"expected-case checks: {'on' if check else 'off (only with --enroll 9,11)'}")
+    print(f"expected-case checks: {'on' if check else 'off (only with --enroll 9,11 or --enroll 2)'}")
     print(f"memory: {'fresh student per question (' + uid + '-qN)' if full else 'n/a (lookup only)'}\n")
 
     failures = 0
-    for i, (q, scope, expected) in enumerate(QUESTIONS, 1):
+    for i, (q, scope, *exp_cols) in enumerate(QUESTIONS, 1):
+        expected = exp_cols[col - 2]
         student = f"{uid}-q{i}" if full else uid
         if student != uid:
             await seed(student)
@@ -226,6 +233,17 @@ async def main() -> None:
                     text.append(f"[error: {e.get('message')}]")
                     failures += 1
             answer = " ".join("".join(text).split())
+            # F1/F2: never name a course the student can't be pointed at; owned answers carry the deep link.
+            citable = {catalog_service.get(c)["title"] for c in ids if catalog_service.get(c)["launched"]}
+            named = [c["title"] for c in catalog_service.all_courses()
+                     if c["title"] not in citable and c["title"].lower() in answer.lower()]
+            if named:
+                print(f"      X names a course it must not cite: {named}")
+                failures += 1
+            if re.search(r"the01\.dev/course/(?!2\?chapter=\d+&sub=\d+&t=\d+)\S*", answer) or (
+                    re.search(r"the01\.dev/course/\d", answer) and 2 not in ids):
+                print("      X malformed or unowned course link")
+                failures += 1
             if len(answer) > 600 and "--whole" not in sys.argv:
                 answer = f"{answer[:330]} … {answer[-250:]}"  # keep the end: pointer / citation live there
             print(f"      first token {first or 0:.2f}s · {answer}\n")
