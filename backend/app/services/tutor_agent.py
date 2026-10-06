@@ -137,28 +137,31 @@ _NOT_FOUND = '{"found": false}'
 
 
 async def _locate_moment(what: str, slug: str):
-    """(chunk, score) of a real chunk of the course, or None. A lecture whose TITLE matches wins
-    (its best chunk for `what`, else its opening); otherwise the best chunk must clear MOMENT_THRESHOLD."""
-    titles = await cl._title_scores(what, slug)
-    best_title = max(titles, key=titles.get, default=None)
-    if best_title is not None and titles[best_title] >= cl.TITLE_THRESHOLD:
-        chunks = [(c, s) for c, s in await cl.search_in_lecture(what, slug, best_title) if c.course_id == slug]
-        if chunks:
-            chunk, score = max(chunks, key=lambda t: t[1])
-            if score >= cl.MOMENT_LECTURE_FLOOR:
-                return chunk, score
-            opening = min((c for c, _ in chunks), key=lambda c: c.start_time)
-            return opening.model_copy(update={"start_time": 0}), titles[best_title]
-    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=1) if c.course_id == slug]
-    if rows and rows[0][1] >= cl.MOMENT_THRESHOLD:
-        return rows[0]
-    return None
+    """(chunk, chunk_score) of a real chunk of the course, or None. Lectures are ranked by
+    max(best chunk, title - TITLE_OFFSET); the winner counts as found when its title clears
+    TITLE_THRESHOLD or its best chunk clears MOMENT_THRESHOLD."""
+    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=1000) if c.course_id == slug]
+    titles = {cl._norm(t): sc for t, sc in (await cl._title_scores(what, slug)).items()}
+    best: dict = {}
+    for c, s in rows:
+        k = cl._norm(c.lecture_title)
+        if k not in best or s > best[k][1]:
+            best[k] = (c, s)
+    if not best:
+        return None
+    key = max(best, key=lambda k: max(best[k][1], titles.get(k, 0.0) - cl.TITLE_OFFSET))
+    chunk, score = best[key]
+    if titles.get(key, 0.0) < cl.TITLE_THRESHOLD and score < cl.MOMENT_THRESHOLD:
+        return None
+    if score < cl.MOMENT_LECTURE_FLOOR:
+        chunk = chunk.model_copy(update={"start_time": 0})
+    return chunk, score
 
 
 @tool("find_moment", description=D.FIND_MOMENT, response_format="content_and_artifact")
 async def find_moment(
-    what: Annotated[str, "Short search phrase for the part to show, rewritten from the student's request, "
-                         "e.g. 'publish the package with np'."],
+    what: Annotated[str, "The specific thing to find, in the instructor's on-screen words: the command, tool, "
+                         "function or term (e.g. 'npm publish command', 'npm link', 'IIFE syntax'), no request filler."],
     runtime: ToolRuntime[ChatContext],
 ) -> tuple[str, Optional[dict]]:
     """Only ever returns a real chunk of the watched course — the model cannot invent a time."""

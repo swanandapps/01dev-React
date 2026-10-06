@@ -313,18 +313,25 @@ async def test_find_moment_between_related_and_moment_threshold_is_not_found(mon
     assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
 
 
-async def test_find_moment_title_match_uses_that_lectures_best_chunk_even_if_low(monkeypatch):
+async def test_find_moment_ranks_lectures_by_chunk_or_title_minus_offset(monkeypatch):
+    A = "8.1 - The `npm link` command"
+    _stub(monkeypatch, titles={A: 0.68, LECTURE: 0.44},
+          course=[(_moment_chunk(lecture=A, start=484), 0.60), (_moment_chunk(start=92), 0.685)])
+    content, artifact = await tutor_agent.find_moment.coroutine(what="npm publish", runtime=_player_runtime())
+    assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 92}
+
+
+async def test_find_moment_title_only_lecture_starts_at_zero(monkeypatch):
     import json
-    _stub(monkeypatch, titles={LECTURE: 0.7, "8.1 - x": 0.2}, lecture=[(_moment_chunk(start=90), 0.35)],
-          course=[])
-    content, artifact = await tutor_agent.find_moment.coroutine(what="publishing with np", runtime=_player_runtime())
-    assert json.loads(content)["start_time"] == 90 and artifact["lecture_title"] == LECTURE
-
-
-async def test_find_moment_title_match_with_no_decent_chunk_starts_at_zero(monkeypatch):
-    _stub(monkeypatch, titles={LECTURE: 0.7}, lecture=[(_moment_chunk(start=120), 0.2), (_moment_chunk(start=15), 0.1)])
+    _stub(monkeypatch, titles={LECTURE: 0.7}, course=[(_moment_chunk(start=120), 0.2), (_moment_chunk(start=15), 0.1)])
     content, artifact = await tutor_agent.find_moment.coroutine(what="np", runtime=_player_runtime())
     assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 0}
+    assert json.loads(content)["score"] == 0.2  # chunk score, not the title's
+
+
+async def test_find_moment_weak_title_and_weak_chunk_is_not_found(monkeypatch):
+    _stub(monkeypatch, titles={LECTURE: 0.55}, course=[(_moment_chunk(), 0.44)])
+    assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
 
 
 async def test_find_moment_never_returns_another_course(monkeypatch):

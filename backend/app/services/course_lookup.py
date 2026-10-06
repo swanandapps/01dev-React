@@ -35,6 +35,10 @@ MAX_HITS = 5
 RELATED_THRESHOLD = 0.40
 TITLE_THRESHOLD = 0.60
 MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter than RELATED: a wrong jump is worse)
+# find_moment ranks lectures by max(best chunk, title - TITLE_OFFSET). Measured on real embeddings
+# (27 phrasings, Build a Custom Library): 26/27 correct vs 21/27 for "title >= 0.60 wins outright"
+# (generic "npm" pulled 8.1/8.2 titles over 11.1's stronger chunks); demo margin >= 0.042.
+TITLE_OFFSET = 0.10
 MOMENT_LECTURE_FLOOR = 0.30  # within a title-matched lecture, chunks below this -> start at 0
 IN_COURSE_K = 3
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
