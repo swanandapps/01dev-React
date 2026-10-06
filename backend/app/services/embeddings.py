@@ -2,6 +2,8 @@ import os
 import math
 from typing import List
 
+EMBED_MODEL = "text-embedding-3-small"
+
 
 class EmbeddingService:
     def __init__(self):
@@ -14,7 +16,7 @@ class EmbeddingService:
                 from app.services.tracing import maybe_trace
                 # timeout + bounded exponential-backoff retries (SDK-native)
                 self.client = maybe_trace(AsyncOpenAI(api_key=self.api_key, timeout=30.0, max_retries=3))
-                print("EmbeddingService: using OpenAI text-embedding-3-small")
+                print("EmbeddingService: using OpenAI {EMBED_MODEL}")
             except ImportError:
                 self.use_openai = False
                 print("EmbeddingService: openai package not found, using local fallback")
@@ -34,7 +36,7 @@ class EmbeddingService:
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
             response = await self.client.embeddings.create(
-                model="text-embedding-3-small",
+                model=EMBED_MODEL,
                 input=[t[:8000] for t in batch],
             )
             if len(response.data) != len(batch):
@@ -46,7 +48,7 @@ class EmbeddingService:
 
     async def _openai_embed(self, text: str) -> List[float]:
         response = await self.client.embeddings.create(
-            model="text-embedding-3-small",
+            model=EMBED_MODEL,
             input=text[:8000],
         )
         return response.data[0].embedding

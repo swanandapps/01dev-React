@@ -68,7 +68,12 @@ class InMemoryVectorStore:
             data = json.load(f)
 
         self._indexed_for = (None, None)  # force norms/course index rebuild after re-init
-        self.chunks = apply_enrichment([TranscriptChunk(**item) for item in data])
+        raw = [TranscriptChunk(**item) for item in data]
+        try:
+            self.chunks = apply_enrichment(raw)
+        except Exception as e:  # noqa: BLE001 — boot must never fail over enrichment/glossary data
+            print(f"WARNING: enrichment failed ({e!r}); falling back to raw chunk text (embed_input = text).")
+            self.chunks = raw
         self._embeddings = []
 
         if os.getenv("DATABASE_URL") and embedding_service.use_openai:

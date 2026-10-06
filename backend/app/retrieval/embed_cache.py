@@ -6,7 +6,9 @@ import os
 from pathlib import Path
 from typing import Optional
 
-FILE = "text-embedding-3-small.jsonl"
+from app.services.embeddings import EMBED_MODEL
+
+FILE = f"{EMBED_MODEL}.jsonl"
 
 
 class EmbedCache:
@@ -15,9 +17,11 @@ class EmbedCache:
         self._data: dict[str, list[float]] = {}
         if self.path.exists():
             for line in self.path.read_text().splitlines():
-                if line.strip():
+                try:
                     row = json.loads(line)
                     self._data[row["k"]] = row["v"]
+                except (ValueError, KeyError, TypeError):
+                    continue  # e.g. a truncated last line
 
     @classmethod
     def from_env(cls) -> Optional["EmbedCache"]:

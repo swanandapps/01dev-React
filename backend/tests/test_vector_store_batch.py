@@ -206,3 +206,27 @@ def test_pg_path_reembeds_when_the_content_hash_changes(monkeypatch):
     store.chunks[1].content_hash, store.chunks[1].embed_text = "new", "E1"
     asyncio.run(store._init_with_pgvector())
     assert client.calls == [["E1"]]
+
+
+def test_initialize_survives_enrichment_failure(monkeypatch):
+    client = FakeClient()
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", client)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("RAG_EMBED_CACHE", raising=False)
+    monkeypatch.setattr(vs, "json", SimpleNamespace(load=lambda f: _seed_two()))
+
+    def boom(chunks):
+        raise RuntimeError("bad data")
+
+    monkeypatch.setattr(vs, "apply_enrichment", boom)
+    store = vs.InMemoryVectorStore()
+    asyncio.run(store.initialize())
+    assert [t for c in client.calls for t in c] == ["We wrap it.", "Then call it."]
+
+
+def test_embed_cache_skips_truncated_lines(tmp_path):
+    from app.retrieval.embed_cache import EmbedCache
+    f = tmp_path / "c.jsonl"
+    f.write_text('{"k": "a", "v": [1.0]}\n{"k": "b", "v": [2.')
+    assert EmbedCache(f).get_many(["a", "b"]) == {"a": [1.0]}

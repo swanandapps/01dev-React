@@ -95,7 +95,6 @@ def test_save_then_load_round_trip_is_sorted_and_atomic(tmp_path):
 
 
 def test_glossary_term_is_whole_word_and_regex_needs_boundary(tmp_path):
-    import pytest
     e, g = _dirs(tmp_path, glossary=[{"term": "tree shucking", "replacement": "tree shaking"},
                                      {"pattern": r"\bnp\b", "replace": "npm"}])
     out = en.apply_enrichment([_c(0, "Tree  Shucking and np and npm and np-x")], e, g)[0]
@@ -103,8 +102,7 @@ def test_glossary_term_is_whole_word_and_regex_needs_boundary(tmp_path):
     (g / "custom-library.json").write_text(json.dumps({"replacements": [{"term": "np", "replacement": "npm"}]}))
     assert en.apply_enrichment([_c(0, "npm np")], e, g)[0].text_clean == "npm npm"
     (g / "custom-library.json").write_text(json.dumps({"replacements": [{"pattern": "np", "replace": "npm"}]}))
-    with pytest.raises(ValueError):
-        en.load_glossary("custom-library", g)
+    assert en.load_glossary("custom-library", g) == []      # bad entry skipped, not raised
 
 
 def test_overlap_resets_per_lecture_and_follows_time_order(tmp_path):
@@ -115,3 +113,19 @@ def test_overlap_resets_per_lecture_and_follows_time_order(tmp_path):
     assert [c.chunk_id for c in out] == [a.chunk_id, b1.chunk_id, b0.chunk_id]
     assert "Previously:" not in out[2].embed_text and "Previously: B opens." in out[1].embed_text
     assert "Previously:" not in out[0].embed_text
+
+
+def test_bad_data_files_skip_only_the_bad_part(tmp_path):
+    e, g = _dirs(tmp_path)
+    gp, ep = g / "custom-library.json", e / "custom-library.json"
+    gp.write_text("{not json")
+    assert en.load_glossary("custom-library", g) == []
+    gp.write_text(json.dumps({"replacements": [{"pattern": "np", "replace": "x"}, {"term": "a"},
+                                               {"term": "tree shucking", "replacement": "tree shaking"}]}))
+    assert len(en.load_glossary("custom-library", g)) == 1      # only the good entry survives
+    ep.write_text("{not json")
+    assert en.load_enrichment("custom-library", e) == {}
+    ep.write_text(json.dumps({"chunks": {"a": {"text_sha": "x"}, "b": "junk"}}))
+    assert list(en.load_enrichment("custom-library", e)) == ["a"]
+    out = en.apply_enrichment([_c(0, "hello")], e, g)           # entry missing keys: no raise
+    assert out[0].embed_text and out[0].summary == ""

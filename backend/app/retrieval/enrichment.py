@@ -9,6 +9,7 @@ Glossary file: backend/data/glossary/<slug>.json  {"replacements": [{"pattern": 
 """
 import hashlib
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -20,7 +21,9 @@ from app.retrieval.text import last_sentence
 BACKEND = Path(__file__).resolve().parents[2]
 ENRICH_DIR = BACKEND / "data" / "enrichment"
 GLOSSARY_DIR = BACKEND / "data" / "glossary"
-EMBED_MODEL = "text-embedding-3-small"
+from app.services.embeddings import EMBED_MODEL  # noqa: E402  single source of truth for the model name
+
+log = logging.getLogger(__name__)
 EMBED_TEXT_CHARS = 8000  # embeddings.py truncates input at 8000 chars too
 
 
@@ -37,15 +40,23 @@ def load_glossary(slug: str, glossary_dir: Path = GLOSSARY_DIR) -> list[tuple[re
     p = Path(glossary_dir) / f"{slug}.json"
     if not p.exists():
         return []
+    try:
+        rows = json.loads(p.read_text()).get("replacements", [])
+    except Exception as e:  # noqa: BLE001 — bad data must never break boot
+        log.warning("glossary %s: unreadable, skipping the whole file (%s)", p, e)
+        return []
     out = []
-    for r in json.loads(p.read_text()).get("replacements", []):
-        if "term" in r:
-            pat = r"(?<!\w)" + r"\s+".join(re.escape(w) for w in r["term"].split()) + r"(?!\w)"
-            out.append((re.compile(pat, re.IGNORECASE), r["replacement"]))
-        else:
-            if not _BOUNDARY.search(r["pattern"]):
-                raise ValueError(f"glossary {slug}: regex {r['pattern']!r} needs a word boundary or lookaround")
-            out.append((re.compile(r["pattern"], re.IGNORECASE), r["replace"]))
+    for r in rows:
+        try:
+            if "term" in r:
+                pat = r"(?<!\w)" + r"\s+".join(re.escape(w) for w in r["term"].split()) + r"(?!\w)"
+                out.append((re.compile(pat, re.IGNORECASE), r["replacement"]))
+            else:
+                if not _BOUNDARY.search(r["pattern"]):
+                    raise ValueError(f"regex {r['pattern']!r} needs a word boundary or lookaround")
+                out.append((re.compile(r["pattern"], re.IGNORECASE), r["replace"]))
+        except Exception as e:  # noqa: BLE001
+            log.warning("glossary %s: skipping bad entry %r (%s)", p, r, e)
     return out
 
 
@@ -57,7 +68,16 @@ def clean_text(text: str, glossary: list[tuple[re.Pattern, str]]) -> str:
 
 def load_enrichment(slug: str, enrich_dir: Path = ENRICH_DIR) -> dict[str, dict]:
     p = Path(enrich_dir) / f"{slug}.json"
-    return json.loads(p.read_text()).get("chunks", {}) if p.exists() else {}
+    if not p.exists():
+        return {}
+    try:
+        chunks = json.loads(p.read_text()).get("chunks", {})
+        if not isinstance(chunks, dict):
+            raise ValueError("'chunks' is not an object")
+    except Exception as e:  # noqa: BLE001 — bad data must never break boot
+        log.warning("enrichment %s: unreadable, skipping the whole file (%s)", p, e)
+        return {}
+    return {k: v for k, v in chunks.items() if isinstance(v, dict)}
 
 
 def save_enrichment(slug: str, entries: dict[str, dict], model: str, enrich_dir: Path = ENRICH_DIR) -> Path:
@@ -112,7 +132,7 @@ def apply_enrichment(chunks: list[TranscriptChunk], enrich_dir: Path = ENRICH_DI
             glossaries[slug] = load_glossary(slug, glossary_dir)
             entries[slug] = load_enrichment(slug, enrich_dir)
         e = entries[slug].get(c.chunk_id)
-        fresh = bool(e) and e.get("text_sha") == text_sha(c.text)
+        fresh = bool(e) and e.get("text_sha") == text_sha(c.text) and isinstance(e.get("keywords", []), list) and isinstance(e.get("questions", []), list)
         enriched.append(c.model_copy(update={
             "chapter": chapter_for(c.lecture_id, slug),
             "text_clean": clean_text(c.text, glossaries[slug]),
