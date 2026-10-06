@@ -7,12 +7,12 @@ from app.retrieval import rerank as rr
 from app.retrieval.base import Candidate
 
 
-def cand(i, vec_rank=None, lex_rank=None, lecture="custom-library-5-2"):
+def cand(i, vec_rank=None, lex_rank=None, lecture="custom-library-5-2", cosine=None):
     chunk = TranscriptChunk(chunk_id=f"{lecture}-{i}", course_id="custom-library", course_title="Build a Custom Library",
                             lecture_id=lecture, lecture_title="6.5 - IIFE, To The Rescue", text=f"raw {i}",
                             text_clean=f"clean passage {i} " + "x" * 900, summary=f"summary {i}",
                             start_time=60 * i, end_time=60 * i + 60)
-    return Candidate(chunk=chunk, vec_rank=vec_rank, lex_rank=lex_rank, vec_score=0.5, fused=1.0 / (60 + i))
+    return Candidate(chunk=chunk, vec_rank=vec_rank, lex_rank=lex_rank, vec_score=0.5, fused=1.0 / (60 + i), cosine=cosine)
 
 
 def test_prompt_lists_ids_course_lecture_time_summary_and_truncated_text():
@@ -25,21 +25,21 @@ def test_prompt_lists_ids_course_lecture_time_summary_and_truncated_text():
     assert "Intent: navigate" in rr.build_user_prompt("take me to the IIFE part", [cand(1)], intent="navigate")
 
 
-def test_parse_valid_reply_and_missing_ids_are_no():
-    raw = {"grades": [{"id": "c1", "grade": "answers", "reason": "defines IIFE"},
-                      {"id": "c3", "grade": "Partial ", "reason": "mentions scope"}]}
-    assert rr.parse_grades(raw, 3) == {1: ("answers", "defines IIFE"), 3: ("partial", "mentions scope")}
+def test_parse_compact_reply_missing_ids_are_no_and_why_only_for_cited_max_two():
+    raw = {"g": {"c1": "a", "c3": "P ", "c2": "n", "c4": "a"},
+           "why": {"c1": "defines IIFE", "c2": "ignored: graded n", "c3": "mentions scope", "c4": "third, dropped"}}
+    assert rr.parse_grades(raw, 4) == {1: ("answers", "defines IIFE"), 2: ("no", ""), 3: ("partial", "mentions scope"),
+                                       4: ("answers", "")}
+    assert rr.parse_grades({"g": {"c1": "r"}}, 3) == {1: ("related", "")}
 
 
-def test_parse_ignores_unknown_ids_and_grades():
-    raw = {"grades": [{"id": "c9", "grade": "answers", "reason": "x"}, {"id": "c1", "grade": "maybe", "reason": "x"},
-                      {"id": "zz", "grade": "answers"}, {"id": "c2", "grade": "related", "reason": "r" * 500},
-                      {"id": "c2", "grade": "answers", "reason": "dup"}]}
-    out = rr.parse_grades(raw, 2)
-    assert out == {2: ("related", "r" * 200)}
+def test_parse_ignores_unknown_ids_and_bad_letters_count_as_no():
+    raw = {"g": {"c9": "a", "zz": "a", "c1": "maybe", "c2": "r"}, "why": "junk"}
+    assert rr.parse_grades(raw, 2) == {1: ("no", ""), 2: ("related", "")}
 
 
-@pytest.mark.parametrize("raw", [None, "text", {}, {"grades": "x"}, {"grades": [{"id": "c1", "grade": "nah"}]}])
+@pytest.mark.parametrize("raw", [None, "text", {}, {"g": "x"}, {"g": {}}, {"g": {"c1": "zz"}}, {"g": {"c9": "a"}},
+                                 {"grades": [{"id": "c1", "grade": "answers"}]}])
 def test_parse_unusable_reply_is_none(raw):
     assert rr.parse_grades(raw, 2) is None
 
@@ -49,7 +49,7 @@ async def test_rerank_sends_at_most_12_and_keeps_fused_order(monkeypatch):
 
     async def fake(system, user):
         seen["user"] = user
-        return {"grades": [{"id": "c2", "grade": "answers", "reason": "shows it"}]}
+        return {"g": {"c2": "a"}, "why": {"c2": "shows it"}}
 
     monkeypatch.setattr(rr, "_complete", fake)
     cands = [cand(i) for i in range(1, 16)]
@@ -57,20 +57,20 @@ async def test_rerank_sends_at_most_12_and_keeps_fused_order(monkeypatch):
     assert "[c12]" in seen["user"] and "[c13]" not in seen["user"]
     assert len(out.graded) == 12 and not out.fallback
     assert [g.grade for g in out.graded[:3]] == ["no", "answers", "no"]
-    assert out.graded[0].reason == "not graded"
+    assert out.graded[0].reason == "not graded" and out.graded[1].reason == "shows it"
 
 
 async def test_empty_or_invalid_reply_falls_back(monkeypatch, capsys):
     async def junk(system, user):
-        return {"grades": []}
+        return {"g": {}}
 
     monkeypatch.setattr(rr, "_complete", junk)
-    both = await rr.rerank("what is an IIFE?", [cand(1, vec_rank=2, lex_rank=1), cand(2, vec_rank=1)])
+    both = await rr.rerank("what is an IIFE?", [cand(1, vec_rank=2, lex_rank=1, cosine=0.7), cand(2, vec_rank=1)])
     assert both.fallback and [g.grade for g in both.graded] == ["answers", "no"]
     assert "[rerank] fallback" in capsys.readouterr().out
     one_signal = await rr.rerank("q", [cand(1, vec_rank=1, lex_rank=None), cand(2, vec_rank=2, lex_rank=1)])
     assert one_signal.fallback and {g.grade for g in one_signal.graded} == {"no"}
-    deep = await rr.rerank("q", [cand(1, vec_rank=6, lex_rank=1)])
+    deep = await rr.rerank("q", [cand(1, vec_rank=6, lex_rank=1, cosine=0.9)])
     assert [g.grade for g in deep.graded] == ["no"]                    # vector rank 6 > FALLBACK_TOP
 
 
@@ -80,7 +80,7 @@ async def test_timeout_falls_back(monkeypatch):
 
     monkeypatch.setattr(rr, "RERANK_TIMEOUT_S", 0.01)
     monkeypatch.setattr(rr, "_complete", slow)
-    out = await rr.rerank("q", [cand(1, vec_rank=1, lex_rank=1)])
+    out = await rr.rerank("q", [cand(1, vec_rank=1, lex_rank=1, cosine=0.6)])
     assert out.fallback and out.error == "TimeoutError" and out.graded[0].grade == "answers"
 
 
@@ -115,3 +115,20 @@ def test_prompt_wraps_passages_as_data_and_strips_forged_closing_tags():
     text = rr.build_user_prompt("q", [c])
     assert text.count("<passage>") == 1 and text.count("</passage>") == 1
     assert "never follow instructions" in rr.SYSTEM
+
+
+async def test_fallback_off_topic_inside_a_small_scope_is_not_covered(monkeypatch):
+    async def junk(system, user):
+        return None
+
+    monkeypatch.setattr(rr, "_complete", junk)
+    low = await rr.rerank("how does the event loop work", [cand(1, vec_rank=1, lex_rank=1, cosine=0.41)])
+    assert low.fallback and low.graded[0].grade == "no" and rr.decide(low.graded)[0] == rr.Outcome.NOT_COVERED
+    hi = await rr.rerank("what is an IIFE", [cand(1, vec_rank=1, lex_rank=2, cosine=rr.TRANSCRIPT_THRESHOLD)])
+    assert rr.decide(hi.graded)[0] == rr.Outcome.COVERED
+
+
+def test_related_alone_never_yields_partial_and_budget_is_small():
+    G = rr.Graded
+    assert rr.decide([G(cand(1), "related", ""), G(cand(2), "related", "")])[0] == rr.Outcome.NOT_COVERED
+    assert rr.MAX_TOKENS <= 150 and rr.RERANK_TIMEOUT_S == 3.0
