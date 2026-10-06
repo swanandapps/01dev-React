@@ -149,3 +149,84 @@ async def test_best_chunk_for_lectures_scores_the_same_question_embedding_withou
     chunk, cos = out["cl-5-2"]
     assert chunk.lecture_id == "cl-5-2" and cos == pytest.approx(1.0) and "nope" not in out
     assert await pipeline.best_chunk_for_lectures("x", ["nope"]) == {} and len(mem) == n   # no chunks: no embed
+
+
+from app.retrieval import rerank as rr
+from app.retrieval.base import Candidate
+from app.services import course_lookup as cl
+
+
+@pytest.fixture
+def grader(monkeypatch):
+    calls = []
+
+    async def no_titles(question, slug):
+        return {}
+
+    monkeypatch.setattr(cl, "_title_scores", no_titles)
+
+    def set_reply(grades, why=None):
+        async def fake(system, user):
+            calls.append(user)
+            return {"g": dict(grades), "why": why or {}}
+        monkeypatch.setattr(rr, "_complete", fake)
+
+    set_reply.calls = calls
+    return set_reply
+
+
+async def test_graded_search_decides_from_grades(mem, grader):
+    grader({"c1": "a"}, {"c1": "defines IIFE"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert res.outcome == pipeline.Outcome.COVERED and not res.fallback
+    assert res.best().candidate.chunk.chunk_id == "cl-5-2-0" and res.best().reason == "defines IIFE"
+    assert [g.grade for g in res.cited()] == ["answers"]
+    assert set(res.timings_ms) >= {"retrieve", "rerank", "total"}
+
+
+async def test_graded_search_partial_and_best(mem, grader):
+    grader({"c2": "p"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert res.outcome == pipeline.Outcome.PARTIAL
+    assert res.best().grade == "partial" and res.best(allow_partial=False) is None
+
+
+async def test_graded_search_empty_scope_never_embeds_or_reranks(mem, grader):
+    res = await pipeline.graded_search("what is an IIFE?", [])
+    assert res.outcome == pipeline.Outcome.NOT_COVERED and res.graded == []
+    assert mem == [] and grader.calls == []
+
+
+async def test_graded_search_tells_the_reranker_about_navigation(mem, grader):
+    grader({"c1": "a"})
+    await pipeline.graded_search("IIFE", ["custom-library"], intent="navigate")
+    assert "Intent: navigate" in grader.calls[0]
+
+
+async def test_graded_search_adds_title_matched_lectures_to_the_pool(mem, grader, monkeypatch):
+    async def titled(question, slug):
+        return {"11.1 - Publishing using `np`": 0.9}          # lecture cl-10-0, absent from the fused list
+
+    async def fake_search(question, scope, **kw):
+        return [Candidate(chunk=CORPUS[0][0], vec_rank=1, lex_rank=1, cosine=0.9)]
+
+    monkeypatch.setattr(cl, "_title_scores", titled)
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    grader({"c2": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert "[c2] custom-library" in grader.calls[0] and "Publishing using np" in grader.calls[0]
+    assert res.outcome == pipeline.Outcome.COVERED and res.best().candidate.chunk.lecture_id == "cl-10-0"
+
+
+async def test_graded_search_pool_is_at_most_12(mem, grader, monkeypatch):
+    async def many(question, scope, **kw):
+        return [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}"})) for i in range(12)]
+
+    async def titled(question, slug):
+        return {"11.1 - Publishing using `np`": 0.9}
+
+    monkeypatch.setattr(cl, "_title_scores", titled)
+    monkeypatch.setattr(pipeline, "search", many)
+    grader({"c1": "n"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert len(res.graded) == 12 and any(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded)

@@ -14,8 +14,8 @@ from app.retrieval.base import Candidate
 # Fallback gate: the legacy TRANSCRIPT_THRESHOLD value (0.54), calibrated on PRE-enrichment embeddings;
 # re-check it against the Phase 4 eval. Defined here (not imported) so rerank never depends on course_lookup.
 FALLBACK_MIN_COSINE = 0.54
-_ID = re.compile(r"c([1-9]\d{0,2})", re.I)
-_PAIR = re.compile(r'"(c[1-9]\d{0,2})"\s*:\s*"([apnr])"', re.I)
+_ID = re.compile(r"c([1-9][0-9]{0,2})", re.I)
+_PAIR = re.compile(r'"(c[1-9][0-9]{0,2})"\s*:\s*"([apnr])"', re.I)
 _TAG = re.compile(r"<\s*/?\s*passage\b[^>]*>", re.I)
 
 LETTERS = {"a": "answers", "p": "partial", "r": "related", "n": "no"}
@@ -69,7 +69,7 @@ async def _complete(system: str, user: str) -> Optional[dict]:
     from app.services.llm import GEN_MODEL, llm
     if not llm.client:
         return {"_error": "no client", "_text": ""}
-    resp = await llm.client.chat.completions.create(
+    resp = await llm.client.with_options(timeout=RERANK_TIMEOUT_S, max_retries=0).chat.completions.create(
         model=GEN_MODEL, temperature=0.0, max_tokens=MAX_TOKENS, response_format={"type": "json_object"},
         messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
     choice = resp.choices[0]

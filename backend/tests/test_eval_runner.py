@@ -267,3 +267,26 @@ def test_refuses_without_openai_embeddings(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.setattr(embedding_service, "use_openai", False)
     assert ev.main(["--label", "x"]) == 2
+
+
+async def test_v2_mapping(monkeypatch):
+    from app.retrieval import pipeline
+    from app.retrieval.base import Candidate
+    from app.retrieval.rerank import Graded, Outcome
+
+    async def fake_graded(question, scope, **kw):
+        assert list(scope) == ["custom-library"] and kw["history"] == [] and kw["lecture_title"] is None
+        a, b = Candidate(chunk=_chunk("custom-library-9-0")), Candidate(chunk=_chunk("custom-library-5-2"))
+        return pipeline.RetrievalResult(Outcome.PARTIAL, [Graded(b, "partial", "x"), Graded(a, "related", "y")],
+                                        fallback=True)
+
+    async def fake_search(question, scope, **kw):
+        return [Candidate(chunk=_chunk("custom-library-1-0")), Candidate(chunk=_chunk("custom-library-9-0"))]
+
+    monkeypatch.setattr(pipeline, "graded_search", fake_graded)
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    p = await rs.V2System().predict(_row("a"), "player")
+    assert (p.outcome, p.cited_lecture, p.fallback) == (PARTIAL, "custom-library-5-2", True)
+    assert p.ranked_lectures == ["custom-library-5-2", "custom-library-9-0", "custom-library-1-0"]
+    assert p.shown_lectures == ["custom-library-5-2"]
+    assert (await rs.V2System().predict(_row("a"), "player", rank=False)).ranked_lectures == []

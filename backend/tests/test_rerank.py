@@ -209,3 +209,34 @@ async def test_slow_model_times_out_within_budget(monkeypatch):
     t = asyncio.get_event_loop().time()
     out = await rr.rerank("q", [cand(1)])
     assert out.fallback and asyncio.get_event_loop().time() - t < 1
+
+
+class _FakeClient:
+    def __init__(self, choice):
+        self.opts, self._choice = {}, choice
+        self.chat = self
+        self.completions = self
+
+    def with_options(self, **kw):
+        self.opts = kw
+        return self
+
+    async def create(self, **kw):
+        from types import SimpleNamespace as NS
+        return NS(choices=[self._choice])
+
+
+@pytest.mark.parametrize("message,finish,want", [
+    ({"content": "", "refusal": "no"}, "stop", {"_error": "refusal", "_text": ""}),
+    ({"content": '{"g": {"c1": "a", "c2"', "refusal": None}, "length", {"_error": "truncated"}),
+    ({"content": None, "refusal": None}, "stop", {"_error": "bad json", "_text": ""}),
+    ({"content": '{"g": {"c1": "a"}}', "refusal": None}, "stop", {"g": {"c1": "a"}}),
+])
+async def test_complete_handles_refusal_length_and_none_content(monkeypatch, message, finish, want):
+    from types import SimpleNamespace as NS
+    from app.services.llm import llm
+    client = _FakeClient(NS(message=NS(**message), finish_reason=finish))
+    monkeypatch.setattr(llm, "client", client)
+    out = await rr._complete("s", "u")
+    assert {k: out[k] for k in want} == want
+    assert client.opts == {"timeout": rr.RERANK_TIMEOUT_S, "max_retries": 0}

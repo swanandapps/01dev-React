@@ -114,3 +114,35 @@ class LegacySystem:
         enrolled, _ = await cl._enrollments(EVAL_STUDENT)
         pairs = await cl._transcript_hits(question, pipeline.ask_scope(enrolled), top_k=pipeline.VEC_K + pipeline.LEX_K)
         return _lecture_order((c, s) for c, s in pairs if cl.ask_citable(cl.transcript_hit(c, s, enrolled)))
+
+
+class V2System:
+    """Phase 4+: graded_search (hybrid -> rerank -> decision); navigation through find_moment's locator."""
+    name = "v2"
+
+    async def predict(self, row: Row, mode: str, rank: bool = True) -> Prediction:
+        from app.retrieval import pipeline
+        from app.services import catalog_service, tutor_agent
+        t0 = time.perf_counter()
+        if row.intent == "navigate":
+            hit = await tutor_agent._locate_moment(row.navigate_phrase or row.question, row.scope_course)
+            return Prediction(row.id, mode, [], NOT_COVERED, None,
+                              moment_lecture=hit[0].lecture_id if hit else None, latency_ms=_ms(t0))
+        scope = [row.scope_course] if mode == "player" else launched_slugs(mode)
+        res = await pipeline.graded_search(row.question, scope, history=list(row.history),
+                                           lecture_title=row.lecture_title)
+        ms = _ms(t0)
+        best = res.best()
+        return Prediction(row.id, mode, await self._ranking(row.question, scope, res) if rank else [],
+                          res.outcome.value, best.candidate.chunk.lecture_id if best else None, latency_ms=ms,
+                          shown_lectures=list(dict.fromkeys(g.candidate.chunk.lecture_id for g in res.cited())),
+                          fallback=res.fallback)
+
+    @staticmethod
+    async def _ranking(question: str, scope, res) -> list[str]:
+        """The full scoped ranking: graded candidates first (best grade first), then the rest of the scope's
+        hybrid ranking, so recall@k sees every lecture the mode may cite."""
+        from app.retrieval import pipeline
+        graded = [g.candidate.chunk.lecture_id for g in res.graded]
+        rest = await pipeline.search(question, scope, limit=pipeline.VEC_K + pipeline.LEX_K, per_lecture=None)
+        return list(dict.fromkeys(graded + [c.chunk.lecture_id for c in rest]))

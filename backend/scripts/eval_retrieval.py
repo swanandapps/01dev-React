@@ -162,7 +162,7 @@ def write_report(run: dict, out_dir: Path = REPORTS, compare_to: Optional[str] =
 
 def make_system(name: str):
     from app.eval import retrieval_systems as rs
-    return {"legacy": rs.LegacySystem}[name]()
+    return {"legacy": rs.LegacySystem, "v2": rs.V2System}[name]()
 
 
 def _memoize_question_embeddings():

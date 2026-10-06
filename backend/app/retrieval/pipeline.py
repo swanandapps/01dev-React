@@ -2,10 +2,13 @@
 → [query understanding, Task 18]. Every consumer (Ask lookup, player lookup, find_moment,
 search_course_content) goes through here."""
 import asyncio
+import time
+from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
 from app.retrieval import factory
 from app.retrieval.base import Candidate, rrf_fuse
+from app.retrieval.rerank import CITED, MAX_CANDIDATES, Graded, Outcome, decide, rerank
 from app.retrieval.text import norm_title, tokenize
 from app.services import catalog_service
 from app.services.embeddings import embedding_service
@@ -150,3 +153,70 @@ async def best_chunk_for_lectures(question: str, lecture_ids) -> dict[str, tuple
         if lid not in best or cos > best[lid][1]:
             best[lid] = (vector_store.chunks[i], cos)
     return best
+
+
+MAX_TITLE_ADDED = 3   # title-matched lectures added to the rerank pool, at most
+
+
+@dataclass
+class RetrievalResult:
+    outcome: Outcome
+    graded: list[Graded]
+    intent: str = "explain"
+    search_query: str = ""
+    fallback: bool = False
+    timings_ms: dict = field(default_factory=dict)
+
+    def cited(self) -> list[Graded]:
+        return [g for g in self.graded if g.grade in CITED]
+
+    def best(self, allow_partial: bool = True) -> Optional[Graded]:
+        for wanted in ("answers", "partial") if allow_partial else ("answers",):
+            for g in self.graded:
+                if g.grade == wanted:
+                    return g
+        return None
+
+
+def _ms(t0: float) -> float:
+    return round((time.perf_counter() - t0) * 1000, 1)
+
+
+async def _title_candidates(question: str, scope: Sequence[str], have: set[str]) -> list[Candidate]:
+    """Lectures whose TITLE matches the question but whose chunks ranked in neither fused list, as rerank
+    candidates (their best chunk, scored on the same question embedding). Best-effort: [] on any failure."""
+    from app.services import course_lookup as cl  # lazy: course_lookup imports this module
+    try:
+        found = []
+        for slug in scope:
+            keys = {cl._norm(t) for t, sc in (await cl._title_scores(question, slug)).items()
+                    if sc >= cl.TITLE_THRESHOLD}
+            ids = [lid for lid in lecture_ids_for_titles(slug, keys).values() if lid not in have]
+            if ids:
+                found.extend((await best_chunk_for_lectures(question, ids)).values())
+        found.sort(key=lambda t: t[1], reverse=True)
+        return [Candidate(chunk=c, cosine=cos) for c, cos in found[:MAX_TITLE_ADDED]]
+    except Exception as e:  # noqa: BLE001 — the title signal is best-effort
+        print(f"[pipeline] title candidates failed: {e!r}")
+        return []
+
+
+async def graded_search(question: str, scope: Sequence[str], *, intent: str = "explain",
+                        lecture_id: Optional[str] = None, history: Sequence[dict] = (),
+                        lecture_title: Optional[str] = None) -> RetrievalResult:
+    """Scope (given, computed by the caller in code) -> hybrid retrieval -> rerank pool (fused list plus
+    title-matched lectures, at most MAX_CANDIDATES) -> rerank -> coverage decision.
+    history / lecture_title are accepted for query understanding (Task 18); unused for now."""
+    t0 = time.perf_counter()
+    scope = tuple(dict.fromkeys(s for s in scope if s))
+    if not scope:
+        return RetrievalResult(Outcome.NOT_COVERED, [], intent=intent, search_query=question)
+    cands = await search(question, scope, lecture_id=lecture_id)
+    extra = [] if lecture_id else await _title_candidates(question, scope, {c.chunk.lecture_id for c in cands})
+    pool = cands[:MAX_CANDIDATES - len(extra)] + extra
+    t_retrieve = _ms(t0)
+    t1 = time.perf_counter()
+    rr = await rerank(question, pool, intent=intent)
+    outcome, ordered = decide(rr.graded)
+    return RetrievalResult(outcome, ordered, intent=intent, search_query=question, fallback=rr.fallback,
+                           timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})
