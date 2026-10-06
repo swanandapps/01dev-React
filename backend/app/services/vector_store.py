@@ -17,6 +17,8 @@ _STOP_WORDS = {
     "tell","show","give","let","get","put","run","work","works","something",
 }
 
+EMBED_BATCH = 100
+
 
 def _fmt_vec(v: List[float]) -> str:
     """List -> pgvector text literal, e.g. '[0.1,0.2]'."""
@@ -59,8 +61,7 @@ class InMemoryVectorStore:
                 self._embeddings = []
 
         print(f"Computing embeddings for {len(self.chunks)} transcript chunks (in-memory)...")
-        for chunk in self.chunks:
-            self._embeddings.append(await embedding_service.embed(chunk.text))
+        self._embeddings = await embedding_service.embed_many([c.text for c in self.chunks])
         print(f"Vector store ready — {len(self.chunks)} chunks indexed (in-memory).")
 
     async def _init_with_pgvector(self):
@@ -73,21 +74,24 @@ class InMemoryVectorStore:
         )
         cached = {r["chunk_id"]: _parse_vec(r["emb"]) for r in rows}
 
-        newly = 0
-        for chunk in self.chunks:
-            emb = cached.get(chunk.chunk_id)
-            if emb is None:
-                emb = await embedding_service.embed(chunk.text)
-                await pool.execute(
-                    """insert into rag_chunks (chunk_id, text, meta, embedding)
-                       values ($1, $2, $3, $4::vector)
-                       on conflict (chunk_id)
-                       do update set text = $2, meta = $3, embedding = $4::vector""",
-                    chunk.chunk_id, chunk.text,
-                    chunk.model_dump(exclude={"embedding"}), _fmt_vec(emb),
-                )
-                newly += 1
-            self._embeddings.append(emb)
+        missing = [c for c in self.chunks if c.chunk_id not in cached]
+        for i in range(0, len(missing), EMBED_BATCH):
+            batch = missing[i:i + EMBED_BATCH]
+            embs = await embedding_service.embed_many([c.text for c in batch])
+            await pool.executemany(
+                """insert into rag_chunks (chunk_id, text, meta, embedding)
+                   values ($1, $2, $3, $4::vector)
+                   on conflict (chunk_id)
+                   do update set text = $2, meta = $3, embedding = $4::vector""",
+                [
+                    (c.chunk_id, c.text, c.model_dump(exclude={"embedding"}), _fmt_vec(e))
+                    for c, e in zip(batch, embs)
+                ],
+            )
+            for c, e in zip(batch, embs):
+                cached[c.chunk_id] = e
+        newly = len(missing)
+        self._embeddings = [cached[c.chunk_id] for c in self.chunks]
 
         print(f"Vector store ready — {len(self.chunks)} chunks "
               f"({newly} newly embedded, {len(self.chunks) - newly} from pgvector cache).")

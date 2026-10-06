@@ -26,6 +26,19 @@ class EmbeddingService:
             return await self._openai_embed(text)
         return self._local_embed(text)
 
+    async def embed_many(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
+        """Embed texts in order, one embeddings.create call per batch when OpenAI is on."""
+        if not (self.use_openai and self.client):
+            return [self._local_embed(t) for t in texts]
+        out: List[List[float]] = []
+        for i in range(0, len(texts), batch_size):
+            response = await self.client.embeddings.create(
+                model="text-embedding-3-small",
+                input=[t[:8000] for t in texts[i:i + batch_size]],
+            )
+            out.extend(d.embedding for d in response.data)
+        return out
+
     async def _openai_embed(self, text: str) -> List[float]:
         response = await self.client.embeddings.create(
             model="text-embedding-3-small",
