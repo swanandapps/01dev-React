@@ -221,6 +221,13 @@ def patch_in_course(monkeypatch, patch_sources):
                 return list(results(query))
             return list(results)
 
+        async def fake_lecture(query, course_slug, lecture_title):
+            seen["queries"].append(query)
+            rows = results(query) if callable(results) else results
+            return [(c, sc) for c, sc in rows if cl._norm(c.lecture_title) == cl._norm(lecture_title)]
+
+        monkeypatch.setattr(cl, "search_in_lecture", fake_lecture)
+
         async def fake_titles(question, slug):
             return dict(titles or {})
 
@@ -406,3 +413,71 @@ def test_player_none_in_a_lecture_still_gets_the_outline():
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=["X"]), scope)
     assert "CASE: IN_COURSE_NONE" in facts
     assert "No transcript excerpt for this lecture" in facts and "Chapter 1 - Introduction" in facts
+
+
+async def test_title_tag_is_set_even_when_the_bare_score_is_already_strong(patch_in_course):
+    patch_in_course(results=[(PUBLISH_CHUNK, 0.70)], titles={"11.1 - Publishing using `np`": 0.9})
+    out = await cl.course_lookup("how do I publish", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
+    assert out.hits[0].via_title is True
+    assert "score 0.70, title match" in cl.render_facts(out, cl.ChatScope(course_slug="custom-library", in_player=True))
+
+
+async def test_current_lecture_excerpt_is_not_listed_under_matches_unless_it_is_a_hit(patch_in_course):
+    here = _chunk("custom-library", "Build a Custom Library", "8.1 - The `npm link` command", "SYMLINK-EXCERPT", start=30)
+    patch_in_course(results=[(PUBLISH_CHUNK, 0.70), (here, 0.20)])
+    out = await cl.course_lookup("how do I publish", "s", PLAYER)
+    facts = cl.render_facts(out, PLAYER)
+    matches = facts.split("Matches:")[1]
+    assert "SYMLINK-EXCERPT" not in matches and "SYMLINK-EXCERPT" in facts.split("Matches:")[0]
+
+
+async def test_search_in_lecture_scores_only_that_lectures_chunks(monkeypatch):
+    other = _chunk("custom-library", "Build a Custom Library", "11.1 - Publishing using `np`", "np")
+    here = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "link")
+    here2 = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "link2")
+
+    class FakeStore:
+        chunks = [other, here, here2]
+        _embeddings = [[0.0, 1.0], [1.0, 0.0], [0.6, 0.8]]
+        _cosine_sim = staticmethod(cl.vector_store._cosine_sim)
+
+        def search(self, *a, **k):
+            raise AssertionError("must not rank the whole store")
+
+    async def fake_embed(text):
+        return [1.0, 0.0]
+
+    monkeypatch.setattr(cl, "vector_store", FakeStore())
+    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
+    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
+    out = await cl.search_in_lecture("q", "custom-library", "8.1 - The `npm link` command")
+    assert [(c.text, round(s, 2)) for c, s in out] == [("link", 1.0), ("link2", 0.6)]
+
+
+async def test_title_embedding_failure_falls_back_to_overlap_and_is_not_retried_in_the_cooldown(monkeypatch):
+    calls = {"n": 0}
+
+    class Boom:
+        class embeddings:
+            @staticmethod
+            async def create(**kw):
+                calls["n"] += 1
+                raise RuntimeError("openai down")
+
+    async def fake_embed(text):
+        return [1.0, 0.0]
+
+    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
+    monkeypatch.setattr(cl.embedding_service, "client", Boom)
+    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
+    monkeypatch.setattr(cl, "_title_cache", {})
+    monkeypatch.setattr(cl, "_title_failed_until", {})
+    monkeypatch.setattr(cl.catalog_service, "by_slug", lambda slug: {"chapters": [
+        {"name": "c", "subchapters": ["10.1 - What Are ES Modules"]}]})
+    first = await cl._title_scores("what are ES modules", "custom-library")
+    second = await cl._title_scores("what are ES modules", "custom-library")
+    assert first == second == {"10.1 - What Are ES Modules": 1.0}
+    assert calls["n"] == 1
+    cl._title_failed_until["custom-library"] = 0.0  # cooldown over -> retries
+    await cl._title_scores("what are ES modules", "custom-library")
+    assert calls["n"] == 2

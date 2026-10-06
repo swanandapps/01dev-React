@@ -5,7 +5,9 @@ skipped a search.
 Searches lecture transcripts and the catalog index, labels each hit enrolled /
 not enrolled, and decides one of three cases the grounding prompt has a rule for.
 """
+import asyncio
 import math
+import time
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -33,6 +35,8 @@ MAX_HITS = 5
 RELATED_THRESHOLD = 0.40
 TITLE_THRESHOLD = 0.60
 IN_COURSE_K = 3
+TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
+TITLE_COOLDOWN = 300.0      # after a failure, use word overlap for this long before retrying
 
 
 class LookupCase(str, Enum):
@@ -143,13 +147,18 @@ def _overlap_title_scores(question: str, titles: list[str]) -> dict[str, float]:
     return out
 
 
+_title_failed_until: dict[str, float] = {}
+
+
 async def _embed_titles(slug: str, titles: list[str]) -> list[list[float]]:
     """One batched embed call per course, cached for the process."""
     cached = _title_cache.get(slug)
     if cached and cached[0] == titles:
         return cached[1]
     texts = [_bare_title(t) for t in titles]
-    resp = await embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts)
+    resp = await asyncio.wait_for(
+        embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts),
+        timeout=TITLE_EMBED_TIMEOUT)
     vecs = [d.embedding for d in resp.data]
     _title_cache[slug] = (titles, vecs)
     return vecs
@@ -158,18 +167,40 @@ async def _embed_titles(slug: str, titles: list[str]) -> list[list[float]]:
 async def _title_scores(question: str, slug: str) -> dict[str, float]:
     """Bare question vs each of the course's lecture titles (numbering and backticks stripped).
     Keys are the titles exactly as the course lists them. Falls back to word overlap when
-    embeddings are unavailable. Reused by Task D's find_moment."""
+    embeddings are unavailable; after a failure the fallback is used for TITLE_COOLDOWN
+    seconds so an outage can't stall every turn. Reused by Task D's find_moment."""
     titles = _lecture_titles(slug)
     if not titles:
         return {}
-    if embedding_service.use_openai and embedding_service.client:
+    if (embedding_service.use_openai and embedding_service.client
+            and time.monotonic() >= _title_failed_until.get(slug, 0.0)):
         try:
             vecs = await _embed_titles(slug, titles)
             q = await embedding_service.embed(question)
             return {t: _cosine(q, v) for t, v in zip(titles, vecs)}
         except Exception as e:  # noqa: BLE001 — title signal is best-effort
-            print(f"[course_lookup] title embedding failed, using word overlap: {e!r}")
+            _title_failed_until[slug] = time.monotonic() + TITLE_COOLDOWN
+            print(f"[course_lookup] title embedding failed, word overlap for {TITLE_COOLDOWN:.0f}s: {e!r}")
     return _overlap_title_scores(question, titles)
+
+
+async def search_in_lecture(query: str, course_slug: str, lecture_title: str) -> list[tuple[TranscriptChunk, float]]:
+    """Chunks of ONE lecture scored against the query, best first — scores only that
+    lecture's chunks instead of ranking the whole store."""
+    if not vector_store.chunks:
+        await vector_store.initialize()
+    here = _norm(lecture_title)
+    idx = [i for i, c in enumerate(vector_store.chunks)
+           if c.course_id == course_slug and _norm(c.lecture_title) == here]
+    if not idx:
+        return []
+    if not (embedding_service.use_openai and len(vector_store._embeddings) == len(vector_store.chunks)):
+        # keyword/hash dev fallback has no comparable per-chunk vectors: use the normal search
+        return [(c, s) for c, s in await search_in_course(query, course_slug, top_k=1000)
+                if _norm(c.lecture_title) == here]
+    emb = await embedding_service.embed(query)
+    out = [(vector_store.chunks[i], vector_store._cosine_sim(emb, vector_store._embeddings[i])) for i in idx]
+    return sorted(out, key=lambda t: t[1], reverse=True)
 
 
 async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
@@ -260,7 +291,7 @@ async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[i
     best = _best_per_lecture(scored)
     titled = {_norm(t) for t, sc in (await _title_scores(question, slug)).items() if sc >= TITLE_THRESHOLD}
 
-    strong = [(c, s, k in titled and s < TRANSCRIPT_THRESHOLD) for k, (c, s) in best.items()
+    strong = [(c, s, k in titled) for k, (c, s) in best.items()
               if s >= TRANSCRIPT_THRESHOLD or k in titled]
     weak = [(c, s, False) for k, (c, s) in best.items()
             if RELATED_THRESHOLD <= s < TRANSCRIPT_THRESHOLD and k not in titled]
@@ -276,8 +307,7 @@ async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[i
     current = None
     if scope.lecture_title:
         here = _norm(scope.lecture_title)
-        ctx = [(c, s) for c, s in await search_in_course(f"{scope.lecture_title} {question}", slug, top_k=1000)
-               if c.course_id == slug and _norm(c.lecture_title) == here]
+        ctx = await search_in_lecture(f"{scope.lecture_title} {question}", slug, scope.lecture_title)
         if ctx:
             c, s = max(ctx, key=lambda t: t[1])
             current = to_hit(c, s)
