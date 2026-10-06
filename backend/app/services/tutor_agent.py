@@ -153,6 +153,11 @@ async def _locate_moment(what: str, slug: str):
         k = cl._norm(c.lecture_title)
         if k not in best or s > best[k][1]:
             best[k] = (c, s)
+    # Title-matched lectures whose chunks are in neither fused list still compete (the old code scored every chunk).
+    floor = max((sc for _, sc in best.values()), default=-1.0)
+    extra = {k for k, t in titles.items()
+             if k not in best and (t - cl.TITLE_OFFSET >= floor or t >= cl.AGREE_TITLE)}
+    best.update(await cl._titled_missing(what, slug, extra))
     if not best:
         return None
     key = max(best, key=lambda k: max(best[k][1], titles.get(k, 0.0) - cl.TITLE_OFFSET))

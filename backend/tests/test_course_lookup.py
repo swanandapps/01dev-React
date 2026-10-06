@@ -665,3 +665,20 @@ def test_player_outline_does_not_repeat_the_description():
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
     snippet = " ".join(course["description"].split())[:60]
     assert facts.count(snippet) == 1
+
+
+async def test_title_matched_lecture_missing_from_the_fused_list_is_still_strong_via_title(patch_in_course, monkeypatch):
+    from app.retrieval import pipeline
+    seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.20)], titles={NPM_CHUNK.lecture_title: 0.75})
+
+    monkeypatch.setattr(pipeline, "lecture_ids_for_titles",
+                        lambda slug, keys: {cl._norm(NPM_CHUNK.lecture_title): NPM_CHUNK.lecture_id})
+
+    async def best(question, ids):
+        assert list(ids) == [NPM_CHUNK.lecture_id]
+        return {NPM_CHUNK.lecture_id: (NPM_CHUNK, 0.31)}
+
+    monkeypatch.setattr(pipeline, "best_chunk_for_lectures", best)
+    out = await cl.course_lookup("symlink", "s", PLAYER)
+    assert out.case == cl.LookupCase.IN_COURSE_MATCH
+    assert [(h.title, h.via_title) for h in out.hits] == [(NPM_CHUNK.lecture_title, True)]

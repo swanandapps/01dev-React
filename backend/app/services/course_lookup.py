@@ -364,6 +364,16 @@ def _best_per_lecture(scored) -> dict[str, tuple[TranscriptChunk, float]]:
     return best
 
 
+async def _titled_missing(question: str, slug: str, keys) -> dict[str, tuple[TranscriptChunk, float]]:
+    """Title-matched lectures whose chunks ranked in neither fused list: their best chunk and cosine, scored
+    against the same question embedding (the old code scored every chunk, so they always took part)."""
+    if not keys:
+        return {}
+    ids = pipeline.lecture_ids_for_titles(slug, keys)
+    found = await pipeline.best_chunk_for_lectures(question, ids.values())
+    return {k: found[lid] for k, lid in ids.items() if lid in found}
+
+
 async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int],
                             enrolled_titles: list[str]) -> CourseLookup:
     """Player tutor (spec §3.2 + amendment-relevance.md): this course's transcripts only.
@@ -381,6 +391,7 @@ async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[i
     scored = [(c, s) for c, s in await search_in_course(question, slug, top_k=None) if c.course_id == slug]
     best = _best_per_lecture(scored)
     titled = {_norm(t) for t, sc in (await _title_scores(question, slug)).items() if sc >= TITLE_THRESHOLD}
+    best.update(await _titled_missing(question, slug, titled - set(best)))
 
     strong = [(c, s, k in titled) for k, (c, s) in best.items()
               if s >= TRANSCRIPT_THRESHOLD or k in titled]

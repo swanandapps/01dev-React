@@ -69,35 +69,84 @@ async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[st
     """Vector top VEC_K + lexical top LEX_K for every query (the question plus any rewrites), all
     inside `scope`, fused with RRF. extra_terms (keywords) join the lexical queries only."""
     scope = tuple(dict.fromkeys(s for s in scope if s))
-    if not scope:
+    queries = list(dict.fromkeys(q for q in (question, *extra_queries) if q and q.strip()))
+    if not scope or not queries:
         return []
     await _ensure_loaded()
     r = factory.get_retriever()
-    queries = list(dict.fromkeys(q for q in (question, *extra_queries) if q and q.strip()))
     embeddings = await asyncio.gather(*(embedding_service.embed(q) for q in queries))
     terms = " ".join(extra_terms)
     lists = await asyncio.gather(
         *(_vector(r, e, scope, lecture_id) for e in embeddings),
         *(_lexical(r, tokenize(f"{q} {terms}"), scope, lecture_id) for q in queries))
+    _remember(queries[0], embeddings[0])
     out = rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit,
                    per_lecture=None if lecture_id else per_lecture)
     _fill_cosines(out, embeddings[0])
     return out
 
 
+_recent: dict[str, list[float]] = {}   # question -> its embedding, so callers can score more chunks without re-embedding
+
+
+def _remember(question: str, embedding: list[float]) -> None:
+    _recent.pop(question, None)
+    _recent[question] = embedding
+    while len(_recent) > 64:
+        _recent.pop(next(iter(_recent)))
+
+
 def _fill_cosines(cands: list[Candidate], question_embedding: list[float]) -> None:
     """RRF scores are not cosines, and the Phase 1-3 decision thresholds are calibrated on cosines. Every
     candidate carries its cosine to the question: the vector list's score when it has one, else (a
-    lexical-only candidate) computed from the store's embedding of that chunk. Unknown -> None."""
-    missing = [c for c in cands if c.vec_score is None]
-    pos = {}
-    if missing and question_embedding:
-        pos = {c.chunk_id: i for i, c in enumerate(vector_store.chunks)}
+    lexical-only candidate) computed from the store's embedding of that chunk. Unknown -> None.
+    NOTE: needs the in-memory store embeddings (vector_store._embeddings); a PgRetriever must keep them
+    loaded or return cosines itself (Task 23)."""
+    vector_store._ensure_index()
     embs = vector_store._embeddings
     for c in cands:
         if c.vec_score is not None:
             c.cosine = c.vec_score
             continue
-        i = pos.get(c.chunk.chunk_id)
-        if i is not None and i < len(embs) and embs[i]:
+        i = vector_store._pos_by_id.get(c.chunk.chunk_id)
+        if question_embedding and i is not None and i < len(embs) and embs[i]:
             c.cosine = vector_store._cosine_sim(question_embedding, embs[i])
+
+
+def lecture_ids_for_titles(slug: str, norm_titles) -> dict[str, str]:
+    """{normalized lecture title: lecture_id} for the given titles of one course."""
+    want = set(norm_titles)
+    out = {}
+    for c in vector_store.chunks:
+        if c.course_id == slug:
+            k = norm_title(c.lecture_title)
+            if k in want:
+                out.setdefault(k, c.lecture_id)
+    return out
+
+
+async def best_chunk_for_lectures(question: str, lecture_ids) -> dict[str, tuple]:
+    """{lecture_id: (best chunk, cosine)} for the given lectures, scored against the SAME question
+    embedding pipeline.search used (no extra embed call when it is still cached). Lets title-matched
+    lectures whose chunks rank in neither top list still take part in a decision (and, in Phase 4, the
+    rerank pool). {} when none of the lectures has an embedded chunk."""
+    want = set(lecture_ids)
+    vector_store._ensure_index()
+    embs, norms = vector_store._embeddings, vector_store._norms
+    pos = [i for i, c in enumerate(vector_store.chunks) if c.lecture_id in want and i < len(embs) and norms[i]]
+    if not pos:
+        return {}
+    q = _recent.get(question)
+    if q is None:
+        q = await embedding_service.embed(question)
+        _remember(question, q)
+    qn = sum(x * x for x in q) ** 0.5
+    if not qn:
+        return {}
+    best: dict[str, tuple] = {}
+    for i in pos:
+        cos = sum(x * y for x, y in zip(q, embs[i])) / (qn * norms[i])
+        lid = vector_store.chunks[i].lecture_id
+        if lid not in best or cos > best[lid][1]:
+            best[lid] = (vector_store.chunks[i], cos)
+    return best

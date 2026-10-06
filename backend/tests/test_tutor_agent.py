@@ -440,3 +440,49 @@ async def test_follow_up_search_in_the_player_stays_in_this_course(monkeypatch):
     content, cards = await tutor_agent.search_course_content.coroutine(query="np", runtime=_player_runtime())
     assert [c["lecture_title"] for c in cards] == [LECTURE]
     assert "[THIS COURSE]" in content and "ENROLLED" not in content
+
+
+async def test_find_moment_title_matched_lecture_outside_the_fused_lists_still_wins(monkeypatch):
+    """12 lectures x 3 chunks: lecture 12's title matches (0.75) but its chunks (cos 0.20) rank in neither
+    top-30 list. The old code scored every chunk and jumped there; the fused list alone would pick lecture 1."""
+    import math
+    from app.models import TranscriptChunk
+    from app.retrieval import factory, pipeline
+    from app.retrieval.memory import MemoryRetriever
+    from app.services import course_lookup as cl
+    from app.services.embeddings import embedding_service
+    from app.services.vector_store import InMemoryVectorStore
+
+    D = 16
+    chunks, embs = [], []
+    for L in range(12):
+        for j in range(3):
+            w = 0.55 - 0.01 * L - 0.001 * j if L < 11 else 0.20 - 0.01 * j
+            v = [0.0] * D
+            v[0], v[1 + ((L * 3 + j) % (D - 1))] = w, math.sqrt(1 - w * w)
+            chunks.append(TranscriptChunk(
+                chunk_id=f"c-{L}-{j}", course_id="custom-library", course_title="C", lecture_id=f"custom-library-{L}-0",
+                lecture_title=f"{L + 1}.1 - Topic {L}" if L < 11 else "12.1 - The npm link command",
+                text=f"zzz{L} body{j}", start_time=10 * j + 5, end_time=10 * j + 15))
+            embs.append(v)
+    st = InMemoryVectorStore()
+    st.chunks, st._embeddings = chunks, embs
+    monkeypatch.setattr(pipeline, "vector_store", st)
+    monkeypatch.setattr(cl, "vector_store", st)
+    monkeypatch.setattr(factory, "_retriever", MemoryRetriever(st))
+    embeds = []
+
+    async def emb(_t):
+        embeds.append(_t)
+        return [1.0] + [0.0] * (D - 1)
+
+    async def titles(q, slug):
+        return {c.lecture_title: (0.75 if "npm link" in c.lecture_title else 0.1) for c in chunks}
+
+    monkeypatch.setattr(embedding_service, "embed", emb)
+    monkeypatch.setattr(cl, "_title_scores", titles)
+    fused = {c.lecture_id for c, _ in await cl.search_in_course("symlink", "custom-library", top_k=None)}
+    assert "custom-library-11-0" not in fused          # the premise: it is in neither list
+    hit = await tutor_agent._locate_moment("symlink", "custom-library")
+    assert hit and hit[0].lecture_title == "12.1 - The npm link command"
+    assert len(embeds) == 2                              # one search call each: the injection did not re-embed

@@ -133,3 +133,19 @@ async def test_every_candidate_carries_its_cosine_including_lexical_only_ones(me
     with_vec = pipeline.Candidate(chunk=store.chunks[0], vec_rank=1, vec_score=0.42)
     pipeline._fill_cosines([with_vec], vec(1, 0, 0, 0))
     assert with_vec.cosine == 0.42
+
+
+async def test_blank_question_returns_nothing_without_embedding(mem):
+    assert await pipeline.search("   ", ["custom-library"]) == []
+    assert await pipeline.search("", ["custom-library"]) == []
+    assert mem == []
+
+
+async def test_best_chunk_for_lectures_scores_the_same_question_embedding_without_re_embedding(mem):
+    await pipeline.search("what is an IIFE?", ["custom-library"])
+    n = len(mem)
+    out = await pipeline.best_chunk_for_lectures("what is an IIFE?", ["cl-5-2", "nope"])
+    assert len(mem) == n                       # served from the cached embedding
+    chunk, cos = out["cl-5-2"]
+    assert chunk.lecture_id == "cl-5-2" and cos == pytest.approx(1.0) and "nope" not in out
+    assert await pipeline.best_chunk_for_lectures("x", ["nope"]) == {} and len(mem) == n   # no chunks: no embed

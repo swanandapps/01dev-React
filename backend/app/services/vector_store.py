@@ -48,6 +48,7 @@ class InMemoryVectorStore:
         self._norms: List[float] = []
         self._course_idx: dict = {}
         self._indexed_for: tuple = (None, None)
+        self._pos_by_id: dict = {}
 
     def _ensure_index(self):
         """Per-embedding norms and per-course chunk positions, rebuilt only when the
@@ -60,6 +61,7 @@ class InMemoryVectorStore:
         for i, c in enumerate(self.chunks):
             idx.setdefault(c.course_id, []).append(i)
         self._course_idx = idx
+        self._pos_by_id = {c.chunk_id: i for i, c in enumerate(self.chunks)}
         self._indexed_for = key
 
     async def initialize(self):
