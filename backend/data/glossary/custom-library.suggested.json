@@ -1,0 +1,142 @@
+{
+ "add": {
+  "means": "@",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "caps lock": {
+  "means": "capitalization",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "dot the idea": {
+  "means": "dot the idea (likely 'dot the id' or 'dot the idea' is a phrase, no correction)",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "ecmaskive": {
+  "means": "ECMAScript",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-0"
+  ]
+ },
+ "ecmassive model": {
+  "means": "ECMAScript module",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-11-1-12"
+  ]
+ },
+ "ecmassive models": {
+  "means": "ECMAScript modules",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-11-1-12"
+  ]
+ },
+ "explosive model": {
+  "means": "ES module",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-0"
+  ]
+ },
+ "ify": {
+  "means": "IIFE",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-0"
+  ]
+ },
+ "massing": {
+  "means": "masking",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "monkey patch": {
+  "means": "monkey patch",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "musket": {
+  "means": "mask",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "npm link our library": {
+  "means": "npm link <library-name>",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-0"
+  ]
+ },
+ "og way": {
+  "means": "old school way",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "pande": {
+  "means": "masked",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "rammer": {
+  "means": "grammar",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "spinning it": {
+  "means": "spin it",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "str": {
+  "means": "string",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "summoned": {
+  "means": "called",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-12"
+  ]
+ },
+ "template return dollar word": {
+  "means": "template literal `${word}`",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-2-0"
+  ]
+ },
+ "webjs": {
+  "means": "web JS",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-0"
+  ]
+ }
+}

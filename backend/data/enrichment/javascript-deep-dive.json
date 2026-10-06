@@ -1,0 +1,1900 @@
+{
+ "version": 1,
+ "model": "gpt-4.1-mini",
+ "chunks": {
+  "javascript-deep-dive-0-0-0": {
+   "text_sha": "ed1a76290a2a24eb",
+   "summary": "The course builds a mini-runtime in JavaScript to deeply understand how the JavaScript engine executes code beyond syntax.",
+   "keywords": [
+    "JavaScript engine",
+    "mini-runtime",
+    "runtime model",
+    "execution context",
+    "JavaScript internals"
+   ],
+   "questions": [
+    "What is the goal of building a mini-runtime in this course?",
+    "How can modeling the JavaScript runtime help understand code execution?",
+    "Does this course focus on new JavaScript syntax?"
+   ]
+  },
+  "javascript-deep-dive-0-0-1": {
+   "text_sha": "cfcdd2a445f2699e",
+   "summary": "The mini-runtime consists of four parts: call stack, scope-chain resolver, prototype lookup, and event-loop simulator, combined in runtime.js.",
+   "keywords": [
+    "call stack",
+    "scope chain",
+    "prototype chain",
+    "event loop",
+    "runtime.js",
+    "execution context",
+    "JavaScript runtime components"
+   ],
+   "questions": [
+    "What are the four main components of the mini-runtime?",
+    "What does the scope-chain resolver do?",
+    "How is the event loop simulated in the mini-runtime?"
+   ]
+  },
+  "javascript-deep-dive-0-0-2": {
+   "text_sha": "1dc6f7d21f939085",
+   "summary": "Building the runtime clarifies common JavaScript misconceptions like hoisting, classes, and setTimeout timing by replacing wrong mental models with accurate ones.",
+   "keywords": [
+    "hoisting",
+    "JavaScript classes",
+    "setTimeout",
+    "mental models",
+    "JavaScript misconceptions",
+    "runtime model"
+   ],
+   "questions": [
+    "Why do people get confused about hoisting and classes in JavaScript?",
+    "How does building a runtime help correct JavaScript misconceptions?",
+    "Does setTimeout with zero delay run immediately?"
+   ]
+  },
+  "javascript-deep-dive-0-0-3": {
+   "text_sha": "f10de7f9ed84feaf",
+   "summary": "The course covers execution, scope, this/new, prototypes, V8 internals, event loop, and debugging a complex bug through all layers.",
+   "keywords": [
+    "execution",
+    "scope",
+    "closures",
+    "this keyword",
+    "new keyword",
+    "prototypes",
+    "V8 engine",
+    "event loop"
+   ],
+   "questions": [
+    "What topics are covered in the JavaScript Deep Dive course?",
+    "Which chapter explains prototypes and classes?",
+    "How does the course approach debugging complex JavaScript bugs?"
+   ]
+  },
+  "javascript-deep-dive-0-0-4": {
+   "text_sha": "013c1a00169fab1f",
+   "summary": "To learn effectively, run and experiment with the mini-runtime code after each lecture and keep a notes.js file for small experiments.",
+   "keywords": [
+    "mini-runtime",
+    "experiments",
+    "notes.js",
+    "learning by doing",
+    "JavaScript runtime exploration"
+   ],
+   "questions": [
+    "How should I practice to get the most out of this course?",
+    "What is the purpose of the notes.js file?",
+    "Why is it important to revisit previous lectures if something is unclear?"
+   ]
+  },
+  "javascript-deep-dive-0-0-5": {
+   "text_sha": "339f3b712c304666",
+   "summary": "Use plain Node.js and a terminal to follow along by typing code yourself; start by creating a mini-runtime folder and initializing npm.",
+   "keywords": [
+    "Node.js",
+    "npm init -y",
+    "callstack.js",
+    "terminal",
+    "typing code",
+    "mini-runtime setup"
+   ],
+   "questions": [
+    "What environment is recommended for following this course?",
+    "Why should I type code instead of copying it?",
+    "How do I set up the mini-runtime project folder?"
+   ]
+  },
+  "javascript-deep-dive-0-1-0": {
+   "text_sha": "04fb16e60c0eb629",
+   "summary": "Running node index.js involves multiple stages from source text to output, including parsing, compiling, and interpreting, which this lecture will explore step-by-step.",
+   "keywords": [
+    "node index.js",
+    "compile",
+    "interpret",
+    "parse",
+    "JavaScript runtime",
+    "execution stages"
+   ],
+   "questions": [
+    "What happens when you run node index.js?",
+    "What are the main stages from JavaScript source code to running output?",
+    "Why is it important to understand parsing, compiling, and interpreting?"
+   ]
+  },
+  "javascript-deep-dive-0-1-1": {
+   "text_sha": "4f168a88f23cec76",
+   "summary": "Parsing splits JavaScript source code into tokens using a tokenizer, then builds an abstract syntax tree (AST) representing the code's structure without whitespace or comments.",
+   "keywords": [
+    "parsing",
+    "tokenizer",
+    "lexer",
+    "tokens",
+    "abstract syntax tree",
+    "AST",
+    "JavaScript parsing"
+   ],
+   "questions": [
+    "What does a tokenizer or lexer do in JavaScript parsing?",
+    "What is an abstract syntax tree (AST)?",
+    "How does parsing handle whitespace and comments?"
+   ]
+  },
+  "javascript-deep-dive-0-1-2": {
+   "text_sha": "0ee324b6b74f92cd",
+   "summary": "V8 engine pre-parses functions lazily to detect syntax errors and scopes, fully parsing only when functions are called, optimizing startup time and enabling scope resolution.",
+   "keywords": [
+    "V8 engine",
+    "pre-parse",
+    "lazy parsing",
+    "syntax errors",
+    "variable scope",
+    "scope resolution"
+   ],
+   "questions": [
+    "How does V8 handle parsing of unused functions?",
+    "What is lazy parsing in V8?",
+    "How does parsing relate to variable scope detection?"
+   ]
+  },
+  "javascript-deep-dive-0-1-3": {
+   "text_sha": "8afde10b96a1d4c9",
+   "summary": "V8 converts the AST to bytecode via the Ignition interpreter, runs it immediately, and optimizes hot functions with TurboFan to machine code, reverting if assumptions fail.",
+   "keywords": [
+    "V8",
+    "Ignition",
+    "bytecode",
+    "TurboFan",
+    "optimizing compiler",
+    "machine code",
+    "hot functions"
+   ],
+   "questions": [
+    "What is the role of Ignition in V8?",
+    "How does V8 optimize hot functions?",
+    "What happens if optimization assumptions fail in V8?"
+   ]
+  },
+  "javascript-deep-dive-0-1-4": {
+   "text_sha": "e2461bc361b6b11d",
+   "summary": "JavaScript execution flows from text to tokens, tokens to AST, AST to bytecode, and hot bytecode to optimized machine code, with parsing defining scope and optimization relying on type assumptions.",
+   "keywords": [
+    "JavaScript execution",
+    "tokens",
+    "AST",
+    "bytecode",
+    "machine code",
+    "scope",
+    "optimizer assumptions"
+   ],
+   "questions": [
+    "What are the main transformations from JavaScript source to running code?",
+    "How does the parser contribute to scope structure?",
+    "What does the optimizer base its assumptions on?"
+   ]
+  },
+  "javascript-deep-dive-0-1-5": {
+   "text_sha": "0d19f44a6bcac33c",
+   "summary": "A simple tokenizer demo shows code as data before execution, leading to the next topic: how the engine tracks running code with the call stack and execution contexts.",
+   "keywords": [
+    "tokenizer demo",
+    "code as data",
+    "call stack",
+    "execution context",
+    "JavaScript runtime"
+   ],
+   "questions": [
+    "What does a tokenizer demo illustrate about code?",
+    "Why is it important to see code as data before behavior?",
+    "What is the call stack and execution context in JavaScript?"
+   ]
+  },
+  "javascript-deep-dive-0-2-0": {
+   "text_sha": "3947303d8f3802fc",
+   "summary": "Introduces the call stack and execution contexts as the mechanism JavaScript engines use to track running bytecode positions, and sets up building a stack that supports push, pop, and trace.",
+   "keywords": [
+    "call stack",
+    "execution context",
+    "bytecode",
+    "stack trace",
+    "push",
+    "pop",
+    "JavaScript engine"
+   ],
+   "questions": [
+    "What is the call stack in JavaScript?",
+    "What are execution contexts in JavaScript?",
+    "How does the JavaScript engine keep track of where it is while running bytecode?"
+   ]
+  },
+  "javascript-deep-dive-0-2-1": {
+   "text_sha": "68e4b9e2e00fab48",
+   "summary": "Explains that an execution context is created whenever code runs, holding scope, this value, and return position, and that these contexts form a last-in-first-out stack reflecting nested function calls.",
+   "keywords": [
+    "execution context",
+    "scope",
+    "this value",
+    "call stack",
+    "function calls",
+    "last in first out",
+    "stack"
+   ],
+   "questions": [
+    "What information does an execution context hold?",
+    "When is a new execution context created?",
+    "Why is a stack the natural structure for execution contexts?"
+   ]
+  },
+  "javascript-deep-dive-0-2-2": {
+   "text_sha": "24e88862f0d5fdee",
+   "summary": "Describes implementing a CallStack class with frames array and methods push, pop, peek, and a depth getter to manage execution contexts as stack frames.",
+   "keywords": [
+    "CallStack class",
+    "frames array",
+    "push method",
+    "pop method",
+    "peek method",
+    "depth getter",
+    "stack frames"
+   ],
+   "questions": [
+    "How do you implement a call stack using a class in JavaScript?",
+    "What does the push method do in the CallStack class?",
+    "What is the purpose of the peek method in a stack?"
+   ]
+  },
+  "javascript-deep-dive-0-2-3": {
+   "text_sha": "26e93152943f6afe",
+   "summary": "Adds a trace method to print stack frames like a real stack trace and enforces a MAX_DEPTH limit to throw a RangeError on excessive recursion, mimicking real call stack overflow errors.",
+   "keywords": [
+    "stack trace",
+    "trace method",
+    "MAX_DEPTH",
+    "RangeError",
+    "maximum call stack size exceeded",
+    "recursion limit"
+   ],
+   "questions": [
+    "How can you print a stack trace from a call stack?",
+    "What happens when the call stack exceeds a maximum depth?",
+    "How does JavaScript handle infinite recursion errors?"
+   ]
+  },
+  "javascript-deep-dive-0-2-4": {
+   "text_sha": "61300d8e9f637b7d",
+   "summary": "Explains that when a function throws an error, the call stack unwinds by popping frames until the error is caught or the program ends, illustrating error propagation.",
+   "keywords": [
+    "stack unwinding",
+    "error throwing",
+    "call stack",
+    "error propagation",
+    "stack frames",
+    "catching errors"
+   ],
+   "questions": [
+    "What does the call stack look like when a function throws an error?",
+    "How does the call stack change after an error is thrown?",
+    "What happens if an error is not caught in JavaScript?"
+   ]
+  },
+  "javascript-deep-dive-0-2-5": {
+   "text_sha": "48f030131375fe04",
+   "summary": "Clarifies that Node.js limits stack size by memory usage, not frame count, and shows how recursion depth varies with frame size; introduces scope as the next topic inside frames.",
+   "keywords": [
+    "Node.js stack limit",
+    "stack size",
+    "memory limit",
+    "recursion depth",
+    "stack frames",
+    "scope chain"
+   ],
+   "questions": [
+    "How does Node.js limit the call stack size?",
+    "Why does recursion depth vary with the size of stack frames?",
+    "What is the next topic related to what goes inside execution context frames?"
+   ]
+  },
+  "javascript-deep-dive-1-0-0": {
+   "text_sha": "9cc7be662941343e",
+   "summary": "Lexical scope determines which variable a name refers to, implemented via a scope chain data structure modeled by a Scope class with a resolver.",
+   "keywords": [
+    "lexical scope",
+    "scope chain",
+    "Scope class",
+    "resolver",
+    "call stack",
+    "environment"
+   ],
+   "questions": [
+    "What is lexical scope in JavaScript?",
+    "How does the JavaScript engine resolve variable names?",
+    "What data structure models lexical scope?"
+   ]
+  },
+  "javascript-deep-dive-1-0-1": {
+   "text_sha": "ef95dd531c4a58f4",
+   "summary": "Lexical scope means variable visibility is based on where code is written, not where it's called, unlike dynamic scope found in some older languages.",
+   "keywords": [
+    "lexical scope",
+    "dynamic scope",
+    "variable visibility",
+    "function nesting",
+    "JavaScript scope"
+   ],
+   "questions": [
+    "What does lexical scope mean?",
+    "How does lexical scope differ from dynamic scope?",
+    "Why can inner functions access outer function variables?"
+   ]
+  },
+  "javascript-deep-dive-1-0-2": {
+   "text_sha": "66e9541a6b701a25",
+   "summary": "A Scope class models lexical scope with a parent link and a Map of bindings, using recursive lookup to implement the scope chain and throw ReferenceError if not found.",
+   "keywords": [
+    "Scope class",
+    "scope chain",
+    "bindings Map",
+    "lookup method",
+    "ReferenceError",
+    "parent scope",
+    "recursion"
+   ],
+   "questions": [
+    "How can lexical scope be modeled in code?",
+    "What does the lookup method do in a Scope class?",
+    "What happens if a variable is not found in any scope?"
+   ]
+  },
+  "javascript-deep-dive-1-0-3": {
+   "text_sha": "7a7d7c741f823865",
+   "summary": "Testing the Scope model shows that child scopes can access parent bindings, shadowing occurs when inner bindings hide outer ones without affecting them.",
+   "keywords": [
+    "scope testing",
+    "global scope",
+    "child scope",
+    "variable shadowing",
+    "lookup behavior"
+   ],
+   "questions": [
+    "How does variable lookup work across nested scopes?",
+    "What is variable shadowing?",
+    "Can a parent scope access child scope variables?"
+   ]
+  },
+  "javascript-deep-dive-1-0-4": {
+   "text_sha": "18e4dc86a6c67bf4",
+   "summary": "Debugging unexpected variable values involves checking which scope the engine resolves the variable in, often revealing accidental shadowing shown in devtools scope chains.",
+   "keywords": [
+    "debugging",
+    "variable shadowing",
+    "scope chain",
+    "Node debugger",
+    "browser devtools",
+    "variable resolution"
+   ],
+   "questions": [
+    "How can you debug unexpected variable values?",
+    "What role does shadowing play in bugs?",
+    "How do devtools help visualize scope chains?"
+   ]
+  },
+  "javascript-deep-dive-1-0-5": {
+   "text_sha": "124f4139d6df6b4f",
+   "summary": "New scopes are created by function bodies and blocks (for let, const, class), while var attaches to the nearest function scope, explaining classic loop bugs and leading to hoisting.",
+   "keywords": [
+    "scope creation",
+    "function scope",
+    "block scope",
+    "let",
+    "const",
+    "var",
+    "hoisting",
+    "loop bug"
+   ],
+   "questions": [
+    "Where are new scopes created in JavaScript?",
+    "How does var differ from let and const in scope?",
+    "What causes the classic loop bug with var?"
+   ]
+  },
+  "javascript-deep-dive-1-1-0": {
+   "text_sha": "2aa1e6d50a99537c",
+   "summary": "Hoisting is better understood as the engine creating bindings before code runs, not moving declarations to the top, which explains let and const behavior correctly.",
+   "keywords": [
+    "hoisting",
+    "JavaScript engine",
+    "scope",
+    "let",
+    "const",
+    "var",
+    "declaration",
+    "binding"
+   ],
+   "questions": [
+    "What is the true meaning of hoisting in JavaScript?",
+    "Why is the 'move declarations to the top' explanation of hoisting incorrect?",
+    "How does understanding hoisting help explain let and const behavior?"
+   ]
+  },
+  "javascript-deep-dive-1-1-1": {
+   "text_sha": "25b9c1d742983fff",
+   "summary": "Before running code, the engine creates bindings for all declarations: var initialized to undefined, functions to their value, and let/const uninitialized, defining hoisting states.",
+   "keywords": [
+    "hoisting",
+    "bindings",
+    "var initialization",
+    "function declaration",
+    "let",
+    "const",
+    "temporal dead zone"
+   ],
+   "questions": [
+    "What are the three different initialization states created during hoisting?",
+    "How does the engine treat var, function, let, and const declarations before code runs?",
+    "What does it mean for let and const declarations to be uninitialized?"
+   ]
+  },
+  "javascript-deep-dive-1-1-2": {
+   "text_sha": "afb5c81aeaf712e3",
+   "summary": "Accessing a var before initialization logs undefined, but accessing let before initialization throws a ReferenceError due to the temporal dead zone from scope start to declaration line.",
+   "keywords": [
+    "temporal dead zone",
+    "ReferenceError",
+    "var hoisting",
+    "let initialization",
+    "console.log",
+    "JavaScript errors"
+   ],
+   "questions": [
+    "What happens when you access a var variable before its declaration?",
+    "Why does accessing a let variable before its declaration cause a ReferenceError?",
+    "What is the temporal dead zone in JavaScript?"
+   ]
+  },
+  "javascript-deep-dive-1-1-3": {
+   "text_sha": "007bbd97543c3740",
+   "summary": "A hoist method models hoisting by declaring vars as undefined, functions as their value, lets/consts as UNINITIALIZED, throwing ReferenceError on uninitialized access and initializing on declaration.",
+   "keywords": [
+    "hoist method",
+    "scope.js",
+    "UNINITIALIZED symbol",
+    "ReferenceError",
+    "initialize method",
+    "JavaScript runtime model"
+   ],
+   "questions": [
+    "How can hoisting be modeled programmatically in a JavaScript runtime?",
+    "What does the UNINITIALIZED symbol represent in the hoisting model?",
+    "How does the model throw a ReferenceError for accessing uninitialized let or const?"
+   ]
+  },
+  "javascript-deep-dive-1-1-4": {
+   "text_sha": "4dbf8369fd16d2fa",
+   "summary": "Best practice is to prefer const, then let, avoid var, declare before use, and rely on errors from early use rather than undefined to write clearer code.",
+   "keywords": [
+    "const",
+    "let",
+    "var",
+    "best practices",
+    "variable declaration",
+    "ReferenceError",
+    "JavaScript coding style"
+   ],
+   "questions": [
+    "Why should you prefer const and let over var in JavaScript?",
+    "What are the benefits of declaring variables before using them?",
+    "How does avoiding var help prevent bugs related to hoisting?"
+   ]
+  },
+  "javascript-deep-dive-1-1-5": {
+   "text_sha": "8ac6e400c84cb44a",
+   "summary": "Function expressions are not hoisted like declarations, causing undefined or TypeError if called early; typeof throws inside the temporal dead zone, unlike before let existed.",
+   "keywords": [
+    "function expressions",
+    "hoisting",
+    "TypeError",
+    "typeof operator",
+    "temporal dead zone",
+    "JavaScript quirks"
+   ],
+   "questions": [
+    "Are function expressions hoisted like function declarations?",
+    "What error occurs when calling a function expression before its assignment?",
+    "How does typeof behave inside the temporal dead zone?"
+   ]
+  },
+  "javascript-deep-dive-1-2-0": {
+   "text_sha": "02c5201092ca2e76",
+   "summary": "A closure is a function bundled with the scope it was created in, enabling functions to remember their environment after execution.",
+   "keywords": [
+    "closure",
+    "scope",
+    "function scope",
+    "lexical scope",
+    "JavaScript closures"
+   ],
+   "questions": [
+    "What is a closure in JavaScript?",
+    "How does a closure relate to a function's scope?",
+    "Why do closures allow functions to remember their environment?"
+   ]
+  },
+  "javascript-deep-dive-1-2-1": {
+   "text_sha": "8530da20a3445393",
+   "summary": "The classic closure example shows a function returning another function that increments a private variable, which persists because scope objects live on the heap, not the stack.",
+   "keywords": [
+    "makeCounter",
+    "closure example",
+    "heap vs stack",
+    "private variables",
+    "function scope"
+   ],
+   "questions": [
+    "Why does the variable inside makeCounter persist after the function returns?",
+    "Where are scope objects stored in JavaScript memory?",
+    "How does the returned function access the variable count?"
+   ]
+  },
+  "javascript-deep-dive-1-2-2": {
+   "text_sha": "6c950a347694d3de",
+   "summary": "Implementing closures by attaching the defining scope to functions and creating new scopes with the function's closure as parent enables lexical scoping instead of dynamic scoping.",
+   "keywords": [
+    "createFunction",
+    "closure property",
+    "lexical scope",
+    "dynamic scope",
+    "callFunction",
+    "scope chain"
+   ],
+   "questions": [
+    "How is the closure implemented in the createFunction method?",
+    "What is the difference between lexical and dynamic scope in this model?",
+    "How does callFunction use the closure to create the scope chain?"
+   ]
+  },
+  "javascript-deep-dive-1-2-3": {
+   "text_sha": "f60e2c7cf46e15b9",
+   "summary": "Each call to makeCounter creates a new closure with its own scope, enabling independent counters and private state inaccessible from outside.",
+   "keywords": [
+    "multiple closures",
+    "private state",
+    "scope isolation",
+    "makeCounter",
+    "closure instances"
+   ],
+   "questions": [
+    "Why do multiple counters created by makeCounter not share state?",
+    "How do closures provide private state in JavaScript?",
+    "What happens to the scope when multiple closures are created?"
+   ]
+  },
+  "javascript-deep-dive-1-2-4": {
+   "text_sha": "c8192e1c204b3d16",
+   "summary": "Functions carry a closure scope that outlives call stack frames, making closures a natural result of lexical scope and first-class functions rather than a separate language feature.",
+   "keywords": [
+    "closure field",
+    "scope chain",
+    "heap allocation",
+    "call stack",
+    "lexical scope",
+    "first-class functions"
+   ],
+   "questions": [
+    "How do closures relate to the call stack and heap?",
+    "Why are closures not considered an added language feature?",
+    "What minimal code changes implement closures in the model?"
+   ]
+  },
+  "javascript-deep-dive-1-2-5": {
+   "text_sha": "dea7be12cfcc2723",
+   "summary": "The loop closure bug occurs because var shares one scope; using let creates a new scope per iteration, fixing the issue; closures can retain large objects, so release references when possible.",
+   "keywords": [
+    "loop closure bug",
+    "var vs let",
+    "block scope",
+    "memory leaks",
+    "closures and memory"
+   ],
+   "questions": [
+    "Why do closures inside a for loop with var share the same variable?",
+    "How does let fix the loop closure bug?",
+    "Why should references in closures be released when no longer needed?"
+   ]
+  },
+  "javascript-deep-dive-2-0-0": {
+   "text_sha": "1a35c130ab0643e8",
+   "summary": "The keyword this in JavaScript follows four rules determined by the call site, not the function definition, enabling predictable this binding.",
+   "keywords": [
+    "this keyword",
+    "call site",
+    "JavaScript this rules",
+    "function call",
+    "this binding"
+   ],
+   "questions": [
+    "What determines the value of this in JavaScript functions?",
+    "How many rules govern the binding of this in JavaScript?",
+    "Why is the call site more important than the function definition for this?"
+   ]
+  },
+  "javascript-deep-dive-2-0-1": {
+   "text_sha": "6f648f0c79341ebb",
+   "summary": "Rule one: default binding sets this to the global object or undefined in strict mode; Rule two: implicit binding sets this to the object before the dot in a method call.",
+   "keywords": [
+    "default binding",
+    "implicit binding",
+    "this global object",
+    "strict mode",
+    "method call this"
+   ],
+   "questions": [
+    "What is the default binding rule for this in JavaScript?",
+    "How does implicit binding determine the value of this?",
+    "What happens to this when a method is called as obj.method?"
+   ]
+  },
+  "javascript-deep-dive-2-0-2": {
+   "text_sha": "ca35d4b8bf14f41a",
+   "summary": "Rule three: explicit binding uses call, apply, or bind to set this; Rule four: new binding creates a new object and sets this to it; binding priority is new > explicit > implicit > default.",
+   "keywords": [
+    "explicit binding",
+    "call",
+    "apply",
+    "bind",
+    "new binding",
+    "this binding priority"
+   ],
+   "questions": [
+    "How do call, apply, and bind affect this binding?",
+    "What does the new keyword do to this inside a function?",
+    "What is the priority order when multiple this binding rules conflict?"
+   ]
+  },
+  "javascript-deep-dive-2-0-3": {
+   "text_sha": "74cbdfa08e150ae1",
+   "summary": "Arrow functions have no own this; they inherit this lexically from their defining scope, making call, apply, and bind ineffective on them.",
+   "keywords": [
+    "arrow functions",
+    "lexical this",
+    "no own this",
+    "call apply bind",
+    "callback this"
+   ],
+   "questions": [
+    "How do arrow functions determine their this value?",
+    "Can call, apply, or bind change the this of an arrow function?",
+    "Why are arrow functions useful for callbacks inside methods?"
+   ]
+  },
+  "javascript-deep-dive-2-0-4": {
+   "text_sha": "da3450a16968a59f",
+   "summary": "Demonstrates losing this when a method is detached and three fixes: bind, arrow wrapper, and class field arrow function, each illustrating different this binding rules.",
+   "keywords": [
+    "detached method",
+    "bind",
+    "arrow wrapper",
+    "class field arrow function",
+    "this fixes"
+   ],
+   "questions": [
+    "What happens to this when a method is assigned to a variable and called?",
+    "How can bind fix the this loss problem?",
+    "What are alternative ways to fix this binding besides bind?"
+   ]
+  },
+  "javascript-deep-dive-2-0-5": {
+   "text_sha": "70fb9605ab51bbd9",
+   "summary": "Implements this binding in a runtime by resolving thisArg based on new, explicit receiver, implicit receiver, or defaulting to undefined; arrows skip storing this for lexical lookup.",
+   "keywords": [
+    "runtime.js",
+    "callFunction",
+    "resolveThis",
+    "thisArg",
+    "new operator",
+    "explicit receiver",
+    "lexical this"
+   ],
+   "questions": [
+    "How does the runtime resolve the value of this for different call types?",
+    "What does the runtime do differently for arrow functions regarding this?",
+    "How is the new operator handled in this binding implementation?"
+   ]
+  },
+  "javascript-deep-dive-2-1-0": {
+   "text_sha": "b1f468ba5103ea84",
+   "summary": "The new keyword follows a four-step process to create objects with constructor functions, demystifying how constructors work in JavaScript.",
+   "keywords": [
+    "new keyword",
+    "constructor functions",
+    "JavaScript object creation",
+    "prototype machinery"
+   ],
+   "questions": [
+    "What are the steps the new keyword performs when creating an object?",
+    "How does the new keyword relate to constructor functions in JavaScript?"
+   ]
+  },
+  "javascript-deep-dive-2-1-1": {
+   "text_sha": "0a3bfdf18619ecf8",
+   "summary": "A constructor function is a normal function called with new, which implicitly creates and returns a new object without an explicit return statement.",
+   "keywords": [
+    "constructor function",
+    "new operator",
+    "JavaScript function",
+    "object creation"
+   ],
+   "questions": [
+    "What happens when a function is called with new in JavaScript?",
+    "Why does new Dog('Rex') return an object even without a return statement?"
+   ]
+  },
+  "javascript-deep-dive-2-1-2": {
+   "text_sha": "f0eb344da476be37",
+   "summary": "The four steps of new: create an empty object, link its prototype, call constructor with this bound, and return the constructor's object or the new one.",
+   "keywords": [
+    "new keyword steps",
+    "prototype linkage",
+    "constructor call",
+    "object return behavior"
+   ],
+   "questions": [
+    "What are the four steps performed by the new operator?",
+    "Why does returning a primitive from a constructor get ignored?"
+   ]
+  },
+  "javascript-deep-dive-2-1-3": {
+   "text_sha": "b8d624cb2abba403",
+   "summary": "Implementing new as a construct function using Object.create to set prototype, calling the constructor with this bound, and returning the correct object.",
+   "keywords": [
+    "construct function",
+    "Object.create",
+    "callFunction",
+    "prototype",
+    "new operator implementation"
+   ],
+   "questions": [
+    "How can you implement the new operator manually in JavaScript?",
+    "What does Object.create(fn.prototype) do in the construct function?"
+   ]
+  },
+  "javascript-deep-dive-2-1-4": {
+   "text_sha": "99131dec810f0066",
+   "summary": "Calling a constructor without new causes this to be undefined or global, leading to errors or bugs; ES6 classes enforce new usage to prevent this.",
+   "keywords": [
+    "calling constructor without new",
+    "this binding",
+    "strict mode",
+    "ES6 class error",
+    "instanceof guard"
+   ],
+   "questions": [
+    "What happens if you call a constructor function without new?",
+    "How do ES6 classes prevent calling constructors without new?"
+   ]
+  },
+  "javascript-deep-dive-2-1-5": {
+   "text_sha": "e6e19951567e8418",
+   "summary": "Instance methods should be placed on the constructor's prototype to avoid duplicating functions for each instance, enabling shared method lookup via prototype.",
+   "keywords": [
+    "prototype methods",
+    "instance methods",
+    "function duplication",
+    "method sharing",
+    "prototype lookup"
+   ],
+   "questions": [
+    "Why should methods be added to the prototype instead of inside the constructor?",
+    "How does placing methods on the prototype save memory?"
+   ]
+  },
+  "javascript-deep-dive-3-0-0": {
+   "text_sha": "56adb874ca941a8e",
+   "summary": "Introduces prototype inheritance and sets up the context for exploring the link between objects and their constructor's prototype.",
+   "keywords": [
+    "prototype inheritance",
+    "constructor prototype",
+    "JavaScript objects",
+    "prototype link"
+   ],
+   "questions": [
+    "What is the link between an object and its constructor's prototype?",
+    "Why is prototype inheritance important in JavaScript?",
+    "What will be covered about prototype inheritance in this chapter?"
+   ]
+  },
+  "javascript-deep-dive-3-0-1": {
+   "text_sha": "6fe542164f731e3f",
+   "summary": "Explains prototype inheritance as JavaScript's mechanism where objects inherit properties via an internal __proto__ link and automatic prototype chain lookup on property access.",
+   "keywords": [
+    "prototype inheritance",
+    "__proto__",
+    "prototype chain",
+    "property lookup",
+    "JavaScript objects"
+   ],
+   "questions": [
+    "What is prototype inheritance in JavaScript?",
+    "How does JavaScript find a property on an object if it is not directly present?",
+    "What is the role of __proto__ in prototype inheritance?"
+   ]
+  },
+  "javascript-deep-dive-3-0-2": {
+   "text_sha": "567ec6125861a759",
+   "summary": "Demonstrates prototype inheritance using Object.create, showing property lookup delegation and that writes only affect the object itself, not its prototype.",
+   "keywords": [
+    "Object.create",
+    "prototype inheritance demo",
+    "property lookup",
+    "hasOwnProperty",
+    "Object.getPrototypeOf"
+   ],
+   "questions": [
+    "How does Object.create establish prototype inheritance?",
+    "What happens when you access a property not directly on the object but on its prototype?",
+    "Does assigning a property modify the prototype or the object itself?"
+   ]
+  },
+  "javascript-deep-dive-3-0-3": {
+   "text_sha": "01255c92ba9463bb",
+   "summary": "Clarifies prototype inheritance as a delegation chain where objects delegate property lookups to their prototype at runtime, enabling shared methods without copying.",
+   "keywords": [
+    "delegation chain",
+    "prototype inheritance",
+    "Object.prototype",
+    "shared methods",
+    "runtime lookup"
+   ],
+   "questions": [
+    "Is prototype inheritance based on copying properties or delegation?",
+    "What is the role of Object.prototype in the prototype chain?",
+    "Why is prototype inheritance memory-efficient?"
+   ]
+  },
+  "javascript-deep-dive-3-0-4": {
+   "text_sha": "6d96c725c3b75a6a",
+   "summary": "Implements prototype lookup with a getProperty function that walks the prototype chain and a setProperty function that writes directly to the object, illustrating read-write asymmetry.",
+   "keywords": [
+    "getProperty function",
+    "setProperty function",
+    "prototype chain lookup",
+    "Object.getPrototypeOf",
+    "property assignment"
+   ],
+   "questions": [
+    "How can you manually implement prototype property lookup in JavaScript?",
+    "Why does writing a property not traverse the prototype chain?",
+    "What is the difference between reading and writing properties in prototype inheritance?"
+   ]
+  },
+  "javascript-deep-dive-3-0-5": {
+   "text_sha": "7107965e7217c401",
+   "summary": "Shows that built-in methods like toString come from Object.prototype and explains the prototype chain of arrays, warning about risks of modifying built-in prototypes.",
+   "keywords": [
+    "Object.prototype",
+    "toString",
+    "Array.prototype",
+    "prototype chain",
+    "modifying built-in prototypes"
+   ],
+   "questions": [
+    "Where do built-in methods like toString come from?",
+    "What is the prototype chain of an array in JavaScript?",
+    "Why is modifying built-in prototypes considered dangerous?"
+   ]
+  },
+  "javascript-deep-dive-3-0-6": {
+   "text_sha": "9533ffe641f6e329",
+   "summary": "Explains that modern class syntax is syntactic sugar over prototype inheritance, with extends setting up prototype chains and instanceof relying on them for type checks.",
+   "keywords": [
+    "class syntax",
+    "extends",
+    "prototype chain",
+    "instanceof operator",
+    "JavaScript classes"
+   ],
+   "questions": [
+    "How does the class keyword relate to prototype inheritance?",
+    "What does extends do to the prototype chain?",
+    "How does instanceof use the prototype chain?"
+   ]
+  },
+  "javascript-deep-dive-3-0-7": {
+   "text_sha": "4a369772b76c9d84",
+   "summary": "Presents a debugging technique using a findOwner function to locate which object in the prototype chain owns a property, helping identify shadowing and unexpected properties.",
+   "keywords": [
+    "debugging prototype",
+    "findOwner function",
+    "property shadowing",
+    "prototype chain traversal",
+    "property ownership"
+   ],
+   "questions": [
+    "How can you find which object in the prototype chain owns a property?",
+    "What is property shadowing in prototype inheritance?",
+    "How can you debug unexpected properties appearing on objects?"
+   ]
+  },
+  "javascript-deep-dive-3-1-0": {
+   "text_sha": "52dff0863a57f364",
+   "summary": "The class keyword in JavaScript is syntactic sugar over constructor functions and prototypes, adding no new object model but simplifying syntax.",
+   "keywords": [
+    "class keyword",
+    "constructor function",
+    "prototype chain",
+    "JavaScript classes",
+    "desugaring classes"
+   ],
+   "questions": [
+    "What does the class keyword add to JavaScript's object model?",
+    "How is a class related to constructor functions and prototypes?",
+    "Can a class be converted back to prototype-based code?"
+   ]
+  },
+  "javascript-deep-dive-3-1-1": {
+   "text_sha": "eda562385175aedf",
+   "summary": "A JavaScript class is a function whose methods live on its prototype; class bodies are strict, methods non-enumerable, and calling without new throws, but structurally it's like constructor functions.",
+   "keywords": [
+    "JavaScript class",
+    "prototype methods",
+    "constructor function",
+    "typeof class",
+    "non-enumerable methods",
+    "strict mode classes"
+   ],
+   "questions": [
+    "What type is a JavaScript class?",
+    "Where do class methods live internally?",
+    "What are differences between classes and constructor functions?"
+   ]
+  },
+  "javascript-deep-dive-3-1-2": {
+   "text_sha": "dcb3da6edb6eb0f1",
+   "summary": "The extends keyword sets up prototype inheritance for instances and static methods; super calls the parent constructor and must be called before accessing this in derived classes.",
+   "keywords": [
+    "class extends",
+    "super keyword",
+    "prototype inheritance",
+    "Object.getPrototypeOf",
+    "static method inheritance",
+    "derived class constructor"
+   ],
+   "questions": [
+    "How does extends set up inheritance for instances and static methods?",
+    "What does super do in a derived class constructor?",
+    "Why must super be called before using this in derived classes?"
+   ]
+  },
+  "javascript-deep-dive-3-1-3": {
+   "text_sha": "c4f4ef518dcc192e",
+   "summary": "A defineClass function can recreate class behavior by setting prototype chains, constructors, copying methods, and linking static inheritance manually.",
+   "keywords": [
+    "defineClass function",
+    "Object.create",
+    "prototype chain",
+    "constructor property",
+    "Object.setPrototypeOf",
+    "manual class desugaring"
+   ],
+   "questions": [
+    "How can you manually create a class-like function with prototypes?",
+    "What does Object.create do in setting up inheritance?",
+    "How do you set static inheritance between constructor functions?"
+   ]
+  },
+  "javascript-deep-dive-3-1-4": {
+   "text_sha": "31b61a773dfb48fc",
+   "summary": "Deep inheritance chains increase lookup costs and tight coupling; many prefer composition or factory functions, knowing classes are just prototypes helps choose wisely.",
+   "keywords": [
+    "inheritance chain cost",
+    "composition over inheritance",
+    "JavaScript object composition",
+    "tight coupling",
+    "prototype chain lookup"
+   ],
+   "questions": [
+    "What are drawbacks of deep inheritance chains?",
+    "Why might teams prefer composition over inheritance?",
+    "How does knowing classes are prototypes affect design choices?"
+   ]
+  },
+  "javascript-deep-dive-3-1-5": {
+   "text_sha": "623134ac3fb9b8c1",
+   "summary": "Private fields (#) are stored in hidden slots off the prototype chain, and arrow function methods are instance own properties, affecting memory and access patterns.",
+   "keywords": [
+    "private fields",
+    "#private fields",
+    "arrow function class fields",
+    "instance own properties",
+    "prototype chain",
+    "memory cost"
+   ],
+   "questions": [
+    "How are private fields stored in JavaScript classes?",
+    "Are arrow function methods shared on the prototype?",
+    "What are memory implications of arrow function methods on instances?"
+   ]
+  },
+  "javascript-deep-dive-3-2-0": {
+   "text_sha": "aad77fff74c8a882",
+   "summary": "Implement Object.create and instanceof from scratch using getPrototypeOf, setPrototypeOf, and function prototype to deeply understand prototype chains.",
+   "keywords": [
+    "Object.create",
+    "instanceof",
+    "getPrototypeOf",
+    "setPrototypeOf",
+    "prototype chain",
+    "proto.js"
+   ],
+   "questions": [
+    "How can I implement Object.create without using the built-in method?",
+    "What primitives are needed to recreate instanceof behavior?",
+    "Why is it useful to write Object.create and instanceof from scratch?"
+   ]
+  },
+  "javascript-deep-dive-3-2-1": {
+   "text_sha": "abd8ad5823c49fc8",
+   "summary": "Create a custom myCreate function that sets an object's prototype using either Object.setPrototypeOf or a throwaway constructor function.",
+   "keywords": [
+    "Object.create",
+    "myCreate",
+    "Object.setPrototypeOf",
+    "prototype",
+    "throwaway constructor",
+    "polyfill"
+   ],
+   "questions": [
+    "How does Object.create set the prototype of a new object?",
+    "What are two ways to implement Object.create manually?",
+    "Why does the throwaway constructor method work to set prototypes?"
+   ]
+  },
+  "javascript-deep-dive-3-2-2": {
+   "text_sha": "d2e72e26a683a126",
+   "summary": "Test myCreate by creating objects with specified prototypes, including null prototype for pure dictionaries, and note performance caveats of setPrototypeOf.",
+   "keywords": [
+    "myCreate",
+    "prototype chain",
+    "null prototype",
+    "pure dictionary",
+    "setPrototypeOf performance",
+    "V8 engine"
+   ],
+   "questions": [
+    "What happens when you create an object with a null prototype?",
+    "How can myCreate be tested to verify prototype linkage?",
+    "Why can using setPrototypeOf slow down JavaScript engines like V8?"
+   ]
+  },
+  "javascript-deep-dive-3-2-3": {
+   "text_sha": "f58c742ef3abe9e1",
+   "summary": "Implement myInstanceOf by walking an object's prototype chain to check if a constructor's prototype appears, mimicking instanceof behavior.",
+   "keywords": [
+    "instanceof",
+    "myInstanceOf",
+    "prototype chain",
+    "Ctor.prototype",
+    "Symbol.hasInstance"
+   ],
+   "questions": [
+    "How does instanceof check if an object is an instance of a constructor?",
+    "How can you implement instanceof functionality manually?",
+    "What role does Symbol.hasInstance play in the instanceof operator?"
+   ]
+  },
+  "javascript-deep-dive-3-2-4": {
+   "text_sha": "85f24f54fa5751d2",
+   "summary": "Object.create optionally accepts property descriptors to define non-writable or non-enumerable properties; these descriptors relate to Object.defineProperty and class syntax.",
+   "keywords": [
+    "Object.create",
+    "property descriptors",
+    "Object.defineProperty",
+    "non-enumerable",
+    "class syntax",
+    "defineProperty"
+   ],
+   "questions": [
+    "What is the purpose of the second argument to Object.create?",
+    "How do property descriptors affect object properties?",
+    "How does class syntax use Object.defineProperty under the hood?"
+   ]
+  },
+  "javascript-deep-dive-3-2-5": {
+   "text_sha": "fa20c9318b6f0151",
+   "summary": "Demonstrate instanceof behavior with class instances and how changing a constructor's prototype breaks instanceof, explaining cross-realm issues and Array.isArray.",
+   "keywords": [
+    "instanceof",
+    "prototype reassignment",
+    "cross-realm",
+    "Array.isArray",
+    "class instances",
+    "prototype chain"
+   ],
+   "questions": [
+    "What happens to instanceof when a constructor's prototype is reassigned?",
+    "Why can instanceof give false results across different realms or iframes?",
+    "Why is Array.isArray preferred over instanceof for arrays?"
+   ]
+  },
+  "javascript-deep-dive-4-0-0": {
+   "text_sha": "f5598c820844d121",
+   "summary": "Introduces V8 engine's role in running JavaScript and questions how it achieves fast performance despite seemingly slow property lookups.",
+   "keywords": [
+    "V8 engine",
+    "JavaScript performance",
+    "property lookup",
+    "engine optimization"
+   ],
+   "questions": [
+    "What is the V8 engine?",
+    "Why might JavaScript property lookups be slow?",
+    "How does V8 improve JavaScript execution speed?"
+   ]
+  },
+  "javascript-deep-dive-4-0-1": {
+   "text_sha": "730510e7a184834f",
+   "summary": "V8 uses hidden classes to optimize object property access by creating internal shapes that allow fixed-offset memory access instead of hash table lookups.",
+   "keywords": [
+    "V8",
+    "hidden classes",
+    "object property access",
+    "fixed-offset memory",
+    "hash table lookup"
+   ],
+   "questions": [
+    "What are hidden classes in V8?",
+    "How do hidden classes optimize property access?",
+    "Why does V8 avoid hash table lookups for object properties?"
+   ]
+  },
+  "javascript-deep-dive-4-0-2": {
+   "text_sha": "d5819ffa9000ad7f",
+   "summary": "Explains how V8 creates and transitions hidden classes as properties are added to an object, storing property offsets and sharing shapes among objects.",
+   "keywords": [
+    "hidden classes",
+    "property offsets",
+    "shape transitions",
+    "V8 object representation"
+   ],
+   "questions": [
+    "How does V8 assign hidden classes when adding properties?",
+    "What is the role of property offsets in hidden classes?",
+    "How does V8 share object shapes among multiple objects?"
+   ]
+  },
+  "javascript-deep-dive-4-0-3": {
+   "text_sha": "58dc427c3cd404e8",
+   "summary": "Objects with identical properties but different property addition orders get different hidden classes, causing performance penalties due to transitions.",
+   "keywords": [
+    "hidden classes",
+    "property order",
+    "performance",
+    "hidden class transitions",
+    "dynamic properties"
+   ],
+   "questions": [
+    "How does property addition order affect hidden classes?",
+    "Why do hidden class transitions hurt performance?",
+    "What happens if properties are added dynamically after object creation?"
+   ]
+  },
+  "javascript-deep-dive-4-0-4": {
+   "text_sha": "611123c718244140",
+   "summary": "Demonstrates using Node's `%HaveSameMap` to check if two objects share the same hidden class, showing that property order affects hidden class equality.",
+   "keywords": [
+    "%HaveSameMap",
+    "hidden class equality",
+    "Node.js",
+    "property order",
+    "object shape"
+   ],
+   "questions": [
+    "How can you check if two objects share the same hidden class in Node?",
+    "Does property order affect hidden class equality?",
+    "What does `%HaveSameMap` return for objects with same keys but different order?"
+   ]
+  },
+  "javascript-deep-dive-4-0-5": {
+   "text_sha": "13de513916f42b0a",
+   "summary": "Implements a shapes.js simulation of V8 hidden classes with Shape objects, transitions, and offsets to illustrate shape branching caused by property order.",
+   "keywords": [
+    "shapes.js",
+    "Shape class",
+    "hidden class simulation",
+    "property transitions",
+    "offsets"
+   ],
+   "questions": [
+    "How can you simulate V8 hidden classes in JavaScript?",
+    "What data structures represent transitions and offsets in shapes.js?",
+    "What does shape branching illustrate about hidden classes?"
+   ]
+  },
+  "javascript-deep-dive-4-0-6": {
+   "text_sha": "982eabac5a9ce958",
+   "summary": "To optimize V8 performance, initialize all object properties in the constructor in a consistent order, avoid adding or deleting properties later, and prefer null over delete.",
+   "keywords": [
+    "V8 optimization",
+    "object initialization",
+    "property order",
+    "delete operator",
+    "dictionary mode"
+   ],
+   "questions": [
+    "How should you initialize object properties for V8 optimization?",
+    "Why avoid deleting properties in V8?",
+    "What is the benefit of setting properties to null instead of deleting?"
+   ]
+  },
+  "javascript-deep-dive-4-0-7": {
+   "text_sha": "17e250e5f751a9db",
+   "summary": "Hidden classes impact performance mainly in hot code with many similar objects; profile before optimizing, and upcoming topics include inline caching for fast property access.",
+   "keywords": [
+    "hidden classes",
+    "hot code",
+    "performance profiling",
+    "inline caching",
+    "JIT compilation"
+   ],
+   "questions": [
+    "When do hidden classes significantly affect performance?",
+    "Why is profiling important before optimizing for hidden classes?",
+    "What is inline caching in V8?"
+   ]
+  },
+  "javascript-deep-dive-4-1-0": {
+   "text_sha": "d1d534a688d1ff22",
+   "summary": "V8 uses inline caches and hidden classes to speed up property access, with terms like monomorphic, polymorphic, and megamorphic describing cache states.",
+   "keywords": [
+    "V8",
+    "inline caches",
+    "hidden class",
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "property access"
+   ],
+   "questions": [
+    "What is an inline cache in V8?",
+    "What do monomorphic, polymorphic, and megamorphic mean in JavaScript engines?",
+    "How does V8 optimize property access using hidden classes?"
+   ]
+  },
+  "javascript-deep-dive-4-1-1": {
+   "text_sha": "3647dfaefd54e224",
+   "summary": "An inline cache stores the hidden class and property offset at a property access site to speed up repeated property lookups with just one comparison and load.",
+   "keywords": [
+    "inline cache",
+    "hidden class",
+    "property offset",
+    "property access optimization",
+    "V8"
+   ],
+   "questions": [
+    "How does an inline cache speed up property access?",
+    "What happens during the first and subsequent calls to a property access site?",
+    "What does V8 store in the inline cache for a property?"
+   ]
+  },
+  "javascript-deep-dive-4-1-2": {
+   "text_sha": "ef9cdd61dea9b345",
+   "summary": "Cache states are monomorphic (one hidden class), polymorphic (2-4 classes), and megamorphic (many classes), with monomorphic sites optimized best by TurboFan.",
+   "keywords": [
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "inline cache states",
+    "TurboFan",
+    "optimizing compiler"
+   ],
+   "questions": [
+    "What are the different inline cache states?",
+    "How does TurboFan optimize monomorphic inline caches?",
+    "What happens when an inline cache becomes megamorphic?"
+   ]
+  },
+  "javascript-deep-dive-4-1-3": {
+   "text_sha": "b97052c3caf262cf",
+   "summary": "A mini-runtime simulates inline caches by caching object shapes and offsets, counting hits and misses, and marking megamorphic when cache entries exceed four.",
+   "keywords": [
+    "mini-runtime",
+    "inline cache simulation",
+    "cache hits",
+    "cache misses",
+    "megamorphic flag",
+    "shapes.js"
+   ],
+   "questions": [
+    "How can inline caches be simulated in a mini-runtime?",
+    "What triggers the megamorphic state in the simulation?",
+    "How are hits and misses tracked in the inline cache simulation?"
+   ]
+  },
+  "javascript-deep-dive-4-1-4": {
+   "text_sha": "f75549ca099b21ec",
+   "summary": "To optimize for inline caches, create objects with consistent shapes, initialize all fields upfront, and avoid passing many object kinds through hot functions; always profile performance.",
+   "keywords": [
+    "inline cache optimization",
+    "object shapes",
+    "constructor",
+    "factory functions",
+    "profiling",
+    "hot functions"
+   ],
+   "questions": [
+    "How can I write code to benefit from inline caches?",
+    "Why should fields be initialized upfront in objects?",
+    "When should I split functions to improve performance?"
+   ]
+  },
+  "javascript-deep-dive-4-1-5": {
+   "text_sha": "b3f5bd81028ad37f",
+   "summary": "Passing objects with different key orders causes megamorphic caches and more misses, slowing functions; consistent object shapes, as enforced by TypeScript, improve performance.",
+   "keywords": [
+    "megamorphic cache",
+    "object key order",
+    "cache misses",
+    "performance",
+    "TypeScript",
+    "object shapes"
+   ],
+   "questions": [
+    "Why do different object key orders cause megamorphic caches?",
+    "How does megamorphic caching affect function performance?",
+    "How does TypeScript help with performance through object shapes?"
+   ]
+  },
+  "javascript-deep-dive-5-0-0": {
+   "text_sha": "635079dfd8e0231a",
+   "summary": "JavaScript uses an event loop to handle asynchronous events like timers and network requests without freezing the single-threaded engine.",
+   "keywords": [
+    "JavaScript",
+    "event loop",
+    "asynchronous",
+    "single-threaded",
+    "network request",
+    "timers",
+    "fetch"
+   ],
+   "questions": [
+    "Why doesn't JavaScript freeze during network requests?",
+    "What mechanism allows JavaScript to handle asynchronous events?",
+    "How does JavaScript manage timers and clicks asynchronously?"
+   ]
+  },
+  "javascript-deep-dive-5-0-1": {
+   "text_sha": "2d47c1df41888cfa",
+   "summary": "The event loop runs tasks from the macrotask queue only when the call stack is empty, ensuring tasks run to completion without interruption.",
+   "keywords": [
+    "event loop",
+    "call stack",
+    "macrotask queue",
+    "setTimeout",
+    "DOM events",
+    "run to completion"
+   ],
+   "questions": [
+    "What is the role of the call stack in JavaScript's event loop?",
+    "When does the event loop pick the next task from the macrotask queue?",
+    "Why does long synchronous work freeze the page?"
+   ]
+  },
+  "javascript-deep-dive-5-0-2": {
+   "text_sha": "68d56274b562615e",
+   "summary": "setTimeout with zero delay schedules a macrotask that runs only after the current script task finishes, so console logs appear in order: one, three, then two.",
+   "keywords": [
+    "setTimeout",
+    "zero delay",
+    "macrotask queue",
+    "console.log order",
+    "event loop timing"
+   ],
+   "questions": [
+    "Why does setTimeout with zero delay not run immediately?",
+    "What is the output order of console logs with setTimeout(0)?",
+    "How does the event loop handle zero-delay timers?"
+   ]
+  },
+  "javascript-deep-dive-5-0-3": {
+   "text_sha": "f8f5c8e6803eaf61",
+   "summary": "Promises use a microtask queue that runs after each macrotask finishes but before the next macrotask starts, giving them higher priority than setTimeout callbacks.",
+   "keywords": [
+    "Promises",
+    "microtask queue",
+    "macrotask queue",
+    "event loop",
+    "await",
+    "promise.then"
+   ],
+   "questions": [
+    "What queue do Promise callbacks use in the event loop?",
+    "Why do Promise.then callbacks run before setTimeout callbacks?",
+    "How does await relate to microtasks?"
+   ]
+  },
+  "javascript-deep-dive-5-0-4": {
+   "text_sha": "a7263bcba898d233",
+   "summary": "When mixing setTimeout and Promise callbacks, the Promise microtask runs immediately after the main script finishes, before the setTimeout macrotask executes.",
+   "keywords": [
+    "setTimeout",
+    "Promise.resolve",
+    "microtask queue",
+    "macrotask queue",
+    "event loop order"
+   ],
+   "questions": [
+    "What is the output order when combining setTimeout and Promise callbacks?",
+    "Why does the Promise callback run before the setTimeout callback?",
+    "How does the event loop process microtasks and macrotasks after a script?"
+   ]
+  },
+  "javascript-deep-dive-5-0-5": {
+   "text_sha": "13be9569aca0f9d2",
+   "summary": "Scheduling microtasks recursively can starve the macrotask queue and block rendering, unlike setTimeout which allows other tasks to run; Node.js also has process.nextTick with even higher priority.",
+   "keywords": [
+    "microtask starvation",
+    "recursive Promise.then",
+    "setTimeout",
+    "process.nextTick",
+    "event loop starvation"
+   ],
+   "questions": [
+    "What happens if microtasks schedule more microtasks indefinitely?",
+    "How does setTimeout differ from recursive microtasks in event loop behavior?",
+    "What is process.nextTick in Node.js and how does it relate to microtasks?"
+   ]
+  },
+  "javascript-deep-dive-5-0-6": {
+   "text_sha": "4cdad1b9cc610a43",
+   "summary": "The event loop consists of a call stack, macrotask queue, microtask queue, and a loop that runs one macrotask then drains microtasks, with browsers adding a rendering step between tasks.",
+   "keywords": [
+    "event loop",
+    "call stack",
+    "macrotask queue",
+    "microtask queue",
+    "rendering step",
+    "JavaScript concurrency"
+   ],
+   "questions": [
+    "What components make up the JavaScript event loop?",
+    "How does the event loop process tasks and microtasks?",
+    "Why do long tasks cause janky pages in browsers?"
+   ]
+  },
+  "javascript-deep-dive-5-1-0": {
+   "text_sha": "609fad04097b7e79",
+   "summary": "Introduce eventloop.js to simulate the JavaScript event loop, enabling running setTimeout and promise puzzles with Node-like output.",
+   "keywords": [
+    "event loop",
+    "setTimeout",
+    "promise",
+    "Node.js",
+    "eventloop.js",
+    "simulation"
+   ],
+   "questions": [
+    "What is the purpose of eventloop.js?",
+    "How can I simulate the JavaScript event loop behavior?"
+   ]
+  },
+  "javascript-deep-dive-5-1-1": {
+   "text_sha": "458696d182339f00",
+   "summary": "Create EventLoop class with macrotasks, microtasks, timers queues and a fake clock for deterministic simulation of asynchronous tasks.",
+   "keywords": [
+    "EventLoop class",
+    "macrotasks",
+    "microtasks",
+    "timers",
+    "fake clock",
+    "setTimeout",
+    "queueMicrotask"
+   ],
+   "questions": [
+    "How do you represent macrotasks and microtasks in an event loop simulator?",
+    "Why use a fake clock in an event loop simulation?",
+    "How does setTimeout and queueMicrotask work in the simulator?"
+   ]
+  },
+  "javascript-deep-dive-5-1-2": {
+   "text_sha": "8fa8e2c78a682ccf",
+   "summary": "Implement run method to process macrotasks, advance time for timers, execute tasks, and drain microtasks in a loop simulating one event loop turn.",
+   "keywords": [
+    "run method",
+    "macrotasks queue",
+    "timers",
+    "microtasks",
+    "event loop turn",
+    "task scheduling"
+   ],
+   "questions": [
+    "How does the run method simulate one turn of the event loop?",
+    "What happens when the macrotask queue is empty in the simulator?",
+    "How are timers moved to macrotasks in the simulation?"
+   ]
+  },
+  "javascript-deep-dive-5-1-3": {
+   "text_sha": "34b7a72ef6c65ca0",
+   "summary": "Define drainMicrotasks method to execute all microtasks including newly queued ones, reproducing microtask starvation and adding a guard against infinite loops.",
+   "keywords": [
+    "drainMicrotasks",
+    "microtask queue",
+    "starvation",
+    "infinite microtasks",
+    "event loop simulation"
+   ],
+   "questions": [
+    "How does drainMicrotasks handle newly queued microtasks?",
+    "What is microtask starvation in the event loop?",
+    "Why add a guard counter for microtasks in the simulator?"
+   ]
+  },
+  "javascript-deep-dive-5-1-4": {
+   "text_sha": "c01698d4c8c1e5f7",
+   "summary": "Implement a simple MyPromise class that schedules then callbacks as microtasks upon resolution, mimicking native promise scheduling behavior.",
+   "keywords": [
+    "MyPromise",
+    "promise state",
+    "then method",
+    "queueMicrotask",
+    "promise resolution",
+    "microtask scheduling"
+   ],
+   "questions": [
+    "How does MyPromise schedule then callbacks?",
+    "What happens when a promise is resolved in the simulator?",
+    "How does the simulator mimic native promise behavior?"
+   ]
+  },
+  "javascript-deep-dive-5-1-5": {
+   "text_sha": "4e1fa898ec8a8fb6",
+   "summary": "Run a test script on the simulator showing order of logs for start, end, promise microtask, and timers with different delays, matching real JavaScript behavior.",
+   "keywords": [
+    "event loop test",
+    "setTimeout zero delay",
+    "microtask order",
+    "promise microtask",
+    "timers order",
+    "async behavior"
+   ],
+   "questions": [
+    "What is the execution order of setTimeout and microtasks in the simulator?",
+    "How does a microtask scheduled inside a timer callback behave?",
+    "How does the simulator output compare to real JavaScript event loop behavior?"
+   ]
+  },
+  "javascript-deep-dive-5-2-0": {
+   "text_sha": "f9e66c6cd376db82",
+   "summary": "Async/await syntax is syntactic sugar built on promises and microtasks, with await essentially being a .then call under the hood.",
+   "keywords": [
+    "async/await",
+    "promises",
+    "microtask queue",
+    ".then",
+    "JavaScript concurrency"
+   ],
+   "questions": [
+    "How is async/await related to promises in JavaScript?",
+    "What does await do under the hood?",
+    "Are async/await and promises separate concurrency mechanisms?"
+   ]
+  },
+  "javascript-deep-dive-5-2-1": {
+   "text_sha": "9a84df9c0ba4efb4",
+   "summary": "An async function returns a promise; await pauses the function by scheduling the continuation as a microtask, allowing the caller to continue running synchronously.",
+   "keywords": [
+    "async function",
+    "await",
+    "promise resolution",
+    "microtask continuation",
+    "JavaScript concurrency"
+   ],
+   "questions": [
+    "What does an async function return?",
+    "How does await affect the execution flow inside an async function?",
+    "Why does code after calling an async function run before code after await inside it?"
+   ]
+  },
+  "javascript-deep-dive-5-2-2": {
+   "text_sha": "41faf6a1e125b873",
+   "summary": "Await pauses execution at that point and schedules the continuation as a microtask, demonstrated by the output order a, c, b matching an equivalent Promise.then chain.",
+   "keywords": [
+    "async function",
+    "await",
+    "microtask",
+    "Promise.resolve().then",
+    "execution order"
+   ],
+   "questions": [
+    "What is the output order of console logs in an async function with await null?",
+    "How does await schedule the continuation of an async function?",
+    "How can async/await behavior be replicated with Promise.then?"
+   ]
+  },
+  "javascript-deep-dive-5-2-3": {
+   "text_sha": "cc83f12e67041ce3",
+   "summary": "Microtask continuations from await always run before timer callbacks, and awaiting a promise resolved by a timer delays continuation until after the timer task completes.",
+   "keywords": [
+    "setTimeout",
+    "microtask",
+    "macrotask",
+    "await",
+    "promise timing",
+    "JavaScript event loop"
+   ],
+   "questions": [
+    "Does a microtask run before or after a timer callback?",
+    "What happens if an async function awaits a promise resolved inside setTimeout?",
+    "How can you simulate promise logic with queueMicrotask?"
+   ]
+  },
+  "javascript-deep-dive-5-2-4": {
+   "text_sha": "0ceffbf305a5199a",
+   "summary": "You can translate an async function into a chain of .then calls by splitting at each await, with try/catch blocks becoming catch handlers on the promise chain.",
+   "keywords": [
+    "async function translation",
+    ".then chaining",
+    "await splitting",
+    "try/catch with promises",
+    "JavaScript concurrency"
+   ],
+   "questions": [
+    "How can you convert an async function into a promise chain?",
+    "What happens to try/catch blocks around await when translated to .then?",
+    "How does splitting at await help predict execution order?"
+   ]
+  },
+  "javascript-deep-dive-5-2-5": {
+   "text_sha": "5ac017261649e4a8",
+   "summary": "Await inside loops runs sequentially; use Promise.all for concurrency. Errors after await reject promises and must be caught to avoid unhandled rejections, and forgetting await causes silent continuation.",
+   "keywords": [
+    "await in loops",
+    "Promise.all",
+    "error handling",
+    "unhandled promise rejection",
+    "async/await pitfalls"
+   ],
+   "questions": [
+    "Why does await inside a loop cause sequential execution?",
+    "How can you run multiple async operations concurrently?",
+    "What happens if an error is thrown after await without try/catch?"
+   ]
+  },
+  "javascript-deep-dive-6-0-0": {
+   "text_sha": "83e4ec479c03fba8",
+   "summary": "Introduces a debugging method that traces a bug through multiple layers of a mini-runtime to understand its cause.",
+   "keywords": [
+    "debugging method",
+    "mini-runtime",
+    "bug tracing",
+    "layers",
+    "JavaScript runtime"
+   ],
+   "questions": [
+    "What is the method to debug complex bugs across multiple runtime layers?",
+    "How can tracing a bug through layers help in understanding its cause?",
+    "What is the goal of the capstone debugging example?"
+   ]
+  },
+  "javascript-deep-dive-6-0-1": {
+   "text_sha": "ff0a8bc284e4e5bb",
+   "summary": "Describes a buggy task tracker program with two issues: results array length logged too early and all tasks having the same id.",
+   "keywords": [
+    "task tracker",
+    "Task class",
+    "loadTasks",
+    "setTimeout",
+    "results array",
+    "bug symptoms"
+   ],
+   "questions": [
+    "What are the two bugs in the task tracker program?",
+    "Why does the results array length log zero instead of three?",
+    "Why do all tasks end up with the same id?"
+   ]
+  },
+  "javascript-deep-dive-6-0-2": {
+   "text_sha": "02bc394270f01656",
+   "summary": "Explains the first bug as a timing issue caused by the event loop and run-to-completion rule, fixed by using promises and await.",
+   "keywords": [
+    "event loop",
+    "macrotasks",
+    "setTimeout",
+    "run-to-completion",
+    "promise",
+    "await",
+    "timing bug"
+   ],
+   "questions": [
+    "Why does logging results.length show zero immediately after the loop?",
+    "How does the event loop and run-to-completion rule affect setTimeout callbacks?",
+    "What is the fix for the timing bug involving setTimeout?"
+   ]
+  },
+  "javascript-deep-dive-6-0-3": {
+   "text_sha": "ab55e4bad0543ce9",
+   "summary": "Identifies the second bug as a closure and scope issue with var in loops, fixed by switching to let for block-scoped variables.",
+   "keywords": [
+    "closure",
+    "scope",
+    "var",
+    "let",
+    "setTimeout callback",
+    "loop variable",
+    "JavaScript scoping"
+   ],
+   "questions": [
+    "Why do all callbacks share the same loop variable value when using var?",
+    "How does switching from var to let fix the closure bug?",
+    "What role does scope play in the repeated id bug?"
+   ]
+  },
+  "javascript-deep-dive-6-0-4": {
+   "text_sha": "21a5b5b5eb10f58d",
+   "summary": "Shows the fixed program version using async/await, let in loops, and consistent Task constructor initialization to solve the bugs.",
+   "keywords": [
+    "async function",
+    "for-of loop",
+    "let",
+    "Promise.all",
+    "Task constructor",
+    "bug fixes"
+   ],
+   "questions": [
+    "How does making loadTasks async and awaiting Promise.all fix the timing issue?",
+    "Why is using let in the for-of loop important for correct ids?",
+    "What constructor changes improve Task object consistency?"
+   ]
+  },
+  "javascript-deep-dive-6-0-5": {
+   "text_sha": "b291793ba08822ac",
+   "summary": "Discusses a profiling issue caused by inconsistent object shapes due to conditional tags property initialization, fixed by always initializing tags.",
+   "keywords": [
+    "hidden classes",
+    "object shapes",
+    "polymorphic",
+    "megamorphic",
+    "tags property",
+    "constructor initialization",
+    "profiling"
+   ],
+   "questions": [
+    "What causes polymorphic shapes in Task objects during profiling?",
+    "How does inconsistent tags property initialization affect performance?",
+    "What is the fix to avoid polymorphic object shapes?"
+   ]
+  },
+  "javascript-deep-dive-6-1-0": {
+   "text_sha": "726f36fb42b5aaf3",
+   "summary": "The mini-runtime built includes modules for call stack, scope chain, prototype lookup, hidden classes, inline caches, and event loop with macrotasks and microtasks.",
+   "keywords": [
+    "call stack",
+    "scope chain",
+    "hoisting",
+    "closures",
+    "prototype lookup",
+    "hidden classes",
+    "inline caches",
+    "event loop"
+   ],
+   "questions": [
+    "What components does the mini-runtime contain?",
+    "What JavaScript concepts are implemented in the mini-runtime?",
+    "Which modules handle prototype lookup and event loop in the mini-runtime?"
+   ]
+  },
+  "javascript-deep-dive-6-1-1": {
+   "text_sha": "dcd6354d215aaad8",
+   "summary": "Key mental models include execution contexts as a stack, scope chains for name resolution, 'this' binding rules, prototype delegation, hidden classes, and asynchronous queues with microtask prioritization.",
+   "keywords": [
+    "execution context stack",
+    "scope chain",
+    "this binding",
+    "arrow functions",
+    "prototype delegation",
+    "hidden classes",
+    "microtasks",
+    "macrotasks"
+   ],
+   "questions": [
+    "How is execution modeled in JavaScript?",
+    "How does JavaScript resolve variable names?",
+    "What determines the value of 'this' in functions?"
+   ]
+  },
+  "javascript-deep-dive-6-1-2": {
+   "text_sha": "213751306393024f",
+   "summary": "Suggested extensions to mini-runtime include adding getters/setters, generators or async iteration, and a simple garbage collector to deepen understanding through hands-on projects.",
+   "keywords": [
+    "getters",
+    "setters",
+    "generators",
+    "async iteration",
+    "garbage collector",
+    "closures",
+    "memory leaks",
+    "mini-runtime extensions"
+   ],
+   "questions": [
+    "How can I extend the mini-runtime to learn more about JavaScript internals?",
+    "What projects can help understand closures and memory leaks?",
+    "Why add getters and setters to prototype lookup?"
+   ]
+  },
+  "javascript-deep-dive-6-1-3": {
+   "text_sha": "cffbbf3039d4b7a3",
+   "summary": "Reading primary sources like the ECMAScript spec, V8 blog, and Node.js docs, plus using Chrome DevTools and Node.js inspector, reinforces understanding of JavaScript internals and debugging.",
+   "keywords": [
+    "ECMAScript specification",
+    "OrdinaryGet",
+    "V8 blog",
+    "Ignition",
+    "TurboFan",
+    "Node.js event loop",
+    "Chrome DevTools",
+    "node --inspect"
+   ],
+   "questions": [
+    "What primary sources are recommended for learning JavaScript internals?",
+    "How does the ECMAScript spec describe prototype lookup?",
+    "What tools help inspect scope chains and profiles?"
+   ]
+  },
+  "javascript-deep-dive-6-1-4": {
+   "text_sha": "a43039230b8b1ae7",
+   "summary": "Learning JavaScript deeply means retaining mental models and rebuilding concepts as needed; frameworks make choices about scope, this, objects, and event loop to understand.",
+   "keywords": [
+    "mental models",
+    "scope",
+    "this",
+    "objects",
+    "event loop",
+    "frameworks",
+    "teaching",
+    "learning"
+   ],
+   "questions": [
+    "What is the most important takeaway from learning JavaScript internals?",
+    "How can understanding scope and event loop help with frameworks?",
+    "Why is teaching others beneficial for learning?"
+   ]
+  },
+  "javascript-deep-dive-6-1-5": {
+   "text_sha": "154770f87e58b9ac",
+   "summary": "Use the mental model layers—stack, scope, this, prototype, shape, queue—to debug JavaScript bugs effectively and explore advanced courses on browser APIs and React performance.",
+   "keywords": [
+    "debugging",
+    "stack",
+    "scope",
+    "this",
+    "prototype",
+    "shape",
+    "queue",
+    "browser APIs"
+   ],
+   "questions": [
+    "How can mental models improve debugging skills?",
+    "What layers should I consider when debugging JavaScript?",
+    "What advanced topics build on these JavaScript concepts?"
+   ]
+  }
+ }
+}

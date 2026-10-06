@@ -1,0 +1,2295 @@
+{
+ "version": 1,
+ "model": "gpt-4.1-mini",
+ "chunks": {
+  "state-management-0-0-0": {
+   "text_sha": "efc1509bf7c764df",
+   "summary": "State is the data a program remembers between moments, like a shopping cart item retained until checkout.",
+   "keywords": [
+    "state",
+    "state definition",
+    "program memory",
+    "shopping cart example"
+   ],
+   "questions": [
+    "What is state in programming?",
+    "Why is state important in applications?",
+    "How can state be simply defined?"
+   ]
+  },
+  "state-management-0-0-1": {
+   "text_sha": "00b4780033062a92",
+   "summary": "State is hard because it is shared and changes across multiple readers and writers, causing synchronization and consistency issues.",
+   "keywords": [
+    "state challenges",
+    "shared state",
+    "state synchronization",
+    "multiple readers and writers"
+   ],
+   "questions": [
+    "Why is managing state difficult in applications?",
+    "What problems arise from multiple readers and writers of state?",
+    "How can inconsistent state views affect the user?"
+   ]
+  },
+  "state-management-0-0-2": {
+   "text_sha": "dee81991693c2d74",
+   "summary": "Plain JavaScript objects don't notify changes, so updating UI after state changes requires manual re-rendering calls.",
+   "keywords": [
+    "JavaScript objects",
+    "state change detection",
+    "manual re-render",
+    "UI update"
+   ],
+   "questions": [
+    "Why doesn't the UI update automatically when a plain object changes?",
+    "How can you detect changes in JavaScript state?",
+    "What happens if you don't notify the UI after state changes?"
+   ]
+  },
+  "state-management-0-0-3": {
+   "text_sha": "3318a802f32d0525",
+   "summary": "Manually calling render functions after state changes is error-prone; state libraries solve detecting changes, notifying listeners, and controlling updates.",
+   "keywords": [
+    "manual rendering",
+    "state update problems",
+    "state libraries",
+    "change detection",
+    "broadcasting changes",
+    "controlled updates"
+   ],
+   "questions": [
+    "What problems arise from manually calling render functions after state changes?",
+    "What are the three main problems a state library solves?",
+    "Why is controlling state changes important for debugging?"
+   ]
+  },
+  "state-management-0-0-4": {
+   "text_sha": "d40a4a867096f388",
+   "summary": "Derived data like cart total should be computed automatically to avoid inconsistencies; state libraries use Proxy, lazy derivation, actions, middleware, and history for robust state management.",
+   "keywords": [
+    "derived data",
+    "cart total",
+    "Proxy",
+    "lazy derivation",
+    "actions",
+    "middleware",
+    "undo history"
+   ],
+   "questions": [
+    "What is derived data in state management?",
+    "How do state libraries keep derived data consistent?",
+    "What techniques are used to build a robust state management library?"
+   ]
+  },
+  "state-management-0-1-0": {
+   "text_sha": "193196e6e20f4c39",
+   "summary": "Different state management libraries solve change detection, notification, and predictable writes with distinct core ideas behind Redux, Zustand, and Pinia.",
+   "keywords": [
+    "state management",
+    "Redux",
+    "Zustand",
+    "Pinia",
+    "change detection",
+    "state writes",
+    "library design"
+   ],
+   "questions": [
+    "What core problems do state management libraries address?",
+    "Which libraries are compared for their approaches to state management?",
+    "Why study Redux, Zustand, and Pinia together?"
+   ]
+  },
+  "state-management-0-1-1": {
+   "text_sha": "7633dfab374f3cc1",
+   "summary": "Redux manages state as one immutable object changed only by dispatching actions processed by reducers, avoiding change detection by controlling all updates through dispatch.",
+   "keywords": [
+    "Redux",
+    "immutable state",
+    "dispatch",
+    "actions",
+    "reducers",
+    "store",
+    "subscriber"
+   ],
+   "questions": [
+    "How does Redux enforce state immutability?",
+    "What role do actions and reducers play in Redux?",
+    "How does Redux detect state changes?"
+   ]
+  },
+  "state-management-0-1-2": {
+   "text_sha": "1be483de16cd91de",
+   "summary": "Zustand simplifies state management by using a closure with a state variable and listeners, updating state with partial merges and notifying subscribers without boilerplate.",
+   "keywords": [
+    "Zustand",
+    "create function",
+    "setState",
+    "get",
+    "subscribe",
+    "listeners",
+    "closure",
+    "Object.assign"
+   ],
+   "questions": [
+    "How does Zustand manage state updates?",
+    "What is the role of listeners in Zustand?",
+    "How does Zustand reduce boilerplate compared to Redux?"
+   ]
+  },
+  "state-management-0-1-3": {
+   "text_sha": "434bbba1a2bd7698",
+   "summary": "Pinia uses Vue's Proxy-based reactivity to automatically track and react to direct state mutations by intercepting property reads and writes.",
+   "keywords": [
+    "Pinia",
+    "Vue reactivity",
+    "Proxy",
+    "automatic tracking",
+    "state mutation",
+    "property interception"
+   ],
+   "questions": [
+    "How does Pinia detect state changes automatically?",
+    "What is the role of JavaScript Proxy in Pinia?",
+    "What tradeoffs come with Proxy-based state tracking?"
+   ]
+  },
+  "state-management-0-1-4": {
+   "text_sha": "2b873ea61e50bbdf",
+   "summary": "The goal is to combine Redux's controlled updates, Zustand's simple subscription model, and Pinia's automatic Proxy tracking into a layered state management library.",
+   "keywords": [
+    "Redux",
+    "Zustand",
+    "Pinia",
+    "state management design",
+    "Proxy",
+    "immutable updates",
+    "subscribe",
+    "controlled updates"
+   ],
+   "questions": [
+    "Can we combine Redux, Zustand, and Pinia approaches?",
+    "What are the three main design bets of Redux, Zustand, and Pinia?",
+    "How will the new library build on these ideas?"
+   ]
+  },
+  "state-management-0-2-0": {
+   "text_sha": "f0e1d522901d047e",
+   "summary": "Introduces the statekit library, a plain JavaScript ES module with no dependencies, tested via a shopping cart app, outlining six core features to be built.",
+   "keywords": [
+    "statekit",
+    "state management library",
+    "shopping cart app",
+    "ES modules",
+    "JavaScript",
+    "no dependencies"
+   ],
+   "questions": [
+    "What is statekit and what are its main characteristics?",
+    "How will the statekit library be tested during development?",
+    "What is the overall goal of the first chapter in this course?"
+   ]
+  },
+  "state-management-0-2-1": {
+   "text_sha": "6a6b63584aa2f050",
+   "summary": "Describes the first three pieces of statekit: reactive.js for Proxy-based reactivity, store.js for state management with getState/setState/subscribe, and computed.js for cached derived values.",
+   "keywords": [
+    "reactive.js",
+    "Proxy",
+    "reactive(target, onChange)",
+    "store.js",
+    "createStore",
+    "getState",
+    "setState",
+    "subscribe"
+   ],
+   "questions": [
+    "What does the reactive.js module do in statekit?",
+    "What functions does createStore provide in store.js?",
+    "How does computed.js help manage derived state?"
+   ]
+  },
+  "state-management-0-2-2": {
+   "text_sha": "76b257c0f814f31d",
+   "summary": "Explains actions as named functions managing state changes including async with optimistic updates, middleware for extending setState with plugins like logger and persistence, and history for undo/redo and devtools.",
+   "keywords": [
+    "actions",
+    "addItem",
+    "removeItem",
+    "checkout",
+    "async actions",
+    "optimistic updates",
+    "rollback",
+    "middleware"
+   ],
+   "questions": [
+    "What role do actions play in statekit's state management?",
+    "How does middleware extend setState functionality?",
+    "What features does history.js provide for state management?"
+   ]
+  },
+  "state-management-0-2-3": {
+   "text_sha": "447f2bfa8399d46f",
+   "summary": "Outlines the folder structure for statekit with source files for each module and a demo folder containing the shopping cart app, recommending creating empty files to start development.",
+   "keywords": [
+    "folder layout",
+    "statekit",
+    "src folder",
+    "reactive.js",
+    "store.js",
+    "computed.js",
+    "middleware.js",
+    "logger.js"
+   ],
+   "questions": [
+    "What is the recommended folder structure for the statekit project?",
+    "Which files are included in the src folder of statekit?",
+    "What files are included in the demo folder and what is their purpose?"
+   ]
+  },
+  "state-management-0-2-4": {
+   "text_sha": "cb3b793202c21d22",
+   "summary": "Encourages active learning by rebuilding code from memory after each lecture and explains the layered architecture where each layer depends only on previous ones, starting next with Proxy property reads.",
+   "keywords": [
+    "active learning",
+    "rebuild code from memory",
+    "layered architecture",
+    "reactivity",
+    "store",
+    "middleware",
+    "JavaScript Proxy",
+    "property read interception"
+   ],
+   "questions": [
+    "Why should you try to rebuild code from memory after each lecture?",
+    "How does the layered architecture of statekit maintain simplicity?",
+    "What is the next topic after this planning lecture?"
+   ]
+  },
+  "state-management-1-0-0": {
+   "text_sha": "eb12547c721d81d8",
+   "summary": "A JavaScript Proxy wraps a target object with a handler object to intercept operations like reading or writing properties using traps.",
+   "keywords": [
+    "JavaScript Proxy",
+    "target",
+    "handler",
+    "traps",
+    "new Proxy",
+    "property access interception"
+   ],
+   "questions": [
+    "What is a JavaScript Proxy and how does it work?",
+    "What are the target and handler objects in a Proxy?",
+    "How does a Proxy intercept operations on an object?"
+   ]
+  },
+  "state-management-1-0-1": {
+   "text_sha": "2c706c498a3236bc",
+   "summary": "Creating a Proxy with an empty handler forwards all operations transparently to the target without copying data, showing Proxy acts as a stand-in.",
+   "keywords": [
+    "Proxy transparency",
+    "empty handler",
+    "target object",
+    "property forwarding",
+    "Proxy data reference"
+   ],
+   "questions": [
+    "What happens when a Proxy has an empty handler?",
+    "Does a Proxy copy the target object's data?",
+    "How does a Proxy forward property reads and writes without traps?"
+   ]
+  },
+  "state-management-1-0-2": {
+   "text_sha": "cfdf2e8883e40bfa",
+   "summary": "Adding get and set traps to a Proxy handler lets you log property reads and writes, with the set trap needing to return true to avoid errors in strict mode.",
+   "keywords": [
+    "Proxy get trap",
+    "Proxy set trap",
+    "return true in set trap",
+    "strict mode",
+    "property mutation hooks"
+   ],
+   "questions": [
+    "How do you add traps to a Proxy to intercept reads and writes?",
+    "Why must the set trap return true in a Proxy handler?",
+    "What happens if the set trap returns a falsy value in strict mode?"
+   ]
+  },
+  "state-management-1-0-3": {
+   "text_sha": "39f5b52249822ed7",
+   "summary": "Vue's reactivity uses get and set traps on Proxies to detect changes anywhere on the object, eliminating the need to manually call render functions.",
+   "keywords": [
+    "Vue reactivity",
+    "Proxy get trap",
+    "Proxy set trap",
+    "automatic change detection",
+    "state management hooks"
+   ],
+   "questions": [
+    "How does Vue use Proxy traps for reactivity?",
+    "Why does using Proxies remove the need to manually call render?",
+    "What is the benefit of intercepting reads and writes with Proxies?"
+   ]
+  },
+  "state-management-1-0-4": {
+   "text_sha": "b291af635d5d634d",
+   "summary": "Proxies only intercept operations on the wrapped object itself, so nested objects like arrays must be proxied recursively to enable deep reactivity.",
+   "keywords": [
+    "Proxy limitation",
+    "nested objects",
+    "deep reactivity",
+    "recursive Proxy",
+    "get trap returning Proxy"
+   ],
+   "questions": [
+    "Why don't Proxies intercept operations on nested objects?",
+    "How can deep reactivity be achieved with Proxies?",
+    "What happens when you call a method like push on a nested array inside a Proxy?"
+   ]
+  },
+  "state-management-1-1-0": {
+   "text_sha": "2839b9434ef44517",
+   "summary": "Reflect is a built-in object with methods mirroring proxy traps to perform default operations inside traps, enabling custom behavior around standard language actions.",
+   "keywords": [
+    "Reflect",
+    "proxy traps",
+    "Reflect.get",
+    "Reflect.set",
+    "Reflect.has",
+    "Reflect.deleteProperty"
+   ],
+   "questions": [
+    "What is the Reflect API in JavaScript?",
+    "How do Reflect methods relate to proxy traps?",
+    "Why use Reflect methods inside proxy traps?"
+   ]
+  },
+  "state-management-1-1-1": {
+   "text_sha": "2e70dd9a0d6229fc",
+   "summary": "Reflect.set returns a boolean indicating assignment success, providing correct semantics for the set trap unlike manual assignment which may throw or misreport.",
+   "keywords": [
+    "Reflect.set",
+    "proxy set trap",
+    "assignment success",
+    "boolean return",
+    "non-writable property"
+   ],
+   "questions": [
+    "What does Reflect.set return and why is it useful?",
+    "How does Reflect.set improve the set trap's behavior?",
+    "What happens if a property is non-writable when using Reflect.set?"
+   ]
+  },
+  "state-management-1-1-2": {
+   "text_sha": "107bf967acd5adde",
+   "summary": "Using the receiver argument with Reflect.get ensures getters use the proxy as this, allowing nested property reads to be intercepted and tracked correctly.",
+   "keywords": [
+    "Reflect.get",
+    "receiver argument",
+    "proxy this binding",
+    "getter traps",
+    "nested property tracking"
+   ],
+   "questions": [
+    "Why is the receiver argument important in Reflect.get?",
+    "What bug occurs if you use target[key] instead of Reflect.get with receiver?",
+    "How does Reflect.get affect this binding inside getters?"
+   ]
+  },
+  "state-management-1-1-3": {
+   "text_sha": "509aeccaa6189e70",
+   "summary": "A demo shows that using Reflect.get with receiver logs nested property reads, enabling reactive tracking of derived values unlike naive target[key] access.",
+   "keywords": [
+    "Reflect.get demo",
+    "proxy getter trap",
+    "nested reads logging",
+    "reactive tracking",
+    "derived values"
+   ],
+   "questions": [
+    "How does Reflect.get with receiver affect logging of nested property reads?",
+    "What difference does Reflect.get make in reactive systems?",
+    "Why does target[key] fail to track nested property accesses?"
+   ]
+  },
+  "state-management-1-1-4": {
+   "text_sha": "0afa83ff46265a49",
+   "summary": "The rule of thumb is to use matching Reflect methods with all arguments inside traps for default behavior and add custom logic; Reflect also offers useful functions like Reflect.has and Reflect.ownKeys.",
+   "keywords": [
+    "Reflect methods",
+    "proxy traps best practice",
+    "Reflect.has",
+    "Reflect.ownKeys",
+    "default behavior",
+    "custom logic"
+   ],
+   "questions": [
+    "What is the recommended pattern for using Reflect inside proxy traps?",
+    "What are some useful Reflect methods besides get and set?",
+    "Why use Reflect.has instead of the in operator?"
+   ]
+  },
+  "state-management-1-2-0": {
+   "text_sha": "ebc55f895c3902fe",
+   "summary": "Defines a reactive function that returns a Proxy to detect and notify on property changes using traps get, set, and deleteProperty.",
+   "keywords": [
+    "reactive function",
+    "Proxy",
+    "JavaScript Proxy traps",
+    "get trap",
+    "set trap",
+    "deleteProperty trap",
+    "onChange callback"
+   ],
+   "questions": [
+    "What is the signature of the reactive function for creating a Proxy?",
+    "Which Proxy traps are used to detect changes in the reactive function?",
+    "How does the reactive function notify about property changes?"
+   ]
+  },
+  "state-management-1-2-1": {
+   "text_sha": "22f839000aebff86",
+   "summary": "Implements the set trap to detect property writes, using Reflect.set and Object.is to notify only on actual value changes.",
+   "keywords": [
+    "set trap",
+    "Reflect.set",
+    "Object.is",
+    "property write detection",
+    "onChange notification",
+    "Proxy set handler"
+   ],
+   "questions": [
+    "How does the set trap detect if a property value has actually changed?",
+    "Why use Object.is instead of simple equality in the set trap?",
+    "What does the set trap return after setting a property?"
+   ]
+  },
+  "state-management-1-2-2": {
+   "text_sha": "026727aa2ca3e03e",
+   "summary": "Implements deleteProperty trap to detect property deletions and get trap to recursively wrap nested objects with reactive proxies.",
+   "keywords": [
+    "deleteProperty trap",
+    "Reflect.deleteProperty",
+    "get trap",
+    "nested reactive proxies",
+    "Proxy traps",
+    "property deletion detection"
+   ],
+   "questions": [
+    "How does the deleteProperty trap notify on property deletions?",
+    "What does the get trap do when it encounters nested objects?",
+    "Why is it important to wrap nested objects in reactive proxies?"
+   ]
+  },
+  "state-management-1-2-3": {
+   "text_sha": "fe6362878ef096d2",
+   "summary": "Adds a WeakMap cache to store proxies per target object, ensuring stable identity and preventing memory leaks in nested reactive proxies.",
+   "keywords": [
+    "WeakMap cache",
+    "proxy identity",
+    "proxy caching",
+    "memory leak prevention",
+    "nested proxies",
+    "reactive proxy optimization"
+   ],
+   "questions": [
+    "Why is caching proxies with a WeakMap important in reactive implementations?",
+    "How does caching proxies affect identity comparisons like proxy.items === proxy.items?",
+    "What role does WeakMap play in preventing memory leaks?"
+   ]
+  },
+  "state-management-1-2-4": {
+   "text_sha": "6a0c1ad455d83223",
+   "summary": "Demonstrates the reactive primitive with a cart example, showing change notifications on property writes and array mutations, noting batching will be added later.",
+   "keywords": [
+    "reactive primitive test",
+    "change notifications",
+    "array mutation detection",
+    "batching updates",
+    "console testing",
+    "reactive cart example"
+   ],
+   "questions": [
+    "How does the reactive primitive notify changes when mutating arrays like push?",
+    "Why does push cause multiple change notifications?",
+    "What is the purpose of batching in reactive state management?"
+   ]
+  },
+  "state-management-2-0-0": {
+   "text_sha": "569e7d72d4261292",
+   "summary": "A store has four core responsibilities: hold state, provide read access, allow controlled changes, and enable subscriptions to state changes.",
+   "keywords": [
+    "store",
+    "state container",
+    "state management",
+    "subscribe",
+    "state change",
+    "read state",
+    "controlled update"
+   ],
+   "questions": [
+    "What are the four main responsibilities of a state store?",
+    "Why is the store important in state management?"
+   ]
+  },
+  "state-management-2-0-1": {
+   "text_sha": "52263e29be52a9ef",
+   "summary": "Using a closure to hold state ensures privacy by restricting direct external access, unlike a class-based approach that exposes state as a public property.",
+   "keywords": [
+    "closure",
+    "module pattern",
+    "createStore",
+    "state privacy",
+    "Zustand",
+    "JavaScript closure",
+    "encapsulation"
+   ],
+   "questions": [
+    "How does a closure provide privacy for state in JavaScript?",
+    "What is the advantage of using a closure over a class for storing state?",
+    "What pattern does Zustand use for its store?"
+   ]
+  },
+  "state-management-2-0-2": {
+   "text_sha": "d50d857c2b6d18a8",
+   "summary": "Store updates are immutable, producing new state objects on each change to support features like time travel, subscriber comparisons, and React-style rendering.",
+   "keywords": [
+    "immutable updates",
+    "setState",
+    "time travel",
+    "state comparison",
+    "reactive primitive",
+    "state mutation"
+   ],
+   "questions": [
+    "Why should store updates be immutable?",
+    "How does immutability help with time travel debugging?",
+    "What problems arise from mutating state in place?"
+   ]
+  },
+  "state-management-2-0-3": {
+   "text_sha": "7e7213e1263e7b88",
+   "summary": "Listeners are stored as functions in a Set to avoid duplicates, allow efficient removal, and ensure predictable call order; subscribing returns an unsubscribe function.",
+   "keywords": [
+    "listeners",
+    "Set",
+    "subscribe",
+    "unsubscribe",
+    "listener management",
+    "state change listeners"
+   ],
+   "questions": [
+    "Why use a Set to store listeners instead of an array?",
+    "How does subscribing to the store work?",
+    "What is the benefit of returning an unsubscribe function?"
+   ]
+  },
+  "state-management-2-0-4": {
+   "text_sha": "34497cce59d04553",
+   "summary": "The store skeleton uses a closure with state and listeners, returning three functions: getState, setState, and subscribe, all in a plain object, not a class.",
+   "keywords": [
+    "createStore",
+    "getState",
+    "setState",
+    "subscribe",
+    "store skeleton",
+    "closure",
+    "state container"
+   ],
+   "questions": [
+    "What functions does the store expose?",
+    "Why return a plain object of functions instead of a class?",
+    "What variables are closed over in the store?"
+   ]
+  },
+  "state-management-2-1-0": {
+   "text_sha": "8c88741bc6b1e5b8",
+   "summary": "The subscribe function registers listeners and returns an unsubscribe function to prevent memory leaks by allowing cleanup when listeners are no longer needed.",
+   "keywords": [
+    "subscribe",
+    "listener",
+    "unsubscribe",
+    "memory leak",
+    "store",
+    "cleanup function"
+   ],
+   "questions": [
+    "How do you register a listener in a store?",
+    "Why should subscribe return an unsubscribe function?",
+    "What causes memory leaks with subscriptions?"
+   ]
+  },
+  "state-management-2-1-1": {
+   "text_sha": "4b77cccff33b81f8",
+   "summary": "Listeners receive both the new and previous state as arguments, enabling them to compare and skip work if relevant parts of the state haven't changed.",
+   "keywords": [
+    "listener arguments",
+    "new state",
+    "previous state",
+    "state comparison",
+    "Zustand",
+    "skip work"
+   ],
+   "questions": [
+    "What arguments does a listener receive when notified?",
+    "Why pass both new and previous state to listeners?",
+    "How can listeners optimize updates based on state changes?"
+   ]
+  },
+  "state-management-2-1-2": {
+   "text_sha": "b297a9ed7932b4ad",
+   "summary": "To avoid unpredictable behavior when listeners modify subscriptions during notification, copy the listeners set before iterating to freeze the notification round.",
+   "keywords": [
+    "Set iteration",
+    "listeners",
+    "subscribe during iteration",
+    "unsubscribe during iteration",
+    "copy listeners",
+    "notification round"
+   ],
+   "questions": [
+    "What happens if a listener subscribes or unsubscribes during notification?",
+    "Why should you copy the listeners set before notifying?",
+    "How does copying listeners prevent unexpected behavior?"
+   ]
+  },
+  "state-management-2-1-3": {
+   "text_sha": "eb7a62e471007ced",
+   "summary": "If a listener throws an error during notification, subsequent listeners won't be called; production code might catch errors per listener to avoid this issue.",
+   "keywords": [
+    "listener error",
+    "forEach",
+    "error handling",
+    "notification",
+    "production code",
+    "analytics plugin"
+   ],
+   "questions": [
+    "What happens if a listener throws an error during notification?",
+    "Why might you want to catch errors per listener in production?",
+    "How can a failing listener affect other listeners?"
+   ]
+  },
+  "state-management-2-1-4": {
+   "text_sha": "f99853bc49548a13",
+   "summary": "The subscription contract involves registering listeners, receiving new and previous state on updates, and unregistering via the returned function, demonstrated with multiple listeners firing on state changes.",
+   "keywords": [
+    "subscription contract",
+    "register listener",
+    "unregister listener",
+    "setState",
+    "multiple listeners",
+    "state updates"
+   ],
+   "questions": [
+    "What is the full contract of subscriptions in a store?",
+    "How do multiple listeners behave when state changes?",
+    "Why is returning a function from subscribe important?"
+   ]
+  },
+  "state-management-2-2-0": {
+   "text_sha": "8c1ca8f16bc6611f",
+   "summary": "getState returns the current state object directly, while setState supports partial updates or updater functions to merge changes without stale reads.",
+   "keywords": [
+    "getState",
+    "setState",
+    "partial object update",
+    "updater function",
+    "state merge",
+    "stale reads"
+   ],
+   "questions": [
+    "What does getState return?",
+    "How can setState be called to update state?",
+    "Why use an updater function in setState?"
+   ]
+  },
+  "state-management-2-2-1": {
+   "text_sha": "10da8268f70fd36d",
+   "summary": "setState checks if the update is a function or object, merges changes immutably with Object.assign, skips if no change, and notifies listeners with new and previous state.",
+   "keywords": [
+    "setState",
+    "Object.assign",
+    "immutable update",
+    "listeners",
+    "state updater function",
+    "state comparison"
+   ],
+   "questions": [
+    "How does setState handle function vs object updates?",
+    "What happens if the new state equals the old state?",
+    "How are listeners notified after state changes?"
+   ]
+  },
+  "state-management-2-2-2": {
+   "text_sha": "37d5611dce8a2f72",
+   "summary": "Creating a new state object on updates preserves immutability, enabling features like undo, but the merge is shallow so nested objects are fully replaced.",
+   "keywords": [
+    "immutability",
+    "Object.assign",
+    "shallow merge",
+    "undo",
+    "state snapshot",
+    "nested state update"
+   ],
+   "questions": [
+    "Why create a new state object on updates?",
+    "What does shallow merge mean in setState?",
+    "How does immutability help with undo functionality?"
+   ]
+  },
+  "state-management-2-2-3": {
+   "text_sha": "63d76a7682d3ec14",
+   "summary": "When updating arrays in state, create new arrays (e.g., with spread) instead of mutating to keep previous state intact and enable proper change detection.",
+   "keywords": [
+    "subscribe",
+    "state update",
+    "array immutability",
+    "spread operator",
+    "state mutation",
+    "change detection"
+   ],
+   "questions": [
+    "How to update arrays in state without mutation?",
+    "Why avoid pushing directly to state arrays?",
+    "How does subscribe detect changes in state?"
+   ]
+  },
+  "state-management-2-2-4": {
+   "text_sha": "7972d43f440546a5",
+   "summary": "Adding store.mutate(fn) wraps a copied state in a reactive proxy to allow natural mutations, committing changes via setState, similar to Immer but simpler.",
+   "keywords": [
+    "store.mutate",
+    "reactive proxy",
+    "Immer",
+    "state copy",
+    "proxy mutation",
+    "commit changes"
+   ],
+   "questions": [
+    "What does store.mutate(fn) do?",
+    "How does the reactive proxy enable natural state mutations?",
+    "How is the mutated state committed back?"
+   ]
+  },
+  "state-management-3-0-0": {
+   "text_sha": "99f5b7a1dfd28819",
+   "summary": "Derived state like 'total' is not independent but calculated from other state like 'items', and storing it directly can cause bugs.",
+   "keywords": [
+    "derived state",
+    "total",
+    "items",
+    "state management",
+    "bugs"
+   ],
+   "questions": [
+    "What is derived state in state management?",
+    "Why is storing derived state like 'total' problematic?",
+    "How is 'total' related to 'items' in a store?"
+   ]
+  },
+  "state-management-3-0-1": {
+   "text_sha": "864799f3a0a81f86",
+   "summary": "Manually updating derived state like 'total' in every state-changing function leads to bugs when updates are missed or inconsistent.",
+   "keywords": [
+    "addItem",
+    "removeItem",
+    "derived state bugs",
+    "state update",
+    "cart total",
+    "state consistency"
+   ],
+   "questions": [
+    "What problems arise from manually updating derived state in multiple functions?",
+    "Why can the cart total display inconsistent values?",
+    "How does forgetting to update derived state cause bugs?"
+   ]
+  },
+  "state-management-3-0-2": {
+   "text_sha": "67b49659779a58f4",
+   "summary": "A simple fix is to compute derived state on demand with a selector function like 'getTotal', avoiding stale data but possibly causing performance issues.",
+   "keywords": [
+    "selector function",
+    "getTotal",
+    "derived state computation",
+    "Redux selectors",
+    "performance"
+   ],
+   "questions": [
+    "How does computing derived state on demand solve stale data issues?",
+    "What is a selector function in Redux?",
+    "When might computing derived state on demand become inefficient?"
+   ]
+  },
+  "state-management-3-0-3": {
+   "text_sha": "d2adcc56450c5510",
+   "summary": "Expensive derived computations called repeatedly cause performance issues and reference inequality; memoization with automatic dependency tracking is needed.",
+   "keywords": [
+    "memoization",
+    "derived state",
+    "performance",
+    "reference equality",
+    "groupedByCategory",
+    "automatic dependencies"
+   ],
+   "questions": [
+    "Why do repeated derived computations hurt performance?",
+    "What problem arises from returning new objects on each derived computation?",
+    "What is memoization and how can it help with derived state?"
+   ]
+  },
+  "state-management-3-0-4": {
+   "text_sha": "df126e28ce0a09bd",
+   "summary": "A 'computed' function caches results, tracks dependencies automatically via Proxy get traps, invalidates cache on changes, and recomputes lazily on demand.",
+   "keywords": [
+    "computed",
+    "cache",
+    "Proxy get trap",
+    "dependency tracking",
+    "lazy recomputation",
+    "memoization"
+   ],
+   "questions": [
+    "What are the key features of a 'computed' function for derived state?",
+    "How does Proxy get trap help track dependencies automatically?",
+    "Why is lazy recomputation important in computed state?"
+   ]
+  },
+  "state-management-3-0-5": {
+   "text_sha": "ed9b0d7139f08030",
+   "summary": "Recomputing derived state only when relevant inputs change and when the result is read avoids wasted work; tracking reads is essential for this.",
+   "keywords": [
+    "recompute",
+    "cache invalidation",
+    "input tracking",
+    "lazy evaluation",
+    "WeakMap",
+    "derived state"
+   ],
+   "questions": [
+    "Why can't we cache a derived value forever without recomputing?",
+    "Why not recompute derived state on every state change?",
+    "How can tracking reads help optimize derived state recomputation?"
+   ]
+  },
+  "state-management-3-1-0": {
+   "text_sha": "20d7885a731e5b05",
+   "summary": "Dependency tracking records properties read during a getter's execution using track(target, key) and trigger(target, key) functions to manage reactive updates.",
+   "keywords": [
+    "dependency tracking",
+    "getter",
+    "track",
+    "trigger",
+    "reactive.js",
+    "get trap",
+    "computed properties"
+   ],
+   "questions": [
+    "What is dependency tracking in reactive state management?",
+    "How do track and trigger functions work in dependency tracking?",
+    "Where is dependency information stored for reactive properties?"
+   ]
+  },
+  "state-management-3-1-1": {
+   "text_sha": "a88f3afc9c3c5bae",
+   "summary": "Dependency data is stored in a three-level nested structure: a WeakMap from target objects to Maps of property keys to Sets of dependent effect functions.",
+   "keywords": [
+    "WeakMap",
+    "Map",
+    "Set",
+    "dependency storage",
+    "targetMap",
+    "effects",
+    "garbage collection"
+   ],
+   "questions": [
+    "How is dependency information structured in reactive state management?",
+    "Why use a WeakMap for storing dependencies?",
+    "What is the role of Sets in tracking effects?"
+   ]
+  },
+  "state-management-3-1-2": {
+   "text_sha": "5ae8fe862e16fc54",
+   "summary": "The track function records the currently active effect as dependent on a target's property by updating the nested targetMap structure during property reads.",
+   "keywords": [
+    "track function",
+    "activeEffect",
+    "targetMap",
+    "dependency recording",
+    "property reads",
+    "reactive tracking"
+   ],
+   "questions": [
+    "How does the track function record dependencies?",
+    "What is activeEffect and how is it used in tracking?",
+    "What happens if no effect is currently active during a property read?"
+   ]
+  },
+  "state-management-3-1-3": {
+   "text_sha": "188b1925eee82401",
+   "summary": "The trigger function looks up and runs all effects dependent on a changed property, and is called in the set trap after a successful property update.",
+   "keywords": [
+    "trigger function",
+    "dependency triggering",
+    "effects",
+    "set trap",
+    "reactive updates",
+    "effect.run"
+   ],
+   "questions": [
+    "How does the trigger function notify dependent effects?",
+    "When is trigger called in the reactive proxy lifecycle?",
+    "Why copy the set of effects before running them?"
+   ]
+  },
+  "state-management-3-1-4": {
+   "text_sha": "26f528960ac800e1",
+   "summary": "An effect function runs a given function while setting activeEffect to enable automatic dependency tracking, demonstrated with reactive state logging updates.",
+   "keywords": [
+    "effect function",
+    "activeEffect",
+    "automatic dependency tracking",
+    "reactive state",
+    "logging updates"
+   ],
+   "questions": [
+    "What does the effect function do in dependency tracking?",
+    "How does activeEffect enable automatic tracking?",
+    "How does changing reactive state trigger logged updates?"
+   ]
+  },
+  "state-management-3-1-5": {
+   "text_sha": "244644e1281abed7",
+   "summary": "To support nested effects, activeEffect is saved and restored during effect runs, preventing overwriting and enabling correct nested dependency tracking.",
+   "keywords": [
+    "nested effects",
+    "activeEffect stack",
+    "effect nesting",
+    "dependency tracking fix",
+    "save and restore activeEffect"
+   ],
+   "questions": [
+    "Why is a single activeEffect variable problematic for nested effects?",
+    "How can activeEffect be managed to support nested effects?",
+    "What is the simplest fix to handle nested effect tracking?"
+   ]
+  },
+  "state-management-3-2-0": {
+   "text_sha": "e6b2a9813c12afca",
+   "summary": "Computed values should be lazy, marking themselves dirty on dependency changes and only recomputing when their value is accessed, avoiding unnecessary eager recalculations.",
+   "keywords": [
+    "computed",
+    "lazy evaluation",
+    "dirty flag",
+    "getter",
+    "cache",
+    "recompute"
+   ],
+   "questions": [
+    "Why should computed values be lazy instead of eager?",
+    "What does marking a computed value as dirty mean?",
+    "When does the computed getter actually run?"
+   ]
+  },
+  "state-management-3-2-1": {
+   "text_sha": "081c5930e2f08a65",
+   "summary": "The computed function returns an object with a getter property 'value' that caches the computed result and tracks a dirty boolean to control when recomputation happens.",
+   "keywords": [
+    "computed function",
+    "getter syntax",
+    "value property",
+    "dirty flag",
+    "cache"
+   ],
+   "questions": [
+    "How does the computed function use a getter to expose its value?",
+    "What state variables are needed inside computed to manage caching?",
+    "Why is the dirty flag initially set to true?"
+   ]
+  },
+  "state-management-3-2-2": {
+   "text_sha": "de10e21bfbc1025b",
+   "summary": "Inside the computed value getter, if dirty, the getter runs with dependency tracking and a scheduler to mark dirty instead of immediate rerun, enabling lazy recomputation.",
+   "keywords": [
+    "value getter",
+    "runWithTracking",
+    "markDirty",
+    "effect scheduler",
+    "dependency tracking"
+   ],
+   "questions": [
+    "What happens inside the computed value getter when dirty is true?",
+    "How does the scheduler option in effect change recomputation behavior?",
+    "Why use a scheduler to mark dirty instead of rerunning immediately?"
+   ]
+  },
+  "state-management-3-2-3": {
+   "text_sha": "92c24c7f654268d4",
+   "summary": "The computed effect uses a scheduler that sets dirty to true and triggers dependents when dependencies change, enabling nested computed values to update correctly.",
+   "keywords": [
+    "computed effect",
+    "scheduler",
+    "dirty flag",
+    "trigger",
+    "nested computed",
+    "targetMap"
+   ],
+   "questions": [
+    "What does the scheduler function do when a dependency changes?",
+    "How are dependents of a computed value notified of changes?",
+    "How does this approach support computed values depending on other computed values?"
+   ]
+  },
+  "state-management-3-2-4": {
+   "text_sha": "d9953eb90d5d900a",
+   "summary": "Demonstration shows computed is lazy: it only logs and recomputes when .value is accessed, caches results, and marks dirty on dependency changes without immediate recomputation.",
+   "keywords": [
+    "reactive",
+    "computed",
+    "lazy evaluation",
+    "cache",
+    "dirty flag",
+    "recompute",
+    "example"
+   ],
+   "questions": [
+    "How does the computed value behave when accessed multiple times without changes?",
+    "What happens when a reactive dependency changes but the computed value is not accessed?",
+    "How many times does the computed getter run per change?"
+   ]
+  },
+  "state-management-3-2-5": {
+   "text_sha": "a451308ed49b888d",
+   "summary": "Current computed implementation doesn't clean up stale dependencies, which can cause inefficiency, and it's not yet integrated with the store; key terms to understand are track, trigger, and dirty.",
+   "keywords": [
+    "stale dependencies",
+    "dependency cleanup",
+    "track",
+    "trigger",
+    "dirty",
+    "store integration"
+   ],
+   "questions": [
+    "What is a limitation of this computed implementation regarding dependencies?",
+    "Why is cleaning up stale dependencies important?",
+    "What are the roles of track, trigger, and dirty in computed values?"
+   ]
+  },
+  "state-management-4-0-0": {
+   "text_sha": "dfad05dc0344780b",
+   "summary": "Define explicit named actions instead of calling setState directly to make state mutations easier to track and debug, following Zustand's convention.",
+   "keywords": [
+    "setState",
+    "actions",
+    "Zustand",
+    "state mutations",
+    "Redux",
+    "store"
+   ],
+   "questions": [
+    "Why should state mutations be made explicit and named?",
+    "How does Zustand handle state changes compared to Redux?",
+    "What is the problem with calling setState directly everywhere?"
+   ]
+  },
+  "state-management-4-0-1": {
+   "text_sha": "f4c8ad3058ce7f55",
+   "summary": "Create a store with initial state and actions by passing a function that receives set and get, defining named action functions like addItem and removeItem.",
+   "keywords": [
+    "createStore",
+    "actions",
+    "set",
+    "get",
+    "addItem",
+    "removeItem",
+    "clear",
+    "state management"
+   ],
+   "questions": [
+    "How do you define actions when creating a store?",
+    "What arguments does the createStore function take?",
+    "How are actions structured in the store?"
+   ]
+  },
+  "state-management-4-0-2": {
+   "text_sha": "183a72921156ec7f",
+   "summary": "Inside createStore, generate actions by calling createActions with setState and getState, enabling usage like cart.actions.addItem without circular references.",
+   "keywords": [
+    "createStore",
+    "createActions",
+    "setState",
+    "getState",
+    "actions",
+    "circular reference"
+   ],
+   "questions": [
+    "How are actions created inside createStore?",
+    "Why does passing set and get avoid circular references?",
+    "How do you call an action on the store?"
+   ]
+  },
+  "state-management-4-0-3": {
+   "text_sha": "1c9669ddf0a02372",
+   "summary": "Make mutations explicit by adding a label string to set calls, enabling listeners and devtools to track and log named actions for better traceability.",
+   "keywords": [
+    "set",
+    "mutation label",
+    "listener",
+    "actionName",
+    "logger plugin",
+    "time-travel devtools",
+    "traceability"
+   ],
+   "questions": [
+    "How can you label state mutations for better debugging?",
+    "What is the purpose of passing a label to set?",
+    "How do devtools use mutation labels?"
+   ]
+  },
+  "state-management-4-0-4": {
+   "text_sha": "bdcce47b26f295c8",
+   "summary": "Use actions as the single place to validate state changes, throwing errors or no-oping to prevent invalid or unnecessary updates and avoid unwanted re-renders.",
+   "keywords": [
+    "validation",
+    "actions",
+    "no-op",
+    "state update",
+    "error handling",
+    "re-render"
+   ],
+   "questions": [
+    "Where should validation of state changes happen?",
+    "What happens if an action returns early without calling set?",
+    "How can actions prevent unnecessary re-renders?"
+   ]
+  },
+  "state-management-4-0-5": {
+   "text_sha": "82e6d179fcf8e7d9",
+   "summary": "State is read via getState and changed only through actions calling set; direct setState calls are possible but discouraged by convention and tooling.",
+   "keywords": [
+    "getState",
+    "actions",
+    "set",
+    "setState",
+    "state management discipline",
+    "convention",
+    "tooling"
+   ],
+   "questions": [
+    "How should state be read and mutated in this pattern?",
+    "Can developers call setState directly?",
+    "What enforces the discipline of using actions for mutations?"
+   ]
+  },
+  "state-management-4-1-0": {
+   "text_sha": "5971abed63a73ddb",
+   "summary": "Optimistic updates improve UI responsiveness by immediately updating state before server confirmation, with later reconciliation if the server response differs.",
+   "keywords": [
+    "optimistic updates",
+    "state management",
+    "UI responsiveness",
+    "server request",
+    "reconciliation"
+   ],
+   "questions": [
+    "What are optimistic updates in state management?",
+    "Why do optimistic updates make apps feel faster?",
+    "What is the trade-off when using optimistic updates?"
+   ]
+  },
+  "state-management-4-1-1": {
+   "text_sha": "b2f91876542b964e",
+   "summary": "A fake server function simulates delayed and sometimes failing requests to test async actions, which can be implemented as plain async functions in the action factory.",
+   "keywords": [
+    "fake server",
+    "saveItem",
+    "async actions",
+    "Promise",
+    "action factory",
+    "setTimeout",
+    "error handling"
+   ],
+   "questions": [
+    "How can I simulate server delay and failure for testing?",
+    "How do you write an async action in a plain function style?",
+    "What does the fake saveItem function do?"
+   ]
+  },
+  "state-management-4-1-2": {
+   "text_sha": "0394ec586c040b28",
+   "summary": "Optimistic async action adds a temporary pending item immediately, then replaces it with the saved server response once available, improving perceived responsiveness.",
+   "keywords": [
+    "optimistic async action",
+    "pending item",
+    "state update",
+    "await",
+    "server response",
+    "item replacement"
+   ],
+   "questions": [
+    "How do you implement an optimistic update in an async action?",
+    "What is the purpose of the pending flag in optimistic updates?",
+    "How do you replace a temporary item with the server response?"
+   ]
+  },
+  "state-management-4-1-3": {
+   "text_sha": "365f35e1edeedd67",
+   "summary": "Comparing temporary items by reference ensures correct replacement in optimistic updates; using client-generated IDs like crypto.randomUUID() helps handle duplicates safely.",
+   "keywords": [
+    "reference equality",
+    "temporary item",
+    "client-generated id",
+    "crypto.randomUUID",
+    "optimistic update",
+    "pending flag",
+    "derived state"
+   ],
+   "questions": [
+    "Why compare temporary items by reference in optimistic updates?",
+    "How can client-generated IDs prevent replacing the wrong item?",
+    "What is the role of the pending flag in the UI?"
+   ]
+  },
+  "state-management-4-1-4": {
+   "text_sha": "69fe4b7e1ebdeaad",
+   "summary": "Race conditions occur when multiple requests overlap and responses arrive out of order; using a request counter sequence number helps ignore outdated responses.",
+   "keywords": [
+    "race condition",
+    "request counter",
+    "sequence number",
+    "async requests",
+    "out of order responses",
+    "state overwrite"
+   ],
+   "questions": [
+    "What is a race condition in async state updates?",
+    "How can a request counter prevent stale responses from overwriting state?",
+    "Why might older responses overwrite newer state updates?"
+   ]
+  },
+  "state-management-4-1-5": {
+   "text_sha": "8bb61045587e3e32",
+   "summary": "Currently, failed optimistic updates leave ghost items in state; rollback logic is needed to remove these when server requests fail.",
+   "keywords": [
+    "rollback",
+    "failed optimistic update",
+    "ghost item",
+    "promise rejection",
+    "error handling",
+    "state cleanup"
+   ],
+   "questions": [
+    "What happens when an optimistic update fails without rollback?",
+    "Why do ghost items remain after a failed server request?",
+    "How can rollback fix stuck temporary items?"
+   ]
+  },
+  "state-management-4-2-0": {
+   "text_sha": "34bc8ac73d37941a",
+   "summary": "Rollback restores state after a failed optimistic update using snapshot rollback or inverse rollback strategies depending on concurrent state changes.",
+   "keywords": [
+    "rollback",
+    "optimistic update",
+    "snapshot rollback",
+    "inverse rollback",
+    "state management",
+    "failed request"
+   ],
+   "questions": [
+    "What does rollback mean in state management?",
+    "What are the common strategies for rollback after a failed optimistic update?",
+    "When should snapshot rollback or inverse rollback be used?"
+   ]
+  },
+  "state-management-4-2-1": {
+   "text_sha": "6bad4c5084622926",
+   "summary": "Snapshot rollback saves previous state before optimistic update and restores it on failure, demonstrated with an async addItemAsync function including action labels.",
+   "keywords": [
+    "snapshot rollback",
+    "optimistic update",
+    "async actions",
+    "addItemAsync",
+    "action labels",
+    "state snapshot"
+   ],
+   "questions": [
+    "How does snapshot rollback work in an async action?",
+    "What is the purpose of action labels in optimistic updates?",
+    "How do you implement snapshot rollback in code?"
+   ]
+  },
+  "state-management-4-2-2": {
+   "text_sha": "40e2edf8eb648b34",
+   "summary": "Snapshot rollback can cause data loss if other changes occur during a request; inverse rollback is safer for rapidly changing state like a shopping cart.",
+   "keywords": [
+    "snapshot rollback",
+    "data loss",
+    "inverse rollback",
+    "optimistic update bugs",
+    "concurrent state changes",
+    "shopping cart"
+   ],
+   "questions": [
+    "Why is snapshot rollback dangerous in rapidly changing state?",
+    "What problem occurs if multiple items are added during a snapshot rollback?",
+    "When is inverse rollback preferred over snapshot rollback?"
+   ]
+  },
+  "state-management-4-2-3": {
+   "text_sha": "896a88520fa8a158",
+   "summary": "Inverse rollback undoes only the optimistic change by removing the temp item, preserving other changes, and can be formalized as an undo function for each action.",
+   "keywords": [
+    "inverse rollback",
+    "undo function",
+    "optimistic update",
+    "state preservation",
+    "rollback implementation"
+   ],
+   "questions": [
+    "How does inverse rollback differ from snapshot rollback?",
+    "How do you implement inverse rollback for adding and removing items?",
+    "What is the benefit of returning an undo function from optimistic actions?"
+   ]
+  },
+  "state-management-4-2-4": {
+   "text_sha": "b9ddb361eea62cfc",
+   "summary": "The optimistic helper function abstracts optimistic updates by applying changes, running requests, and undoing on failure, while rethrowing errors for UI handling.",
+   "keywords": [
+    "optimistic helper",
+    "async optimistic update",
+    "undo function",
+    "error rethrowing",
+    "state rollback abstraction"
+   ],
+   "questions": [
+    "What inputs does the optimistic helper function take?",
+    "How does the optimistic helper manage applying and undoing changes?",
+    "Why is it important to rethrow errors after rollback?"
+   ]
+  },
+  "state-management-4-2-5": {
+   "text_sha": "96b408f67baed3a2",
+   "summary": "Chapter recap: actions call set, async actions are async functions, optimistic updates mark pending changes, inverse rollback is preferred, and rollback rethrows errors for UI feedback.",
+   "keywords": [
+    "actions",
+    "async actions",
+    "optimistic updates",
+    "inverse rollback",
+    "error handling",
+    "state management recap"
+   ],
+   "questions": [
+    "What are the key points about actions and async actions?",
+    "Why is inverse rollback usually preferred over snapshot rollback?",
+    "What should rollback do besides restoring state?"
+   ]
+  },
+  "state-management-5-0-0": {
+   "text_sha": "72317db3b1d09a7c",
+   "summary": "Middleware wraps setState to add behaviors like logging or persistence without complicating setState itself.",
+   "keywords": [
+    "middleware",
+    "setState",
+    "logging",
+    "localStorage",
+    "analytics",
+    "validation",
+    "Express middleware",
+    "Redux middleware"
+   ],
+   "questions": [
+    "What is middleware in state management?",
+    "Why not add logging or persistence directly inside setState?",
+    "How does middleware help manage side effects in a store?"
+   ]
+  },
+  "state-management-5-0-1": {
+   "text_sha": "615b4fdd60289848",
+   "summary": "Middleware is a function that takes the next setState and returns a new setState with the same signature, enabling stacking and transparency.",
+   "keywords": [
+    "middleware signature",
+    "setState",
+    "function wrapping",
+    "higher-order function",
+    "middleware chaining"
+   ],
+   "questions": [
+    "What is the function signature of middleware in this state management library?",
+    "How does middleware maintain the same interface as setState?",
+    "Why is it important that middleware looks like setState?"
+   ]
+  },
+  "state-management-5-0-2": {
+   "text_sha": "a2ee96346df59337",
+   "summary": "Middlewares are composed by reversing their order and wrapping raw setState so the first middleware runs first, preserving intuitive execution order.",
+   "keywords": [
+    "middleware composition",
+    "createStore",
+    "dispatch",
+    "reverse order",
+    "function wrapping",
+    "middleware chain"
+   ],
+   "questions": [
+    "How are multiple middlewares composed in this library?",
+    "Why are middlewares applied in reverse order?",
+    "How does the composed dispatch replace raw setState?"
+   ]
+  },
+  "state-management-5-0-3": {
+   "text_sha": "0b52937f3988f223",
+   "summary": "A simple timestamp middleware logs before and after setState, showing that code after next runs after listeners are notified.",
+   "keywords": [
+    "timestamp middleware",
+    "logging middleware",
+    "next function",
+    "listeners notification",
+    "middleware ordering"
+   ],
+   "questions": [
+    "How does a middleware log before and after a state update?",
+    "When do listeners get notified in relation to middleware execution?",
+    "What guarantees the order of middleware and listener notifications?"
+   ]
+  },
+  "state-management-5-0-4": {
+   "text_sha": "92d18823ab478ae4",
+   "summary": "Middleware can block updates by not calling next or transform updates by modifying partials; function-form partials require reading getState after next.",
+   "keywords": [
+    "middleware blocking",
+    "middleware transforming",
+    "partial updates",
+    "function-form partials",
+    "getState",
+    "validation middleware"
+   ],
+   "questions": [
+    "How can middleware block a state update?",
+    "How does middleware transform updates before passing them on?",
+    "Why do middlewares read getState after calling next with function-form partials?"
+   ]
+  },
+  "state-management-5-0-5": {
+   "text_sha": "4111f6bbedc33e73",
+   "summary": "Unlike Redux's three-level middleware, this library uses two-level middleware with plugin factories accepting config and returning middleware functions.",
+   "keywords": [
+    "Redux middleware",
+    "middleware factory",
+    "plugin configuration",
+    "closures",
+    "two-level middleware"
+   ],
+   "questions": [
+    "How does this middleware pattern differ from Redux's middleware?",
+    "What is the role of a plugin factory in this middleware system?",
+    "How do plugins accept configuration in this middleware design?"
+   ]
+  },
+  "state-management-5-1-0": {
+   "text_sha": "0c89410cbf04801a",
+   "summary": "Introduces building a logger plugin that logs action labels, previous and next state, and timing by accessing getState in middleware.",
+   "keywords": [
+    "logger plugin",
+    "middleware",
+    "getState",
+    "state change logging",
+    "Redux Logger",
+    "setState wrapper"
+   ],
+   "questions": [
+    "What information does the logger plugin output for each state change?",
+    "Why does the logger middleware need access to getState?",
+    "What challenge does middleware wrapping setState present for logging?"
+   ]
+  },
+  "state-management-5-1-1": {
+   "text_sha": "53d2cf8671bbda24",
+   "summary": "Defines the logger middleware factory with a simplified contract where middleware receives (next, api) and api includes getState.",
+   "keywords": [
+    "middleware factory",
+    "logger",
+    "getState",
+    "next function",
+    "middleware API",
+    "createStore composition"
+   ],
+   "questions": [
+    "How is the logger middleware factory structured in terms of function layers?",
+    "What change simplifies the middleware contract for accessing getState?",
+    "How does createStore compose middleware with getState in the API?"
+   ]
+  },
+  "state-management-5-1-2": {
+   "text_sha": "f079bc136b260b66",
+   "summary": "Implements logger internals capturing previous state, timing with performance.now, calling next, then logging grouped console output with prev and next state.",
+   "keywords": [
+    "performance.now",
+    "console.groupCollapsed",
+    "logger implementation",
+    "prev state",
+    "next state",
+    "timing logs"
+   ],
+   "questions": [
+    "How does the logger measure the time taken for a state update?",
+    "What console methods are used to group and display log output?",
+    "Why use performance.now instead of Date.now for timing?"
+   ]
+  },
+  "state-management-5-1-3": {
+   "text_sha": "61ebad68c918d389",
+   "summary": "Shows usage of logger middleware in createStore and how async actions produce sequential collapsible console groups telling a state update story.",
+   "keywords": [
+    "createStore",
+    "logger usage",
+    "async actions",
+    "console groups",
+    "state update story",
+    "rollback logging"
+   ],
+   "questions": [
+    "How do async actions appear in the logger's console output?",
+    "What does expanding a console group for an action reveal?",
+    "Why is labeling actions important for understanding async state changes?"
+   ]
+  },
+  "state-management-5-1-4": {
+   "text_sha": "ce4c02cdbbcfe54f",
+   "summary": "Adds production-ready options to logger: collapsed groups, filtering noisy actions, and diffing changed keys with early return to skip logging.",
+   "keywords": [
+    "logger options",
+    "collapsed",
+    "filter function",
+    "diff option",
+    "early return",
+    "middleware next call"
+   ],
+   "questions": [
+    "How can the logger filter out noisy actions?",
+    "What does the diff option do in the logger?",
+    "Why must middleware always call next even when skipping logging?"
+   ]
+  },
+  "state-management-5-1-5": {
+   "text_sha": "b51f1574b148f5ef",
+   "summary": "Guards logger in production by enabling it only when NODE_ENV is not 'production', returning an identity middleware to avoid overhead.",
+   "keywords": [
+    "production guard",
+    "NODE_ENV",
+    "enabled option",
+    "identity middleware",
+    "logger overhead",
+    "middleware design"
+   ],
+   "questions": [
+    "How does the logger avoid logging in production environments?",
+    "What is the identity middleware and why is it useful?",
+    "Why is it important to disable logging in production?"
+   ]
+  },
+  "state-management-5-2-0": {
+   "text_sha": "f0c412a0336f2fe3",
+   "summary": "Introduce a persistence plugin that saves and restores state from localStorage to prevent data loss on page refresh by hydrating and saving state.",
+   "keywords": [
+    "persistence plugin",
+    "localStorage",
+    "hydrate",
+    "save",
+    "state management",
+    "refresh persistence"
+   ],
+   "questions": [
+    "What is the purpose of a persistence plugin in state management?",
+    "How does hydration differ from saving in persistence?",
+    "Why is hydration tricky before the store or middleware exists?"
+   ]
+  },
+  "state-management-5-2-1": {
+   "text_sha": "5255628f49066a3b",
+   "summary": "Design the persist plugin as an object with hydrate and middleware functions, allowing it to wrap initial state and integrate with createStore for hydration and middleware composition.",
+   "keywords": [
+    "persist function",
+    "hydrate function",
+    "middleware",
+    "createStore",
+    "plugin design",
+    "state wrapping"
+   ],
+   "questions": [
+    "How can a persistence plugin influence the initial state?",
+    "What parts can a plugin object have in this design?",
+    "How does createStore use the hydrate function of a plugin?"
+   ]
+  },
+  "state-management-5-2-2": {
+   "text_sha": "7ed8e4a00cfb19a5",
+   "summary": "Implement hydrate to safely read and merge saved state from localStorage with initial state, handling errors and preserving new default fields via object spread.",
+   "keywords": [
+    "hydrate implementation",
+    "localStorage getItem",
+    "JSON.parse",
+    "error handling",
+    "state merging",
+    "default fields"
+   ],
+   "questions": [
+    "How does hydrate handle corrupted or missing localStorage data?",
+    "Why merge saved state over initial state instead of replacing it?",
+    "What errors can occur when reading from localStorage?"
+   ]
+  },
+  "state-management-5-2-3": {
+   "text_sha": "6a54828db297dde6",
+   "summary": "Create saving middleware that writes updated state to localStorage after notifying subscribers, using try-catch to handle quota errors and avoiding function serialization issues.",
+   "keywords": [
+    "saving middleware",
+    "localStorage setItem",
+    "try-catch",
+    "JSON.stringify",
+    "state serialization",
+    "middleware next"
+   ],
+   "questions": [
+    "When does the saving middleware write to localStorage?",
+    "Why is try-catch used when saving state?",
+    "Why don't functions in actions get saved to localStorage?"
+   ]
+  },
+  "state-management-5-2-4": {
+   "text_sha": "d4d34de7e62e43a9",
+   "summary": "Improve persistence performance by debouncing writes to localStorage and adding a partialize option to selectively save state fields, avoiding saving transient data.",
+   "keywords": [
+    "debouncing",
+    "localStorage performance",
+    "partialize option",
+    "selective persistence",
+    "transient state",
+    "delay"
+   ],
+   "questions": [
+    "Why is debouncing necessary when saving state to localStorage?",
+    "What does the partialize option do in persistence?",
+    "Why avoid persisting transient state like pending flags?"
+   ]
+  },
+  "state-management-5-2-5": {
+   "text_sha": "15a223b3f5b055be",
+   "summary": "Mention advanced persistence concerns: versioning with migrations to handle state shape changes, and cross-tab synchronization using the browser's storage event.",
+   "keywords": [
+    "versioning",
+    "state migration",
+    "cross-tab sync",
+    "storage event",
+    "localStorage",
+    "state consistency"
+   ],
+   "questions": [
+    "How can versioning help with persisted state updates?",
+    "What is cross-tab synchronization and how is it implemented?",
+    "Why are migrations important for persisted state?"
+   ]
+  },
+  "state-management-6-0-0": {
+   "text_sha": "5ef9af7456c4e30b",
+   "summary": "Time-travel debugging works by keeping references to immutable state snapshots created with Object.assign, allowing restoring past states without special proxies.",
+   "keywords": [
+    "time-travel debugging",
+    "setState",
+    "Object.assign",
+    "immutable state",
+    "state snapshots",
+    "state history"
+   ],
+   "questions": [
+    "How does time-travel debugging use immutable state snapshots?",
+    "Why does setState create new objects instead of mutating old ones?",
+    "What enables restoring old states in time-travel debugging?"
+   ]
+  },
+  "state-management-6-0-1": {
+   "text_sha": "c49f27ead594524a",
+   "summary": "Structural sharing means new state objects share unchanged parts by reference, making storing many snapshots memory-efficient despite copying state on each change.",
+   "keywords": [
+    "structural sharing",
+    "immutable state",
+    "memory efficiency",
+    "state snapshots",
+    "spread operator",
+    "state copying"
+   ],
+   "questions": [
+    "What is structural sharing in state management?",
+    "Why is copying state on every change not expensive?",
+    "How does structural sharing reduce memory usage for snapshots?"
+   ]
+  },
+  "state-management-6-0-2": {
+   "text_sha": "5f749bf3c01b906b",
+   "summary": "A history structure with past, present, and future arrays simplifies undo and redo operations by moving states between these arrays accordingly.",
+   "keywords": [
+    "history data structure",
+    "undo",
+    "redo",
+    "past array",
+    "present state",
+    "future array",
+    "state management"
+   ],
+   "questions": [
+    "What are the two common designs for storing state history?",
+    "How do past, present, and future arrays support undo and redo?",
+    "Why clear the future array after a new change?"
+   ]
+  },
+  "state-management-6-0-3": {
+   "text_sha": "1bc62506a1f3af76",
+   "summary": "Implementing history with a limit prevents unbounded memory growth; a travelling flag avoids recording state changes caused by restoring snapshots.",
+   "keywords": [
+    "history limit",
+    "memory management",
+    "past array",
+    "future array",
+    "travelling flag",
+    "state restoration"
+   ],
+   "questions": [
+    "Why is a limit needed for the history size?",
+    "What does the travelling flag do in state history?",
+    "How do you prevent restoring snapshots from creating new history entries?"
+   ]
+  },
+  "state-management-6-0-4": {
+   "text_sha": "d4b8ea7694db4dd5",
+   "summary": "History tracks changes by subscribing to store updates, saving previous states and action labels to identify each history entry's cause.",
+   "keywords": [
+    "store.subscribe",
+    "state changes",
+    "history tracking",
+    "action labels",
+    "previous state",
+    "state listener"
+   ],
+   "questions": [
+    "How does the history system learn about state changes?",
+    "What information is saved for each history entry?",
+    "Why are action labels important in history entries?"
+   ]
+  },
+  "state-management-6-0-5": {
+   "text_sha": "a3f0dcc854833239",
+   "summary": "Filtering unwanted changes from history and grouping rapid changes into one undo step are advanced features; currently, all labeled changes are recorded.",
+   "keywords": [
+    "history filter",
+    "undo grouping",
+    "optimistic update",
+    "pending flags",
+    "state history",
+    "undo complexity"
+   ],
+   "questions": [
+    "How can unwanted changes be excluded from history?",
+    "What is grouping in undo systems?",
+    "Why might some changes be skipped in history recording?"
+   ]
+  },
+  "state-management-6-1-0": {
+   "text_sha": "8d4845cd971000d0",
+   "summary": "Modify setState to optionally replace the entire state instead of merging, enabling correct state restoration for undo/redo in time-travel debugging.",
+   "keywords": [
+    "setState",
+    "replace argument",
+    "Object.assign",
+    "state restoration",
+    "time travel",
+    "undo",
+    "redo"
+   ],
+   "questions": [
+    "How can setState be modified to support full state replacement?",
+    "Why is replacing the whole state necessary for undo functionality?",
+    "What does the replace argument in setState do?"
+   ]
+  },
+  "state-management-6-1-1": {
+   "text_sha": "dc4fdbc4c7fdca04",
+   "summary": "Implement undo by popping the last past state, pushing current state to future, and restoring the past state with a travelling flag to suppress notifications.",
+   "keywords": [
+    "undo",
+    "past stack",
+    "future stack",
+    "setState",
+    "travelling flag",
+    "state restoration",
+    "history subscriber"
+   ],
+   "questions": [
+    "How does the undo function restore the previous state?",
+    "What is the purpose of the travelling flag during undo?",
+    "Why are listeners ignored during undo state restoration?"
+   ]
+  },
+  "state-management-6-1-2": {
+   "text_sha": "ccc4a52859138a82",
+   "summary": "Implement redo symmetrically to undo by swapping states between future and past stacks, with canUndo and canRedo functions to enable UI controls.",
+   "keywords": [
+    "redo",
+    "undo",
+    "past stack",
+    "future stack",
+    "canUndo",
+    "canRedo",
+    "state management"
+   ],
+   "questions": [
+    "How is redo implemented in relation to undo?",
+    "What do canUndo and canRedo functions check?",
+    "Why are undo and redo symmetric operations?"
+   ]
+  },
+  "state-management-6-1-3": {
+   "text_sha": "8454dbd3d06a521e",
+   "summary": "Demonstrate undo/redo in a cart example, showing how adding new actions clears the redo stack, matching standard editor behavior using immutable state.",
+   "keywords": [
+    "undo",
+    "redo",
+    "cart example",
+    "immutable state",
+    "future stack clearing",
+    "history management"
+   ],
+   "questions": [
+    "What happens to the redo stack when a new action is added after undo?",
+    "How does immutability simplify undo/redo implementation?",
+    "How does the cart example illustrate undo and redo functionality?"
+   ]
+  },
+  "state-management-6-1-4": {
+   "text_sha": "807f65e3ffe82eb5",
+   "summary": "Add jumpTo function to move state backward or forward by repeatedly calling undo or redo, returning an API including undo, redo, canUndo, canRedo, jumpTo, and entries.",
+   "keywords": [
+    "jumpTo",
+    "undo",
+    "redo",
+    "history API",
+    "state navigation",
+    "entries list",
+    "devtools panel"
+   ],
+   "questions": [
+    "How does jumpTo navigate through history states?",
+    "What does the history API return?",
+    "Why might jumpTo be inefficient for large jumps?"
+   ]
+  },
+  "state-management-6-1-5": {
+   "text_sha": "63903e06dc222e7c",
+   "summary": "Explain interaction between persistence middleware and history, emphasizing middleware order and graceful failure when undoing during async optimistic requests.",
+   "keywords": [
+    "persistence middleware",
+    "history",
+    "middleware order",
+    "async actions",
+    "optimistic requests",
+    "graceful failure"
+   ],
+   "questions": [
+    "How does persistence middleware interact with undo history?",
+    "Why does middleware order matter for persistence and history?",
+    "What happens if undo is called during an in-flight optimistic async request?"
+   ]
+  },
+  "state-management-6-2-0": {
+   "text_sha": "d3988c0f0daa6922",
+   "summary": "Redux DevTools extension exposes a global object window.__REDUX_DEVTOOLS_EXTENSION__ that apps connect to for sending and receiving messages, enabling time-travel debugging for any state container.",
+   "keywords": [
+    "Redux DevTools",
+    "window.__REDUX_DEVTOOLS_EXTENSION__",
+    "connect",
+    "time travel debugging",
+    "state container",
+    "Zustand devtools middleware"
+   ],
+   "questions": [
+    "How does Redux DevTools communicate with an app?",
+    "What global object does Redux DevTools add to the page?",
+    "Can Redux DevTools work with state containers other than Redux?"
+   ]
+  },
+  "state-management-6-2-1": {
+   "text_sha": "4675b13c337bd920",
+   "summary": "Create a devtools plugin that connects to Redux DevTools extension, guards against missing extension, names the store, and initializes the timeline with the store's current state.",
+   "keywords": [
+    "devtools plugin",
+    "connect",
+    "window.__REDUX_DEVTOOLS_EXTENSION__",
+    "conn.init",
+    "store name",
+    "timeline initialization"
+   ],
+   "questions": [
+    "How do you safely connect to Redux DevTools in a plugin?",
+    "What does conn.init do in Redux DevTools integration?",
+    "Why is naming the store useful in Redux DevTools?"
+   ]
+  },
+  "state-management-6-2-2": {
+   "text_sha": "4c0de2320edf3daa",
+   "summary": "Send state updates to Redux DevTools by subscribing to store changes and calling conn.send with an action object containing a type and the new state snapshot.",
+   "keywords": [
+    "store.subscribe",
+    "conn.send",
+    "action type",
+    "state snapshot",
+    "Redux DevTools updates",
+    "labels"
+   ],
+   "questions": [
+    "How do you send state updates to Redux DevTools?",
+    "What is the format of the action object sent to Redux DevTools?",
+    "Why are descriptive labels important for Redux DevTools action list?"
+   ]
+  },
+  "state-management-6-2-3": {
+   "text_sha": "46063e71c53435ca",
+   "summary": "Handle time travel by subscribing to Redux DevTools messages and applying JSON-parsed state snapshots on JUMP_TO_STATE or JUMP_TO_ACTION dispatches.",
+   "keywords": [
+    "conn.subscribe",
+    "DISPATCH",
+    "JUMP_TO_STATE",
+    "JUMP_TO_ACTION",
+    "JSON.parse",
+    "store.setState",
+    "time travel"
+   ],
+   "questions": [
+    "How does Redux DevTools communicate time travel commands to the app?",
+    "What message types indicate a time travel jump?",
+    "How do you apply a state snapshot received from Redux DevTools?"
+   ]
+  },
+  "state-management-6-2-4": {
+   "text_sha": "fb8f26e4f671c30f",
+   "summary": "Redux DevTools keeps its own snapshot history, so app state updates from devtools shouldn't be recorded in app history, and state must be serializable as JSON for time travel to work correctly.",
+   "keywords": [
+    "snapshot history",
+    "state serialization",
+    "JSON limitations",
+    "time travel",
+    "ignoring devtools updates",
+    "immutable state"
+   ],
+   "questions": [
+    "Why shouldn't app history record state changes from Redux DevTools?",
+    "What types of state data don't survive JSON serialization?",
+    "How does Redux DevTools manage snapshot history?"
+   ]
+  },
+  "state-management-6-2-5": {
+   "text_sha": "71bcaaa4a13e7845",
+   "summary": "Time travel debugging involves detecting the devtools global, connecting, initializing, sending updates, and subscribing to jump messages—about 30 lines of code implementing immutable snapshots and state restoration.",
+   "keywords": [
+    "time travel debugging",
+    "Redux DevTools integration",
+    "immutable snapshots",
+    "state restoration",
+    "connect",
+    "init",
+    "send",
+    "subscribe"
+   ],
+   "questions": [
+    "What are the core steps to implement Redux DevTools time travel?",
+    "How many lines of code does a basic Redux DevTools integration require?",
+    "What is the essence of time travel debugging in state management?"
+   ]
+  },
+  "state-management-7-0-0": {
+   "text_sha": "94f8abe19244e5c8",
+   "summary": "Zustand's core state management uses a closure with state, listeners, getState, setState, and subscribe, similar to our store.js implementation.",
+   "keywords": [
+    "Zustand",
+    "state management",
+    "closure",
+    "getState",
+    "setState",
+    "subscribe",
+    "Object.is",
+    "Object.assign"
+   ],
+   "questions": [
+    "What core components does Zustand's state management use?",
+    "How does Zustand's setState check for changes?",
+    "What similarities exist between Zustand and store.js implementations?"
+   ]
+  },
+  "state-management-7-0-1": {
+   "text_sha": "e475faac86c1fd1e",
+   "summary": "Zustand merges state and actions in one object, while our library separates actions to avoid persisting functions inside state, and both support a replace option in setState.",
+   "keywords": [
+    "Zustand",
+    "setState",
+    "replace option",
+    "actions",
+    "state creator",
+    "partialize",
+    "persist middleware"
+   ],
+   "questions": [
+    "How does Zustand handle state and actions in its state creator?",
+    "What is the purpose of the replace argument in setState?",
+    "Why does our library separate actions from state?"
+   ]
+  },
+  "state-management-7-0-2": {
+   "text_sha": "db33a4bd230c1164",
+   "summary": "Zustand's middleware wraps the state creator function, enabling powerful features like hydrating and API extension, unlike our setState wrapper approach.",
+   "keywords": [
+    "Zustand",
+    "middleware",
+    "state creator",
+    "create(devtools(persist(...)))",
+    "hydrate",
+    "setState wrapper"
+   ],
+   "questions": [
+    "How does Zustand's middleware system work?",
+    "What advantages does wrapping the state creator provide?",
+    "How does our middleware approach differ from Zustand's?"
+   ]
+  },
+  "state-management-7-0-3": {
+   "text_sha": "f8c942622569fb9f",
+   "summary": "Zustand integrates with React by returning a hook using useSyncExternalStore and selectors for fine-grained updates; our library lacks React binding but could implement a similar hook.",
+   "keywords": [
+    "Zustand",
+    "React integration",
+    "create hook",
+    "useSyncExternalStore",
+    "selector",
+    "subscribe",
+    "getState",
+    "useStore"
+   ],
+   "questions": [
+    "How does Zustand integrate with React?",
+    "What is the role of useSyncExternalStore in Zustand?",
+    "How could our library implement React bindings?"
+   ]
+  },
+  "state-management-7-0-4": {
+   "text_sha": "22e223a2df8aed73",
+   "summary": "Zustand uses explicit selectors without Proxy or computed values, while our library adds computed with dependency tracking, reflecting different philosophies on reactivity and feature completeness.",
+   "keywords": [
+    "Zustand",
+    "reactivity",
+    "explicit selectors",
+    "Proxy tracking",
+    "computed values",
+    "dependency tracking",
+    "Vue",
+    "Pinia"
+   ],
+   "questions": [
+    "What reactivity approach does Zustand use?",
+    "How does our library's computed feature differ from Zustand?",
+    "What advanced features does Zustand handle that our library lacks?"
+   ]
+  },
+  "state-management-7-1-0": {
+   "text_sha": "26165a619271e39f",
+   "summary": "Create a src/index.js file that re-exports all public API functions to define the package's external interface and keep internal code private.",
+   "keywords": [
+    "src/index.js",
+    "export",
+    "public API",
+    "re-export",
+    "module exports"
+   ],
+   "questions": [
+    "How do you define the public API for an npm package?",
+    "Why re-export functions in an index.js file?",
+    "How can you keep internal code private in an npm package?"
+   ]
+  },
+  "state-management-7-1-1": {
+   "text_sha": "7dde0c9b50e286f9",
+   "summary": "Configure package.json with essential fields like name, version, type, main, exports, and files to prepare the package for publishing.",
+   "keywords": [
+    "package.json",
+    "npm init",
+    "name field",
+    "version",
+    "type module",
+    "main",
+    "exports",
+    "files"
+   ],
+   "questions": [
+    "What are the important fields to set in package.json before publishing?",
+    "How do you specify ES modules in package.json?",
+    "What does the files field in package.json do?"
+   ]
+  },
+  "state-management-7-1-2": {
+   "text_sha": "075014363984786f",
+   "summary": "Use npm pack --dry-run to preview files included in the package and write a README with a quickstart guide and license before publishing.",
+   "keywords": [
+    "npm pack --dry-run",
+    "README",
+    "license",
+    "package files",
+    "quickstart"
+   ],
+   "questions": [
+    "How can you check which files will be published in your npm package?",
+    "What should a README for an npm package include?",
+    "Why add a license field in package.json?"
+   ]
+  },
+  "state-management-7-1-3": {
+   "text_sha": "c024295a58284d0c",
+   "summary": "Follow semantic versioning with npm version commands, create an npm account, login, and publish the package, using --access public for scoped packages.",
+   "keywords": [
+    "semver",
+    "npm version patch",
+    "npm login",
+    "npm publish",
+    "scoped packages",
+    "--access public"
+   ],
+   "questions": [
+    "What is semantic versioning and how is it used in npm?",
+    "How do you publish a scoped npm package publicly?",
+    "Why enable two-factor authentication on npm?"
+   ]
+  },
+  "state-management-7-1-4": {
+   "text_sha": "2c2a0b7033f5c758",
+   "summary": "Use the np package to automate version bumping, testing, publishing, and tagging, then test the published package by installing and importing it in a fresh project.",
+   "keywords": [
+    "np package",
+    "npx np",
+    "npm publish automation",
+    "testing published package",
+    "git tag"
+   ],
+   "questions": [
+    "What does the np package do for npm publishing?",
+    "How do you test your npm package after publishing?",
+    "Why should you treat npm publish as permanent?"
+   ]
+  },
+  "state-management-7-1-5": {
+   "text_sha": "4930250a6c6844bd",
+   "summary": "Consider publishing built bundles and TypeScript type definitions for broader compatibility and autocomplete support, using tools like tsup or Rollup.",
+   "keywords": [
+    "built bundles",
+    "minified bundle",
+    "TypeScript definitions",
+    ".d.ts files",
+    "tsup",
+    "Rollup",
+    "types field"
+   ],
+   "questions": [
+    "Why publish built and minified bundles for npm packages?",
+    "How do you add TypeScript type definitions to an npm package?",
+    "What tools can create CommonJS and ESM bundles from source?"
+   ]
+  },
+  "state-management-7-2-0": {
+   "text_sha": "0d7dfa4231dd9f1c",
+   "summary": "This passage reviews building a state management library called statekit with Proxy-based reactivity, closure stores, computed values, actions, middleware, and history features.",
+   "keywords": [
+    "statekit",
+    "Proxy",
+    "reactive primitive",
+    "closure store",
+    "getState",
+    "setState",
+    "subscribe",
+    "computed values"
+   ],
+   "questions": [
+    "What features does the statekit library include?",
+    "How does statekit implement reactivity and state management?",
+    "What advanced capabilities like undo and middleware does statekit support?"
+   ]
+  },
+  "state-management-7-2-1": {
+   "text_sha": "849b84f7f47a7aa5",
+   "summary": "Understanding core concepts like closures, listeners, immutable updates, and Proxy traps helps demystify popular state libraries like Zustand, Redux Toolkit, Pinia, and Vue.",
+   "keywords": [
+    "Zustand",
+    "Redux Toolkit",
+    "Pinia",
+    "Vue",
+    "closure",
+    "Set of listeners",
+    "immutable updates",
+    "middleware chain"
+   ],
+   "questions": [
+    "What core ideas do popular state management libraries share?",
+    "How do Proxy traps enable reactivity in Vue and Pinia?",
+    "What patterns appear in Zustand and Redux Toolkit source code?"
+   ]
+  },
+  "state-management-7-2-2": {
+   "text_sha": "10e33fd336e263ff",
+   "summary": "Suggested next steps include writing a React binding with useSyncExternalStore, adding batching, fixing computed dependency cleanup, creating subscribeWithSelector, and grouping history entries.",
+   "keywords": [
+    "React binding",
+    "useStore",
+    "useSyncExternalStore",
+    "selector",
+    "batching",
+    "microtask",
+    "computed dependency cleanup",
+    "subscribeWithSelector"
+   ],
+   "questions": [
+    "How can I write a React binding for the state library?",
+    "What is batching and why use microtasks for notifications?",
+    "How do you improve computed values and subscription efficiency?"
+   ]
+  },
+  "state-management-7-2-3": {
+   "text_sha": "1b46a57faa9a8305",
+   "summary": "Recommended readings include Vue reactivity docs, Zustand and Redux source, and Immer; building real apps like drawing or form wizards helps reveal and fix library edge cases.",
+   "keywords": [
+    "Vue reactivity",
+    "effect",
+    "track",
+    "Zustand source",
+    "Redux immutability",
+    "middleware",
+    "Immer",
+    "copy on write proxies"
+   ],
+   "questions": [
+    "What resources help deepen understanding of reactivity and state management?",
+    "How does Immer implement immutable updates?",
+    "Why build real apps to test a state library?"
+   ]
+  },
+  "state-management-7-2-4": {
+   "text_sha": "8057fab42a0fe87c",
+   "summary": "Advice includes publishing your statekit code on GitHub or npm, writing a README, and rebuilding the library from scratch to solidify understanding.",
+   "keywords": [
+    "statekit repository",
+    "GitHub",
+    "README",
+    "npm",
+    "rebuild from scratch",
+    "create",
+    "useStore"
+   ],
+   "questions": [
+    "Why should I publish my state management library code?",
+    "How does rebuilding the library help learning?",
+    "What practical steps help maintain and showcase your project?"
+   ]
+  }
+ }
+}

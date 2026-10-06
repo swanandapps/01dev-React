@@ -1,0 +1,1964 @@
+{
+ "version": 1,
+ "model": "gpt-4.1-mini",
+ "chunks": {
+  "js-engine-0-0-0": {
+   "text_sha": "de704956ffd6a31f",
+   "summary": "V8 JavaScript engine makes many engineering decisions like JIT compilation and garbage collection to run code efficiently, which this course will explore in detail.",
+   "keywords": [
+    "V8",
+    "JavaScript engine",
+    "JIT compilation",
+    "hidden classes",
+    "deoptimization",
+    "garbage collection",
+    "Node.js"
+   ],
+   "questions": [
+    "What is the V8 engine and where is it used?",
+    "What are some key engineering concepts behind V8's performance?",
+    "Why is understanding the JavaScript engine important?"
+   ]
+  },
+  "js-engine-0-0-1": {
+   "text_sha": "213c0396e2e0bd30",
+   "summary": "The course uses Node.js flags like --print-bytecode, --trace-opt, --trace-deopt, and --prof to show real V8 internals and help you read engine outputs.",
+   "keywords": [
+    "node --print-bytecode",
+    "node --trace-opt",
+    "node --trace-deopt",
+    "node --prof",
+    "V8 flags",
+    "benchmarking",
+    "bytecode",
+    "optimization"
+   ],
+   "questions": [
+    "How can I see V8's bytecode output?",
+    "What Node.js flags show optimization and deoptimization events?",
+    "How does this course demonstrate V8 internals?"
+   ]
+  },
+  "js-engine-0-0-2": {
+   "text_sha": "798d2f90cab53a34",
+   "summary": "The course covers V8's pipeline from parsing and lazy parsing to Ignition bytecode interpreter, TurboFan optimizing compiler, hidden classes, inline caches, and garbage collection.",
+   "keywords": [
+    "V8 pipeline",
+    "parsing",
+    "lazy parsing",
+    "Ignition",
+    "bytecode interpreter",
+    "TurboFan",
+    "optimizing compiler",
+    "hidden classes"
+   ],
+   "questions": [
+    "What are the main stages of V8's JavaScript execution pipeline?",
+    "What is lazy parsing in V8?",
+    "How does V8 optimize property access?"
+   ]
+  },
+  "js-engine-0-0-3": {
+   "text_sha": "c9ec96320fb9d373",
+   "summary": "Understanding V8 internals helps explain performance cliffs caused by code changes and encourages writing clear code first, then measuring and reasoning about performance.",
+   "keywords": [
+    "performance cliffs",
+    "V8 internals",
+    "code optimization",
+    "deoptimization",
+    "clear code",
+    "performance measurement"
+   ],
+   "questions": [
+    "Why do small code changes sometimes cause big performance drops?",
+    "How should I approach optimizing JavaScript code for V8?",
+    "What is the benefit of knowing V8 internals as a developer?"
+   ]
+  },
+  "js-engine-0-0-4": {
+   "text_sha": "39d254064fe6820c",
+   "summary": "The course uses small demo files like add.js, hot.js, deopt.js, shapes.js, gc.js, and prof.js to illustrate V8 concepts and commands.",
+   "keywords": [
+    "add.js",
+    "hot.js",
+    "deopt.js",
+    "shapes.js",
+    "gc.js",
+    "prof.js",
+    "V8 demos",
+    "Node.js terminal"
+   ],
+   "questions": [
+    "What demo files are used to explore V8 internals?",
+    "How can I follow along with V8 experiments in this course?",
+    "What tools do I need to run V8 internal demos?"
+   ]
+  },
+  "js-engine-0-0-5": {
+   "text_sha": "1e3a1e6bd2fc7cb1",
+   "summary": "Running commands yourself and predicting V8 behavior builds skill; differences in output across Node versions are data, not mistakes.",
+   "keywords": [
+    "V8 prediction",
+    "Node.js versions",
+    "trace-opt",
+    "trace-deopt",
+    "learning by doing",
+    "V8 heuristics"
+   ],
+   "questions": [
+    "Why should I run V8 commands myself during the course?",
+    "What causes differences in V8 output between Node versions?",
+    "How can I develop intuition about V8 optimization and deoptimization?"
+   ]
+  },
+  "js-engine-0-0-6": {
+   "text_sha": "d01457856ea40624",
+   "summary": "When running JavaScript, V8 tokenizes source, builds an abstract syntax tree, generates bytecode for Ignition interpreter, then compiles hot functions with TurboFan to machine code.",
+   "keywords": [
+    "tokenization",
+    "abstract syntax tree",
+    "AST",
+    "bytecode generation",
+    "Ignition",
+    "TurboFan",
+    "hot functions",
+    "machine code"
+   ],
+   "questions": [
+    "What are the main steps V8 takes to run JavaScript code?",
+    "What is the role of Ignition in V8?",
+    "How does TurboFan optimize JavaScript functions?"
+   ]
+  },
+  "js-engine-0-0-7": {
+   "text_sha": "e2807ba23d7a60a8",
+   "summary": "V8 starts by interpreting code quickly and only compiles hot code with TurboFan for speed, balancing startup time and runtime performance using feedback.",
+   "keywords": [
+    "interpreter",
+    "optimizing compiler",
+    "TurboFan",
+    "feedback",
+    "hot code",
+    "performance tradeoff"
+   ],
+   "questions": [
+    "Why doesn't V8 compile all code upfront?",
+    "What is the difference between interpreting and optimizing in V8?",
+    "How does V8 decide which functions to optimize?"
+   ]
+  },
+  "js-engine-0-0-8": {
+   "text_sha": "a616a7f92ed7bf17",
+   "summary": "V8 manages memory with a garbage collector running alongside code, and functions can deoptimize and revert from machine code back to interpreted code if assumptions break.",
+   "keywords": [
+    "garbage collector",
+    "heap",
+    "memory management",
+    "deoptimization",
+    "parallel threads",
+    "V8 internals"
+   ],
+   "questions": [
+    "How does V8 handle memory management?",
+    "What is deoptimization in V8?",
+    "Can V8 revert optimized code back to interpreted code?"
+   ]
+  },
+  "js-engine-0-0-9": {
+   "text_sha": "3ae82c8c7192545e",
+   "summary": "V8's execution cycle is parse, interpret, observe, optimize, and bail out if needed; benchmarks require warm-up to reflect steady-state performance.",
+   "keywords": [
+    "parse",
+    "interpret",
+    "optimize",
+    "bail out",
+    "benchmark warm-up",
+    "steady state",
+    "V8 pipeline"
+   ],
+   "questions": [
+    "What are the stages of V8's execution cycle?",
+    "Why do benchmarks need warm-up in V8?",
+    "What does it mean to bail out in V8?"
+   ]
+  },
+  "js-engine-0-1-0": {
+   "text_sha": "bfbd5f93923a01d6",
+   "summary": "The V8 pipeline starts with parsing source code into tokens, builds an abstract syntax tree (AST), generates bytecode, and runs it on Ignition, which collects type feedback for optimization.",
+   "keywords": [
+    "V8 pipeline",
+    "parser",
+    "scanner",
+    "tokens",
+    "abstract syntax tree",
+    "AST",
+    "bytecode generator",
+    "Ignition"
+   ],
+   "questions": [
+    "What are the main components of the V8 pipeline from source code to execution?",
+    "What is the role of the feedback vector in V8's interpreter Ignition?",
+    "What does the parser produce as output in V8?"
+   ]
+  },
+  "js-engine-0-1-1": {
+   "text_sha": "853bb074e874a8ef",
+   "summary": "When functions become hot, V8's TurboFan compiler uses type feedback to optimize code into machine code with guards, supporting deoptimization and intermediate tiers like Sparkplug and Maglev.",
+   "keywords": [
+    "TurboFan",
+    "hot functions",
+    "type feedback",
+    "machine code",
+    "guards",
+    "deoptimization",
+    "Sparkplug",
+    "Maglev"
+   ],
+   "questions": [
+    "How does TurboFan optimize hot functions in V8?",
+    "What is deoptimization in V8 and when does it occur?",
+    "What are Sparkplug and Maglev in the V8 compilation pipeline?"
+   ]
+  },
+  "js-engine-0-1-2": {
+   "text_sha": "4d9e864ffe3a6bd2",
+   "summary": "V8's heap is divided into young and old generations managed by scavenger and mark-sweep-compact garbage collectors, respectively, completing the pipeline from source to optimized code with feedback and deoptimization.",
+   "keywords": [
+    "heap",
+    "garbage collector",
+    "young generation",
+    "old generation",
+    "scavenger",
+    "mark-sweep-compact",
+    "V8 pipeline",
+    "deoptimization"
+   ],
+   "questions": [
+    "How does V8 manage memory with young and old generations?",
+    "What garbage collection algorithms does V8 use for different heap regions?",
+    "How does the V8 pipeline incorporate garbage collection and deoptimization?"
+   ]
+  },
+  "js-engine-0-1-3": {
+   "text_sha": "6a1969113c220fae",
+   "summary": "When evaluating V8 performance claims, identify which pipeline stage (parsing, interpreting, optimizing, memory) they refer to, as many discussions confuse different stages.",
+   "keywords": [
+    "V8 performance",
+    "pipeline stages",
+    "parsing cost",
+    "interpreter speed",
+    "optimized code quality",
+    "memory usage",
+    "performance claims"
+   ],
+   "questions": [
+    "Why is it important to identify the V8 pipeline stage when discussing performance?",
+    "Which pipeline stages affect parsing cost, interpreter speed, and optimized code quality?",
+    "How can understanding the V8 pipeline help interpret online performance arguments?"
+   ]
+  },
+  "js-engine-0-1-4": {
+   "text_sha": "8f8be3aecdafd9eb",
+   "summary": "Different runtime symptoms like syntax errors, slow first runs, sudden slowdowns, or memory patterns correspond to specific V8 pipeline stages, helping debugging and guiding predictable code shape for optimization.",
+   "keywords": [
+    "syntax error",
+    "compilation",
+    "deoptimization",
+    "garbage collection",
+    "debugging",
+    "code predictability",
+    "V8 optimization"
+   ],
+   "questions": [
+    "What runtime symptoms indicate issues at different V8 pipeline stages?",
+    "Why can't you directly force V8 to optimize a function?",
+    "How does writing predictable code help V8 produce better optimized code?"
+   ]
+  },
+  "js-engine-0-2-0": {
+   "text_sha": "2076b43448ce9d6b",
+   "summary": "Set up a project folder and run Node with the --print-bytecode flag to see V8's generated bytecode for a simple add function.",
+   "keywords": [
+    "node --version",
+    "v8-lab",
+    "add.js",
+    "function add",
+    "node --print-bytecode",
+    "V8 bytecode"
+   ],
+   "questions": [
+    "How do I check my Node.js version?",
+    "How can I see the bytecode V8 generates for a JavaScript function?",
+    "What does the --print-bytecode flag do in Node?"
+   ]
+  },
+  "js-engine-0-2-1": {
+   "text_sha": "398df16df01d7fcc",
+   "summary": "Use --print-bytecode-filter to limit bytecode output to a specific function and --trace-opt to see when V8 marks and compiles hot functions for optimization.",
+   "keywords": [
+    "--print-bytecode-filter",
+    "--trace-opt",
+    "V8 optimization",
+    "hot functions",
+    "bytecode filtering",
+    "node flags"
+   ],
+   "questions": [
+    "How can I filter bytecode output to a single function?",
+    "What does the --trace-opt flag show in Node?",
+    "How does V8 indicate a function is being optimized?"
+   ]
+  },
+  "js-engine-0-2-2": {
+   "text_sha": "73298b9033a94049",
+   "summary": "Use --trace-deopt to see when V8 deoptimizes functions and --prof to generate profiling logs processed with --prof-process for performance analysis.",
+   "keywords": [
+    "--trace-deopt",
+    "deoptimization",
+    "bailout message",
+    "--prof",
+    "--prof-process",
+    "V8 profiling"
+   ],
+   "questions": [
+    "How can I detect when V8 deoptimizes a function?",
+    "What is the purpose of the --trace-deopt flag?",
+    "How do I generate and process V8 profiling logs?"
+   ]
+  },
+  "js-engine-0-2-3": {
+   "text_sha": "796fb613382b9466",
+   "summary": "Keep demo files small and isolated for readable logs, avoid using diagnostic flags in production, and use node --v8-options to list supported V8 flags.",
+   "keywords": [
+    "small demo files",
+    "diagnostic flags",
+    "node --v8-options",
+    "V8 flags",
+    "production best practices"
+   ],
+   "questions": [
+    "Why should demo files be kept small when using V8 diagnostic flags?",
+    "Should V8 diagnostic flags be used in production?",
+    "How can I find all V8 flags supported by my Node version?"
+   ]
+  },
+  "js-engine-0-2-4": {
+   "text_sha": "a73addae10788452",
+   "summary": "Verify setup by running --print-bytecode with a filter and --trace-opt with head to confirm V8 outputs bytecode and optimization events correctly.",
+   "keywords": [
+    "setup verification",
+    "--print-bytecode-filter",
+    "--trace-opt",
+    "node head command",
+    "V8 bytecode output"
+   ],
+   "questions": [
+    "How do I confirm my Node and V8 setup is correct for bytecode inspection?",
+    "What should I do if --print-bytecode-filter shows no output?",
+    "How can I view the first few optimization events without too much output?"
+   ]
+  },
+  "js-engine-1-0-0": {
+   "text_sha": "0d6d89e66cda8c2c",
+   "summary": "Tokenization in V8 is done by the scanner, which breaks raw source code into smallest meaningful pieces called tokens, forming the basis for understanding syntax.",
+   "keywords": [
+    "tokenization",
+    "scanner",
+    "V8",
+    "tokens",
+    "syntax rules",
+    "JavaScript parsing"
+   ],
+   "questions": [
+    "What is tokenization in the V8 engine?",
+    "What role does the scanner play in parsing JavaScript code?",
+    "Why is tokenization important for understanding syntax?"
+   ]
+  },
+  "js-engine-1-0-1": {
+   "text_sha": "ef3763d20d5bf173",
+   "summary": "The scanner processes a line of code as a stream of characters and splits it into tokens like keywords, identifiers, punctuation, ignoring whitespace and comments.",
+   "keywords": [
+    "scanner",
+    "tokens",
+    "identifiers",
+    "keywords",
+    "JavaScript syntax",
+    "whitespace",
+    "comments"
+   ],
+   "questions": [
+    "How does the scanner split a line of JavaScript code into tokens?",
+    "Which parts of code does the scanner ignore?",
+    "What are examples of tokens produced from a function declaration?"
+   ]
+  },
+  "js-engine-1-0-2": {
+   "text_sha": "9176b4316f4014fd",
+   "summary": "Tokens have types and sometimes values; keywords are recognized by lookup tables, scanning is optimized for speed, and tricky cases like regex vs division require cooperation between scanner and parser.",
+   "keywords": [
+    "token types",
+    "keyword recognition",
+    "identifier token",
+    "scanner optimization",
+    "regex literal",
+    "division operator",
+    "V8 scanning"
+   ],
+   "questions": [
+    "What information does each token carry?",
+    "How does the scanner distinguish keywords from identifiers?",
+    "Why is scanning optimized and what tricky cases does it handle?"
+   ]
+  },
+  "js-engine-1-0-3": {
+   "text_sha": "fd94db2642e8efa0",
+   "summary": "The scanner handles complex syntax like template literals by switching modes and records line breaks for automatic semicolon insertion; syntax errors prevent program execution by stopping parsing early.",
+   "keywords": [
+    "template literals",
+    "scanner modes",
+    "automatic semicolon insertion",
+    "line breaks",
+    "syntax errors",
+    "parsing",
+    "V8"
+   ],
+   "questions": [
+    "How does the scanner handle template literals with embedded expressions?",
+    "What role do line breaks play in automatic semicolon insertion?",
+    "Why does a syntax error stop the program from running?"
+   ]
+  },
+  "js-engine-1-0-4": {
+   "text_sha": "88a88edc9d9acd94",
+   "summary": "Tokens are generated on demand by the scanner as the parser requests them, enabling low memory usage and allowing parsing to start before full script download completes.",
+   "keywords": [
+    "on-demand token generation",
+    "scanner",
+    "parser",
+    "streaming design",
+    "memory efficiency",
+    "parsing start",
+    "V8"
+   ],
+   "questions": [
+    "How does V8 manage tokens during parsing to save memory?",
+    "What is the benefit of generating tokens on demand?",
+    "When can parsing start in relation to script downloading?"
+   ]
+  },
+  "js-engine-1-1-0": {
+   "text_sha": "b23338070873dec0",
+   "summary": "The abstract syntax tree (AST) structures tokens into a tree reflecting JavaScript grammar and operator precedence, with nodes representing constructs like functions and binary operations.",
+   "keywords": [
+    "abstract syntax tree",
+    "AST",
+    "parser",
+    "tokens",
+    "JavaScript grammar",
+    "operator precedence",
+    "V8"
+   ],
+   "questions": [
+    "What is an abstract syntax tree (AST) in JavaScript parsing?",
+    "How does the AST represent operator precedence like in 'a + b * c'?",
+    "What nodes does the parser create for a function with parameters and a return statement?"
+   ]
+  },
+  "js-engine-1-1-1": {
+   "text_sha": "959d3c4a6cca7ab1",
+   "summary": "The AST is abstract because it omits syntax details like parentheses, semicolons, and whitespace, focusing on program meaning; tools like Acorn produce similar JSON ASTs for inspection.",
+   "keywords": [
+    "abstract syntax tree",
+    "AST abstraction",
+    "Acorn",
+    "JavaScript parser",
+    "syntax details",
+    "JSON AST"
+   ],
+   "questions": [
+    "Why is the AST called abstract?",
+    "What syntax elements are removed in the AST representation?",
+    "How can I view an AST for a JavaScript function using tools like Acorn?"
+   ]
+  },
+  "js-engine-1-1-2": {
+   "text_sha": "03974db69be24830",
+   "summary": "During AST construction, the parser performs scope analysis to determine variable lifetimes and storage, influencing whether variables use registers or heap-allocated contexts for closures.",
+   "keywords": [
+    "scope analysis",
+    "AST",
+    "variable scope",
+    "closures",
+    "registers",
+    "heap allocation",
+    "bytecode generator"
+   ],
+   "questions": [
+    "What role does scope analysis play during AST construction?",
+    "How does V8 decide where to store variables for closures?",
+    "What happens to the AST after bytecode generation?"
+   ]
+  },
+  "js-engine-1-1-3": {
+   "text_sha": "9b30232a9a93bc84",
+   "summary": "Tokens identify words, the AST reveals their meaning, and bytecode executes instructions; V8 uses lazy parsing to avoid building full ASTs for all functions, improving efficiency.",
+   "keywords": [
+    "tokens",
+    "AST",
+    "bytecode",
+    "lazy parsing",
+    "V8 engine",
+    "operator precedence",
+    "function parsing"
+   ],
+   "questions": [
+    "What are the roles of tokens, AST, and bytecode in JavaScript execution?",
+    "Why does V8 use lazy parsing instead of building full ASTs for every function?",
+    "How can sketching an AST help understand operator precedence and control flow?"
+   ]
+  },
+  "js-engine-1-2-0": {
+   "text_sha": "69fd6f27361c3939",
+   "summary": "Lazy parsing in V8 delays full parsing and compiling of JavaScript functions until they are actually called, avoiding unnecessary work during startup.",
+   "keywords": [
+    "lazy parsing",
+    "V8",
+    "JavaScript startup",
+    "function parsing",
+    "optimization"
+   ],
+   "questions": [
+    "What is lazy parsing in V8?",
+    "Why doesn't V8 fully parse all JavaScript code at startup?",
+    "How does lazy parsing improve startup performance?"
+   ]
+  },
+  "js-engine-1-2-1": {
+   "text_sha": "e30c613df58d1bfa",
+   "summary": "V8 uses preparsing to quickly validate function syntax and find outer variable usage without building a full AST or bytecode, deferring full parsing until the function is called.",
+   "keywords": [
+    "preparsing",
+    "deferred parsing",
+    "outer variables",
+    "AST",
+    "bytecode",
+    "V8 optimization"
+   ],
+   "questions": [
+    "What is preparsing in V8?",
+    "How does V8 detect outer variable usage during preparsing?",
+    "When does V8 perform the full parse and compile of a function?"
+   ]
+  },
+  "js-engine-1-2-2": {
+   "text_sha": "2c298bb97abbeaec",
+   "summary": "Using Node.js flags like --print-bytecode and --print-bytecode-filter demonstrates lazy compilation by showing bytecode only for functions that are actually called.",
+   "keywords": [
+    "node",
+    "--print-bytecode",
+    "--print-bytecode-filter",
+    "lazy compilation",
+    "bytecode",
+    "V8"
+   ],
+   "questions": [
+    "How can you observe lazy compilation in Node.js?",
+    "What does the --print-bytecode-filter flag do?",
+    "Why does bytecode not appear for unused functions?"
+   ]
+  },
+  "js-engine-1-2-3": {
+   "text_sha": "aafe4f49188c0d25",
+   "summary": "V8 heuristically compiles immediately invoked functions eagerly to avoid double parsing, using parentheses as a hint to optimize startup performance.",
+   "keywords": [
+    "immediately invoked function expression",
+    "IIFE",
+    "eager compilation",
+    "V8 heuristic",
+    "parentheses",
+    "startup optimization"
+   ],
+   "questions": [
+    "Why does V8 compile IIFEs eagerly?",
+    "What is the cost of lazy parsing when a function is called?",
+    "How do parentheses affect V8's parsing strategy?"
+   ]
+  },
+  "js-engine-1-2-4": {
+   "text_sha": "22e84b81f3db3262",
+   "summary": "The preparser tracks outer variable references in inner functions to manage heap contexts efficiently, and V8 uses code caching to speed up subsequent runs by skipping parsing and compiling unchanged scripts.",
+   "keywords": [
+    "inner functions",
+    "outer variables",
+    "heap context",
+    "preparser",
+    "code cache",
+    "v8-compile-cache",
+    "Node.js",
+    "Chrome"
+   ],
+   "questions": [
+    "How does V8 handle outer variable references in inner functions during preparsing?",
+    "What is the purpose of V8's code cache?",
+    "How can Node.js benefit from the v8-compile-cache?"
+   ]
+  },
+  "js-engine-1-2-5": {
+   "text_sha": "33728966874c6510",
+   "summary": "To benefit from lazy parsing, keep unused code out of startup paths and use dynamic imports to defer modules, allowing V8 to optimize startup automatically.",
+   "keywords": [
+    "lazy parsing",
+    "dynamic imports",
+    "startup optimization",
+    "unused functions",
+    "code organization"
+   ],
+   "questions": [
+    "How can developers write code to take advantage of lazy parsing?",
+    "What role do dynamic imports play in startup performance?",
+    "Should developers worry about unused functions in their code?"
+   ]
+  },
+  "js-engine-2-0-0": {
+   "text_sha": "4cf7e101939de01e",
+   "summary": "Bytecode is a compact, low-level instruction set for a virtual machine inside V8 called Ignition, translating the syntax tree into a flat sequence of one-byte opcodes and operands.",
+   "keywords": [
+    "bytecode",
+    "Ignition",
+    "V8",
+    "opcode",
+    "virtual machine",
+    "bytecode interpreter"
+   ],
+   "questions": [
+    "What is bytecode in V8?",
+    "Why does V8 use bytecode instead of executing the syntax tree directly?",
+    "What is Ignition in the context of V8?"
+   ]
+  },
+  "js-engine-2-0-1": {
+   "text_sha": "b1eac09f0154c5e3",
+   "summary": "V8 uses bytecode instead of direct machine code to reduce memory use and startup time, and to provide a uniform function representation for interpretation, optimization, and deoptimization.",
+   "keywords": [
+    "bytecode",
+    "machine code",
+    "memory use",
+    "startup time",
+    "Ignition",
+    "deoptimization",
+    "type feedback"
+   ],
+   "questions": [
+    "Why doesn't V8 compile JavaScript directly to machine code?",
+    "How does bytecode help with V8's memory and startup performance?",
+    "What role does bytecode play in V8's optimization and deoptimization?"
+   ]
+  },
+  "js-engine-2-0-2": {
+   "text_sha": "ee9a815e9d1e27f3",
+   "summary": "Bytecode makes V8 portable across platforms by using the same bytecode generation code everywhere, differing only in execution and machine code generation per architecture.",
+   "keywords": [
+    "bytecode",
+    "portability",
+    "V8",
+    "machine code generation",
+    "architecture",
+    "node --print-bytecode"
+   ],
+   "questions": [
+    "How does bytecode contribute to V8's portability?",
+    "What command shows V8's bytecode for a JavaScript file?",
+    "What information does V8's bytecode output include?"
+   ]
+  },
+  "js-engine-2-0-3": {
+   "text_sha": "81a5f7d8e6b6de6b",
+   "summary": "Storing bytecode for many functions is memory-efficient, enabling V8 to optimize only hot functions with machine code; bytecode also enables tooling and debugging by providing a readable instruction stream.",
+   "keywords": [
+    "bytecode",
+    "optimization",
+    "hot functions",
+    "machine code",
+    "debugging",
+    "tooling",
+    "V8 bug reports"
+   ],
+   "questions": [
+    "Why does V8 store bytecode for all functions but machine code only for hot ones?",
+    "How does bytecode facilitate debugging and tooling in V8?",
+    "What is the benefit of learning to read V8 bytecode?"
+   ]
+  },
+  "js-engine-2-0-4": {
+   "text_sha": "58aafb1655554298",
+   "summary": "Interpreting bytecode is slower than running machine code because of instruction dispatch overhead, so V8 uses an optimizing compiler to replace frequently run functions with machine code.",
+   "keywords": [
+    "bytecode interpretation",
+    "performance",
+    "optimizing compiler",
+    "machine code",
+    "Ignition",
+    "instruction dispatch"
+   ],
+   "questions": [
+    "Why is bytecode interpretation slower than running machine code?",
+    "How does V8 improve performance for frequently run functions?",
+    "What is the role of the optimizing compiler in V8?"
+   ]
+  },
+  "js-engine-2-1-0": {
+   "text_sha": "2bef49beb41fb5a1",
+   "summary": "Run Node.js with --print-bytecode to see bytecode instructions like Ldar that load function parameters into the accumulator, which is a special working register.",
+   "keywords": [
+    "node --print-bytecode",
+    "Ldar",
+    "accumulator",
+    "bytecode header",
+    "function parameters",
+    "V8 bytecode"
+   ],
+   "questions": [
+    "How do you print V8 bytecode for a JavaScript function using Node.js?",
+    "What does the Ldar instruction do in V8 bytecode?",
+    "Why is the parameter count sometimes higher than the number of function parameters?"
+   ]
+  },
+  "js-engine-2-1-1": {
+   "text_sha": "e9acbed3ff1a883d",
+   "summary": "The Add instruction adds a register value to the accumulator and uses a feedback slot for type feedback; Return returns the accumulator value, showing how operands are ordered in bytecode.",
+   "keywords": [
+    "Add instruction",
+    "feedback slot",
+    "Return instruction",
+    "accumulator",
+    "V8 bytecode operands"
+   ],
+   "questions": [
+    "What does the Add instruction do in V8 bytecode?",
+    "What is the purpose of the feedback slot number in bytecode instructions?",
+    "How does the Return instruction work in V8 bytecode?"
+   ]
+  },
+  "js-engine-2-1-2": {
+   "text_sha": "38c2f89ac4ac8919",
+   "summary": "AddSmi and MulSmi instructions perform arithmetic with small integer literals embedded, while Star0 stores the accumulator into a register; feedback slots track type info.",
+   "keywords": [
+    "AddSmi",
+    "MulSmi",
+    "Star0",
+    "small integer literal",
+    "feedback slot",
+    "V8 bytecode arithmetic"
+   ],
+   "questions": [
+    "What are AddSmi and MulSmi instructions in V8 bytecode?",
+    "How does the Star0 instruction work?",
+    "What role do feedback slots play in these arithmetic instructions?"
+   ]
+  },
+  "js-engine-2-1-3": {
+   "text_sha": "3c1a2c87109abaca",
+   "summary": "Bytecode mnemonics follow patterns: Lda* loads into accumulator, Sta*/Star* stores from accumulator, arithmetic uses accumulator, jumps control flow, and Call* handles calls.",
+   "keywords": [
+    "bytecode mnemonics",
+    "Lda",
+    "Sta",
+    "Star",
+    "Add",
+    "Jump",
+    "Call",
+    "V8 bytecode patterns"
+   ],
+   "questions": [
+    "What do mnemonics starting with Lda indicate in V8 bytecode?",
+    "How are stores represented in V8 bytecode mnemonics?",
+    "Which mnemonics control flow and function calls in V8 bytecode?"
+   ]
+  },
+  "js-engine-2-1-4": {
+   "text_sha": "95bf207090eda3a9",
+   "summary": "The --print-bytecode-filter matches function names, including inferred names for anonymous functions; uncalled functions have no bytecode due to lazy compilation, and mnemonics evolve over time.",
+   "keywords": [
+    "--print-bytecode-filter",
+    "anonymous functions",
+    "lazy compilation",
+    "mnemonics evolution",
+    "V8 bytecode printing"
+   ],
+   "questions": [
+    "How does the --print-bytecode-filter flag work in Node.js?",
+    "Why might a function's bytecode not appear when printing?",
+    "Should you memorize V8 bytecode mnemonics?"
+   ]
+  },
+  "js-engine-2-2-0": {
+   "text_sha": "2590f72fb8f0a874",
+   "summary": "Ignition uses virtual registers (r0, r1, etc.) for locals and arguments (a0, a1, etc.) plus a special implicit accumulator register for most instructions.",
+   "keywords": [
+    "Ignition",
+    "register machine",
+    "accumulator",
+    "virtual registers",
+    "stack frame",
+    "bytecode"
+   ],
+   "questions": [
+    "What are the types of registers used in Ignition bytecode?",
+    "How are function arguments and local variables stored in Ignition?",
+    "What is the role of the accumulator in Ignition?"
+   ]
+  },
+  "js-engine-2-2-1": {
+   "text_sha": "8c857ee80a385a07",
+   "summary": "The accumulator reduces bytecode size by allowing many instructions to have only one explicit operand, making functions more compact and faster to fetch.",
+   "keywords": [
+    "accumulator",
+    "bytecode size",
+    "operands",
+    "bytecode compactness",
+    "Ignition design"
+   ],
+   "questions": [
+    "Why does Ignition use an accumulator in its bytecode design?",
+    "How does the accumulator affect the number of operands in instructions?",
+    "What is the benefit of having fewer operands in bytecode instructions?"
+   ]
+  },
+  "js-engine-2-2-2": {
+   "text_sha": "9eeaefa50c9bcba1",
+   "summary": "Example bytecode for function calc shows accumulator usage: Ldar loads, Add adds to accumulator, Star stores accumulator to register, and Return returns accumulator.",
+   "keywords": [
+    "Ldar",
+    "Add",
+    "Star",
+    "LdaSmi",
+    "Mul",
+    "Return",
+    "accumulator",
+    "bytecode example"
+   ],
+   "questions": [
+    "How does the bytecode for a simple function use the accumulator?",
+    "What do the instructions Ldar, Add, Star, and LdaSmi do in Ignition bytecode?",
+    "How are registers allocated and reused in Ignition bytecode?"
+   ]
+  },
+  "js-engine-2-2-3": {
+   "text_sha": "0cbd8d027cbd4f18",
+   "summary": "LdaSmi loads small integers (Smis) directly as tagged values, making integer arithmetic cheap compared to heap-allocated numbers.",
+   "keywords": [
+    "LdaSmi",
+    "Smi",
+    "small integer",
+    "tagged value",
+    "heap number",
+    "integer arithmetic",
+    "V8"
+   ],
+   "questions": [
+    "What does LdaSmi stand for and do in Ignition bytecode?",
+    "How are small integers (Smis) represented in V8?",
+    "Why is integer arithmetic on Smis cheaper than on heap numbers?"
+   ]
+  },
+  "js-engine-2-2-4": {
+   "text_sha": "395855901b7e80f9",
+   "summary": "Experiment: rewriting a function to reuse variables reduces the register count in bytecode, showing source shape influences register allocation.",
+   "keywords": [
+    "register count",
+    "bytecode generator",
+    "variable reuse",
+    "local variables",
+    "bytecode experiment"
+   ],
+   "questions": [
+    "How does reusing variables in source code affect the register count in bytecode?",
+    "What does the register count in the bytecode header represent?",
+    "How can you observe the effect of source code shape on bytecode registers?"
+   ]
+  },
+  "js-engine-2-2-5": {
+   "text_sha": "d4bed7e5ac36d4ea",
+   "summary": "The accumulator mainly reduces bytecode size; it is not a direct performance trick, and TurboFan later replaces this machinery with its own optimizer representation.",
+   "keywords": [
+    "accumulator",
+    "performance",
+    "bytecode size",
+    "TurboFan",
+    "optimizer",
+    "virtual machine"
+   ],
+   "questions": [
+    "Is the accumulator primarily a performance optimization?",
+    "What happens to the accumulator and registers when TurboFan optimizes code?",
+    "Why does the accumulator help with interpreter dispatch speed?"
+   ]
+  },
+  "js-engine-3-0-0": {
+   "text_sha": "71c82a371cbd39f9",
+   "summary": "Just-in-time (JIT) compilation translates JavaScript code to machine code on the fly during execution, unlike ahead-of-time compilation which compiles before running.",
+   "keywords": [
+    "JIT compilation",
+    "just-in-time",
+    "ahead-of-time compilation",
+    "JavaScript engine",
+    "TurboFan",
+    "interpreter"
+   ],
+   "questions": [
+    "What is just-in-time (JIT) compilation?",
+    "How does JIT differ from ahead-of-time compilation?",
+    "Why is JIT beneficial for JavaScript?"
+   ]
+  },
+  "js-engine-3-0-1": {
+   "text_sha": "40a1fd4238535a8f",
+   "summary": "V8's Ignition interpreter monitors function usage and sends hot, stable functions to TurboFan for background JIT compilation, enabling optimized machine code execution.",
+   "keywords": [
+    "Ignition",
+    "TurboFan",
+    "V8",
+    "JIT compilation",
+    "hot functions",
+    "optimization threshold",
+    "node --trace-opt"
+   ],
+   "questions": [
+    "How does V8 decide which functions to optimize?",
+    "What role does Ignition play in JIT compilation?",
+    "How can you observe TurboFan's JIT compilation in Node.js?"
+   ]
+  },
+  "js-engine-3-0-2": {
+   "text_sha": "2062da690b2a72db",
+   "summary": "Optimized code runs faster by inlining, using CPU registers, removing redundant checks, and making assumptions from feedback, but compilation costs CPU time and memory.",
+   "keywords": [
+    "optimized code",
+    "inlining",
+    "CPU registers",
+    "JIT assumptions",
+    "compilation cost",
+    "TurboFan optimization"
+   ],
+   "questions": [
+    "Why does optimized machine code run faster than interpreted code?",
+    "What are the trade-offs of JIT compilation?",
+    "Why does V8 use thresholds before optimizing functions?"
+   ]
+  },
+  "js-engine-3-0-3": {
+   "text_sha": "042de880535e6eef",
+   "summary": "Recent Node versions add intermediate compilation stages for incremental speedups, and reading --trace-opt output involves tracking function names through marked, compiled, and completed states.",
+   "keywords": [
+    "baseline compiler",
+    "mid tier",
+    "incremental optimization",
+    "trace-opt",
+    "function optimization states",
+    "deoptimization"
+   ],
+   "questions": [
+    "What are the intermediate compilation stages in recent Node versions?",
+    "How do you interpret the output of node --trace-opt?",
+    "What does deoptimization mean in the JIT process?"
+   ]
+  },
+  "js-engine-3-0-4": {
+   "text_sha": "cef9434c4d3d68b2",
+   "summary": "On-stack replacement lets V8 optimize a running function with a hot loop by swapping the interpreter frame for an optimized one mid-execution.",
+   "keywords": [
+    "on-stack replacement",
+    "hot loop optimization",
+    "V8",
+    "JIT",
+    "interpreter frame swap"
+   ],
+   "questions": [
+    "What is on-stack replacement in V8?",
+    "How can a function called once still get optimized if it has a hot loop?",
+    "Why does on-stack replacement improve performance for loops?"
+   ]
+  },
+  "js-engine-3-1-0": {
+   "text_sha": "92f3619395695915",
+   "summary": "TurboFan uses type feedback slots to record operand types seen at runtime, enabling it to speculate on types and generate optimized code despite JavaScript's dynamic typing.",
+   "keywords": [
+    "TurboFan",
+    "type feedback",
+    "speculation",
+    "feedback vector",
+    "dynamic typing",
+    "Ignition",
+    "bytecode"
+   ],
+   "questions": [
+    "How does TurboFan handle JavaScript's dynamic typing to generate fast code?",
+    "What is the role of feedback vectors in TurboFan's optimization?",
+    "How does TurboFan record and use operand types during execution?"
+   ]
+  },
+  "js-engine-3-1-1": {
+   "text_sha": "2665277f67a827ab",
+   "summary": "TurboFan speculates on operand types from feedback slots to generate fast machine code guarded by checks that ensure type correctness and enable safe deoptimization.",
+   "keywords": [
+    "TurboFan",
+    "speculation",
+    "guards",
+    "type feedback",
+    "deoptimization",
+    "integer addition",
+    "machine code"
+   ],
+   "questions": [
+    "What does TurboFan do when it speculates that operands are small integers?",
+    "How do guards work in TurboFan's optimized code?",
+    "Why is deoptimization necessary in TurboFan's speculation approach?"
+   ]
+  },
+  "js-engine-3-1-2": {
+   "text_sha": "497adb7fad4b0aa1",
+   "summary": "Type feedback affects performance: consistent operand types enable fast code, while mixed types slow it down; feedback also records object shapes and function calls for optimization.",
+   "keywords": [
+    "type feedback",
+    "performance benchmark",
+    "object shapes",
+    "function inlining",
+    "property loads",
+    "array accesses",
+    "TurboFan"
+   ],
+   "questions": [
+    "How does mixed operand types affect TurboFan's generated code performance?",
+    "What other operations besides arithmetic use type feedback in V8?",
+    "Why are object shapes important for TurboFan's optimization?"
+   ]
+  },
+  "js-engine-3-1-3": {
+   "text_sha": "4ef351d675a4a37e",
+   "summary": "Type feedback is gathered only during interpreter or baseline execution, so early optimization may be based on limited inputs, causing occasional deoptimization on broader real workloads.",
+   "keywords": [
+    "type feedback",
+    "interpreter",
+    "baseline tier",
+    "early optimization",
+    "deoptimization",
+    "speculation",
+    "TurboFan"
+   ],
+   "questions": [
+    "When is type feedback gathered in V8's execution tiers?",
+    "Why can early optimization cause surprise bailouts in real workloads?",
+    "How do speculation and guards relate to type feedback?"
+   ]
+  },
+  "js-engine-3-1-4": {
+   "text_sha": "9974efef2fa8b412",
+   "summary": "Speculation is like a cashier quickly handling familiar bills with guards checking for anomalies; changing variable types muddles feedback, causing more guard failures and slower code.",
+   "keywords": [
+    "speculation",
+    "guards",
+    "type feedback",
+    "variable type consistency",
+    "performance",
+    "deoptimization",
+    "TurboFan"
+   ],
+   "questions": [
+    "What analogy explains speculation and guards in TurboFan?",
+    "Why should variable types remain consistent for better performance?",
+    "What happens when variable types change frequently in V8?"
+   ]
+  },
+  "js-engine-3-2-0": {
+   "text_sha": "3498e33081d97a19",
+   "summary": "Deoptimization in V8 discards optimized machine code when assumptions fail, reverting execution to the interpreter to preserve correctness but lose speed, demonstrated with a type-mismatched add function.",
+   "keywords": [
+    "deoptimization",
+    "V8",
+    "optimized code",
+    "interpreter",
+    "node --trace-opt",
+    "node --trace-deopt",
+    "bailout",
+    "guard"
+   ],
+   "questions": [
+    "What happens when optimized code encounters an unexpected value in V8?",
+    "How does V8 handle a type mismatch during JIT-compiled execution?",
+    "How can you observe deoptimization events in Node.js?"
+   ]
+  },
+  "js-engine-3-2-1": {
+   "text_sha": "68c4470a45b98183",
+   "summary": "Deoptimization reasons include type mismatches like 'not a Smi', wrong object shapes, out-of-bounds array access, or insufficient type feedback, with V8 reconstructing interpreter state to resume execution.",
+   "keywords": [
+    "deoptimization reasons",
+    "not a Smi",
+    "wrong map",
+    "out of bounds",
+    "type feedback",
+    "deoptimization points",
+    "interpreter state",
+    "Ignition"
+   ],
+   "questions": [
+    "What are common reasons for deoptimization in V8?",
+    "How does V8 resume execution after deoptimization?",
+    "What does 'not a Smi' mean in V8 deoptimization logs?"
+   ]
+  },
+  "js-engine-3-2-2": {
+   "text_sha": "363317a7737b5537",
+   "summary": "Deoptimizations can be eager (immediate on guard failure) or lazy (triggered later by invalidated assumptions), and repeated optimize-deopt cycles can cause performance cliffs where V8 stops optimizing.",
+   "keywords": [
+    "eager deopt",
+    "lazy deopt",
+    "guard failure",
+    "object shape",
+    "optimize-deopt loop",
+    "performance cliff",
+    "V8 optimization"
+   ],
+   "questions": [
+    "What is the difference between eager and lazy deoptimization?",
+    "What causes V8 to stop optimizing a function after repeated deoptimizations?",
+    "How does object shape changes trigger lazy deoptimization?"
+   ]
+  },
+  "js-engine-3-2-3": {
+   "text_sha": "c962a4a8c240af8c",
+   "summary": "Deoptimization is a normal safety feature; to diagnose it, check the function and reason in logs, identify expected vs actual types, and trace unusual callers to fix inconsistent type usage.",
+   "keywords": [
+    "deoptimization diagnosis",
+    "type consistency",
+    "call site logging",
+    "V8 deopt logs",
+    "function optimization",
+    "type feedback"
+   ],
+   "questions": [
+    "How can you diagnose the cause of a deoptimization in V8?",
+    "Why is maintaining consistent types important to avoid deoptimization?",
+    "How do you find the caller causing a deoptimization?"
+   ]
+  },
+  "js-engine-3-2-4": {
+   "text_sha": "ffb491c231377403",
+   "summary": "Multiple optimize-deopt-reopt cycles are normal during warm-up in long-running servers; focus on functions that repeatedly deopt or appear hot in profiles for performance tuning.",
+   "keywords": [
+    "optimize-deopt cycle",
+    "warm-up",
+    "long-running server",
+    "performance cliff",
+    "profiling",
+    "hot functions",
+    "V8 optimization"
+   ],
+   "questions": [
+    "Is it normal for functions to be optimized and deoptimized multiple times?",
+    "When should you focus on deoptimization logs for performance issues?",
+    "How do profiling tools help identify problematic functions?"
+   ]
+  },
+  "js-engine-4-0-0": {
+   "text_sha": "075553c940cf9fa5",
+   "summary": "JavaScript objects appear like dictionaries but V8 optimizes property access to be fast like C struct field access, avoiding slow dictionary lookups.",
+   "keywords": [
+    "JavaScript object",
+    "property access",
+    "dictionary lookup",
+    "C struct",
+    "V8 optimization"
+   ],
+   "questions": [
+    "Why is accessing point.x fast in JavaScript despite dynamic objects?",
+    "How does JavaScript property access compare to C struct field access?",
+    "Would a dictionary lookup on every property access be efficient?"
+   ]
+  },
+  "js-engine-4-0-1": {
+   "text_sha": "ac8e77b638c1f8ab",
+   "summary": "V8 uses hidden classes (called Maps internally) to describe object layouts, enabling fast property access by shape checking instead of dictionary lookups.",
+   "keywords": [
+    "V8 hidden class",
+    "Map",
+    "object shape",
+    "property offset",
+    "shape check",
+    "fast property access"
+   ],
+   "questions": [
+    "What is a hidden class in V8 and how does it speed up property access?",
+    "How does V8 avoid dictionary lookups for object properties?",
+    "What does the hidden class pointer in an object header represent?"
+   ]
+  },
+  "js-engine-4-0-2": {
+   "text_sha": "91f34c1ae4f6e562",
+   "summary": "V8 objects store properties partly in-object and partly out-of-object, separate elements for indexed values, and optimize element kinds for performance.",
+   "keywords": [
+    "object layout",
+    "in-object properties",
+    "out-of-object properties",
+    "elements store",
+    "array optimization",
+    "small integers"
+   ],
+   "questions": [
+    "How does V8 store properties inside and outside an object?",
+    "Why are elements stored separately from named properties in V8?",
+    "How does V8 optimize arrays with small integers?"
+   ]
+  },
+  "js-engine-4-0-3": {
+   "text_sha": "8878834763da1bcc",
+   "summary": "Objects created the same way share a hidden class (shape) in V8, verified by the internal function %HaveSameMap, enabling fast property access.",
+   "keywords": [
+    "hidden class",
+    "shape",
+    "V8 %HaveSameMap",
+    "object creation order",
+    "fast property access"
+   ],
+   "questions": [
+    "How can you check if two objects share the same hidden class in V8?",
+    "What does sharing a hidden class imply for property access speed?",
+    "What flag enables V8 internal functions like %HaveSameMap?"
+   ]
+  },
+  "js-engine-4-0-4": {
+   "text_sha": "9db21519824d829b",
+   "summary": "The terms hidden class, shape, structure, and map all refer to the same concept of object layout in V8, with Map being the internal name and %DebugPrint showing details.",
+   "keywords": [
+    "hidden class",
+    "shape",
+    "structure",
+    "Map",
+    "V8 %DebugPrint",
+    "object layout"
+   ],
+   "questions": [
+    "What different names are used for V8's object layout concept?",
+    "What internal V8 function shows the map and descriptors of an object?",
+    "Are hidden class and shape the same thing in V8?"
+   ]
+  },
+  "js-engine-4-1-0": {
+   "text_sha": "64c73700d32b4b0b",
+   "summary": "Objects start with an empty hidden class (shape) and each added property triggers a shape transition to a new shape that includes that property, enabling V8 to reuse shape transitions.",
+   "keywords": [
+    "hidden class",
+    "shape",
+    "shape transition",
+    "V8 engine",
+    "object properties"
+   ],
+   "questions": [
+    "How does an object get its hidden class initially?",
+    "What happens when a new property is added to an object in V8?",
+    "What is a shape transition in V8?"
+   ]
+  },
+  "js-engine-4-1-1": {
+   "text_sha": "091eedbc5897b96a",
+   "summary": "V8 creates a shape transition for each new property added in order, linking shapes in a transition table so subsequent objects follow existing transitions without creating new shapes.",
+   "keywords": [
+    "shape transition",
+    "transition table",
+    "V8 shapes",
+    "object property addition",
+    "Point constructor"
+   ],
+   "questions": [
+    "How does V8 handle property additions in a constructor like Point?",
+    "What happens when V8 encounters a property label not in the transition table?",
+    "How does V8 reuse shapes for multiple objects with the same property additions?"
+   ]
+  },
+  "js-engine-4-1-2": {
+   "text_sha": "bbb8b8e92203074c",
+   "summary": "Shapes form a tree where each edge is a property addition; objects with the same properties added in different orders have different shapes, confirmed by %HaveSameMap returning false.",
+   "keywords": [
+    "shape tree",
+    "property order",
+    "hidden class",
+    "%HaveSameMap",
+    "object shape equality"
+   ],
+   "questions": [
+    "How do shapes relate to the order of property additions?",
+    "Do objects with the same properties but different addition orders share the same shape?",
+    "What does %HaveSameMap(a, b) indicate about two objects?"
+   ]
+  },
+  "js-engine-4-1-3": {
+   "text_sha": "7504c9e71711199b",
+   "summary": "Different shapes for objects cause polymorphic code paths that are slower; initializing properties in the same order, ideally in constructors or object literals, helps keep shapes consistent and code fast.",
+   "keywords": [
+    "monomorphic",
+    "polymorphic",
+    "inline caches",
+    "object initialization order",
+    "object literals",
+    "shape consistency"
+   ],
+   "questions": [
+    "Why does property initialization order affect performance?",
+    "What is the difference between monomorphic and polymorphic shapes?",
+    "How do object literals help maintain consistent shapes?"
+   ]
+  },
+  "js-engine-4-1-4": {
+   "text_sha": "28407ed6f32e7350",
+   "summary": "Deleting properties often triggers dictionary (slow) mode in V8, degrading performance; setting properties to undefined/null preserves shapes, and using Map is better for objects as hash tables.",
+   "keywords": [
+    "dictionary mode",
+    "slow mode",
+    "delete operator",
+    "property removal",
+    "V8 optimization",
+    "Map object"
+   ],
+   "questions": [
+    "What happens when you delete a property from an object in V8?",
+    "How does setting a property to undefined differ from deleting it?",
+    "When should you use a Map instead of an object for key-value storage?"
+   ]
+  },
+  "js-engine-4-2-0": {
+   "text_sha": "76fb47353861bfdd",
+   "summary": "Inline caches (IC) speed up property access by caching the hidden class and offset for a property at each access site, avoiding repeated lookups.",
+   "keywords": [
+    "inline cache",
+    "IC",
+    "hidden class",
+    "property access",
+    "feedback slot",
+    "V8",
+    "offset"
+   ],
+   "questions": [
+    "What is an inline cache and how does it optimize property access?",
+    "How does V8 use feedback slots in inline caches?",
+    "What happens the first time a property access runs in V8?"
+   ]
+  },
+  "js-engine-4-2-1": {
+   "text_sha": "0311b92d91440960",
+   "summary": "Inline caches can be monomorphic (one shape), polymorphic (few shapes), or megamorphic (many shapes), with performance decreasing as the cache becomes more polymorphic.",
+   "keywords": [
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "inline cache states",
+    "shape",
+    "V8 optimization"
+   ],
+   "questions": [
+    "What are the different states of an inline cache?",
+    "How does performance change from monomorphic to megamorphic inline caches?",
+    "What does V8 do when an inline cache becomes megamorphic?"
+   ]
+  },
+  "js-engine-4-2-2": {
+   "text_sha": "eaa2c5e1c6e73968",
+   "summary": "Testing inline cache states by running a property access on objects with varying shapes shows monomorphic, polymorphic, and megamorphic behavior, measurable with timing and Node flags like --log-ic.",
+   "keywords": [
+    "shapes.js",
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "performance.now()",
+    "--log-ic",
+    "--trace-ic",
+    "Node.js"
+   ],
+   "questions": [
+    "How can you experimentally observe monomorphic, polymorphic, and megamorphic inline caches?",
+    "What Node.js flags help log inline cache events?",
+    "How does mixing objects with different shapes affect inline cache state?"
+   ]
+  },
+  "js-engine-4-2-3": {
+   "text_sha": "57adb4492f9a89df",
+   "summary": "TurboFan uses inline cache feedback to optimize code: monomorphic sites enable direct loads and shape checks, polymorphic sites use switches, and megamorphic sites fall back to slower runtime calls.",
+   "keywords": [
+    "TurboFan",
+    "inline cache feedback",
+    "monomorphic optimization",
+    "polymorphic switch",
+    "megamorphic runtime call",
+    "shape check"
+   ],
+   "questions": [
+    "How does TurboFan optimize code based on inline cache states?",
+    "What optimization does TurboFan perform for monomorphic inline caches?",
+    "What happens to optimization when an inline cache becomes megamorphic?"
+   ]
+  },
+  "js-engine-4-2-4": {
+   "text_sha": "636cad6be7d97cd1",
+   "summary": "To maintain fast property access, keep hot code paths monomorphic or with few shapes; generic utility functions often cause megamorphic caches and should be specialized per object type.",
+   "keywords": [
+    "hot code",
+    "property access",
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "utility functions",
+    "inline cache optimization"
+   ],
+   "questions": [
+    "Why should hot code paths have few shapes for property access?",
+    "How do generic utility functions affect inline cache performance?",
+    "What is a common strategy to avoid megamorphic inline caches in utility functions?"
+   ]
+  },
+  "js-engine-5-0-0": {
+   "text_sha": "f65e455b5f581d92",
+   "summary": "The V8 heap is divided into spaces, mainly young and old generations, based on the generational hypothesis that most objects die young, so garbage collection targets short-lived objects efficiently.",
+   "keywords": [
+    "V8 heap",
+    "young generation",
+    "old generation",
+    "generational hypothesis",
+    "garbage collector",
+    "JavaScript memory management"
+   ],
+   "questions": [
+    "What is the generational hypothesis in garbage collection?",
+    "How does V8 organize its heap for memory management?",
+    "Why does JavaScript rely on a garbage collector instead of manual memory freeing?"
+   ]
+  },
+  "js-engine-5-0-1": {
+   "text_sha": "853835fca8cd72c8",
+   "summary": "New objects are allocated in the young generation's semi-spaces for cheap allocation and quick collection, while surviving objects are promoted to the larger old generation; large and special objects have dedicated spaces.",
+   "keywords": [
+    "young generation",
+    "new space",
+    "semi-spaces",
+    "old generation",
+    "large object space",
+    "code space",
+    "object promotion"
+   ],
+   "questions": [
+    "What are semi-spaces in V8's young generation?",
+    "How does V8 promote objects from young to old generation?",
+    "What special spaces exist in the V8 heap besides young and old generations?"
+   ]
+  },
+  "js-engine-5-0-2": {
+   "text_sha": "80ff1b3a25caa834",
+   "summary": "Running `node --trace-gc gc.js` shows frequent Scavenge minor collections in the young generation, with memory usage dropping sharply after each, illustrating typical garbage collection behavior for short-lived objects.",
+   "keywords": [
+    "node --trace-gc",
+    "Scavenge",
+    "minor collection",
+    "young generation",
+    "garbage collection logs",
+    "heap size",
+    "memory usage"
+   ],
+   "questions": [
+    "How can you observe V8's garbage collection activity in Node.js?",
+    "What does a Scavenge event indicate in V8's garbage collection?",
+    "What does the sawtooth pattern in heap size represent during garbage collection?"
+   ]
+  },
+  "js-engine-5-0-3": {
+   "text_sha": "d26b686ebe847109",
+   "summary": "V8 flags `--max-old-space-size` and `--max-semi-space-size` control old and young generation sizes; using `--trace-gc` helps diagnose memory leaks versus allocation pressure by analyzing heap growth after collections.",
+   "keywords": [
+    "--max-old-space-size",
+    "--max-semi-space-size",
+    "--trace-gc",
+    "memory leak detection",
+    "heap size tuning",
+    "Node.js memory flags"
+   ],
+   "questions": [
+    "What does the `--max-old-space-size` flag do in Node.js?",
+    "How can `--trace-gc` help distinguish between memory leaks and allocation pressure?",
+    "Why might increasing the young generation size reduce object promotion?"
+   ]
+  },
+  "js-engine-5-0-4": {
+   "text_sha": "2863427312f8c80a",
+   "summary": "The `--expose-gc` flag enables manual garbage collection via `global.gc()` for testing, but forcing GC in production is discouraged because V8 optimizes collection timing automatically.",
+   "keywords": [
+    "--expose-gc",
+    "global.gc()",
+    "manual garbage collection",
+    "V8 garbage collector",
+    "Node.js testing"
+   ],
+   "questions": [
+    "What does the `--expose-gc` flag do in Node.js?",
+    "When is it appropriate to call `global.gc()` manually?",
+    "Why is forcing garbage collection generally discouraged in production?"
+   ]
+  },
+  "js-engine-5-1-0": {
+   "text_sha": "aadc49ed435a46d7",
+   "summary": "The V8 scavenger is a minor garbage collector that quickly cleans the young generation by copying live objects from one semi-space to another, leaving dead objects behind as garbage.",
+   "keywords": [
+    "V8",
+    "scavenger",
+    "minor GC",
+    "young generation",
+    "semi-space",
+    "from-space",
+    "to-space",
+    "copying collection"
+   ],
+   "questions": [
+    "What is the role of the scavenger in V8?",
+    "How does the scavenger identify live objects in the young generation?",
+    "What happens to dead objects during a minor GC in V8?"
+   ]
+  },
+  "js-engine-5-1-1": {
+   "text_sha": "11fe24f9027043b0",
+   "summary": "The scavenger's cost depends on live objects, not allocated ones, copying survivors within young generation and promoting long-lived objects to the old generation to optimize performance.",
+   "keywords": [
+    "scavenger cost",
+    "live objects",
+    "survivor objects",
+    "promotion",
+    "young generation",
+    "old generation",
+    "object age"
+   ],
+   "questions": [
+    "Why does the scavenger's cost depend on live objects rather than allocated objects?",
+    "How does V8 handle objects that survive multiple scavenges?",
+    "What is the benefit of packing survivors together in memory?"
+   ]
+  },
+  "js-engine-5-1-2": {
+   "text_sha": "ae84b7398a846ad9",
+   "summary": "V8 uses a write barrier to track pointers from old to young objects, treating those references as roots during scavenging to avoid freeing live young objects mistakenly.",
+   "keywords": [
+    "write barrier",
+    "old generation",
+    "young generation",
+    "remembered slots",
+    "minor GC",
+    "pointer tracking"
+   ],
+   "questions": [
+    "What problem does the write barrier solve in V8's garbage collection?",
+    "How does V8 ensure young objects referenced by old objects are not collected?",
+    "What are remembered slots in the context of V8 GC?"
+   ]
+  },
+  "js-engine-5-1-3": {
+   "text_sha": "9af67b2d02e225b4",
+   "summary": "V8's scavenger runs in parallel on multiple threads to shorten pause times, and retention of objects affects promotion and old generation growth, observable via GC tracing.",
+   "keywords": [
+    "parallel scavenging",
+    "stop-the-world pause",
+    "GC tracing",
+    "object retention",
+    "promotion",
+    "old generation growth",
+    "node --trace-gc"
+   ],
+   "questions": [
+    "How does parallel scavenging improve V8's minor GC pause times?",
+    "What effect does retaining allocated objects have on scavenging and promotion?",
+    "How can you observe scavenger behavior using Node.js?"
+   ]
+  },
+  "js-engine-5-1-4": {
+   "text_sha": "ddfadfc3f4e211a2",
+   "summary": "Short-lived allocations are cheap in V8, but frequent allocations in hot loops or objects surviving two scavenges cause costly promotions known as mid-life crisis, impacting performance.",
+   "keywords": [
+    "short-lived allocation",
+    "hot loop allocation",
+    "object promotion",
+    "mid-life crisis",
+    "old generation cleanup",
+    "allocation cost"
+   ],
+   "questions": [
+    "Why is short-lived allocation cheap in V8?",
+    "What is the mid-life crisis pattern in garbage collection?",
+    "How do frequent promotions affect performance in V8?"
+   ]
+  },
+  "js-engine-5-2-0": {
+   "text_sha": "4bc013b672039ae9",
+   "summary": "Major GC in V8 uses mark-sweep-compact with a marking phase that traces reachable objects by coloring them to identify live versus garbage objects, handling reference cycles correctly.",
+   "keywords": [
+    "V8",
+    "major GC",
+    "mark-sweep-compact",
+    "marking phase",
+    "tracing",
+    "reference cycles",
+    "garbage collection"
+   ],
+   "questions": [
+    "What algorithm does V8 use for major garbage collection?",
+    "How does the marking phase identify live objects?",
+    "Why can V8 collect reference cycles unlike simple reference counting?"
+   ]
+  },
+  "js-engine-5-2-1": {
+   "text_sha": "fda47d582cd898ec",
+   "summary": "The sweeping phase frees memory occupied by unreachable objects without moving them, and optional compaction reduces fragmentation by relocating live objects and updating pointers selectively.",
+   "keywords": [
+    "sweeping phase",
+    "memory fragmentation",
+    "compaction",
+    "V8 garbage collector",
+    "free blocks",
+    "live objects relocation"
+   ],
+   "questions": [
+    "What does the sweeping phase do in V8's major GC?",
+    "Why is compaction optional in V8's garbage collection?",
+    "How does compaction improve memory layout?"
+   ]
+  },
+  "js-engine-5-2-2": {
+   "text_sha": "32e4fab9495b6023",
+   "summary": "V8 reduces pause times by performing marking incrementally and concurrently, with sweeping and compaction also parallelized, coordinated by the Orinoco project and relying heavily on the write barrier.",
+   "keywords": [
+    "pause time",
+    "incremental marking",
+    "concurrent garbage collection",
+    "Orinoco project",
+    "write barrier",
+    "parallel sweeping",
+    "compaction"
+   ],
+   "questions": [
+    "How does V8 minimize pause times during major GC?",
+    "What role does the write barrier play in concurrent marking?",
+    "What is the Orinoco project in V8?"
+   ]
+  },
+  "js-engine-5-2-3": {
+   "text_sha": "bed7e1b7fd8ea0f4",
+   "summary": "Running `node --trace-gc` shows scavenges and Mark-Compact collections; memory leaks occur if references are unintentionally retained, causing heap out of memory errors unless limits or fixes are applied.",
+   "keywords": [
+    "node --trace-gc",
+    "Mark-Compact",
+    "scavenge",
+    "heap out of memory",
+    "memory leak",
+    "retained references",
+    "max-old-space-size"
+   ],
+   "questions": [
+    "How can you observe major GC events in Node.js?",
+    "What causes memory leaks despite garbage collection?",
+    "How can you avoid heap out of memory errors in Node.js?"
+   ]
+  },
+  "js-engine-5-2-4": {
+   "text_sha": "0819c529013dad29",
+   "summary": "Mark-Compact lines in trace-gc output show heap sizes and pause times, with much work done concurrently; performance hooks and Chrome DevTools can provide detailed GC event timings.",
+   "keywords": [
+    "Mark-Compact",
+    "trace-gc output",
+    "heap size",
+    "pause time",
+    "concurrent GC",
+    "performance hooks",
+    "Chrome DevTools",
+    "node --inspect"
+   ],
+   "questions": [
+    "What information does a Mark-Compact line provide in trace-gc?",
+    "How can you measure precise garbage collection pause times?",
+    "What tools help analyze GC events in Node.js?"
+   ]
+  },
+  "js-engine-5-2-5": {
+   "text_sha": "34aee412cf63c92d",
+   "summary": "Object shapes and optimized code share the V8 heap, so maintaining consistent hidden classes and efficient memory use helps keep the heap healthy and GC efficient.",
+   "keywords": [
+    "object shapes",
+    "hidden classes",
+    "optimized code",
+    "V8 heap",
+    "memory management",
+    "garbage collection efficiency"
+   ],
+   "questions": [
+    "How do object shapes affect memory usage in V8?",
+    "Why is it important to keep the V8 heap calm?",
+    "What shares the heap managed by V8's garbage collector?"
+   ]
+  },
+  "js-engine-6-0-0": {
+   "text_sha": "16e050d299766be4",
+   "summary": "Monomorphic code accesses one type or shape, polymorphic a few (up to 4), and megamorphic many; keeping code monomorphic improves V8 performance and enables inlining.",
+   "keywords": [
+    "monomorphic",
+    "polymorphic",
+    "megamorphic",
+    "inline cache",
+    "V8 performance",
+    "call site",
+    "function inlining"
+   ],
+   "questions": [
+    "What does monomorphic mean in V8 optimization?",
+    "How does polymorphic code differ from megamorphic code?",
+    "Why is monomorphic code preferred for performance?"
+   ]
+  },
+  "js-engine-6-0-1": {
+   "text_sha": "2de4065cc3e39f74",
+   "summary": "Creating many objects with identical shapes results in faster execution than objects with multiple different shapes, as shown by timing calls to a function on these objects.",
+   "keywords": [
+    "object shape",
+    "performance.now()",
+    "object literals",
+    "shape polymorphism",
+    "V8 optimization",
+    "hot code"
+   ],
+   "questions": [
+    "How does object shape affect JavaScript performance?",
+    "What happens when objects have different shapes in a loop?",
+    "How can you measure the performance impact of object shapes?"
+   ]
+  },
+  "js-engine-6-0-2": {
+   "text_sha": "0ab056e4314e2958",
+   "summary": "To keep objects monomorphic, create them with consistent properties and order, avoid adding or deleting properties later, initialize absent fields with null, and keep arrays uniform and packed.",
+   "keywords": [
+    "object shape consistency",
+    "constructor",
+    "factory function",
+    "dictionary mode",
+    "holey arrays",
+    "packed arrays",
+    "array element types"
+   ],
+   "questions": [
+    "How can you maintain consistent object shapes in JavaScript?",
+    "Why should you avoid deleting properties on objects?",
+    "What causes arrays to become slower in V8?"
+   ]
+  },
+  "js-engine-6-0-3": {
+   "text_sha": "f00176796df3295a",
+   "summary": "Keep argument types and counts consistent in hot functions to avoid adaptation overhead, but only optimize hot code after measuring performance impacts.",
+   "keywords": [
+    "hot functions",
+    "argument types",
+    "function optimization",
+    "V8 adaptation",
+    "performance profiling",
+    "call site consistency"
+   ],
+   "questions": [
+    "Why should argument types be consistent in hot functions?",
+    "What problems arise from passing different numbers of arguments?",
+    "When should you apply these optimization guidelines?"
+   ]
+  },
+  "js-engine-6-0-4": {
+   "text_sha": "a47100d68456dc70",
+   "summary": "Using classes or constructors ensures consistent object shapes automatically, while object literals from multiple sources risk shape drift; a factory function can unify layouts.",
+   "keywords": [
+    "classes",
+    "constructors",
+    "object shape consistency",
+    "factory function",
+    "shape drift",
+    "hot code optimization"
+   ],
+   "questions": [
+    "How do classes help maintain consistent object shapes?",
+    "What causes shape drift with object literals?",
+    "How can a factory function improve shape consistency?"
+   ]
+  },
+  "js-engine-6-1-0": {
+   "text_sha": "d0057f3120ff582a",
+   "summary": "Deoptimization in V8 is triggered by type changes, such as when a function optimized for integers receives a string or a number representation changes from small integer to float.",
+   "keywords": [
+    "deoptimization",
+    "TurboFan",
+    "type change",
+    "Smi",
+    "node --trace-deopt",
+    "node --trace-opt",
+    "number representation"
+   ],
+   "questions": [
+    "What causes deoptimization due to type changes in V8?",
+    "How does a number representation change trigger deoptimization?",
+    "What commands show deoptimization traces in Node.js?"
+   ]
+  },
+  "js-engine-6-1-1": {
+   "text_sha": "2088c63eaa4d5b8d",
+   "summary": "Deoptimization also occurs due to shape changes in objects, out-of-bounds or holes in arrays, and insufficient type feedback when optimized code encounters new branches.",
+   "keywords": [
+    "shape change",
+    "hidden class",
+    "wrong map",
+    "out-of-bounds",
+    "holes",
+    "type feedback",
+    "deoptimization triggers"
+   ],
+   "questions": [
+    "How does a shape change in an object cause deoptimization?",
+    "What happens when optimized code accesses out-of-bounds array elements?",
+    "Why does insufficient type feedback lead to deoptimization?"
+   ]
+  },
+  "js-engine-6-1-2": {
+   "text_sha": "9c75d6bab3f0133b",
+   "summary": "Other deoptimization triggers include unusual use of arguments, mismatched argument counts, try-catch usage, and unsupported operations; the key is to identify and fix the failing assumption from the deopt trace.",
+   "keywords": [
+    "arguments object",
+    "try catch",
+    "deoptimization causes",
+    "fixing deopt",
+    "V8 limitations",
+    "deopt trace"
+   ],
+   "questions": [
+    "What are some less common causes of deoptimization in V8?",
+    "How should you approach fixing deoptimizations based on trace output?",
+    "Why is memorizing a fixed list of deopt causes not recommended?"
+   ]
+  },
+  "js-engine-6-1-3": {
+   "text_sha": "810316b310eb8229",
+   "summary": "A practical fix for deoptimization is normalizing input at the boundary, e.g., converting user input to numbers before passing to hot functions, and avoiding repeated optimize-deopt loops.",
+   "keywords": [
+    "normalize at the boundary",
+    "deoptimization fix",
+    "hot function",
+    "optimize-deopt loop",
+    "user input conversion"
+   ],
+   "questions": [
+    "What does 'normalize at the boundary' mean in preventing deoptimization?",
+    "How can repeated optimize-deopt loops be identified and avoided?",
+    "Why is it acceptable to have some deoptimizations during warm-up?"
+   ]
+  },
+  "js-engine-6-1-4": {
+   "text_sha": "3845b00c9c65969b",
+   "summary": "Profiling helps find important functions; V8 becomes more conservative after repeated deoptimizations, so testing under realistic, warmed-up conditions is crucial for accurate performance insights.",
+   "keywords": [
+    "profiling",
+    "V8 optimization",
+    "deoptimization history",
+    "warm-up",
+    "long-running server",
+    "cold start"
+   ],
+   "questions": [
+    "How does V8's behavior change after multiple deoptimizations of a function?",
+    "Why is testing under warmed-up conditions important for profiling?",
+    "What role does profiling play in identifying functions to optimize?"
+   ]
+  },
+  "js-engine-6-2-0": {
+   "text_sha": "4dbc1c6cbc481d84",
+   "summary": "Use the V8 sampling profiler with the `--prof` flag to record periodic samples of a Node.js program's execution for later performance analysis.",
+   "keywords": [
+    "V8 sampling profiler",
+    "--prof",
+    "node profiling",
+    "performance measurement",
+    "sampling profiler",
+    "isolate log",
+    "v8.log"
+   ],
+   "questions": [
+    "How do you enable V8's sampling profiler in Node.js?",
+    "What kind of output file does `--prof` generate?",
+    "How can you create a test script to profile with `--prof`?"
+   ]
+  },
+  "js-engine-6-2-1": {
+   "text_sha": "5ab3bdba42cde1f5",
+   "summary": "Process the V8 profiler log with `node --prof-process` to get a report showing time spent in JavaScript, C++, garbage collection, and other categories.",
+   "keywords": [
+    "--prof-process",
+    "V8 profiler report",
+    "sampling ticks",
+    "garbage collection profiling",
+    "runtime profiling",
+    "C++ profiling"
+   ],
+   "questions": [
+    "How do you convert a V8 profiler log into a readable report?",
+    "What does the summary section of the `--prof-process` report show?",
+    "How can you tell if garbage collection is a performance bottleneck from the profiler?"
+   ]
+  },
+  "js-engine-6-2-2": {
+   "text_sha": "f320a23accb30b44",
+   "summary": "Analyze the bottom-up profile from `--prof-process` to find the slowest functions and their callers, and use flags like `--trace-opt` and `--print-bytecode` to investigate optimization status and bytecode.",
+   "keywords": [
+    "bottom-up profile",
+    "hot functions",
+    "--trace-opt",
+    "--trace-deopt",
+    "--print-bytecode",
+    "optimized code",
+    "interpreted code",
+    "function callers"
+   ],
+   "questions": [
+    "What does the bottom-up profile in V8's profiler report show?",
+    "How can you check if a function was optimized or interpreted?",
+    "Which flags help understand a function's optimization and bytecode?"
+   ]
+  },
+  "js-engine-6-2-3": {
+   "text_sha": "4212ede366f25dc9",
+   "summary": "Use `--cpu-prof` to generate a Chrome DevTools flame chart for visual profiling of Node.js programs as an alternative to text reports.",
+   "keywords": [
+    "--cpu-prof",
+    "Chrome DevTools",
+    "flame chart",
+    "visual profiling",
+    "Node.js profiling",
+    "cpuprofile file"
+   ],
+   "questions": [
+    "What is the purpose of the `--cpu-prof` flag in Node.js?",
+    "How can you visualize V8 profiling data using Chrome DevTools?",
+    "What are the benefits of a flame chart over text profiling reports?"
+   ]
+  },
+  "js-engine-6-2-4": {
+   "text_sha": "72f00d66f1eade5d",
+   "summary": "Combine V8 flags like `--print-bytecode`, `--trace-opt`, `--trace-deopt`, and `--prof` to iteratively profile, analyze, and optimize JavaScript functions using realistic inputs and shape checks.",
+   "keywords": [
+    "--print-bytecode",
+    "--trace-opt",
+    "--trace-deopt",
+    "--prof",
+    "%HaveSameMap",
+    "--allow-natives-syntax",
+    "optimization pipeline",
+    "profiling workflow"
+   ],
+   "questions": [
+    "Which V8 flags help inspect bytecode and optimization status?",
+    "How can you check object shape consistency during profiling?",
+    "What is a good workflow for profiling and optimizing a JavaScript function?"
+   ]
+  }
+ }
+}

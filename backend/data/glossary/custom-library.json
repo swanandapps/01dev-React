@@ -1,0 +1,64 @@
+{
+ "replacements": [
+  {
+   "term": "iffy",
+   "replacement": "IIFE"
+  },
+  {
+   "term": "ify",
+   "replacement": "IIFE"
+  },
+  {
+   "term": "model pattern",
+   "replacement": "module pattern"
+  },
+  {
+   "term": "model patterns",
+   "replacement": "module patterns"
+  },
+  {
+   "term": "tree shucking",
+   "replacement": "tree shaking"
+  },
+  {
+   "term": "ecmaskive models",
+   "replacement": "ECMAScript modules"
+  },
+  {
+   "term": "ecmassive model",
+   "replacement": "ECMAScript module"
+  },
+  {
+   "term": "ecmassive models",
+   "replacement": "ECMAScript modules"
+  },
+  {
+   "term": "ecmascript model",
+   "replacement": "ECMAScript module"
+  },
+  {
+   "term": "ecmascript models",
+   "replacement": "ECMAScript modules"
+  },
+  {
+   "term": "explosive model",
+   "replacement": "ES module"
+  },
+  {
+   "term": "node models",
+   "replacement": "node modules"
+  },
+  {
+   "term": "node model",
+   "replacement": "node module"
+  },
+  {
+   "term": "common javascript models",
+   "replacement": "CommonJS modules"
+  },
+  {
+   "term": "outside a model",
+   "replacement": "outside a module"
+  }
+ ]
+}

@@ -1,0 +1,1291 @@
+{
+ "version": 1,
+ "model": "gpt-4.1-mini",
+ "chunks": {
+  "product-engineering-0-0-0": {
+   "text_sha": "e1b7d9bd44332614",
+   "summary": "The key difference between a developer and a product engineer is understanding why code behaves as it does and how it reaches users, beyond just knowing syntax.",
+   "keywords": [
+    "developer vs product engineer",
+    "code behavior",
+    "software delivery",
+    "engineering mindset"
+   ],
+   "questions": [
+    "Why do some developers feel stuck after years of coding?",
+    "What separates a developer from a product engineer?",
+    "Is syntax knowledge enough to advance as a software engineer?"
+   ]
+  },
+  "product-engineering-0-0-1": {
+   "text_sha": "b4ad3a91038ec75d",
+   "summary": "The course project is a link-preview widget that fetches and parses external web pages, extracts metadata, caches results, renders a card, and handles internet failures.",
+   "keywords": [
+    "link-preview widget",
+    "Open Graph tags",
+    "HTML parsing",
+    "caching",
+    "error handling",
+    "web scraping"
+   ],
+   "questions": [
+    "What is the link-preview widget project about?",
+    "What engineering challenges does a link-preview widget involve?",
+    "How do you handle metadata extraction and caching in a link-preview?"
+   ]
+  },
+  "product-engineering-0-0-2": {
+   "text_sha": "2744eaac98e12b3c",
+   "summary": "The course covers the engineer's mindset, JavaScript architecture, asynchronous programming, functional patterns, and production engineering, all applied to the same project.",
+   "keywords": [
+    "engineer's mindset",
+    "JavaScript architecture",
+    "event loop",
+    "microtask queue",
+    "functional programming",
+    "production engineering"
+   ],
+   "questions": [
+    "What topics does the Product Engineering Essentials course cover?",
+    "How is asynchronous JavaScript taught in this course?",
+    "What production engineering skills are included in the curriculum?"
+   ]
+  },
+  "product-engineering-0-0-3": {
+   "text_sha": "cbdbc6063736ceae",
+   "summary": "To learn effectively, actively follow along with code, pause to think, and understand trade-offs in engineering decisions rather than just copying code.",
+   "keywords": [
+    "active learning",
+    "code reading",
+    "engineering trade-offs",
+    "problem solving",
+    "learning habits"
+   ],
+   "questions": [
+    "How should I approach learning from this course?",
+    "Why is it important to ask why before how in coding?",
+    "What does it mean that engineering decisions depend on context?"
+   ]
+  },
+  "product-engineering-0-1-0": {
+   "text_sha": "082e97bcf7ac441b",
+   "summary": "Copying code snippets quickly helps new engineers close tasks but builds shallow knowledge without understanding underlying mechanisms.",
+   "keywords": [
+    "copy-paste coding",
+    "shallow knowledge",
+    "engineering incentives",
+    "code snippets",
+    "learning programming"
+   ],
+   "questions": [
+    "Why do many engineers rely on copying code snippets?",
+    "What is the downside of using code snippets without understanding them?",
+    "How do incentives affect engineers' learning depth?"
+   ]
+  },
+  "product-engineering-0-1-1": {
+   "text_sha": "fd503cfc25ffbb08",
+   "summary": "Asking deep questions about how fetch and promises work under the hood helps diagnose issues beyond surface-level syntax problems.",
+   "keywords": [
+    "fetch API",
+    "promises",
+    "JavaScript async",
+    "debugging",
+    "browser behavior",
+    "UI hang"
+   ],
+   "questions": [
+    "What questions should you ask when fetch causes UI hangs?",
+    "How does understanding promises help debug asynchronous code?",
+    "Why is it important to look beyond syntax in debugging?"
+   ]
+  },
+  "product-engineering-0-1-2": {
+   "text_sha": "3aae2967703f8e75",
+   "summary": "Going one level deeper into how functions or frameworks work each time you encounter surprises builds mental models that speed up debugging.",
+   "keywords": [
+    "mental models",
+    "debugging strategy",
+    "first principles",
+    "framework internals",
+    "HTML parsing"
+   ],
+   "questions": [
+    "How can going one level deeper improve debugging skills?",
+    "What does it mean to ask what a function is actually made of?",
+    "Why is understanding what parsing means important before using libraries?"
+   ]
+  },
+  "product-engineering-0-1-3": {
+   "text_sha": "e2ff693556e80f2c",
+   "summary": "Overcoming fear of reading specs and source code enables engineers to explore underlying systems confidently and enjoyably.",
+   "keywords": [
+    "reading specs",
+    "source code",
+    "first principles thinking",
+    "engineering mindset",
+    "overcoming fear"
+   ],
+   "questions": [
+    "Why do engineers fear reading specifications and source code?",
+    "How can engineers overcome the fear of reading code and specs?",
+    "What benefits come from confidently exploring source code?"
+   ]
+  },
+  "product-engineering-0-2-0": {
+   "text_sha": "cf9ee3351f46de43",
+   "summary": "First principles thinking means breaking problems down to their fundamental truths instead of relying on analogy, enabling solutions for unique situations without tutorials.",
+   "keywords": [
+    "first principles thinking",
+    "reasoning by analogy",
+    "problem solving",
+    "fundamental truths"
+   ],
+   "questions": [
+    "What is first principles thinking?",
+    "How does first principles thinking differ from reasoning by analogy?",
+    "Why is first principles thinking useful in product work?"
+   ]
+  },
+  "product-engineering-0-2-1": {
+   "text_sha": "8144726922d6d4db",
+   "summary": "A link preview fundamentally takes a URL and returns metadata like title, description, and image, with data sourced from meta tags in the HTML head and subject to browser cross-origin rules.",
+   "keywords": [
+    "link preview",
+    "URL metadata",
+    "HTML meta tags",
+    "cross-origin requests",
+    "browser security"
+   ],
+   "questions": [
+    "What is the core function of a link preview?",
+    "Where does link preview metadata come from?",
+    "How do browser cross-origin rules affect fetching metadata?"
+   ]
+  },
+  "product-engineering-0-2-2": {
+   "text_sha": "dd2c0bf58e19b1e4",
+   "summary": "Design a link preview widget with a server-side fetchPreview function to get metadata and a client-side createLinkPreview function to render it, keeping responsibilities framework-agnostic.",
+   "keywords": [
+    "link preview design",
+    "fetchPreview",
+    "createLinkPreview",
+    "server-side function",
+    "client-side function",
+    "framework-agnostic design"
+   ],
+   "questions": [
+    "How can a link preview widget handle cross-origin restrictions?",
+    "What are the roles of fetchPreview and createLinkPreview functions?",
+    "Why keep design responsibilities independent of frameworks?"
+   ]
+  },
+  "product-engineering-0-2-3": {
+   "text_sha": "86382a766a426677",
+   "summary": "Use a four-step checklist for new problems: define input/output, list truths for correctness, separate knowns from assumptions, and design minimal experiments to test assumptions.",
+   "keywords": [
+    "problem solving checklist",
+    "input output definition",
+    "assumptions testing",
+    "minimal experiments",
+    "bug prevention"
+   ],
+   "questions": [
+    "What are the steps to analyze a new problem effectively?",
+    "Why is it important to separate known facts from assumptions?",
+    "How do minimal experiments help in testing assumptions?"
+   ]
+  },
+  "product-engineering-1-0-0": {
+   "text_sha": "a13deb4c374e7084",
+   "summary": "The wave model explains JavaScript evolved in layers over time, with each wave adding features while preserving previous ones, helping to understand its quirks historically.",
+   "keywords": [
+    "JavaScript waves",
+    "JavaScript history",
+    "JavaScript architecture",
+    "language evolution",
+    "backward compatibility"
+   ],
+   "questions": [
+    "What is the wave model of JavaScript?",
+    "Why does JavaScript have odd or confusing behaviors?",
+    "How can understanding JavaScript's history help in coding?"
+   ]
+  },
+  "product-engineering-1-0-1": {
+   "text_sha": "fff8248c0b492cde",
+   "summary": "JavaScript evolved in five waves: from simple scripting in the 90s, through ES3 cross-browser issues, ES5 additions, the major ES2015 update, to yearly small feature additions since then.",
+   "keywords": [
+    "JavaScript waves",
+    "ECMAScript 3",
+    "ES5",
+    "ES2015",
+    "async await",
+    "JavaScript history",
+    "JavaScript features"
+   ],
+   "questions": [
+    "What are the major waves in JavaScript's evolution?",
+    "Which features were introduced in ES2015?",
+    "How did JavaScript change between the 90s and ES5?"
+   ]
+  },
+  "product-engineering-1-0-2": {
+   "text_sha": "dcdd0cdc73f4feae",
+   "summary": "JavaScript code often mixes features from different waves, like async/await from recent waves and forgiving HTML parsing from early waves, reflecting multiple eras coexisting in one file.",
+   "keywords": [
+    "async await",
+    "Object.assign",
+    "JavaScript waves",
+    "backward compatibility",
+    "HTML parsing",
+    "JavaScript evolution"
+   ],
+   "questions": [
+    "Why might JavaScript code use features from different waves?",
+    "What is an example of mixing old and new JavaScript features?",
+    "How does understanding waves help predict code behavior?"
+   ]
+  },
+  "product-engineering-1-0-3": {
+   "text_sha": "bb2a70f2f5ef7d34",
+   "summary": "JavaScript prioritizes backward compatibility to avoid breaking the web, leading to coexistence of old and new features like var and let or functions and arrow functions.",
+   "keywords": [
+    "backward compatibility",
+    "var vs let",
+    "arrow functions",
+    "JavaScript design",
+    "don't break the web",
+    "JavaScript evolution"
+   ],
+   "questions": [
+    "Why does JavaScript keep old features instead of removing them?",
+    "What does 'don't break the web' mean for JavaScript?",
+    "Why do var and let both exist in JavaScript?"
+   ]
+  },
+  "product-engineering-1-0-4": {
+   "text_sha": "584f43362bf59171",
+   "summary": "A practical exercise: identify which JavaScript wave your recent code lines belong to, helping to recognize language layers and improve understanding.",
+   "keywords": [
+    "JavaScript waves",
+    "code analysis exercise",
+    "ES5",
+    "ES2015",
+    "JavaScript history",
+    "learning JavaScript"
+   ],
+   "questions": [
+    "How can I identify which wave a JavaScript code line belongs to?",
+    "Why is it useful to classify code by JavaScript waves?",
+    "What features distinguish ES5 from ES2015 code?"
+   ]
+  },
+  "product-engineering-1-1-0": {
+   "text_sha": "b7796ed335975bec",
+   "summary": "JavaScript 1.0 was designed in 10 days by Brendan Eich with clear constraints, and its name was chosen for marketing, not technical similarity to Java.",
+   "keywords": [
+    "JavaScript 1.0",
+    "Brendan Eich",
+    "Netscape",
+    "Mocha",
+    "LiveScript",
+    "JavaScript history",
+    "language constraints"
+   ],
+   "questions": [
+    "Who created JavaScript 1.0 and how long did it take?",
+    "Why is JavaScript named after Java if they are different?",
+    "What does the short design time of JavaScript 1.0 imply about its design?"
+   ]
+  },
+  "product-engineering-1-1-1": {
+   "text_sha": "da184ad0d558e9d9",
+   "summary": "JavaScript's design combined Java/C-like syntax, loose typing for accessibility, first-class functions inspired by Scheme, and prototype-based objects from Self.",
+   "keywords": [
+    "JavaScript design",
+    "loose typing",
+    "first-class functions",
+    "prototype inheritance",
+    "Scheme",
+    "Self",
+    "JavaScript syntax"
+   ],
+   "questions": [
+    "What syntax features did JavaScript borrow from Java and C?",
+    "Why does JavaScript have loose typing and automatic conversions?",
+    "Which languages inspired JavaScript's functions and object system?"
+   ]
+  },
+  "product-engineering-1-1-2": {
+   "text_sha": "6fa620a6bf6f6ff2",
+   "summary": "JavaScript's loose typing, first-class functions, and prototype inheritance directly affect code behavior like type coercion, passing handlers, and sharing methods without classes.",
+   "keywords": [
+    "JavaScript loose typing",
+    "type coercion",
+    "first-class functions",
+    "prototype inheritance",
+    "parseMetadata",
+    "createLinkPreview",
+    "JavaScript bugs"
+   ],
+   "questions": [
+    "Why does '5' + 1 equal '51' but '5' - 1 equals 4 in JavaScript?",
+    "How do first-class functions simplify passing handlers in JavaScript?",
+    "How does prototype inheritance allow method sharing without classes?"
+   ]
+  },
+  "product-engineering-1-1-3": {
+   "text_sha": "dc2e5087303ae7aa",
+   "summary": "Some early JavaScript features like == coercion and dynamic this are problematic, but first-class functions, closures, and flexible objects enabled its powerful growth.",
+   "keywords": [
+    "JavaScript == operator",
+    "this keyword",
+    "first-class functions",
+    "closures",
+    "flexible objects",
+    "JavaScript evolution"
+   ],
+   "questions": [
+    "What are some regrettable early JavaScript design choices?",
+    "Which features helped JavaScript grow into a powerful language?",
+    "Why is JavaScript still evolving today?"
+   ]
+  },
+  "product-engineering-1-1-4": {
+   "text_sha": "466b70e5c067dce2",
+   "summary": "Exercise: Use browser console commands typeof null, '5' - 1, and '5' + 1 to identify which 1995 design constraints explain their behavior.",
+   "keywords": [
+    "typeof null",
+    "JavaScript type coercion",
+    "browser console",
+    "JavaScript exercise",
+    "1995 design constraints"
+   ],
+   "questions": [
+    "What does typeof null return and why?",
+    "Why does '5' - 1 produce a number but '5' + 1 produces a string?",
+    "How can these behaviors be traced back to JavaScript's original design constraints?"
+   ]
+  },
+  "product-engineering-1-2-0": {
+   "text_sha": "a805dd2bb9bc6e0f",
+   "summary": "JavaScript evolved due to competition and governance, leading to standardization by Ecma International, resulting in ECMAScript editions like ES5 and ES2015 implemented by browsers.",
+   "keywords": [
+    "JavaScript evolution",
+    "ECMAScript",
+    "standardization",
+    "Netscape",
+    "Microsoft",
+    "ES5",
+    "ES2015",
+    "Ecma International"
+   ],
+   "questions": [
+    "Why did JavaScript evolve from version 1.0 to its current form?",
+    "What is the relationship between JavaScript and ECMAScript?",
+    "Why were different browser versions of JavaScript problematic for developers?"
+   ]
+  },
+  "product-engineering-1-2-1": {
+   "text_sha": "76327d65e23498fc",
+   "summary": "New JavaScript features are proposed and approved through the TC39 committee's staged process, ensuring stability since shipped features cannot be removed from the web.",
+   "keywords": [
+    "TC39",
+    "JavaScript proposals",
+    "stages",
+    "optional chaining",
+    "ECMAScript features",
+    "feature standardization"
+   ],
+   "questions": [
+    "What is the TC39 committee and what role does it play in JavaScript development?",
+    "How does the TC39 proposal process work for new JavaScript features?",
+    "Why must JavaScript features be carefully approved before shipping?"
+   ]
+  },
+  "product-engineering-1-2-2": {
+   "text_sha": "f29a5dcab98675ed",
+   "summary": "Transpilers like Babel and polyfills enable writing modern JavaScript while supporting older browsers, with product decisions guiding whether to ship modern code or compile down.",
+   "keywords": [
+    "transpilers",
+    "Babel",
+    "polyfills",
+    "Promise",
+    "async await",
+    "browser support",
+    "modern JavaScript"
+   ],
+   "questions": [
+    "What are transpilers and polyfills in JavaScript?",
+    "How do transpilers and polyfills help support older browsers?",
+    "What factors influence whether to ship modern JavaScript code directly or compile it down?"
+   ]
+  },
+  "product-engineering-1-2-3": {
+   "text_sha": "46812433c3504386",
+   "summary": "JavaScript's quirks stem from its rapid start, competition, and careful backward-compatible evolution, enabling prediction of language behavior and leading into prototype concepts.",
+   "keywords": [
+    "JavaScript history",
+    "backward compatibility",
+    "prototypes",
+    "[[Prototype]]",
+    "language evolution"
+   ],
+   "questions": [
+    "What historical factors explain JavaScript's unusual features?",
+    "How does understanding JavaScript's evolution help predict its behavior?",
+    "What is the significance of prototypes in JavaScript?"
+   ]
+  },
+  "product-engineering-1-2-4": {
+   "text_sha": "9961ab70d92b1f62",
+   "summary": "Reading TC39 proposal documents on GitHub reveals the motivations and trade-offs behind JavaScript features, emphasizing understanding reasoning over syntax.",
+   "keywords": [
+    "TC39 proposals",
+    "GitHub",
+    "JavaScript feature motivation",
+    "proposal trade-offs",
+    "reading primary sources"
+   ],
+   "questions": [
+    "Where can I find official TC39 JavaScript proposals?",
+    "What kind of information do TC39 proposals provide besides syntax?",
+    "Why is reading the reasoning behind proposals useful?"
+   ]
+  },
+  "product-engineering-2-0-0": {
+   "text_sha": "945d72b41de3383b",
+   "summary": "JavaScript objects have a hidden internal slot called [[Prototype]] that links to another object or null, enabling property lookup through this prototype chain.",
+   "keywords": [
+    "[[Prototype]]",
+    "internal slot",
+    "prototype chain",
+    "JavaScript object",
+    "property lookup"
+   ],
+   "questions": [
+    "What is the [[Prototype]] internal slot in JavaScript objects?",
+    "How does JavaScript use the [[Prototype]] link when accessing properties?",
+    "Can you access the [[Prototype]] property directly with dot notation?"
+   ]
+  },
+  "product-engineering-2-0-1": {
+   "text_sha": "b9b04ad677d30f82",
+   "summary": "Object.create sets an object's [[Prototype]] to a given object, enabling property inheritance; Object.getPrototypeOf reveals this prototype, while Object.hasOwn checks own properties.",
+   "keywords": [
+    "Object.create",
+    "Object.getPrototypeOf",
+    "Object.hasOwn",
+    "prototype inheritance",
+    "__proto__"
+   ],
+   "questions": [
+    "How does Object.create set an object's prototype?",
+    "How can you check if a property is an object's own property?",
+    "What is the recommended way to access an object's prototype?"
+   ]
+  },
+  "product-engineering-2-0-2": {
+   "text_sha": "09866dcf4ac00027",
+   "summary": "Writing to a property creates or shadows it on the object itself without modifying the prototype; mutating shared objects like arrays on the prototype affects all linked objects.",
+   "keywords": [
+    "property shadowing",
+    "prototype mutation",
+    "shared mutable data",
+    "JavaScript prototype write behavior"
+   ],
+   "questions": [
+    "What happens when you assign a property that exists on the prototype?",
+    "Why is mutating shared objects on the prototype dangerous?",
+    "What is property shadowing in JavaScript prototypes?"
+   ]
+  },
+  "product-engineering-2-0-3": {
+   "text_sha": "73b6ac2cf90fa447",
+   "summary": "To share methods but keep unique data per object, create a methods object as prototype and instantiate objects with Object.create to save memory and separate data from behavior.",
+   "keywords": [
+    "Object.create",
+    "prototype methods",
+    "shared behavior",
+    "unique data",
+    "memory optimization"
+   ],
+   "questions": [
+    "How can you share methods among many objects without duplicating them?",
+    "Why use Object.create with a methods object for multiple instances?",
+    "How does this pattern separate data and behavior in JavaScript objects?"
+   ]
+  },
+  "product-engineering-2-1-0": {
+   "text_sha": "dc3af47666197ddd",
+   "summary": "JavaScript property lookup follows the prototype chain by checking own properties, then prototypes repeatedly until found or null, as defined by the OrdinaryGet operation.",
+   "keywords": [
+    "prototype chain",
+    "property lookup",
+    "OrdinaryGet",
+    "Object.prototype",
+    "[[Prototype]]",
+    "JavaScript specification"
+   ],
+   "questions": [
+    "How does JavaScript find a property on an object?",
+    "What happens if a property is not found on the object itself?",
+    "What is the end of the prototype chain?"
+   ]
+  },
+  "product-engineering-2-1-1": {
+   "text_sha": "9e4707a076438c54",
+   "summary": "Creating a function with a prototype object and using new links the new object's [[Prototype]] to the function's prototype, distinguishing between function.prototype and object [[Prototype]].",
+   "keywords": [
+    "function prototype",
+    "new operator",
+    "[[Prototype]]",
+    "Preview.prototype",
+    "Object.getPrototypeOf",
+    "JavaScript objects"
+   ],
+   "questions": [
+    "What is the difference between function.prototype and an object's [[Prototype]]?",
+    "What happens internally when calling a function with new?",
+    "How can you verify an object's prototype in JavaScript?"
+   ]
+  },
+  "product-engineering-2-1-2": {
+   "text_sha": "f02e1e0c6b0406d3",
+   "summary": "An object's prototype chain links own properties to function prototype objects and then to Object.prototype, enabling shared methods like render, toString, and array methods.",
+   "keywords": [
+    "prototype chain",
+    "own properties",
+    "Preview.prototype",
+    "Object.prototype",
+    "Array.prototype",
+    "class keyword",
+    "JavaScript inheritance"
+   ],
+   "questions": [
+    "What does an object's prototype chain look like?",
+    "Where are methods like toString and map found in the chain?",
+    "How does the class keyword relate to prototypes?"
+   ]
+  },
+  "product-engineering-2-1-3": {
+   "text_sha": "2173f1577c17b4b9",
+   "summary": "The for...in loop iterates over enumerable own and inherited properties, so use Object.hasOwn or Object.keys to avoid inherited keys in loops.",
+   "keywords": [
+    "for...in loop",
+    "enumerable properties",
+    "Object.hasOwn",
+    "Object.keys",
+    "prototype chain",
+    "inherited properties",
+    "JavaScript debugging"
+   ],
+   "questions": [
+    "Why does for...in loop include inherited properties?",
+    "How can you filter out inherited properties when looping?",
+    "What causes unexpected keys to appear in for...in loops?"
+   ]
+  },
+  "product-engineering-2-2-0": {
+   "text_sha": "199fb78b91682836",
+   "summary": "You can add methods to an object's prototype at runtime, and all linked objects, even previously created ones, immediately gain access to the new method.",
+   "keywords": [
+    "prototype",
+    "runtime modification",
+    "method addition",
+    "prototype chain",
+    "live linking"
+   ],
+   "questions": [
+    "How can you add a method to an prototype after objects are created?",
+    "What happens when you add a method to a prototype at runtime?",
+    "Why does modifying a prototype affect all linked objects immediately?"
+   ]
+  },
+  "product-engineering-2-2-1": {
+   "text_sha": "223cbdbb4475c6ea",
+   "summary": "Modifying built-in prototypes, known as monkey patching, can cause conflicts and break code, so it should be avoided in shared code despite its tempting convenience.",
+   "keywords": [
+    "monkey patching",
+    "built-in prototypes",
+    "Array.prototype",
+    "method conflicts",
+    "flatten vs flat",
+    "contains vs includes"
+   ],
+   "questions": [
+    "What is monkey patching in JavaScript?",
+    "Why is modifying built-in prototypes dangerous?",
+    "What historical issues arose from extending built-in prototypes?"
+   ]
+  },
+  "product-engineering-2-2-2": {
+   "text_sha": "e249b0761f05c103",
+   "summary": "Polyfills safely add missing methods by checking existence first, and local prototype hacks can be used for method overriding without classes by chaining prototypes.",
+   "keywords": [
+    "polyfill",
+    "Array.prototype.at",
+    "method overriding",
+    "Object.create",
+    "prototype chaining",
+    "local hacks"
+   ],
+   "questions": [
+    "What is a polyfill and how does it safely add methods?",
+    "How can you override methods using prototype chaining without classes?",
+    "Why check if a method exists before adding it to a prototype?"
+   ]
+  },
+  "product-engineering-2-2-3": {
+   "text_sha": "ba7cc2b81d6da2a5",
+   "summary": "Object.freeze prevents prototype modification, and Object.setPrototypeOf can change an object's prototype but may hurt performance; prefer Object.create for setting prototypes initially.",
+   "keywords": [
+    "Object.freeze",
+    "Object.setPrototypeOf",
+    "prototype modification",
+    "performance",
+    "Object.create",
+    "V8 engine optimization"
+   ],
+   "questions": [
+    "What does Object.freeze do to a prototype?",
+    "Why can changing an object's prototype with Object.setPrototypeOf slow down performance?",
+    "When should you use Object.create instead of changing prototypes later?"
+   ]
+  },
+  "product-engineering-3-0-0": {
+   "text_sha": "d34c5329367c3068",
+   "summary": "JavaScript runs on a single thread using a call stack, executing one function at a time, which blocks other actions during long-running functions.",
+   "keywords": [
+    "JavaScript single thread",
+    "call stack",
+    "function execution",
+    "blocking",
+    "synchronous code"
+   ],
+   "questions": [
+    "How does JavaScript execute code on a single thread?",
+    "What happens when a function takes a long time to run in JavaScript?",
+    "What is the call stack in JavaScript?"
+   ]
+  },
+  "product-engineering-3-0-1": {
+   "text_sha": "ce5a65c8a6c1702e",
+   "summary": "The browser or Node environment handles waiting tasks like network requests on separate threads and queues callbacks in the task queue for the event loop to process when the call stack is empty.",
+   "keywords": [
+    "event loop",
+    "task queue",
+    "macrotask queue",
+    "fetch",
+    "callback",
+    "browser threads"
+   ],
+   "questions": [
+    "How does JavaScript handle asynchronous network requests without blocking?",
+    "What is the role of the task queue in JavaScript's event loop?",
+    "How does the event loop decide when to run a callback?"
+   ]
+  },
+  "product-engineering-3-0-2": {
+   "text_sha": "aa48c9978f8d040c",
+   "summary": "setTimeout with zero delay queues its callback as a task that runs only after the current call stack is empty, demonstrating the event loop's task scheduling.",
+   "keywords": [
+    "setTimeout",
+    "zero delay",
+    "event loop",
+    "task queue",
+    "callback order",
+    "console.log"
+   ],
+   "questions": [
+    "Why does setTimeout with zero delay not execute immediately?",
+    "What order do console.log statements run with setTimeout in JavaScript?",
+    "How does the event loop handle tasks queued by setTimeout?"
+   ]
+  },
+  "product-engineering-3-0-3": {
+   "text_sha": "5f929a5c55586d07",
+   "summary": "Long synchronous tasks block the main thread, causing UI delays, so it's important to keep tasks short and break up heavy work to maintain responsiveness.",
+   "keywords": [
+    "main thread blocking",
+    "synchronous loop",
+    "UI responsiveness",
+    "task length",
+    "event loop"
+   ],
+   "questions": [
+    "What happens if a synchronous loop takes a long time in JavaScript?",
+    "Why should tasks be kept short in JavaScript?",
+    "How does blocking the main thread affect user experience?"
+   ]
+  },
+  "product-engineering-3-1-0": {
+   "text_sha": "c31742d567783d27",
+   "summary": "Callbacks handle asynchronous results but cause nested, hard-to-manage code known as callback hell due to scattered control flow and error handling.",
+   "keywords": [
+    "callback",
+    "callback hell",
+    "asynchronous JavaScript",
+    "error handling",
+    "nested callbacks",
+    "fetchPreview"
+   ],
+   "questions": [
+    "What is callback hell in asynchronous JavaScript?",
+    "Why is nested callback code problematic for control flow and error handling?",
+    "How does a callback function work in asynchronous operations?"
+   ]
+  },
+  "product-engineering-3-1-1": {
+   "text_sha": "dc586eca27ef4cad",
+   "summary": "Promises represent future results with states pending, fulfilled, or rejected, enabling chaining with .then and .catch for clearer asynchronous control flow and centralized error handling.",
+   "keywords": [
+    "Promise",
+    "pending",
+    "fulfilled",
+    "rejected",
+    ".then",
+    ".catch",
+    "promise chaining",
+    "asynchronous control flow"
+   ],
+   "questions": [
+    "What states can a JavaScript promise be in?",
+    "How do .then and .catch methods work with promises?",
+    "Why do promise handlers always run asynchronously?"
+   ]
+  },
+  "product-engineering-3-1-2": {
+   "text_sha": "5071a1d5b81997a7",
+   "summary": "Async/await syntax builds on promises, pausing async functions at await points without blocking the call stack, making asynchronous code read like synchronous code with try/catch error handling.",
+   "keywords": [
+    "async function",
+    "await",
+    "promises",
+    "state machine",
+    "try/catch",
+    "asynchronous code",
+    "call stack"
+   ],
+   "questions": [
+    "How does async/await relate to promises?",
+    "What happens when an async function encounters await?",
+    "How does async/await improve error handling compared to promises?"
+   ]
+  },
+  "product-engineering-3-1-3": {
+   "text_sha": "653b97775aa67777",
+   "summary": "Avoid sequential awaits in loops by using Promise.all for parallelism; always await promises to prevent unhandled rejections; use Promise.allSettled to handle multiple promises when some may fail.",
+   "keywords": [
+    "await in loop",
+    "Promise.all",
+    "Promise.allSettled",
+    "parallel asynchronous calls",
+    "unhandled promise rejection",
+    "asynchronous traps"
+   ],
+   "questions": [
+    "Why does using await inside a loop cause sequential execution?",
+    "How can Promise.all help run asynchronous tasks in parallel?",
+    "What is the difference between Promise.all and Promise.allSettled?"
+   ]
+  },
+  "product-engineering-3-2-0": {
+   "text_sha": "27ccbbfce536db40",
+   "summary": "The microtask queue has higher priority than the task queue; promise handlers and queueMicrotask callbacks run after each task finishes but before rendering or the next task.",
+   "keywords": [
+    "microtask queue",
+    "task queue",
+    "event loop",
+    "promise handlers",
+    "queueMicrotask",
+    "setTimeout",
+    "JavaScript asynchronous"
+   ],
+   "questions": [
+    "What is the difference between the microtask queue and the task queue?",
+    "When do promise handlers run in the JavaScript event loop?",
+    "How does the event loop prioritize microtasks versus tasks?"
+   ]
+  },
+  "product-engineering-3-2-1": {
+   "text_sha": "e07e394d40b2a35a",
+   "summary": "Promise handlers run after the current script task finishes and before timers; the output of console.log('1'), setTimeout(...), Promise.resolve().then(...), console.log('4') is 1, 4, 3, 2.",
+   "keywords": [
+    "promise handlers",
+    "setTimeout",
+    "microtask queue",
+    "task queue",
+    "console.log order",
+    "JavaScript event loop"
+   ],
+   "questions": [
+    "What is the output order of console.log statements mixed with setTimeout and Promise.then?",
+    "Why do promise handlers run before setTimeout callbacks?",
+    "How does the event loop handle tasks and microtasks in a script?"
+   ]
+  },
+  "product-engineering-3-2-2": {
+   "text_sha": "82be5a6d00f8124c",
+   "summary": "Microtasks can starve the event loop if they schedule more microtasks endlessly, freezing the UI; yielding to the task queue with setTimeout allows the browser to render between batches.",
+   "keywords": [
+    "microtask starvation",
+    "event loop freeze",
+    "infinite promise chain",
+    "setTimeout yield",
+    "UI freezing",
+    "JavaScript microtasks"
+   ],
+   "questions": [
+    "How can microtasks cause the event loop to starve and freeze the UI?",
+    "What is a good way to prevent microtask starvation in long-running promise chains?",
+    "Why should microtasks not be used for long-running work?"
+   ]
+  },
+  "product-engineering-3-2-3": {
+   "text_sha": "d846625439b79698",
+   "summary": "To trigger CSS transitions on newly added elements, wait a frame with requestAnimationFrame before setting classes, ensuring the browser paints the starting state first.",
+   "keywords": [
+    "requestAnimationFrame",
+    "CSS transitions",
+    "microtask queue",
+    "browser paint",
+    "renderCard",
+    "JavaScript animation timing"
+   ],
+   "questions": [
+    "Why does adding an element and setting its class in the same microtask prevent CSS transitions?",
+    "How does requestAnimationFrame help trigger transitions correctly?",
+    "When does requestAnimationFrame run relative to browser painting?"
+   ]
+  },
+  "product-engineering-4-0-0": {
+   "text_sha": "48ac34a126abc634",
+   "summary": "Pure functions always return the same result for the same inputs and have no side effects, making code predictable and easy to test.",
+   "keywords": [
+    "pure function",
+    "side effects",
+    "predictable code",
+    "testing",
+    "functional programming"
+   ],
+   "questions": [
+    "What defines a pure function?",
+    "Why are pure functions important for predictable code?",
+    "How do pure functions affect testing?"
+   ]
+  },
+  "product-engineering-4-0-1": {
+   "text_sha": "70c5ef0aa7ee4f99",
+   "summary": "Separating pure functions like parseMetadata from impure ones like fetchPreview improves testability by isolating logic from side effects like network calls and DOM manipulation.",
+   "keywords": [
+    "parseMetadata",
+    "pure function",
+    "fetchPreview",
+    "impure function",
+    "testability",
+    "DOM manipulation",
+    "network call"
+   ],
+   "questions": [
+    "How does parseMetadata demonstrate a pure function?",
+    "Why is separating fetchPreview from parseMetadata beneficial?",
+    "What makes a function impure in this context?"
+   ]
+  },
+  "product-engineering-4-0-2": {
+   "text_sha": "141aa5b645152079",
+   "summary": "Immutability avoids side effects by creating new objects or arrays with changes using spread syntax and array methods like map and filter, while noting spread is shallow.",
+   "keywords": [
+    "immutability",
+    "spread operator",
+    "shallow copy",
+    "map",
+    "filter",
+    "side effects",
+    "object copying"
+   ],
+   "questions": [
+    "How does immutability prevent unexpected side effects?",
+    "What does the spread operator do in creating new objects?",
+    "Why is the spread operator considered a shallow copy?"
+   ]
+  },
+  "product-engineering-4-0-3": {
+   "text_sha": "e9fbcbca5fad4094",
+   "summary": "Immutability has performance costs due to copying but benefits small objects by enabling history tracking and safer code; Object.freeze can enforce immutability during development.",
+   "keywords": [
+    "immutability cost",
+    "Object.freeze",
+    "performance",
+    "persistent data structures",
+    "Immer",
+    "history tracking"
+   ],
+   "questions": [
+    "What are the performance trade-offs of immutability?",
+    "How does Object.freeze help enforce immutability?",
+    "Why might immutability be acceptable for small objects?"
+   ]
+  },
+  "product-engineering-4-1-0": {
+   "text_sha": "6985bae3b57b013f",
+   "summary": "Function composition chains small single-argument functions so each output feeds the next input, creating clear, testable pipelines like a link-preview widget.",
+   "keywords": [
+    "function composition",
+    "pipeline",
+    "pure functions",
+    "single argument functions",
+    "JavaScript",
+    "f(g(x))"
+   ],
+   "questions": [
+    "What is function composition in JavaScript?",
+    "Why should functions take one argument and return one result for composition?",
+    "How can function composition improve reasoning about code?"
+   ]
+  },
+  "product-engineering-4-1-1": {
+   "text_sha": "b68ddf2b570a526e",
+   "summary": "The pipe helper composes functions left-to-right using reduce, returning a new function that passes input through each function sequentially.",
+   "keywords": [
+    "pipe",
+    "function composition",
+    "reduce",
+    "left-to-right",
+    "compose",
+    "reduceRight",
+    "JavaScript"
+   ],
+   "questions": [
+    "How does the pipe function work in JavaScript?",
+    "What is the difference between pipe and compose?",
+    "How can you compose multiple functions into one?"
+   ]
+  },
+  "product-engineering-4-1-2": {
+   "text_sha": "a29c6ece7c83fcc6",
+   "summary": "Partial application and currying create functions with preset arguments, enabling functions like truncate(max)(text) to fit pipelines expecting single-argument functions.",
+   "keywords": [
+    "partial application",
+    "currying",
+    "closures",
+    "truncate function",
+    "function returning function",
+    "JavaScript"
+   ],
+   "questions": [
+    "How do partial application and currying help with function composition?",
+    "What is an example of a curried truncate function?",
+    "Why are closures important in currying?"
+   ]
+  },
+  "product-engineering-4-1-3": {
+   "text_sha": "a8b84837f9d8b513",
+   "summary": "pipeAsync composes asynchronous functions by chaining promises with reduce and then, allowing mixed sync and async steps in a pipeline.",
+   "keywords": [
+    "pipeAsync",
+    "asynchronous composition",
+    "promises",
+    "reduce",
+    "then",
+    "JavaScript",
+    "tap function"
+   ],
+   "questions": [
+    "How do you compose asynchronous functions in JavaScript?",
+    "What is pipeAsync and how does it work?",
+    "How can you debug a long async pipeline?"
+   ]
+  },
+  "product-engineering-4-2-0": {
+   "text_sha": "7e3932347c55a98f",
+   "summary": "Closures combine a function with its lexical environment, enabling private, persistent state without classes or globals, foundational for caching, memoization, and module patterns.",
+   "keywords": [
+    "closure",
+    "lexical environment",
+    "private state",
+    "persistent state",
+    "caching",
+    "memoization",
+    "module pattern"
+   ],
+   "questions": [
+    "What is a closure in JavaScript?",
+    "How do closures provide private and persistent state?",
+    "Why are closures important for caching and memoization?"
+   ]
+  },
+  "product-engineering-4-2-1": {
+   "text_sha": "1d0571f7e9f1905c",
+   "summary": "A time-to-live cache is implemented using a closure that encapsulates a private Map, exposing get and set methods to manage cached data with expiration.",
+   "keywords": [
+    "cache",
+    "closure",
+    "Map",
+    "time-to-live",
+    "ttlMs",
+    "private state",
+    "get method",
+    "set method"
+   ],
+   "questions": [
+    "How can closures be used to create a private cache in JavaScript?",
+    "What is the role of the ttlMs parameter in the cache implementation?",
+    "How does the cache handle expired entries?"
+   ]
+  },
+  "product-engineering-4-2-2": {
+   "text_sha": "c2bde044644f1791",
+   "summary": "Memoization wraps a pure function with a closure storing previous results in a Map, enabling efficient repeated calls and shared promises for concurrent requests.",
+   "keywords": [
+    "memoization",
+    "pure function",
+    "Map",
+    "closure",
+    "caching",
+    "fetchPreview",
+    "promise sharing"
+   ],
+   "questions": [
+    "What is memoization and how does it improve function performance?",
+    "Why must memoized functions be pure?",
+    "How can memoization be applied to asynchronous functions like fetchPreview?"
+   ]
+  },
+  "product-engineering-4-2-3": {
+   "text_sha": "00c61a15c8fb0226",
+   "summary": "Using var in loops causes closure bugs due to shared bindings, while let creates separate bindings per iteration; also, caches must evict entries to avoid memory leaks.",
+   "keywords": [
+    "closure bug",
+    "var vs let",
+    "loop closure",
+    "setTimeout",
+    "memory leak",
+    "cache eviction",
+    "JavaScript scoping"
+   ],
+   "questions": [
+    "Why does using var in a loop with closures cause unexpected results?",
+    "How does let fix the closure issue in loops?",
+    "Why is it important to evict entries in a cache implemented with closures?"
+   ]
+  },
+  "product-engineering-5-0-0": {
+   "text_sha": "4a42e8c84348aa2f",
+   "summary": "Code review spreads knowledge, catches design mistakes early, and ensures shared understanding, emphasizing a collaborative culture over a policing process.",
+   "keywords": [
+    "code review",
+    "design mistakes",
+    "collaborative culture",
+    "knowledge sharing",
+    "bug cost",
+    "review process"
+   ],
+   "questions": [
+    "Why is code review important beyond catching typos?",
+    "How does code review affect team knowledge and trust?",
+    "What kind of culture improves the effectiveness of code reviews?"
+   ]
+  },
+  "product-engineering-5-0-1": {
+   "text_sha": "d2939c98ad01ca4b",
+   "summary": "Authors should self-review diffs for clarity, scope, and tests before pull requests, writing descriptive explanations and splitting large changes for easier review.",
+   "keywords": [
+    "self-review",
+    "pull request",
+    "diff readability",
+    "test coverage",
+    "change description",
+    "code splitting"
+   ],
+   "questions": [
+    "What should an author check before opening a pull request?",
+    "How can authors make reviewers' jobs easier?",
+    "Why split changes that touch multiple components?"
+   ]
+  },
+  "product-engineering-5-0-2": {
+   "text_sha": "0b0cc713e5da8e8f",
+   "summary": "Reviewers prioritize correctness, security (e.g., preventing SSRF), design clarity, tests, and style in that order to ensure safe and maintainable code.",
+   "keywords": [
+    "code review",
+    "correctness",
+    "security",
+    "server-side request forgery",
+    "SSRF",
+    "design review",
+    "testing",
+    "style automation"
+   ],
+   "questions": [
+    "What is the priority order for reviewing code?",
+    "How can SSRF vulnerabilities be prevented in server code?",
+    "Why is setting textContent safer than innerHTML for untrusted data?"
+   ]
+  },
+  "product-engineering-5-0-3": {
+   "text_sha": "b94662ed0b0ac4ee",
+   "summary": "Effective code review tone uses questions, separates must-fix from minor issues, praises good work, encourages constructive responses, and values fast turnaround.",
+   "keywords": [
+    "code review tone",
+    "constructive feedback",
+    "nitpick",
+    "praise",
+    "review speed",
+    "author response",
+    "face-to-face discussion"
+   ],
+   "questions": [
+    "How should reviewers phrase feedback to be constructive?",
+    "What is the purpose of separating must-fix issues from nits?",
+    "Why is fast review turnaround important?"
+   ]
+  },
+  "product-engineering-5-1-0": {
+   "text_sha": "a2657d00288cb2d2",
+   "summary": "Performance profiling involves measuring actual performance metrics to identify bottlenecks, rather than guessing, using tools like Chrome DevTools to quantify delays in features like link-preview rendering.",
+   "keywords": [
+    "performance profiling",
+    "Chrome DevTools",
+    "link-preview widget",
+    "measuring performance",
+    "optimization",
+    "profiling method"
+   ],
+   "questions": [
+    "What is the first rule of performance profiling?",
+    "Why should engineers measure performance instead of guessing?",
+    "How do you define and measure what 'slow' means in an application?"
+   ]
+  },
+  "product-engineering-5-1-1": {
+   "text_sha": "1438837099802b32",
+   "summary": "Using Chrome DevTools Performance panel, record and analyze flame charts to identify expensive function calls and long tasks blocking the main thread, such as inefficient regex parsing.",
+   "keywords": [
+    "Chrome DevTools",
+    "Performance panel",
+    "flame chart",
+    "long tasks",
+    "main thread blocking",
+    "parseMetadata",
+    "regular expression backtracking"
+   ],
+   "questions": [
+    "How do you use the Chrome DevTools Performance panel to find performance bottlenecks?",
+    "What does a wide bar in a flame chart represent?",
+    "Why are long tasks over 50 milliseconds problematic?"
+   ]
+  },
+  "product-engineering-5-1-2": {
+   "text_sha": "ccff366a00fb433f",
+   "summary": "The Network panel helps identify slow endpoints or large images causing delays, while the Memory panel detects leaks by comparing heap snapshots to find retained detached DOM nodes.",
+   "keywords": [
+    "Network panel",
+    "waterfall chart",
+    "image optimization",
+    "loading='lazy'",
+    "Memory panel",
+    "heap snapshot",
+    "memory leaks",
+    "detached DOM nodes"
+   ],
+   "questions": [
+    "How can the Network panel help diagnose slow loading times?",
+    "What does the Memory panel reveal about memory leaks?",
+    "How do you detect if detached DOM nodes are causing memory issues?"
+   ]
+  },
+  "product-engineering-5-1-3": {
+   "text_sha": "480d74d18a66c7ea",
+   "summary": "Optimize performance by prioritizing less work, deferring non-critical tasks, parallelizing with Promise.all, and finally tuning code, while setting performance budgets to prevent regressions.",
+   "keywords": [
+    "performance optimization",
+    "caching",
+    "defer non-critical work",
+    "split long tasks",
+    "Promise.all",
+    "performance budget",
+    "fail build on regression"
+   ],
+   "questions": [
+    "What are the priority steps for optimizing performance?",
+    "How does deferring non-critical work improve performance?",
+    "Why set a performance budget and fail builds on regressions?"
+   ]
+  },
+  "product-engineering-5-2-0": {
+   "text_sha": "63281e992854e711",
+   "summary": "Continuous integration and delivery pipelines automate testing, building, and deploying the exact tested artifact from pull request to production to ensure reliable releases.",
+   "keywords": [
+    "continuous integration",
+    "continuous delivery",
+    "pull request",
+    "linter",
+    "tests",
+    "artifact",
+    "automated deployment"
+   ],
+   "questions": [
+    "What is continuous integration and continuous delivery?",
+    "Why should the same tested artifact be deployed to production?",
+    "How does the pipeline handle failed tests or linting?"
+   ]
+  },
+  "product-engineering-5-2-1": {
+   "text_sha": "14729847dacd403d",
+   "summary": "Deploy features first to staging, use smoke tests and feature flags for gradual release, and always have a tested rollback plan to ensure safe production updates.",
+   "keywords": [
+    "deployment strategy",
+    "staging environment",
+    "smoke test",
+    "feature flag",
+    "gradual release",
+    "rollback plan"
+   ],
+   "questions": [
+    "What is the purpose of deploying to a staging environment?",
+    "How do feature flags help in releasing features safely?",
+    "Why is having a tested rollback plan important?"
+   ]
+  },
+  "product-engineering-5-2-2": {
+   "text_sha": "584e29bf2e77d741",
+   "summary": "Monitoring production requires structured logs, key metrics like error rates and latency, alerts on user-impacting symptoms, and a clear runbook for incident response.",
+   "keywords": [
+    "logs",
+    "structured logging",
+    "metrics",
+    "error rate",
+    "latency",
+    "alerts",
+    "runbook",
+    "cache hit ratio"
+   ],
+   "questions": [
+    "What types of monitoring data are important after deployment?",
+    "Why should alerts focus on user-impacting symptoms?",
+    "What is a runbook and why is it necessary?"
+   ]
+  },
+  "product-engineering-5-2-3": {
+   "text_sha": "be34f925a9f9d862",
+   "summary": "The course emphasizes understanding fundamentals, reading specs and source, using functional programming, profiling, and shipping small safe changes to build reliable software.",
+   "keywords": [
+    "first principles",
+    "JavaScript prototypes",
+    "event loop",
+    "functional programming",
+    "profiling",
+    "safe shipping",
+    "link-preview widget"
+   ],
+   "questions": [
+    "What habits does the course encourage for effective software engineering?",
+    "How does understanding JavaScript internals help in building features?",
+    "What is the recommended approach to shipping software changes?"
+   ]
+  }
+ }
+}
