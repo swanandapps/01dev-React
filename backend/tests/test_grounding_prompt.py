@@ -78,13 +78,17 @@ def test_prompt_has_the_all_cases_citation_rule():
     text = " ".join(loader.read_grounding_prompt().split())
     head, _, _ = text.partition("## Every IN_COURSE case")
     assert "## Every case" in head
-    assert "Never name or cite a course, lecture, time or link that is not listed under Matches" in head
+    assert "use only what is listed under Matches" in head
+    assert "returned by a tool such as find_moment" in head and "CURRENT LECTURE" in head
     assert "Never combine or blend two course names" in head
+    assert "is not a pointer" in head and "get_enrolled_courses" in head
+    assert "name no course at all" not in head
 
 
 def test_prompt_enrolled_case_asks_for_the_deep_link_and_no_match_names_no_course():
     text = " ".join(loader.read_grounding_prompt().split())
-    assert "the01.dev/course/2?chapter=7&sub=0&t=87" in text
+    assert "the01.dev/course/<id>?chapter=<c>&sub=<s>&t=<seconds>" in text
+    assert "t=87" not in text   # the placeholder is clearly fake: the real demo link must not be copyable
     assert "Name no course, lecture, link or time" in text
     assert "You're not enrolled in it yet" not in text
 
@@ -93,3 +97,9 @@ def test_prompt_builds_examples_from_the_lecture_and_the_running_project():
     text = " ".join(loader.read_grounding_prompt().split())
     assert "running project" in text and "COURSE DESCRIPTION" in text
     assert "don't invent a different example domain" in text.lower()
+
+
+def test_player_prompt_forbids_writing_links():
+    text = " ".join(loader.read_grounding_prompt().split())
+    _, _, player = text.partition("## Every IN_COURSE case")
+    assert "Never write a URL or link yourself" in player

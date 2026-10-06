@@ -126,7 +126,8 @@ def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
         "You are a quiz author. Write multiple-choice questions testing the given "
         "objective, grounded in the material. Each question has exactly 4 answer options "
         "written out IN FULL as real answers (NEVER single letters like 'a'/'b'/'c'/'d'), "
-        "with exactly one correct. 'correctIndex' is the 0-based position of the correct "
+        "with exactly one correct. Options are shuffled afterwards: never refer to an option by "
+        "letter or position in the explanation. 'correctIndex' is the 0-based position of the correct "
         'option in the array. Return ONLY JSON: {"questions":[{"question":"<full question>",'
         '"options":["<full answer text>","<full answer text>","<full answer text>",'
         '"<full answer text>"],"correctIndex":<0-3>,"explanation":"<why that option is '
