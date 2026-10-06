@@ -3,12 +3,20 @@ answers | partial | related | no. Coverage is decided by those grades, not by sc
 any answers -> COVERED, else any partial -> PARTIAL, else NOT_COVERED. On failure/timeout, a
 conservative fallback (top fused candidate in BOTH vector and lexical top-5) is used and logged."""
 import asyncio
+import json
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
 from app.retrieval.base import Candidate
-from app.services.course_lookup import TRANSCRIPT_THRESHOLD
+
+# Fallback gate: the legacy TRANSCRIPT_THRESHOLD value (0.54), calibrated on PRE-enrichment embeddings;
+# re-check it against the Phase 4 eval. Defined here (not imported) so rerank never depends on course_lookup.
+FALLBACK_MIN_COSINE = 0.54
+_ID = re.compile(r"c([1-9]\d{0,2})", re.I)
+_PAIR = re.compile(r'"(c[1-9]\d{0,2})"\s*:\s*"([apnr])"', re.I)
+_TAG = re.compile(r"<\s*/?\s*passage\b[^>]*>", re.I)
 
 LETTERS = {"a": "answers", "p": "partial", "r": "related", "n": "no"}
 MAX_WHY = 2
@@ -56,8 +64,31 @@ class RerankResult:
 
 
 async def _complete(system: str, user: str) -> Optional[dict]:
-    from app.services.llm import llm
-    return await llm.generate_json(system, user, temperature=0.0, max_tokens=MAX_TOKENS)
+    """Parsed reply, or None (no reply), or {"_error": why, "_text": raw} when the reply is unusable
+    (truncated / refusal / bad JSON) so rerank can log the cause and try to salvage grades."""
+    from app.services.llm import GEN_MODEL, llm
+    if not llm.client:
+        return {"_error": "no client", "_text": ""}
+    resp = await llm.client.chat.completions.create(
+        model=GEN_MODEL, temperature=0.0, max_tokens=MAX_TOKENS, response_format={"type": "json_object"},
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
+    choice = resp.choices[0]
+    text = choice.message.content or ""
+    if getattr(choice.message, "refusal", None):
+        return {"_error": "refusal", "_text": ""}
+    try:
+        parsed = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return {"_error": "truncated" if choice.finish_reason == "length" else "bad json", "_text": text}
+    return parsed if isinstance(parsed, dict) else {"_error": "bad json", "_text": text}
+
+
+def _clean(text: str) -> str:
+    """Remove every passage-delimiter lookalike, repeating until stable (defeats nested forgeries)."""
+    prev = None
+    while prev != text:
+        prev, text = text, _TAG.sub("", text)
+    return text
 
 
 def _mmss(seconds: int) -> str:
@@ -73,11 +104,25 @@ def build_user_prompt(question: str, cands: list[Candidate], intent: str = "expl
     for i, c in enumerate(cands, 1):
         ch = c.chunk
         lines.append(f"[c{i}] {ch.course_title} › {ch.lecture_title} @ {_mmss(ch.start_time)}")
+        body = _clean((ch.text_clean or ch.text)[:PASSAGE_CHARS])
+        lines.append("<passage>")
         if ch.summary:
-            lines.append(f"Summary: {ch.summary}")
-        body = (ch.text_clean or ch.text)[:PASSAGE_CHARS].replace("<passage>", "").replace("</passage>", "")
-        lines += ["<passage>", body, "</passage>", ""]
+            lines.append(f"Summary: {_clean(ch.summary)}")
+        lines += [body, "</passage>", ""]
     return "\n".join(lines).rstrip()
+
+
+def _idx(cid, n: int) -> Optional[int]:
+    m = _ID.fullmatch(str(cid).strip())
+    return int(m.group(1)) if m and int(m.group(1)) <= n else None
+
+
+def salvage_grades(text: str, n: int) -> Optional[dict[int, tuple[str, str]]]:
+    """Regex-recover "cK": "<letter>" pairs from truncated JSON; None when there is none."""
+    g: dict[str, str] = {}
+    for cid, letter in _PAIR.findall(text or ""):
+        g.setdefault(cid.lower(), letter)
+    return parse_grades({"g": g}, n) if g else None
 
 
 def parse_grades(raw, n: int) -> Optional[dict[int, tuple[str, str]]]:
@@ -88,21 +133,20 @@ def parse_grades(raw, n: int) -> Optional[dict[int, tuple[str, str]]]:
     why = raw.get("why") if isinstance(raw.get("why"), dict) else {}
     out: dict[int, tuple[str, str]] = {}
     valid = False
-    for cid, letter in raw["g"].items():
-        cid = str(cid).strip().lower()
-        if not cid.startswith("c") or not cid[1:].isdigit() or not 1 <= int(cid[1:]) <= n:
+    for cid, letter in raw["g"].items():       # duplicate ids (e.g. "c1" and "C1"): the FIRST one wins
+        idx = _idx(cid, n)
+        if idx is None or idx in out:
             continue
-        grade = LETTERS.get(str(letter).strip().lower()) if isinstance(letter, str) else None
+        grade = LETTERS.get(letter.strip().lower()) if isinstance(letter, str) else None
         valid = valid or grade is not None
-        out[int(cid[1:])] = (grade or "no", "")
+        out[idx] = (grade or "no", "")
     if not valid:
         return None
     shown = 0
     for cid, text in why.items():
-        cid = str(cid).strip().lower()
-        if cid.startswith("c") and cid[1:].isdigit() and int(cid[1:]) in out and isinstance(text, str) \
-                and out[int(cid[1:])][0] in CITED and shown < MAX_WHY:
-            out[int(cid[1:])] = (out[int(cid[1:])][0], text.strip()[:200])
+        idx = _idx(cid, n)
+        if idx in out and isinstance(text, str) and out[idx][0] in CITED and not out[idx][1] and shown < MAX_WHY:
+            out[idx] = (out[idx][0], text.strip()[:200])
             shown += 1
     return out
 
@@ -114,7 +158,7 @@ def fallback_grades(cands: list[Candidate]) -> list[Graded]:
     top = cands[0] if cands else None
     if top and top.vec_rank is not None and top.lex_rank is not None \
             and top.vec_rank <= FALLBACK_TOP and top.lex_rank <= FALLBACK_TOP \
-            and top.cosine is not None and top.cosine >= TRANSCRIPT_THRESHOLD:
+            and top.cosine is not None and top.cosine >= FALLBACK_MIN_COSINE:
         out[0] = Graded(top, "answers", "fallback: top of both vector and lexical search, cosine above threshold")
     return out
 
@@ -131,13 +175,20 @@ async def rerank(question: str, cands: list[Candidate], *, intent: str = "explai
     try:
         raw = await asyncio.wait_for(_complete(SYSTEM, build_user_prompt(question, cands, intent)),
                                      timeout=RERANK_TIMEOUT_S)
+        parsed, why = None, "no reply"
+        if isinstance(raw, dict) and "_error" in raw:
+            why = str(raw["_error"])
+            parsed = salvage_grades(raw.get("_text", ""), len(cands))
+            if parsed:
+                print(f"[rerank] salvaged {len(parsed)} grades from {why} output: {question[:80]!r}")
+        elif raw is not None:
+            parsed, why = parse_grades(raw, len(cands)), "no usable grades"
     except asyncio.TimeoutError:
         return _fall_back(question, cands, "TimeoutError")
     except Exception as e:  # noqa: BLE001 — a reranker outage must never fail the turn
         return _fall_back(question, cands, repr(e))
-    parsed = parse_grades(raw, len(cands))
-    if parsed is None:
-        return _fall_back(question, cands, "no usable grades")
+    if not parsed:
+        return _fall_back(question, cands, why)
     return RerankResult([Graded(c, *parsed.get(i, ("no", "not graded"))) for i, c in enumerate(cands, 1)],
                         fallback=False)
 
