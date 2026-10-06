@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
 COVERED, PARTIAL, NOT_COVERED = "covered", "partial", "not_covered"
-METRIC_KEYS = ["recall@1", "recall@5", "mrr", "coverage_accuracy", "cite_accuracy", "partial_rate_pos",
+METRIC_KEYS = ["recall@1", "recall@5", "mrr", "shown@3", "coverage_accuracy", "cite_accuracy", "partial_rate_pos",
                "false_cite_rate", "navigate_accuracy", "fallback_rate", "latency_p50_ms", "latency_p95_ms"]
 PER_COURSE_KEYS = ["recall@1", "recall@5", "mrr", "coverage_accuracy", "false_cite_rate", "navigate_accuracy"]
 
@@ -47,13 +47,15 @@ class Row:
 class Prediction:
     row_id: str
     mode: str                                     # "player" | "ask"
-    ranked_lectures: list[str]                    # distinct lecture ids, best first
+    ranked_lectures: list[str]                    # FULL scoped ranking (every lecture in the mode's scope), best first
     outcome: str                                  # COVERED | PARTIAL | NOT_COVERED
     cited_lecture: Optional[str]                  # lecture of the cited chunk, None when nothing cited
     moment_lecture: Optional[str] = None          # navigate rows: where the player would jump
     latency_ms: float = 0.0
     fallback: bool = False                        # reranker fell back to the fused rule
     error: Optional[str] = None
+    shown_lectures: list[str] = field(default_factory=list)  # lectures the student is actually shown (decision hits)
+    lookup_case: Optional[str] = None             # raw decision case of the system (diagnostic)
 
 
 def _mean(values: Iterable) -> Optional[float]:
@@ -87,6 +89,7 @@ def summarize(rows: dict[str, Row], preds: list[Prediction]) -> dict:
         "recall@1": _mean(bool(set(p.ranked_lectures[:1]) & set(r.gold_lecture_ids)) for r, p in pos),
         "recall@5": _mean(bool(set(p.ranked_lectures[:5]) & set(r.gold_lecture_ids)) for r, p in pos),
         "mrr": _mean(_rr(p.ranked_lectures, r.gold_lecture_ids) for r, p in pos),
+        "shown@3": _mean(bool(set(p.shown_lectures[:3]) & set(r.gold_lecture_ids)) for r, p in pos),
         "coverage_accuracy": _mean((p.outcome == COVERED) == (r.expect == COVERED) for r, p in explain),
         "cite_accuracy": _mean(p.cited_lecture in r.gold_lecture_ids for r, p in pos if p.outcome == COVERED),
         "partial_rate_pos": _mean(p.outcome == PARTIAL for _, p in pos),
@@ -147,6 +150,11 @@ def render_markdown(run: dict) -> str:
 
 def compare(base: dict, new: dict) -> str:
     out = [f"# Delta: {base['label']} → {new['label']}", ""]
+    bc, nc = base.get("config") or {}, new.get("config") or {}
+    diffs = [f"{k}: {bc.get(k)!r} → {nc.get(k)!r}" for k in sorted(set(bc) | set(nc))
+             if k != "git_sha" and bc.get(k) != nc.get(k)]
+    if diffs:
+        out += ["WARNING: run configurations differ, so the numbers may not be comparable: " + "; ".join(diffs), ""]
     only = sorted(set(base["modes"]) ^ set(new["modes"]))
     if only:
         out += [f"Note: mode(s) present in only one run, not compared: {', '.join(only)}", ""]
