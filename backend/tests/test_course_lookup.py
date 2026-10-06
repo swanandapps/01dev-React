@@ -5,7 +5,6 @@ from app.retrieval import pipeline
 from app.retrieval.base import Candidate
 from app.retrieval.rerank import Graded, decide
 from app.services import course_lookup as cl
-from app.retrieval import titles as title_index
 from app.services import enrollment_service
 from app.services.catalog_index import CatalogEntry
 
@@ -352,16 +351,6 @@ async def test_one_best_chunk_per_lecture_and_at_most_three(patch_in_course):
     assert [h.title for h in out.hits] == ["0.1 - L0", "1.1 - L1", "2.1 - L2"] and out.hits[0].start_time == 0
 
 
-async def test_title_scores_fall_back_to_word_overlap_without_embeddings(monkeypatch):
-    monkeypatch.setattr(cl.embedding_service, "use_openai", False)
-    monkeypatch.setattr(cl.catalog_service, "by_slug", lambda slug: {"chapters": [
-        {"name": "c", "subchapters": ["10.1 - What Are ES Modules", "8.1 - The `npm link` command"]}]})
-    scores = await cl._title_scores("what are ES modules", "custom-library")
-    assert scores["10.1 - What Are ES Modules"] >= cl.TITLE_THRESHOLD
-    assert scores["8.1 - The `npm link` command"] < cl.TITLE_THRESHOLD
-    assert (await cl._title_scores("how does the event loop work", "custom-library"))["10.1 - What Are ES Modules"] == 0.0
-
-
 async def test_player_with_no_lecture_selected_searches_the_bare_question_in_this_course(patch_in_course):
     # CoursePlayerPage sends the course title as `lecture` before a lecture is picked; the
     # route blanks it, so the scope has no lecture_title — still course-only.
@@ -434,33 +423,13 @@ async def test_catalog_is_used_only_for_in_scope_courses_without_transcripts(pat
     assert out.case == cl.LookupCase.ENROLLED_MATCH and [h.source for h in out.hits] == ["catalog"]
 
 
-async def test_search_in_course_goes_through_the_scoped_pipeline(monkeypatch):
-    from app.retrieval import pipeline
-    from app.retrieval.base import Candidate
-    calls = []
-
-    async def fake_search(q, scope, **kw):
-        calls.append((q, tuple(scope), kw))
-        return [Candidate(chunk=PUBLISH_CHUNK, vec_rank=1, vec_score=0.6), Candidate(chunk=NPM_CHUNK, lex_rank=1)]
-
-    monkeypatch.setattr(pipeline, "search", fake_search)
-    assert await cl.search_in_course("publish", "custom-library", top_k=1) == [(PUBLISH_CHUNK, 0.6), (NPM_CHUNK, 0.0)]
-    assert calls[0] == ("publish", ("custom-library",), {"limit": 1, "per_lecture": None})
-    await cl.search_in_course("publish", "custom-library", top_k=None)
-    assert calls[1][2]["limit"] == pipeline.VEC_K + pipeline.LEX_K
-
-
-async def test_decisions_read_the_cosine_not_the_fused_score(monkeypatch):
-    # A lexical-only candidate carries a COMPUTED cosine (pipeline.search fills it); the thresholds see that.
-    from app.retrieval import pipeline
+def test_pairs_read_the_cosine_not_the_fused_score():
+    # A lexical-only candidate carries a COMPUTED cosine (pipeline.search fills it); consumers see that.
     from app.retrieval.base import Candidate
 
-    async def fake_search(q, scope, **kw):
-        return [Candidate(chunk=NPM_CHUNK, lex_rank=1, fused=0.0164, cosine=0.57),
-                Candidate(chunk=PUBLISH_CHUNK, vec_rank=1, vec_score=0.61, fused=0.0163, cosine=0.61)]
-
-    monkeypatch.setattr(pipeline, "search", fake_search)
-    assert await cl.search_in_course("q", "custom-library") == [(NPM_CHUNK, 0.57), (PUBLISH_CHUNK, 0.61)]
+    cands = [Candidate(chunk=NPM_CHUNK, lex_rank=1, fused=0.0164, cosine=0.57),
+             Candidate(chunk=PUBLISH_CHUNK, vec_rank=1, vec_score=0.61, fused=0.0163, cosine=0.61)]
+    assert cl._pairs(cands) == [(NPM_CHUNK, 0.57), (PUBLISH_CHUNK, 0.61)]
 
 
 async def test_search_in_lecture_filters_by_the_resolved_lecture(monkeypatch):
@@ -513,35 +482,6 @@ async def test_current_lecture_excerpt_is_not_listed_under_matches_unless_it_is_
     assert "SYMLINK-EXCERPT" not in matches and "SYMLINK-EXCERPT" in facts.split("Matches:")[0]
 
 
-async def test_title_embedding_failure_falls_back_to_overlap_and_is_not_retried_in_the_cooldown(monkeypatch):
-    calls = {"n": 0}
-
-    class Boom:
-        class embeddings:
-            @staticmethod
-            async def create(**kw):
-                calls["n"] += 1
-                raise RuntimeError("openai down")
-
-    async def fake_embed(text):
-        return [1.0, 0.0]
-
-    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
-    monkeypatch.setattr(cl.embedding_service, "client", Boom)
-    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
-    monkeypatch.setattr(title_index, "_cache", {})
-    monkeypatch.setattr(title_index, "_failed_until", {})
-    monkeypatch.setattr(cl.catalog_service, "by_slug", lambda slug: {"chapters": [
-        {"name": "c", "subchapters": ["10.1 - What Are ES Modules"]}]})
-    first = await cl._title_scores("what are ES modules", "custom-library")
-    second = await cl._title_scores("what are ES modules", "custom-library")
-    assert first == second == {"10.1 - What Are ES Modules": 1.0}
-    assert calls["n"] == 1
-    title_index._failed_until["custom-library"] = 0.0  # cooldown over -> retries
-    await cl._title_scores("what are ES modules", "custom-library")
-    assert calls["n"] == 2
-
-
 def test_no_launched_enrolled_course_means_no_enrolled_line_in_the_facts():
     lookup = cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=[])
     facts = cl.render_facts(lookup, cl.ChatScope())
@@ -591,72 +531,6 @@ def test_ask_facts_have_no_course_description_line():
     assert "COURSE DESCRIPTION" not in facts
 
 
-# ---- title-embedding prewarm (I1) ----
-def _fake_embeddings_client(monkeypatch, behaviour):
-    """Stub OpenAI client: behaviour(texts) -> vectors or raises. Returns the list of input batches."""
-    from types import SimpleNamespace
-
-    batches = []
-
-    async def create(model, input):
-        batches.append(list(input))
-        return SimpleNamespace(data=[SimpleNamespace(embedding=v) for v in behaviour(input)])
-
-    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
-    monkeypatch.setattr(cl.embedding_service, "client", SimpleNamespace(embeddings=SimpleNamespace(create=create)))
-    monkeypatch.setattr(title_index, "_cache", {})
-    monkeypatch.setattr(title_index, "_failed_until", {})
-    return batches
-
-
-async def test_prewarm_titles_embeds_every_course_in_one_call_and_fills_the_cache(monkeypatch):
-    batches = _fake_embeddings_client(monkeypatch, lambda texts: [[1.0, float(i)] for i, _ in enumerate(texts)])
-    n_titles, n_courses = await cl.prewarm_titles()
-    expected = {c["slug"]: cl._lecture_titles(c["slug"]) for c in cl.catalog_service.all_courses()}
-    expected = {k: v for k, v in expected.items() if v}
-    assert len(batches) == 1 and n_courses == len(expected) and n_titles == sum(map(len, expected.values()))
-    assert set(title_index._cache) == set(expected)
-    for slug, titles in expected.items():
-        assert title_index._cache[slug][0] == titles and len(title_index._cache[slug][1]) == len(titles)
-
-
-async def test_prewarm_failure_raises_but_sets_no_cooldown(monkeypatch):
-    def boom(texts):
-        raise RuntimeError("openai down")
-
-    _fake_embeddings_client(monkeypatch, boom)
-    with pytest.raises(RuntimeError):
-        await cl.prewarm_titles()
-    assert title_index._failed_until == {} and title_index._cache == {}
-
-
-async def test_question_embed_failure_does_not_trigger_the_title_cooldown(monkeypatch):
-    _fake_embeddings_client(monkeypatch, lambda texts: [[1.0, 0.0] for _ in texts])
-    await cl.prewarm_titles()
-
-    async def flaky(text):
-        raise RuntimeError("transient")
-
-    monkeypatch.setattr(cl.embedding_service, "embed", flaky)
-    scores = await cl._title_scores("npm link", "custom-library")  # falls back for this turn only
-    assert scores and title_index._failed_until == {}
-
-    async def ok(text):
-        return [1.0, 0.0]
-
-    monkeypatch.setattr(cl.embedding_service, "embed", ok)
-    assert set((await cl._title_scores("npm link", "custom-library")).values()) == {1.0}  # real cosines again
-
-
-async def test_title_build_failure_still_sets_a_short_cooldown(monkeypatch):
-    def boom(texts):
-        raise RuntimeError("down")
-
-    _fake_embeddings_client(monkeypatch, boom)
-    await cl._title_scores("npm link", "custom-library")
-    assert 0 < title_index._failed_until["custom-library"] - cl.time.monotonic() <= 60.0
-
-
 def test_description_cap_keeps_product_engineerings_project():
     course = cl.catalog_service.by_slug("product-engineering")
     desc = " ".join(course["description"].split())
@@ -695,3 +569,22 @@ async def test_out_of_scope_chunk_graded_answers_is_dropped_everywhere(patch_sou
     facts = cl.render_facts(out, cl.ChatScope())
     assert "React Performance" not in facts and "react-perf leak" not in facts
     assert {c["course_id"] for c in cl.to_cards(out)} == {"custom-library"}
+
+
+def test_threshold_and_title_machinery_is_gone():
+    for name in ("TRANSCRIPT_THRESHOLD", "RELATED_THRESHOLD", "TITLE_THRESHOLD", "MOMENT_THRESHOLD", "TITLE_OFFSET",
+                 "AGREE_TITLE", "AGREE_CHUNK", "MOMENT_LECTURE_FLOOR", "prewarm_titles", "_title_scores",
+                 "_lecture_titles", "TITLE_COOLDOWN", "search_in_course", "_transcript_hits", "_titled_missing"):
+        assert not hasattr(cl, name), name
+    assert cl.CATALOG_THRESHOLD and cl.IN_COURSE_K == 3
+
+
+async def test_case_comes_from_the_grades_of_the_hits_that_survive_the_citation_filter(patch_sources, monkeypatch):
+    """M4: the only 'answers' hit is dropped by ask_citable; the surviving hit is 'partial' -> ENROLLED_RELATED."""
+    other = _chunk("custom-library", "Build a Custom Library", "7.2 - Publishing to npm")
+    patch_sources(transcripts=[(NPM_CHUNK, "answers"), (other, "partial")], enrolled_ids=[2])
+    real = cl.ask_citable
+    monkeypatch.setattr(cl, "ask_citable", lambda h: real(h) and h.grade != "answers")
+    out = await cl.course_lookup("q", "s")
+    assert [h.grade for h in out.hits] == ["partial"]
+    assert out.case == cl.LookupCase.ENROLLED_RELATED

@@ -81,55 +81,6 @@ def test_check_targets_names_misses():
     assert misses == ["coverage_accuracy 0.800 (target >= 0.9)", "false_cite_rate 0.050 (target <= 0.03)"]
 
 
-async def test_legacy_player_mapping(monkeypatch):
-    from app.services import course_lookup as cl
-
-    async def lookup(q, student, scope):
-        assert scope.in_player and scope.course_slug == "custom-library"
-        hit = cl.Hit(source="transcript", course_id=2, course_slug="custom-library", course_title="C",
-                     title="T", score=0.5, enrolled=True, lecture_id="custom-library-5-2")
-        return cl.CourseLookup(case=cl.LookupCase.IN_COURSE_RELATED, hits=[hit], enrolled_titles=[])
-
-    async def in_course(q, slug, top_k=8):
-        return [(_chunk("custom-library-9-0"), 0.5), (_chunk("custom-library-5-2"), 0.45),
-                (_chunk("custom-library-9-0", 1), 0.44)]
-
-    monkeypatch.setattr(cl, "course_lookup", lookup)
-    monkeypatch.setattr(cl, "search_in_course", in_course)
-    p = await rs.LegacySystem().predict(_row("a"), "player")
-    assert (p.outcome, p.cited_lecture) == (PARTIAL, "custom-library-5-2")
-    assert p.ranked_lectures == ["custom-library-9-0", "custom-library-5-2"]
-
-
-async def test_legacy_ask_uses_real_lookup_policy_and_navigate(monkeypatch, owner):
-    from app.services import course_lookup as cl, tutor_agent
-
-    async def lookup(q, student, scope):
-        assert scope == cl.ChatScope() and not scope.in_player  # Ask: no course, no player
-        cat = cl.Hit(source="catalog", course_id=2, course_slug="custom-library", course_title="C",
-                     title="C", score=0.5, enrolled=True)
-        tr = cl.Hit(source="transcript", course_id=2, course_slug="custom-library", course_title="C",
-                    title="T", score=0.6, enrolled=True, lecture_id="custom-library-5-2")
-        return cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[cat, tr], enrolled_titles=[])
-
-    async def hits(q, scope, top_k=8):
-        assert tuple(scope) == ("custom-library",)   # ask mode: launched AND owned only (react-perf is unlaunched)
-        return [(_chunk("custom-library-9-0"), 0.6), (_chunk("custom-library-5-2"), 0.5)]
-
-    async def locate(what, slug):
-        assert what == "np"
-        return _chunk("custom-library-10-0"), 0.7
-
-    monkeypatch.setattr(cl, "course_lookup", lookup)
-    monkeypatch.setattr(cl, "_transcript_hits", hits)
-    monkeypatch.setattr(tutor_agent, "_locate_moment", locate)
-    p = await rs.LegacySystem().predict(_row("a"), "ask")
-    assert (p.outcome, p.cited_lecture) == (COVERED, "custom-library-5-2")
-    assert p.ranked_lectures == ["custom-library-9-0", "custom-library-5-2"]
-    nav = await rs.LegacySystem().predict(_row("n", intent="navigate", navigate_phrase="np"), "player")
-    assert nav.moment_lecture == "custom-library-10-0"
-
-
 def test_rows_for_mode_ask_keeps_only_launched_courses():
     rows = [_row("a"), _row("b", scope_course="react-perf")]
     assert [r.id for r in ev.rows_for_mode(rows, "ask")] == ["a"]
@@ -162,44 +113,6 @@ def test_all_courses_launched_patches_and_restores():
         assert cl._is_launched(11) is True and cl._is_launched(999) is False
     assert cl._is_launched(11) is False
     assert rs.launched_slugs("ask") == ["custom-library"] and rs.launched_slugs("ask_all") == ["custom-library", "react-perf"]
-
-
-async def test_catalog_only_match_is_partial_and_records_case(monkeypatch):
-    from app.services import course_lookup as cl
-
-    async def lookup(q, student, scope):
-        cat = cl.Hit(source="catalog", course_id=2, course_slug="custom-library", course_title="C",
-                     title="C", score=0.5, enrolled=True)
-        return cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[cat], enrolled_titles=[])
-
-    async def hits(q, scope, top_k=8):
-        return []
-
-    monkeypatch.setattr(cl, "course_lookup", lookup)
-    monkeypatch.setattr(cl, "_transcript_hits", hits)
-    p = await rs.LegacySystem().predict(_row("a", expect=NOT_COVERED, gold_lecture_ids=[]), "ask")
-    assert (p.outcome, p.cited_lecture, p.lookup_case) == (PARTIAL, None, "enrolled_match")
-
-
-async def test_ask_ranking_is_the_whole_fused_list_scoped_to_launched_owned(monkeypatch, owner):
-    from app.services import course_lookup as cl
-    from app.retrieval import pipeline
-
-    def other(lid):
-        c = _chunk(lid)
-        return c.model_copy(update={"course_id": "react-perf"})
-
-    seen = {}
-
-    async def hits(q, scope, top_k=8):
-        seen["top_k"], seen["scope"] = top_k, tuple(scope)
-        rows = [(other("react-perf-1-0"), 0.9), (_chunk("custom-library-5-2"), 0.8), (_chunk("custom-library-9-0"), 0.7)]
-        return [(c, sc) for c, sc in rows if c.course_id in scope]
-
-    monkeypatch.setattr(cl, "_transcript_hits", hits)
-    ranked = await rs.LegacySystem._ask_ranking("q")
-    assert seen["top_k"] == pipeline.VEC_K + pipeline.LEX_K and seen["scope"] == ("custom-library",)
-    assert ranked == ["custom-library-5-2", "custom-library-9-0"]
 
 
 def test_watched_lecture_is_deterministic_non_gold_and_respects_explicit_title(monkeypatch):

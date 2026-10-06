@@ -1,11 +1,10 @@
-"""search_in_course / vector_store.search: precomputed norms and per-course scoping must
+"""pipeline.search / vector_store.search: precomputed norms and per-course scoping must
 not change a single ranking or score versus the old score-everything-then-filter path."""
 import asyncio
 import math
 import random
 
 from app.models import TranscriptChunk
-from app.services import course_lookup as cl
 from app.services.embeddings import embedding_service
 from app.services.vector_store import InMemoryVectorStore
 
@@ -94,7 +93,8 @@ def test_search_in_course_never_touches_other_courses_chunks(monkeypatch):
     monkeypatch.setattr(pipeline, "vector_store", st)
     monkeypatch.setattr(factory, "_retriever", MemoryRetriever(st))
     monkeypatch.setattr(embedding_service, "embed", fake_embed)
-    out = asyncio.run(cl.search_in_course("x", "js-engine", top_k=None))
+    cands = asyncio.run(pipeline.search("x", ["js-engine"], limit=pipeline.VEC_K + pipeline.LEX_K, per_lecture=None))
+    out = [(c.chunk, c.vec_score) for c in cands]
     assert out and all(c.course_id == "js-engine" for c, _ in out)
     assert seen and all(st.chunks[i].course_id == "js-engine" for i in seen)
     # js-engine has 30 chunks, 3 or 4 per lecture; the vector list keeps the best 3 per lecture (Task 9's

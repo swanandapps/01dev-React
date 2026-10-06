@@ -2,7 +2,7 @@
 writes backend/eval/retrieval/reports/<label>.json + .md, appending one line per mode to HISTORY.md.
 
 LOCAL ONLY — the in-memory store; run from backend/ with the key inline and the database off:
-  env OPENAI_API_KEY=... DATABASE_URL= .venv/bin/python scripts/eval_retrieval.py --system legacy --label phase1-baseline
+  env OPENAI_API_KEY=... DATABASE_URL= .venv/bin/python scripts/eval_retrieval.py --system v2 --label phase4
 Options: --modes player,ask  --limit N (first N rows per set, trial)  --only <slug>  --concurrency 6
          --compare <earlier label>  --all-launched (adds mode ask_all)  --latency-sample N (default 60)
 """
@@ -162,7 +162,7 @@ def write_report(run: dict, out_dir: Path = REPORTS, compare_to: Optional[str] =
 
 def make_system(name: str):
     from app.eval import retrieval_systems as rs
-    return {"legacy": rs.LegacySystem, "v2": rs.V2System}[name]()
+    return {"v2": rs.V2System}[name]()
 
 
 def _memoize_question_embeddings():
@@ -253,7 +253,7 @@ async def _main(a) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--system", default="legacy", choices=["legacy", "v2"])
+    ap.add_argument("--system", default="v2", choices=["v2"])
     ap.add_argument("--label", required=True)
     ap.add_argument("--modes", default="player,ask")
     ap.add_argument("--all-launched", action="store_true", help="also run mode ask_all (every course treated as launched)")

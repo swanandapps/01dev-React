@@ -3,74 +3,28 @@ tutor answers — in code, every turn, so a demo can't fail because the model
 skipped a search.
 
 Searches lecture transcripts and the catalog index, labels each hit enrolled /
-not enrolled, and decides one of three cases the grounding prompt has a rule for.
+not enrolled, and decides one of the cases the grounding prompt has a rule for.
+Coverage is decided by the retrieval pipeline's reranker (app/retrieval), not by score thresholds.
 """
 import asyncio
-import math
-import time
 import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Sequence
 
 from app.models import TranscriptChunk
-from app.retrieval import pipeline, titles
+from app.retrieval import pipeline
 from app.retrieval.rerank import Graded, Outcome, decide
+from app.retrieval.text import norm_title
 from app.services import catalog_index, catalog_service, enrollment_service
-from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
 
-# Set from measured data by scripts/calibrate_lookup.py (Task 9) — see spec §4.3.
-# Calibrated for OpenAI embeddings; the no-key keyword/hash fallback (local dev) is not comparable.
-# calibrated 2026-10-04 on 23 labelled questions (scripts/calibrate_lookup.py): transcript acc 100%, catalog acc 100%
-# Each value is the midpoint of its max-accuracy range: transcript 0.48–0.60, catalog 0.21–0.46.
-TRANSCRIPT_THRESHOLD = 0.54
-CATALOG_THRESHOLD = 0.34
+CATALOG_THRESHOLD = 0.34  # catalog entries of in-scope courses with NO transcripts only (see _catalog_hits)
 MAX_HITS = 5
-# Player only (spec §3.2 as amended by amendment-relevance.md). Relevance is scored on the
-# BARE question (a lecture-title prefix makes the title dominate and inflates every score).
-# STRONG = bare chunk score >= TRANSCRIPT_THRESHOLD, or the lecture's title matches the
-# question (>= TITLE_THRESHOLD). WEAK = RELATED_THRESHOLD <= score < TRANSCRIPT_THRESHOLD.
-# Measured 2026-10-06 on the 340 custom-library chunks (scripts/calibrate_in_course.py):
-# real matches as low as 0.42 (ES modules), off-topic up to 0.45 (React reconciliation), so no
-# single cutoff separates them; the title signal separates them (true >= 0.64, off-topic <= 0.34).
-RELATED_THRESHOLD = 0.40
-TITLE_THRESHOLD = titles.TITLE_THRESHOLD   # 0.60; owned by app.retrieval.titles
-MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter than RELATED: a wrong jump is worse)
-# find_moment ranks lectures by max(best chunk, title - TITLE_OFFSET). Measured on real embeddings
-# (27 phrasings, Build a Custom Library): 26/27 correct vs 21/27 for "title >= 0.60 wins outright"
-# (generic "npm" pulled 8.1/8.2 titles over 11.1's stronger chunks); demo margin >= 0.042.
-TITLE_OFFSET = 0.10
-# Agreement rule (F4). find_moment only runs on an explicit "take me to ..." request, so a lecture
-# whose title AND best chunk both lean toward the phrase is a safe jump even when neither signal
-# clears its own cutoff ("virtualize the table" -> 5.1: chunk 0.41-0.43 < 0.46). Found when the
-# SAME lecture has title >= AGREE_TITLE and chunk >= AGREE_CHUNK. Measured 2026-10-06 with real
-# embeddings (scripts: scratch qa/f4/cal.py; winner lecture, chunk / title):
-#   positives                                              chunk  title  found by
-#   react-perf   "virtualize the table"          5.1       0.412  0.755  title (>= 0.60), agreement
-#   react-perf   "virtualizing the 5000 row table" 5.1     0.473  0.895  title, chunk
-#   state-mgmt   "undo and redo"                 7.2       0.607  0.753  title, chunk
-#   custom-lib   "npm publish command"           11.1      0.653  0.467  chunk
-#   custom-lib   "commands for publishing the npm library" 11.1  0.689  0.439  chunk
-#   custom-lib   "ES modules"                    10.1      0.474  0.735  title, chunk
-#   prog-lang    "tokenizer loop"                8.3/6.2   0.508/0.452  0.506/0.540  chunk; 6.2 agrees (0.45, 0.54)
-#   negatives (lecture ranked first; none may be found)    chunk  title
-#   custom-lib "event loop" 6.1 0.369/0.218 | "React reconciliation" 6.5 0.436/0.212 |
-#              "SQL join" 6.2 0.190/0.138   | "Kubernetes pods" 12.1 0.285/0.168
-#   react-perf "event loop" 6.1 0.322/0.162 | "SQL join" 2.2 0.222/0.094 | "Kubernetes pods" 5.1 0.248/0.190
-#   (react-perf "React reconciliation" is found at 0.500 by the existing chunk rule: that course is
-#    about re-rendering, so it is not a false positive and not caused by this rule.)
-# Every positive title is >= 0.54 where chunk < 0.46; every negative title is <= 0.22 (worst
-# off-topic title seen anywhere: 0.34, CSS box model). So the title floor sits in the wide gap
-# (0.34..0.54) at 0.50 and the chunk floor at RELATED_THRESHOLD's 0.40.
-AGREE_TITLE = 0.50
-AGREE_CHUNK = 0.40
-MOMENT_LECTURE_FLOOR = 0.30  # if the winning lecture's best chunk is below this, jump to its start (0) instead
 IN_COURSE_K = 3
 CURRENT_PASSAGES = 3         # player: passages of the watched lecture given as context
 CURRENT_CONTEXT_CHARS = 1500  # ... capped in total
 DESCRIPTION_CHARS = 600  # longest catalog description is 546; product-engineering's project sits near char 430
-TITLE_COOLDOWN = titles.TITLE_COOLDOWN
 
 
 class LookupCase(str, Enum):
@@ -122,10 +76,7 @@ class CourseLookup:
     current_passages: list[Hit] = field(default_factory=list)
 
 
-def _norm(s: str) -> str:
-    """Compare titles loosely: the player's names use backticks ("The `npm link` command")
-    where transcripts don't, and spacing/case drift between the two."""
-    return " ".join(s.replace("`", "").split()).casefold()
+_norm = norm_title
 
 
 def _mmss(seconds: int) -> str:
@@ -134,45 +85,8 @@ def _mmss(seconds: int) -> str:
 
 
 def _pairs(cands) -> list[tuple[TranscriptChunk, float]]:
-    """(chunk, cosine) in the hybrid search's fused order. The decision thresholds are calibrated on
-    cosines, not RRF scores, so they keep reading the candidate's cosine (a lexical-only candidate
-    carries a computed one; 0.0 only when its embedding is unknown)."""
+    """(chunk, cosine) in the hybrid search's fused order (0.0 only when a candidate's embedding is unknown)."""
     return [(c.chunk, c.cosine if c.cosine is not None else (c.vec_score or 0.0)) for c in cands]
-
-
-async def _transcript_hits(question: str, scope: Sequence[str], top_k: int = 8):
-    """Ask: (chunk, cosine) from the hybrid search INSIDE the scope (launched AND owned), fused order."""
-    return _pairs(await pipeline.search(question, scope, limit=top_k))
-
-
-async def search_in_course(query: str, course_slug: str, top_k: Optional[int] = 8) -> list[tuple[TranscriptChunk, float]]:
-    """Fused-order transcript chunks of ONE course (another course's chunk is never scored).
-    top_k=None = the whole fused candidate list, no per-lecture cap."""
-    limit = top_k if top_k is not None else pipeline.VEC_K + pipeline.LEX_K
-    return _pairs(await pipeline.search(query, [course_slug], limit=limit, per_lecture=None))
-
-
-# The title signal lives in app.retrieval.titles (cache, prewarm, scoring); these are thin legacy wrappers
-# kept until Task 15 rewires the consumers.
-_lecture_titles = titles.lecture_titles
-prewarm_titles = titles.prewarm
-
-
-async def _title_scores(question: str, slug: str) -> dict[str, float]:
-    """Bare question vs each of the course's lecture titles (numbering and backticks stripped).
-    Keys are the titles exactly as the course lists them. Falls back to word overlap when
-    embeddings are unavailable; after a failure the fallback is used for TITLE_COOLDOWN seconds."""
-    if not titles.lecture_titles(slug):
-        return {}
-    q = None
-    if await titles.vectors(slug) is not None:
-        # The question embed is outside the cooldown: a transient failure here must not
-        # disable titles for the slug (it just uses word overlap for this turn).
-        try:
-            q = await embedding_service.embed(question)
-        except Exception as e:  # noqa: BLE001
-            print(f"[course_lookup] question embed failed, word overlap this turn: {e!r}")
-    return {t: s for (_, t), s in (await titles.title_scores(q, [slug], question=question)).items()}
 
 
 async def search_in_lecture(query: str, course_slug: str, lecture_title: str) -> list[tuple[TranscriptChunk, float]]:
@@ -216,12 +130,15 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
         return (_GRADE_RANK.get(h.grade, 2), not in_lecture, not in_course)
 
     hits = sorted(hits, key=rank)[:MAX_HITS]          # stable: fused order is kept within a rank
-    if not hits:
-        case = LookupCase.NO_MATCH
-    elif result.outcome == Outcome.PARTIAL:
-        case = LookupCase.ENROLLED_RELATED
-    else:
+    # The case follows the grades of the hits that SURVIVE the citation policy, not the raw outcome.
+    if any(h.grade == "answers" for h in hits):
         case = LookupCase.ENROLLED_MATCH
+    elif any(h.grade == "partial" for h in hits):
+        case = LookupCase.ENROLLED_RELATED
+    elif hits:                       # catalog-only course pointers
+        case = LookupCase.ENROLLED_MATCH
+    else:
+        case = LookupCase.NO_MATCH
     owned_titles = [c["title"] for i in sorted(enrolled_ids) if (c := catalog_service.get(i)) and c.get("launched")]
     return CourseLookup(case=case, hits=hits, enrolled_titles=owned_titles)
 
@@ -286,16 +203,6 @@ def deep_link(h: Hit) -> Optional[str]:
     if not m:
         return h.url
     return f"{h.url}?chapter={m.group(1)}&sub={m.group(2)}&t={int(h.start_time)}"
-
-
-async def _titled_missing(question: str, slug: str, keys) -> dict[str, tuple[TranscriptChunk, float]]:
-    """Title-matched lectures whose chunks ranked in neither fused list: their best chunk and cosine, scored
-    against the same question embedding. Still used by tutor_agent.find_moment (Task 15 rewires it)."""
-    if not keys:
-        return {}
-    ids = pipeline.lecture_ids_for_titles(slug, keys)
-    found = await pipeline.best_chunk_for_lectures(question, ids.values())
-    return {k: found[lid] for k, lid in ids.items() if lid in found}
 
 
 async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int], enrolled_titles: list[str],

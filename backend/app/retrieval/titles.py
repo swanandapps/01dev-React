@@ -1,7 +1,6 @@
 """Lecture-title signal (retrieval side): cached title vectors, prewarm, and scores of a question against the
 titles of every lecture in a scope. Scoring uses an ALREADY COMPUTED question embedding (never embeds the
-question); word overlap is the fallback when title vectors are unavailable. course_lookup's legacy
-_title_scores/prewarm_titles delegate here."""
+question); word overlap is the fallback when title vectors are unavailable. main.py's lifespan calls prewarm()."""
 import asyncio
 import math
 import re
@@ -11,7 +10,7 @@ from typing import Optional, Sequence
 from app.services import catalog_service
 from app.services.embeddings import embedding_service
 
-TITLE_THRESHOLD = 0.60      # a title at/above this matches the question (see course_lookup's calibration notes)
+TITLE_THRESHOLD = 0.60      # a title at/above this matches the question (calibrated 2026-10-06: true title matches >= 0.64, off-topic <= 0.34)
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
 TITLE_PREWARM_TIMEOUT = 30.0  # startup batch for every course
 TITLE_COOLDOWN = 60.0       # after a failure, use word overlap for this long before retrying

@@ -19,9 +19,9 @@ from langchain_openai import ChatOpenAI
 from app.services import (catalog_service, concept_explain, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
 from app.models import SearchResult
-from app.retrieval import pipeline
+from app.retrieval import pipeline, titles
+from app.retrieval.text import norm_title
 from app.services import course_lookup as cl
-from app.services.course_lookup import TRANSCRIPT_THRESHOLD
 from app.services import tool_descriptions as D
 from app.services.llm import GEN_MODEL
 
@@ -55,31 +55,35 @@ async def search_course_content(
     query: Annotated[str, "What to look up — the student's follow-up question or the concept."],
     runtime: ToolRuntime[ChatContext],
 ) -> tuple[str, list[dict]]:
-    # Same bar as course_lookup: weak matches would surface as citation cards for unrelated lectures.
+    # Same bar as course_lookup: only reranker-graded answers/partial hits are citable; a vague question
+    # ("what does this mean?") grades nothing and so yields no text and no cards.
     in_course = runtime.context.in_course
-    if in_course:  # player: this course only (spec §3.2)
-        pairs = await cl.search_in_course(query, in_course, top_k=5)
-        results = [SearchResult(chunk=c, score=s) for c, s in pairs
-                   if c.course_id == in_course and s >= TRANSCRIPT_THRESHOLD]
-        cards = [c.model_dump() for c in grounding.build_sources(results)]
-    else:
-        # Ask: search ONLY launched AND owned courses (F1, scope computed before searching), with the
-        # exact-lecture deep link. The ask_citable check stays as the same-policy backstop.
+    if in_course:  # player: this course only (spec §3.2), whoever owns it
+        enrolled_ids, scope = set(), (in_course,)
+    else:          # Ask: launched AND owned courses only (F1, scope computed before searching), exact-lecture deep links
         enrolled_ids = await _enrolled_ids(runtime.context.student_id)
         scope = pipeline.ask_scope(enrolled_ids)
-        pairs = await cl._transcript_hits(query, scope, top_k=15) if scope else []
-        keep = [(SearchResult(chunk=c, score=s), h) for c, s in pairs if s >= TRANSCRIPT_THRESHOLD
-                and cl.ask_citable(h := cl.transcript_hit(c, s, enrolled_ids))][:5]
-        results = [r for r, _ in keep]
-        cards = cl.to_cards(cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[h for _, h in keep],
+    result = await pipeline.graded_search(query, scope)   # empty scope: NOT_COVERED, nothing searched
+    cited = sorted((g for g in result.cited() if g.candidate.chunk.course_id in scope),
+                   key=lambda g: g.grade != "answers")      # answers first, then partial; fused order within a grade
+    if in_course:
+        kept = cited[:5]
+        results = [SearchResult(chunk=g.candidate.chunk, score=_cos(g)) for g in kept]
+        cards = [c.model_dump() for c in grounding.build_sources(results)]
+    else:
+        # ask_citable stays as the same-policy backstop to the scope
+        pairs = [(g, h) for g in cited if cl.ask_citable(h := cl.graded_hit(g, enrolled_ids))][:5]
+        kept = [g for g, _ in pairs]
+        cards = cl.to_cards(cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[h for _, h in pairs],
                                             enrolled_titles=[]))
-    if not results:
+    if not kept:
         return "No matching course content.", []
     text = "\n".join(
         f"{'[THIS COURSE] ' if in_course else ''}"
-        f"{r.chunk.course_title} → {r.chunk.lecture_title} @ {c['timestamp']}: {r.chunk.text}"
+        f"{g.candidate.chunk.course_title} → {g.candidate.chunk.lecture_title} @ {c['timestamp']}"
+        f"{' (touches on it)' if g.grade == 'partial' else ''}: {g.candidate.chunk.text}"
         + (f" — link: the01.dev{c['url']}" if not in_course and c.get("url") else "")
-        for r, c in zip(results, cards)
+        for g, c in zip(kept, cards)
     )
     return text, cards
 
@@ -141,38 +145,35 @@ async def explain_concept(
 _NOT_FOUND = '{"found": false}'
 
 
+def _cos(g) -> float:
+    c = g.candidate
+    return c.cosine if c.cosine is not None else (c.vec_score or 0.0)
+
+
 async def _locate_moment(what: str, slug: str):
-    """(chunk, chunk_score) of a real chunk of the course, or None. Lectures are ranked by
-    max(best chunk, title - TITLE_OFFSET); the winner counts as found when its title clears
-    TITLE_THRESHOLD or its best chunk clears MOMENT_THRESHOLD, or both clear the lower agreement floors
-    (AGREE_TITLE and AGREE_CHUNK, the same lecture — see course_lookup for the calibration)."""
-    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=None) if c.course_id == slug]
-    titles = {cl._norm(t): sc for t, sc in (await cl._title_scores(what, slug)).items()}
-    best: dict = {}
-    for c, s in rows:
-        k = cl._norm(c.lecture_title)
-        if k not in best or s > best[k][1]:
-            best[k] = (c, s)
-    # Title-matched lectures whose chunks are in neither fused list still compete (the old code scored every chunk).
-    floor = max((sc for _, sc in best.values()), default=-1.0)
-    extra = {k for k, t in titles.items()
-             if k not in best and (t - cl.TITLE_OFFSET >= floor or t >= cl.AGREE_TITLE)}
-    best.update(await cl._titled_missing(what, slug, extra))
-    if not best:
-        return None
-    key = max(best, key=lambda k: max(best[k][1], titles.get(k, 0.0) - cl.TITLE_OFFSET))
-    chunk, score = best[key]
-    title = titles.get(key, 0.0)
-    agree = title >= cl.AGREE_TITLE and score >= cl.AGREE_CHUNK
-    if title < cl.TITLE_THRESHOLD and score < cl.MOMENT_THRESHOLD and not agree:
-        return None
-    if score < cl.MOMENT_LECTURE_FLOOR:
-        # No chunk of this lecture matches well: open it from the start, with a range that ends where its first chunk ends.
-        # The lecture's first chunk may not be among the fused candidates: look in the store too.
-        pool = [c for c, _ in rows] + [c for c in cl.vector_store.chunks if c.course_id == slug]
-        opening = min((c for c in pool if cl._norm(c.lecture_title) == key), key=lambda c: c.start_time)
-        chunk = chunk.model_copy(update={"start_time": 0, "end_time": opening.end_time})
-    return chunk, score
+    """(chunk, cosine) of the moment that shows `what` in the watched course, or None. find_moment only
+    runs on an explicit "take me to ..." request, so the best `answers` chunk wins, else the best
+    `partial` one (spec §2.5). Only a real chunk of THIS course is ever returned. Within a grade the
+    reranker often grades several lectures `answers`, so the pick is: a lecture whose TITLE matches the
+    phrase first (the instructor named it), then the highest cosine."""
+    result = await pipeline.graded_search(what, [slug], intent="navigate")
+    for grade in ("answers", "partial"):
+        tier = [g for g in result.graded if g.grade == grade and g.candidate.chunk.course_id == slug]
+        if tier:
+            by_title = await _title_matches(what, slug)
+            best = max(tier, key=lambda g: (by_title.get(norm_title(g.candidate.chunk.lecture_title), 0.0), _cos(g)))
+            return best.candidate.chunk, _cos(best)
+    return None
+
+
+async def _title_matches(what: str, slug: str) -> dict[str, float]:
+    """{normalized lecture title: title score} for lectures whose title matches the phrase, best effort."""
+    try:
+        scores = await titles.title_scores(pipeline._recent.get(what), [slug], question=what)
+    except Exception as e:  # noqa: BLE001 — the title signal is only a tie-break
+        print(f"[tutor_agent] title tie-break failed: {e!r}")
+        return {}
+    return {norm_title(t): sc for (_, t), sc in scores.items() if sc >= titles.TITLE_THRESHOLD}
 
 
 @tool("find_moment", description=D.FIND_MOMENT, response_format="content_and_artifact")

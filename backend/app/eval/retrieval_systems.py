@@ -67,53 +67,8 @@ def watched_lecture(row: Row) -> Optional[str]:
     return lectures[int(hashlib.sha1(row.id.encode()).hexdigest(), 16) % len(lectures)][1]
 
 
-def _lecture_order(pairs) -> list[str]:
-    """(chunk, score) best-first -> distinct lecture ids, best first."""
-    return list(dict.fromkeys(c.lecture_id for c, _ in pairs))
-
-
 def _ms(t0: float) -> float:
     return round((time.perf_counter() - t0) * 1000, 1)
-
-
-class LegacySystem:
-    """Phases 1-3: the threshold-based code paths exactly as they are (course_lookup, find_moment)."""
-    name = "legacy"
-
-    async def predict(self, row: Row, mode: str, rank: bool = True) -> Prediction:
-        from app.services import course_lookup as cl, tutor_agent
-        t0 = time.perf_counter()
-        if row.intent == "navigate":
-            hit = await tutor_agent._locate_moment(row.navigate_phrase or row.question, row.scope_course)
-            return Prediction(row.id, mode, [], NOT_COVERED, None,
-                              moment_lecture=hit[0].lecture_id if hit else None, latency_ms=_ms(t0))
-        if mode == "player":
-            scope = cl.ChatScope(course_slug=row.scope_course, lecture_title=watched_lecture(row), in_player=True)
-            lk = await cl.course_lookup(row.question, EVAL_STUDENT, scope)
-            ms = _ms(t0)
-            ranked = _lecture_order(await cl.search_in_course(row.question, row.scope_course, top_k=None)) if rank else []
-            outcome = {cl.LookupCase.IN_COURSE_MATCH: COVERED,
-                       cl.LookupCase.IN_COURSE_RELATED: PARTIAL}.get(lk.case, NOT_COVERED)
-            return Prediction(row.id, mode, ranked, outcome, lk.hits[0].lecture_id if lk.hits else None,
-                              latency_ms=ms, shown_lectures=[h.lecture_id for h in lk.hits],
-                              lookup_case=lk.case.value)
-        lk = await cl.course_lookup(row.question, EVAL_STUDENT, cl.ChatScope())
-        ms = _ms(t0)
-        ranked = await self._ask_ranking(row.question) if rank else []
-        shown = [h.lecture_id for h in lk.hits if h.source == "transcript"]
-        # a catalog-only match shows the student a course-pointer card: partial, naming no lecture
-        outcome = COVERED if shown else (PARTIAL if lk.hits else NOT_COVERED)
-        return Prediction(row.id, mode, ranked, outcome, shown[0] if shown else None, latency_ms=ms,
-                          shown_lectures=shown, lookup_case=lk.case.value)
-
-    @staticmethod
-    async def _ask_ranking(question: str) -> list[str]:
-        """Every lecture the Ask page may cite (launched AND owned, via the real ask_citable), best first."""
-        from app.services import course_lookup as cl
-        from app.retrieval import pipeline
-        enrolled, _ = await cl._enrollments(EVAL_STUDENT)
-        pairs = await cl._transcript_hits(question, pipeline.ask_scope(enrolled), top_k=pipeline.VEC_K + pipeline.LEX_K)
-        return _lecture_order((c, s) for c, s in pairs if cl.ask_citable(cl.transcript_hit(c, s, enrolled)))
 
 
 class V2System:
