@@ -70,7 +70,7 @@ def test_norms_follow_replaced_embeddings(monkeypatch):
     assert abs(st.search(q, top_k=1, threshold=0.0)[0].score - 1.0) < 1e-9
 
 
-def test_search_in_course_never_touches_other_courses_chunks(monkeypatch):
+def test_pipeline_search_never_touches_other_courses_chunks(monkeypatch):
     from app.retrieval import factory, pipeline
     from app.retrieval.memory import MemoryRetriever
     monkeypatch.setattr(embedding_service, "use_openai", True)

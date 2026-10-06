@@ -165,6 +165,7 @@ class RetrievalResult:
     intent: str = "explain"
     search_query: str = ""
     fallback: bool = False
+    question_embedding: Optional[list[float]] = None   # the embedding graded_search already computed for the question
     rerank_error: Optional[str] = None   # why the reranker fell back, or "salvaged: ..." when it was repaired
     timings_ms: dict = field(default_factory=dict)
 
@@ -232,4 +233,4 @@ async def graded_search(question: str, scope: Sequence[str], *, intent: str = "e
     rr = await rerank(question, pool, intent=intent)
     outcome, ordered = decide(rr.graded)
     return RetrievalResult(outcome, ordered, intent=intent, search_query=question, fallback=rr.fallback,
-                           rerank_error=rr.error, timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})
+                           question_embedding=_recent.get(question), rerank_error=rr.error, timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})

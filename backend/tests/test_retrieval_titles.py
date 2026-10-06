@@ -31,7 +31,7 @@ def _one_course(monkeypatch, titles):
     monkeypatch.setattr(catalog_service, "by_slug", lambda slug: {"chapters": [{"name": "c", "subchapters": titles}]})
 
 
-async def test_title_scores_fall_back_to_word_overlap_without_embeddings(monkeypatch):
+async def test_title_scores_use_word_overlap_when_no_embedding_is_given(monkeypatch):
     monkeypatch.setattr(embedding_service, "use_openai", False)
     _one_course(monkeypatch, [ES, LINK])
     scores = await title_index.title_scores(None, ["custom-library"], question="what are ES modules")

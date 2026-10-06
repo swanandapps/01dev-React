@@ -184,6 +184,13 @@ async def test_graded_search_decides_from_grades(mem, grader):
     assert set(res.timings_ms) >= {"retrieve", "rerank", "total"}
 
 
+async def test_graded_search_returns_the_question_embedding_it_computed(mem, grader):
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert res.question_embedding and res.question_embedding == pipeline._recent["what is an IIFE?"]
+    assert (await pipeline.graded_search("x", [])).question_embedding is None
+
+
 async def test_graded_search_partial_and_best(mem, grader):
     grader({"c2": "p"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])

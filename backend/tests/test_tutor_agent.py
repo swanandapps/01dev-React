@@ -335,6 +335,32 @@ async def test_find_moment_among_answers_prefers_the_lecture_whose_title_matches
     assert (artifact["lecture_title"], artifact["start_time"]) == (LECTURE, 45)
 
 
+async def test_find_moment_title_matched_partial_never_beats_a_non_title_answers(monkeypatch):
+    other = _moment_chunk(lecture="8.2 - Testing Our NPM Package", start=184)
+    _stub(monkeypatch, [(_moment_chunk(start=45), "partial", 0.7), (other, "answers", 0.4)])
+    _, artifact = await tutor_agent.find_moment.coroutine(what="publishing", runtime=_player_runtime())
+    assert (artifact["lecture_title"], artifact["start_time"]) == ("8.2 - Testing Our NPM Package", 184)
+
+
+async def test_find_moment_title_match_beats_cosine_and_non_title_chunks_order_by_cosine(monkeypatch):
+    a = _moment_chunk(lecture="8.2 - Testing Our NPM Package", start=184)
+    b = _moment_chunk(lecture="6.5 - IIFE, To The Rescue", start=9)
+    _stub(monkeypatch, [(a, "answers", 0.60), (b, "answers", 0.65), (_moment_chunk(start=45), "answers", 0.50)])
+    _, artifact = await tutor_agent.find_moment.coroutine(what="publishing", runtime=_player_runtime())
+    assert artifact["start_time"] == 45                      # title-matched, though lowest cosine
+    _stub(monkeypatch, [(a, "answers", 0.60), (b, "answers", 0.65)])
+    _, artifact = await tutor_agent.find_moment.coroutine(what="publishing", runtime=_player_runtime())
+    assert artifact["lecture_title"] == "6.5 - IIFE, To The Rescue"   # neither matches: highest cosine
+
+
+async def test_search_course_content_text_uses_the_clean_transcript(monkeypatch):
+    c = _moment_chunk()
+    c.text, c.text_clean = "raw uh text", "clean text"
+    _stub(monkeypatch, [(c, "answers", 0.7)])
+    content, _ = await tutor_agent.search_course_content.coroutine(query="np", runtime=_player_runtime())
+    assert "clean text" in content and "raw uh text" not in content
+
+
 async def test_find_moment_related_only_is_not_found(monkeypatch):
     _stub(monkeypatch, [(_moment_chunk(), "related", 0.5)])
     assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)

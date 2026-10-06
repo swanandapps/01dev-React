@@ -64,8 +64,8 @@ async def search_course_content(
         enrolled_ids = await _enrolled_ids(runtime.context.student_id)
         scope = pipeline.ask_scope(enrolled_ids)
     result = await pipeline.graded_search(query, scope)   # empty scope: NOT_COVERED, nothing searched
-    cited = sorted((g for g in result.cited() if g.candidate.chunk.course_id in scope),
-                   key=lambda g: g.grade != "answers")      # answers first, then partial; fused order within a grade
+    # cited() is already answers first, then partial, fused order within a grade
+    cited = [g for g in result.cited() if g.candidate.chunk.course_id in scope]
     if in_course:
         kept = cited[:5]
         results = [SearchResult(chunk=g.candidate.chunk, score=_cos(g)) for g in kept]
@@ -81,7 +81,7 @@ async def search_course_content(
     text = "\n".join(
         f"{'[THIS COURSE] ' if in_course else ''}"
         f"{g.candidate.chunk.course_title} → {g.candidate.chunk.lecture_title} @ {c['timestamp']}"
-        f"{' (touches on it)' if g.grade == 'partial' else ''}: {g.candidate.chunk.text}"
+        f"{' (touches on it)' if g.grade == 'partial' else ''}: {g.candidate.chunk.text_clean or g.candidate.chunk.text}"
         + (f" — link: the01.dev{c['url']}" if not in_course and c.get("url") else "")
         for g, c in zip(kept, cards)
     )
@@ -153,27 +153,27 @@ def _cos(g) -> float:
 async def _locate_moment(what: str, slug: str):
     """(chunk, cosine) of the moment that shows `what` in the watched course, or None. find_moment only
     runs on an explicit "take me to ..." request, so the best `answers` chunk wins, else the best
-    `partial` one (spec §2.5). Only a real chunk of THIS course is ever returned. Within a grade the
-    reranker often grades several lectures `answers`, so the pick is: a lecture whose TITLE matches the
-    phrase first (the instructor named it), then the highest cosine."""
+    `partial` one (spec §2.5); a lower grade never loses to a higher one. Only a real chunk of THIS course
+    is ever returned. Within a grade, a chunk of a lecture whose TITLE matches the phrase
+    (titles.TITLE_THRESHOLD) comes first, then the highest cosine."""
     result = await pipeline.graded_search(what, [slug], intent="navigate")
     for grade in ("answers", "partial"):
         tier = [g for g in result.graded if g.grade == grade and g.candidate.chunk.course_id == slug]
         if tier:
-            by_title = await _title_matches(what, slug)
-            best = max(tier, key=lambda g: (by_title.get(norm_title(g.candidate.chunk.lecture_title), 0.0), _cos(g)))
+            matched = await _title_matched(what, slug, result.question_embedding)
+            best = max(tier, key=lambda g: (norm_title(g.candidate.chunk.lecture_title) in matched, _cos(g)))
             return best.candidate.chunk, _cos(best)
     return None
 
 
-async def _title_matches(what: str, slug: str) -> dict[str, float]:
-    """{normalized lecture title: title score} for lectures whose title matches the phrase, best effort."""
+async def _title_matched(what: str, slug: str, question_embedding) -> set[str]:
+    """Normalized titles of the course's lectures whose title matches the phrase, best effort."""
     try:
-        scores = await titles.title_scores(pipeline._recent.get(what), [slug], question=what)
-    except Exception as e:  # noqa: BLE001 — the title signal is only a tie-break
-        print(f"[tutor_agent] title tie-break failed: {e!r}")
-        return {}
-    return {norm_title(t): sc for (_, t), sc in scores.items() if sc >= titles.TITLE_THRESHOLD}
+        scores = await titles.title_scores(question_embedding, [slug], question=what)
+    except Exception as e:  # noqa: BLE001 — the title signal is only an ordering hint
+        print(f"[tutor_agent] title match failed: {e!r}")
+        return set()
+    return {norm_title(t) for (_, t), sc in scores.items() if sc >= titles.TITLE_THRESHOLD}
 
 
 @tool("find_moment", description=D.FIND_MOMENT, response_format="content_and_artifact")
