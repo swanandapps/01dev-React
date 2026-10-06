@@ -1,4 +1,11 @@
 {
+ "ECMASyf": {
+  "means": "ECMAScript",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-9-1-4"
+  ]
+ },
  "add": {
   "means": "@",
   "count": 1,
@@ -48,11 +55,25 @@
    "custom-library-9-1-0"
   ]
  },
+ "get element by class name": {
+  "means": "getElementsByClassName",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-4-2-3"
+  ]
+ },
  "ify": {
   "means": "IIFE",
   "count": 1,
   "chunk_ids": [
    "custom-library-9-1-0"
+  ]
+ },
+ "indexo": {
+  "means": "indexOf",
+  "count": 1,
+  "chunk_ids": [
+   "custom-library-3-0-30"
   ]
  },
  "massing": {
@@ -134,9 +155,10 @@
  },
  "webjs": {
   "means": "web JS",
-  "count": 1,
+  "count": 2,
   "chunk_ids": [
-   "custom-library-9-1-0"
+   "custom-library-9-1-0",
+   "custom-library-9-1-4"
   ]
  }
 }
