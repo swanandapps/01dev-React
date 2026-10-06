@@ -22,7 +22,12 @@ def _no_real_db_or_embeddings(monkeypatch):
         leaks.append("EmbeddingService._openai_embed (real OpenAI)")
         raise AssertionError("test reached the real OpenAI embeddings: stub embedding_service.embed")
 
+    async def _blocked_embeddings_create(self, *a, **k):
+        leaks.append("openai AsyncEmbeddings.create (real OpenAI, e.g. course_lookup._embed_titles)")
+        raise AssertionError("test reached the real OpenAI embeddings client: stub it")
+
     monkeypatch.setattr(db, "get_pool", _blocked_pool)
+    monkeypatch.setattr("openai.resources.embeddings.AsyncEmbeddings.create", _blocked_embeddings_create)
     monkeypatch.setattr(type(embeddings.embedding_service), "_openai_embed", _blocked_openai)
-    yield
+    yield leaks
     assert not leaks, f"test leaked to a real backend: {leaks}"
