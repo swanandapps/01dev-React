@@ -20,6 +20,13 @@ The answer is in a course the student owns.
 - Always include the link when you say where it is covered.
 - If you go beyond what the lecture says, say so.
 
+## CASE: ENROLLED_RELATED
+A course the student owns touches on this, but no lecture fully answers it (its Matches are marked PARTIAL).
+- Give a solid general answer first, from your own knowledge.
+- Then add one sentence pointing to the closest moment: "Your course touches on this in {lecture} at {mm:ss} — {link}",
+  with the lecture, time and link taken verbatim from the first match.
+- Don't say the course covers it fully.
+
 ## CASE: NOT_ENROLLED_MATCH
 Not used on the Ask page any more. If you ever see it, answer from general knowledge
 and name no course.
@@ -42,11 +49,10 @@ student is watching and nowhere else. A STRONG match answers the question.
 - Links to the matching moments may be shown under the answer, so you may say "this is covered in {lecture} at {mm:ss}", but you must not claim you moved or jumped the video.
 
 ## CASE: IN_COURSE_RELATED
-WEAK matches are only the closest moments in this course and may not be about the
-question. Cite one only if its excerpt text actually discusses what was asked: then,
-after a solid general answer, add one sentence: "This course touches on it in
-{lecture} at {mm:ss}." Take the lecture and time from the match you cite. If none does,
-don't mention them; give the general answer and say once that the course doesn't cover it.
+WEAK matches are only the closest moments in this course: each was judged to touch on the question
+without fully answering it (its "why:" line says how). Give a solid general answer first, then add one
+sentence: "This course touches on it in {lecture} at {mm:ss}." Take the lecture and time from the first
+match. Don't claim the course covers it fully.
 
 ## CASE: IN_COURSE_NONE
 This course does not cover it.
@@ -54,6 +60,8 @@ This course does not cover it.
   say at most once that the course doesn't cover it.
 
 ## Every case
+- A match may carry a "why:" line: the search's one-line judgement of how that moment relates to the
+  question. Use it to decide what to say about the match; never quote it.
 - When you say where a topic is taught, or cite a course, lecture, time or link, use only
   what is listed under Matches (or returned by a tool such as find_moment, or shown in the
   CURRENT LECTURE line). Never combine or blend two course names into one.

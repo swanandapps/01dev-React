@@ -16,8 +16,9 @@ def wired(monkeypatch):
         calls["recorded"].append((student_id, slug, q, a))
     async def weak(*a):
         return []
-    async def lookup(question, student_id, scope=cl.ChatScope()):
+    async def lookup(question, student_id, scope=cl.ChatScope(), history=()):
         calls["lookup_q"].append(question)
+        calls["lookup_history"] = list(history)
         hit = cl.Hit(source="transcript", course_id=2, course_slug="custom-library",
                      course_title="Build a Custom Library", title="8.1 - The npm link command", score=0.6,
                      enrolled=False, text="npm link", lecture_id="custom-library-8-1", start_time=87, url="/course/2")
@@ -81,7 +82,7 @@ async def test_not_enrolled_answer_that_already_has_the_course_url_gets_no_point
 
 @pytest.mark.parametrize("case,enrolled", [(cl.LookupCase.ENROLLED_MATCH, True), (cl.LookupCase.NO_MATCH, False)])
 async def test_pointer_is_never_appended_outside_not_enrolled(wired, monkeypatch, case, enrolled):
-    async def lookup(question, student_id, scope=cl.ChatScope()):
+    async def lookup(question, student_id, scope=cl.ChatScope(), history=()):
         hit = cl.Hit(source="transcript", course_id=2, course_slug="custom-library",
                      course_title="Build a Custom Library", title="8.1 - The npm link command", score=0.6,
                      enrolled=enrolled, text="npm link", url="/course/2")
@@ -183,7 +184,7 @@ async def test_ask_scope_lookup_uses_the_bare_question(wired, monkeypatch):
 
 
 def _not_enrolled(*hits):
-    async def lookup(question, student_id, scope=cl.ChatScope()):
+    async def lookup(question, student_id, scope=cl.ChatScope(), history=()):
         return cl.CourseLookup(case=cl.LookupCase.NOT_ENROLLED_MATCH, hits=list(hits), enrolled_titles=[])
     return lookup
 
@@ -328,14 +329,14 @@ async def test_ask_turn_calls_the_agent_as_before_and_never_navigates(wired, mon
 
 # ---- suggest event (player only, never navigates) -----------------------------
 
-def _chit(title, score, lecture_id, start, slug="custom-library", via_title=False):
+def _chit(title, grade, lecture_id, start, slug="custom-library"):
     return cl.Hit(source="transcript", course_id=2, course_slug=slug, course_title="Build a Custom Library",
-                  title=title, score=score, enrolled=True, text="x", lecture_id=lecture_id,
-                  start_time=start, url="/course/2", via_title=via_title)
+                  title=title, score=0.5, enrolled=True, text="x", lecture_id=lecture_id,
+                  start_time=start, url="/course/2", grade=grade)
 
 
 def _incourse(monkeypatch, case, *hits):
-    async def lookup(question, student_id, scope=cl.ChatScope()):
+    async def lookup(question, student_id, scope=cl.ChatScope(), history=()):
         return cl.CourseLookup(case=case, hits=list(hits), enrolled_titles=[])
     monkeypatch.setattr(chat_pipeline, "course_lookup", lookup)
 
@@ -346,14 +347,14 @@ async def _player_events(monkeypatch, wired, agent_events, q="how does npm link 
 
 
 TOK = [{"type": "token", "value": "Answer."}]
-S1 = _chit("8.1 - The `npm link` command", 0.7, "l1", 87)
-S2 = _chit("8.2 - Testing Our NPM Package", 0.6, "l2", 40)
-S3 = _chit("11.1 - Publishing using `np`", 0.58, "l3", 200)
+S1 = _chit("8.1 - The `npm link` command", "answers", "l1", 87)
+S2 = _chit("8.2 - Testing Our NPM Package", "answers", "l2", 40)
+S3 = _chit("11.1 - Publishing using `np`", "answers", "l3", 200)
 
 
 async def test_match_emits_suggest_before_done_with_at_most_two_distinct_lectures(wired, monkeypatch):
-    dup = _chit("8.1 - The `npm link` command", 0.65, "l1", 300)
-    weak = _chit("9.1 - Weak", 0.45, "l9", 5)
+    dup = _chit("8.1 - The `npm link` command", "answers", "l1", 300)
+    weak = _chit("9.1 - Weak", "partial", "l9", 5)
     _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1, dup, weak, S2, S3)
     events = await _player_events(monkeypatch, wired, TOK)
     assert [e["type"] for e in events][-2:] == ["suggest", "done"]
@@ -363,15 +364,23 @@ async def test_match_emits_suggest_before_done_with_at_most_two_distinct_lecture
         {"lecture_title": "8.2 - Testing Our NPM Package", "start_time": 40}]}
 
 
-async def test_via_title_hit_counts_as_strong_and_weak_hits_never_suggest(wired, monkeypatch):
-    titled = _chit("8.1 - The `npm link` command", 0.2, "l1", 0, via_title=True)
-    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, titled, _chit("9.1 - W", 0.45, "l9", 5))
+async def test_only_answers_hits_are_suggested(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("8.1 - The `npm link` command", "answers", "l1", 0),
+              _chit("9.1 - W", "partial", "l9", 5))
     events = await _player_events(monkeypatch, wired, TOK)
     assert events[-2]["moments"] == [{"lecture_title": "8.1 - The `npm link` command", "start_time": 0}]
 
 
+async def test_history_reaches_the_lookup_scrubbed(wired, monkeypatch):
+    _agent(monkeypatch, wired)
+    hist = [{"role": "user", "content": "my email is a@b.co"}, {"role": "assistant", "content": "ok"}]
+    [e async for e in chat_pipeline.chat_turn(_req(history=hist))]
+    assert wired["lookup_history"][1] == {"role": "assistant", "content": "ok"}
+    assert "a@b.co" not in wired["lookup_history"][0]["content"]
+
+
 async def test_other_courses_hits_are_never_suggested(wired, monkeypatch):
-    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("Other", 0.9, "o1", 1, slug="other-course"))
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("Other", "answers", "o1", 1, slug="other-course"))
     events = await _player_events(monkeypatch, wired, TOK)
     assert "suggest" not in [e["type"] for e in events]
 
@@ -405,7 +414,7 @@ async def test_suggest_course_slug_comes_from_the_scope(wired, monkeypatch):
     events = [e async for e in chat_pipeline.chat_turn(req)]
     # hits belong to custom-library, not the scope's course: nothing to suggest
     assert "suggest" not in [e["type"] for e in events]
-    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("L", 0.7, "l1", 3, slug="scope-slug"))
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("L", "answers", "l1", 3, slug="scope-slug"))
     events = [e async for e in chat_pipeline.chat_turn(req)]
     assert events[-2]["course_slug"] == "scope-slug"
 

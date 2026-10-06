@@ -197,15 +197,14 @@ async def _title_candidates(question: str, scope: Sequence[str], cands: list[Can
             by_key = {norm_title(t): sc for (s, t), sc in scores.items() if s == slug and sc >= titles.TITLE_THRESHOLD}
             for key, lid in lecture_ids_for_titles(slug, by_key).items():
                 matched[lid] = max(matched.get(lid, 0.0), by_key[key])
-        order = sorted(matched, key=matched.get, reverse=True)[:MAX_TITLE_ADDED]
-        k = len(order)
-        while True:   # the kept slice shrinks by the number added, which depends on what the slice already holds
+        order = sorted(matched, key=matched.get, reverse=True)
+        for k in range(MAX_TITLE_ADDED + 1):   # smallest k whose backfilled additions fit in the k slots it frees
             kept = cands[:MAX_CANDIDATES - k]
             have = {c.chunk.lecture_id for c in kept}
-            missing = [lid for lid in order if lid not in have]
-            if len(missing) >= k:
+            # drop lectures the kept slice already holds BEFORE taking the top MAX_TITLE_ADDED (backfill)
+            missing = [lid for lid in order if lid not in have][:MAX_TITLE_ADDED]
+            if len(missing) <= k:
                 break
-            k = len(missing)
         if not missing:
             return kept, []
         found = await best_chunk_for_lectures(question, missing)

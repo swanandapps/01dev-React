@@ -316,3 +316,26 @@ async def test_pool_edge_counts_only_the_kept_slice(mem, grader, monkeypatch):
     grader({"c1": "n"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
     assert len(res.graded) == 12 and sum(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded) == 1
+
+
+async def test_title_additions_backfill_past_lectures_the_kept_slice_already_holds(mem, grader, monkeypatch):
+    """Task 13 review: lectures already in the kept slice are dropped BEFORE the top 3 is taken."""
+    chunks = [CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}", "lecture_id": f"L{i}"}) for i in range(12)]
+    cands = [Candidate(chunk=c) for c in chunks]
+    titles_scored = {("custom-library", f"T{i}"): 0.95 - n * 0.05 for n, i in enumerate((0, 20, 21, 22))}   # L0 best, then 3 absent
+
+    async def scored(*a, **kw):
+        return titles_scored
+
+    ids = {"t0": "L0", "t20": "L20", "t21": "L21", "t22": "L22"}
+    monkeypatch.setattr(titles, "title_scores", scored)
+    monkeypatch.setattr(pipeline, "norm_title", lambda t: t.lower())
+    monkeypatch.setattr(pipeline, "lecture_ids_for_titles", lambda slug, keys: {k: ids[k] for k in keys})
+
+    async def found(question, lids):
+        return {l: (CORPUS[0][0].model_copy(update={"chunk_id": f"y{l}", "lecture_id": l}), 0.5) for l in lids}
+
+    monkeypatch.setattr(pipeline, "best_chunk_for_lectures", found)
+    kept, extra = await pipeline._title_candidates("q", ["custom-library"], cands)
+    assert {c.chunk.lecture_id for c in extra} == {"L20", "L21", "L22"}     # L0 held already: three others backfill
+    assert len(kept) + len(extra) == 12

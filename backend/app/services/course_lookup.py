@@ -15,6 +15,7 @@ from typing import Optional, Sequence
 
 from app.models import TranscriptChunk
 from app.retrieval import pipeline, titles
+from app.retrieval.rerank import Graded, Outcome, decide
 from app.services import catalog_index, catalog_service, enrollment_service
 from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
@@ -74,6 +75,7 @@ TITLE_COOLDOWN = titles.TITLE_COOLDOWN
 
 class LookupCase(str, Enum):
     ENROLLED_MATCH = "enrolled_match"
+    ENROLLED_RELATED = "enrolled_related"   # Ask: a launched+owned course only touches on it (graded partial)
     NOT_ENROLLED_MATCH = "not_enrolled_match"
     NO_MATCH = "no_match"
     # Player tutor only (ChatScope.in_player) — this course's transcripts, nothing else.
@@ -105,7 +107,8 @@ class Hit:
     start_time: int = 0
     end_time: int = 0
     url: Optional[str] = None
-    via_title: bool = False        # player: surfaced because the lecture title matched the question
+    grade: str = ""                # reranker grade: "answers" | "partial" ("" = catalog hit or context passage)
+    reason: str = ""               # reranker's one-line reason, shown to the model as "why:"
 
 
 @dataclass
@@ -190,62 +193,76 @@ async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
         return set(), []
 
 
-async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatScope()) -> CourseLookup:
+async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatScope(),
+                        history: Sequence[dict] = ()) -> CourseLookup:
     enrolled_ids, enrolled_titles = await _enrollments(student_id)
     if scope.in_player:
-        return await _in_course_lookup(question, scope, enrolled_ids, enrolled_titles)
+        return await _in_course_lookup(question, scope, enrolled_ids, enrolled_titles, history)
     scope_slugs = pipeline.ask_scope(enrolled_ids)
-    if not scope_slugs:  # F1: nothing launched AND owned -> nothing to search, nothing to cite
+    if not scope_slugs:  # F1: nothing launched AND owned -> nothing to search, rerank or cite
         return CourseLookup(case=LookupCase.NO_MATCH, hits=[], enrolled_titles=[])
-    hits: list[Hit] = []
-
-    # In the player, vague questions ("Give me an example") only find the right
-    # transcript when the lecture title rides along. The catalog search keeps the bare
-    # question: a generic title ("1.1 - What is this course") matches other courses'
-    # overviews and turned a vague question into a pointer to an unrelated course.
-    transcript_q = f"{scope.lecture_title} {question}" if scope.lecture_title else question
-    for chunk, score in await _transcript_hits(transcript_q, scope_slugs):
-        if score < TRANSCRIPT_THRESHOLD:
-            continue
-        hits.append(transcript_hit(chunk, score, enrolled_ids))
-
-    covered = {h.course_id for h in hits}
-    for entry, score in await catalog_index.search(question, top_k=5):
-        if score < CATALOG_THRESHOLD or entry.course_id in covered:
-            continue
-        covered.add(entry.course_id)
-        course = catalog_service.get(entry.course_id)
-        hits.append(Hit(
-            source="catalog", course_id=entry.course_id, course_slug=entry.course_slug,
-            course_title=entry.course_title, title=entry.module_title or entry.course_title, score=score,
-            enrolled=entry.course_id in enrolled_ids, text=entry.text, url=course["url"] if course else None,
-        ))
+    # The bare question is the evidence query; the lecture being watched and the history are context
+    # for query understanding (Task 18), never folded into what the reranker judges.
+    result = await pipeline.graded_search(question, scope_slugs, history=history, lecture_title=scope.lecture_title)
+    hits = [graded_hit(g, enrolled_ids) for g in result.cited()]
+    if result.outcome == Outcome.NOT_COVERED:
+        hits = await _catalog_hits(question, scope_slugs, enrolled_ids)
+    # Ask citation policy (user decision 2026-10-06, F1): cite only courses that are launched AND owned.
+    hits = [h for h in hits if ask_citable(h)]
 
     def rank(h: Hit):
         in_course = bool(scope.course_slug) and h.course_slug == scope.course_slug
         in_lecture = in_course and bool(scope.lecture_title) and _norm(h.title) == _norm(scope.lecture_title)
-        return (in_lecture, in_course, h.enrolled, h.score)
+        return (_GRADE_RANK.get(h.grade, 2), not in_lecture, not in_course)
 
-    # Ask citation policy (user decision 2026-10-06): cite only courses that are launched AND
-    # the student owns. Never point at an unowned or unreleased course, so NOT_ENROLLED_MATCH
-    # is not produced here (the enum member stays for the in-player path / prompt history).
-    hits = [h for h in hits if ask_citable(h)]
-    hits.sort(key=rank, reverse=True)
-    hits = hits[:MAX_HITS]
+    hits = sorted(hits, key=rank)[:MAX_HITS]          # stable: fused order is kept within a rank
+    if not hits:
+        case = LookupCase.NO_MATCH
+    elif result.outcome == Outcome.PARTIAL:
+        case = LookupCase.ENROLLED_RELATED
+    else:
+        case = LookupCase.ENROLLED_MATCH
     owned_titles = [c["title"] for i in sorted(enrolled_ids) if (c := catalog_service.get(i)) and c.get("launched")]
-    return CourseLookup(case=LookupCase.ENROLLED_MATCH if hits else LookupCase.NO_MATCH,
-                        hits=hits, enrolled_titles=owned_titles)
+    return CourseLookup(case=case, hits=hits, enrolled_titles=owned_titles)
 
 
-def transcript_hit(chunk: TranscriptChunk, score: float, enrolled_ids: set[int]) -> Hit:
+def transcript_hit(chunk: TranscriptChunk, score: float, enrolled_ids: set[int], grade: str = "",
+                   reason: str = "") -> Hit:
     course = catalog_service.by_slug(chunk.course_id)
     cid = course["id"] if course else None
     return Hit(
         source="transcript", course_id=cid, course_slug=chunk.course_id, course_title=chunk.course_title,
-        title=chunk.lecture_title, score=score, enrolled=cid in enrolled_ids, text=chunk.text,
+        title=chunk.lecture_title, score=score, enrolled=cid in enrolled_ids, text=chunk.text_clean or chunk.text,
         lecture_id=chunk.lecture_id, start_time=chunk.start_time, end_time=chunk.end_time,
-        url=course["url"] if course else None,
+        url=course["url"] if course else None, grade=grade, reason=reason,
     )
+
+
+def graded_hit(g: Graded, enrolled_ids: set[int]) -> Hit:
+    c = g.candidate
+    return transcript_hit(c.chunk, c.cosine if c.cosine is not None else (c.vec_score or 0.0), enrolled_ids,
+                          g.grade, g.reason)
+
+
+_GRADE_RANK = {"answers": 0, "": 0, "partial": 1}
+
+
+async def _catalog_hits(question: str, scope_slugs: Sequence[str], enrolled_ids: set[int]) -> list[Hit]:
+    """Catalog text is evidence only for an in-scope course we hold NO transcript of; for every other
+    course the reranker's judgement of its transcripts decides (a vague catalog blurb must not cite)."""
+    bare = set(scope_slugs) - {c.course_id for c in vector_store.chunks}
+    if not bare:
+        return []
+    out: list[Hit] = []
+    for entry, score in await catalog_index.search(question, top_k=5):
+        if entry.course_slug not in bare or score < CATALOG_THRESHOLD or any(h.course_id == entry.course_id for h in out):
+            continue
+        course = catalog_service.get(entry.course_id)
+        out.append(Hit(source="catalog", course_id=entry.course_id, course_slug=entry.course_slug,
+                       course_title=entry.course_title, title=entry.module_title or entry.course_title, score=score,
+                       enrolled=entry.course_id in enrolled_ids, text=entry.text,
+                       url=course["url"] if course else None))
+    return out
 
 
 def ask_citable(h: Hit) -> bool:
@@ -271,18 +288,9 @@ def deep_link(h: Hit) -> Optional[str]:
     return f"{h.url}?chapter={m.group(1)}&sub={m.group(2)}&t={int(h.start_time)}"
 
 
-def _best_per_lecture(scored) -> dict[str, tuple[TranscriptChunk, float]]:
-    best: dict[str, tuple[TranscriptChunk, float]] = {}
-    for c, sc in scored:
-        k = _norm(c.lecture_title)
-        if k not in best or sc > best[k][1]:
-            best[k] = (c, sc)
-    return best
-
-
 async def _titled_missing(question: str, slug: str, keys) -> dict[str, tuple[TranscriptChunk, float]]:
     """Title-matched lectures whose chunks ranked in neither fused list: their best chunk and cosine, scored
-    against the same question embedding (the old code scored every chunk, so they always took part)."""
+    against the same question embedding. Still used by tutor_agent.find_moment (Task 15 rewires it)."""
     if not keys:
         return {}
     ids = pipeline.lecture_ids_for_titles(slug, keys)
@@ -290,46 +298,48 @@ async def _titled_missing(question: str, slug: str, keys) -> dict[str, tuple[Tra
     return {k: found[lid] for k, lid in ids.items() if lid in found}
 
 
-async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int],
-                            enrolled_titles: list[str]) -> CourseLookup:
-    """Player tutor (spec §3.2 + amendment-relevance.md): this course's transcripts only.
-    Relevance comes from the BARE question; the lecture being watched is context, not evidence."""
+async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int], enrolled_titles: list[str],
+                            history: Sequence[dict] = ()) -> CourseLookup:
+    """Player tutor (spec §3.2): this course's transcripts only. The reranker judges the BARE question;
+    the lecture being watched is context (passages for "this"/"here"), not evidence."""
     slug = scope.course_slug or ""
     course = catalog_service.by_slug(slug)
     cid = course["id"] if course else None
 
-    def to_hit(c: TranscriptChunk, s: float, via_title: bool = False) -> Hit:
+    def to_hit(c: TranscriptChunk, s: float, grade: str = "", reason: str = "") -> Hit:
         return Hit(source="transcript", course_id=cid, course_slug=slug, course_title=c.course_title,
-                   title=c.lecture_title, score=s, enrolled=cid in enrolled_ids, text=c.text,
+                   title=c.lecture_title, score=s, enrolled=cid in enrolled_ids, text=c.text_clean or c.text,
                    lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
-                   url=course["url"] if course else None, via_title=via_title)
+                   url=course["url"] if course else None, grade=grade, reason=reason)
 
-    scored = [(c, s) for c, s in await search_in_course(question, slug, top_k=None) if c.course_id == slug]
-    best = _best_per_lecture(scored)
-    titled = {_norm(t) for t, sc in (await _title_scores(question, slug)).items() if sc >= TITLE_THRESHOLD}
-    best.update(await _titled_missing(question, slug, titled - set(best)))
+    async def context():
+        if not scope.lecture_title:
+            return []
+        return await search_in_lecture(f"{scope.lecture_title} {question}", slug, scope.lecture_title)
 
-    strong = [(c, s, k in titled) for k, (c, s) in best.items()
-              if s >= TRANSCRIPT_THRESHOLD or k in titled]
-    weak = [(c, s, False) for k, (c, s) in best.items()
-            if RELATED_THRESHOLD <= s < TRANSCRIPT_THRESHOLD and k not in titled]
-    if strong:
-        case, picked = LookupCase.IN_COURSE_MATCH, strong
-    elif weak:
-        case, picked = LookupCase.IN_COURSE_RELATED, weak
-    else:
-        case, picked = LookupCase.IN_COURSE_NONE, []
-    picked.sort(key=lambda t: t[1], reverse=True)
-    hits = [to_hit(c, s, v) for c, s, v in picked[:IN_COURSE_K]]
-
+    result, ctx = await asyncio.gather(
+        pipeline.graded_search(question, [slug], history=history, lecture_title=scope.lecture_title), context())
+    # the pipeline is already scoped to this course; filter again so another course can never decide the case
+    outcome, graded = decide([g for g in result.graded if g.candidate.chunk.course_id == slug])
+    case = {Outcome.COVERED: LookupCase.IN_COURSE_MATCH,
+            Outcome.PARTIAL: LookupCase.IN_COURSE_RELATED}.get(outcome, LookupCase.IN_COURSE_NONE)
+    want = {LookupCase.IN_COURSE_MATCH: "answers", LookupCase.IN_COURSE_RELATED: "partial"}.get(case)
+    hits, seen = [], set()
+    for g in graded:
+        ch, key = g.candidate.chunk, _norm(g.candidate.chunk.lecture_title)
+        if g.grade != want or key in seen:
+            continue
+        seen.add(key)
+        c = g.candidate
+        hits.append(to_hit(ch, c.cosine if c.cosine is not None else (c.vec_score or 0.0), g.grade, g.reason))
+        if len(hits) == IN_COURSE_K:
+            break
     current, passages = None, []
-    if scope.lecture_title:
-        ctx = await search_in_lecture(f"{scope.lecture_title} {question}", slug, scope.lecture_title)
-        if ctx:
-            c, s = max(ctx, key=lambda t: t[1])
-            current = to_hit(c, s)
-            top = sorted(ctx, key=lambda t: t[1], reverse=True)[:CURRENT_PASSAGES]
-            passages = [to_hit(c, s) for c, s in sorted(top, key=lambda t: t[0].start_time)]
+    if ctx:
+        c, s = max(ctx, key=lambda t: t[1])
+        current = to_hit(c, s)
+        top = sorted(ctx, key=lambda t: t[1], reverse=True)[:CURRENT_PASSAGES]
+        passages = [to_hit(c, s) for c, s in sorted(top, key=lambda t: t[0].start_time)]
     return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles, current_excerpt=current,
                         current_passages=passages)
 
@@ -394,16 +404,16 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         lines.append("Matches:")
         for i, h in enumerate(lookup.hits, 1):
             if scope.in_player:
-                band = "STRONG" if h.via_title or h.score >= TRANSCRIPT_THRESHOLD else "WEAK"
-                tag = ", title match" if h.via_title else ""
-                lines.append(f"{i}. [THIS COURSE · {band}] {h.title} @ {_mmss(h.start_time)} "
-                             f"(score {h.score:.2f}{tag})")
+                band = "STRONG" if h.grade == "answers" else "WEAK"
+                lines.append(f"{i}. [THIS COURSE · {band}] {h.title} @ {_mmss(h.start_time)}")
             else:
-                label = "ENROLLED" if h.enrolled else "NOT ENROLLED"
+                label = ("ENROLLED" if h.enrolled else "NOT ENROLLED") + (" · PARTIAL" if h.grade == "partial" else "")
                 where = f"{h.title} @ {_mmss(h.start_time)}" if h.source == "transcript" else h.title
                 link = deep_link(h)
                 page = f" — link: the01.dev{link}" if link else ""
-                lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}, score {h.score:.2f}){page}")
+                lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}){page}")
+            if h.reason:
+                lines.append(f"   why: {h.reason}")
             lines.append(f'   "{h.text[:600]}"')
     return "\n".join(lines)
 

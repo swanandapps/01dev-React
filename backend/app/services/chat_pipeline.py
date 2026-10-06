@@ -12,8 +12,8 @@ from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
 from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
-from app.services.course_lookup import (TRANSCRIPT_THRESHOLD, _norm, ChatScope, CourseLookup, LookupCase, course_lookup,
-                                        render_facts, to_cards)
+from app.services.course_lookup import (_norm, ChatScope, CourseLookup, LookupCase, course_lookup, render_facts,
+                                        to_cards)
 from app.services.llm import GEN_MODEL
 
 CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
@@ -64,11 +64,11 @@ MAX_SUGGESTIONS = 2
 
 
 def _suggest_moments(lookup, scope) -> list[dict]:
-    """Up to 2 STRONG hits of the watched course, one per lecture, in rank order."""
+    """Up to 2 hits the reranker judged to ANSWER the question, of the watched course, one per lecture."""
     out, seen = [], set()
     for h in lookup.hits:
-        strong = h.via_title or h.score >= TRANSCRIPT_THRESHOLD
-        if h.source != "transcript" or h.course_slug != scope.course_slug or not strong or _norm(h.title) in seen:
+        if h.source != "transcript" or h.course_slug != scope.course_slug or h.grade != "answers" \
+                or _norm(h.title) in seen:
             continue
         seen.add(_norm(h.title))
         out.append({"lecture_title": h.title, "start_time": int(h.start_time)})
@@ -87,7 +87,7 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         print(f"[chat_turn] audit failed: {e!r}")
 
     try:
-        lookup = await course_lookup(question, req.student_id, req.scope)
+        lookup = await course_lookup(question, req.student_id, req.scope, history=history_in)
         weak = (await journey_service.weak_concepts_for_course(req.student_id, req.scope.course_slug)
                 if req.scope.course_slug else None)
         memory = await memory_service.memory_context(req.student_id, req.memory_slug)

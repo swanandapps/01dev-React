@@ -143,8 +143,8 @@ async def player_checks(uid: str) -> int:
             print(f"Q: {q}")
             print(f"LookupCase: {lk.case.value}")
             for h in lk.hits:
-                band = "STRONG" if h.via_title or h.score >= 0.54 else "WEAK"
-                print(f"  hit: {h.title} @ {h.start_time}s score={h.score:.3f} band={band} via_title={h.via_title}")
+                band = "STRONG" if h.grade == "answers" else "WEAK"
+                print(f"  hit: {h.title} @ {h.start_time}s grade={h.grade or '-'} band={band} why={h.reason!r}")
             cur = lk.current_excerpt
             print(f"  current: {cur.title + ' @ ' + str(cur.start_time) + 's ' + format(cur.score, '.3f') if cur else None}")
             print(f"find_moment calls: {calls or 'none'}")
@@ -213,12 +213,11 @@ async def main() -> None:
         student = f"{uid}-q{i}" if full else uid
         if student != uid:
             await seed(student)
-        # Same query the chat uses: in the player the lecture title rides along.
-        lookup_q = f"{scope.lecture_title} {q}" if scope.lecture_title else q
-        lk = await course_lookup(lookup_q, student, scope)
+        # Same call the chat makes: the bare question (the lecture title is context inside the lookup).
+        lk = await course_lookup(q, student, scope)
         ok = not check or expected is None or lk.case == expected
         failures += not ok
-        top = f"{lk.hits[0].course_title} → {lk.hits[0].title} ({lk.hits[0].score:.2f})" if lk.hits else "-"
+        top = f"{lk.hits[0].course_title} → {lk.hits[0].title} ({lk.hits[0].grade or 'catalog'})" if lk.hits else "-"
         exp = f" (expected {expected.value})" if not ok else ""
         print(f"[{'ok' if ok else 'FAIL'}] {lk.case.value:18} {q[:42]:42} top: {top}{exp}")
         if full:

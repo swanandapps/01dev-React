@@ -103,3 +103,10 @@ def test_player_prompt_forbids_writing_links():
     text = " ".join(loader.read_grounding_prompt().split())
     _, _, player = text.partition("## Every IN_COURSE case")
     assert "Never write a URL or link yourself" in player
+
+
+def test_prompt_has_the_enrolled_related_case_and_why_lines():
+    text = " ".join(loader.read_grounding_prompt().split())
+    assert "CASE: ENROLLED_RELATED" in text
+    assert "Your course touches on this in {lecture} at {mm:ss} — {link}" in text
+    assert 'may carry a "why:" line' in text

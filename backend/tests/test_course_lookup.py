@@ -1,6 +1,9 @@
 import pytest
 
 from app.models import TranscriptChunk
+from app.retrieval import pipeline
+from app.retrieval.base import Candidate
+from app.retrieval.rerank import Graded, decide
 from app.services import course_lookup as cl
 from app.retrieval import titles as title_index
 from app.services import enrollment_service
@@ -20,15 +23,20 @@ NPM_MODULE = CatalogEntry(2, "custom-library", "Build a Custom Library", "NPM Pa
 
 @pytest.fixture
 def patch_sources(monkeypatch):
-    # Pin thresholds so these tests don't depend on Task 9's calibrated values.
-    monkeypatch.setattr(cl, "TRANSCRIPT_THRESHOLD", 0.35)
     monkeypatch.setattr(cl, "CATALOG_THRESHOLD", 0.35)
-    seen_scopes: list = []
+    from types import SimpleNamespace   # the transcripts the library holds: custom-library and react-perf
+    monkeypatch.setattr(cl, "vector_store", SimpleNamespace(chunks=[NPM_CHUNK, MEMO_CHUNK]))
+    seen: dict = {"scopes": [], "questions": [], "kw": []}
 
     def apply(transcripts=(), catalog=(), enrolled_ids=(), enrollment_error=False):
-        async def fake_transcripts(question, scope, top_k=8):
-            seen_scopes.append(tuple(scope))
-            return [(c, s) for c, s in transcripts if c.course_id in scope]
+        async def fake_graded(question, scope, **kw):
+            seen["scopes"].append(tuple(scope))
+            seen["questions"].append(question)
+            seen["kw"].append(kw)
+            graded = [Graded(Candidate(chunk=c, vec_score=0.6), g, f"why {c.lecture_title}")
+                      for c, g in transcripts if c.course_id in scope]
+            outcome, ordered = decide(graded)
+            return pipeline.RetrievalResult(outcome, ordered, search_query=question)
 
         async def fake_catalog(query, top_k=5):
             return list(catalog)
@@ -38,18 +46,18 @@ def patch_sources(monkeypatch):
                 raise RuntimeError("db down")
             return [{"id": i, "title": f"course {i}", "purchased_at": "x"} for i in enrolled_ids]
 
-        monkeypatch.setattr(cl, "_transcript_hits", fake_transcripts)
+        monkeypatch.setattr(pipeline, "graded_search", fake_graded)
         monkeypatch.setattr(cl.catalog_index, "search", fake_catalog)
         monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
 
-    apply.scopes = seen_scopes
+    apply.scopes, apply.seen = seen["scopes"], seen
     return apply
 
 
 async def test_npm_question_for_student_not_in_custom_library_is_no_match(patch_sources):
     # CHANGED (F1 policy): was NOT_ENROLLED_MATCH. Demo fixture: enrolled in JS Deep Dive (9) + React
     # Perf (11), not Custom Library (2). The Ask page never points at a course the student doesn't own.
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[9, 11])
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[9, 11])
     out = await cl.course_lookup("how do I publish an npm library", "demo")
     assert out.case == cl.LookupCase.NO_MATCH
     assert out.hits == []
@@ -59,7 +67,7 @@ async def test_npm_question_for_student_not_in_custom_library_is_no_match(patch_
 
 
 async def test_enrolled_in_custom_library_gets_a_deep_link_to_the_exact_lecture_and_second(patch_sources):
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
     out = await cl.course_lookup("how do I publish an npm library", "demo")
     assert out.case == cl.LookupCase.ENROLLED_MATCH
     facts = cl.render_facts(out, cl.ChatScope())
@@ -71,7 +79,7 @@ async def test_enrolled_in_custom_library_gets_a_deep_link_to_the_exact_lecture_
 
 async def test_an_unlaunched_course_the_student_owns_is_never_cited(patch_sources):
     # React Perf (11) is enrolled but not launched: not cited, not listed as owned.
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.8)], enrolled_ids=[11])
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers")], enrolled_ids=[11])
     out = await cl.course_lookup("does React.memo need useCallback", "s")
     assert out.case == cl.LookupCase.NO_MATCH and out.hits == []
     assert out.enrolled_titles == []
@@ -80,23 +88,21 @@ async def test_an_unlaunched_course_the_student_owns_is_never_cited(patch_source
 
 async def test_only_the_launched_enrolled_hit_survives(patch_sources):
     # CHANGED (F1): was "enrolled hit wins over not enrolled"; now the unowned hit is dropped outright.
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.70), (NPM_CHUNK, 0.50)], enrolled_ids=[2, 11])
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers"), (NPM_CHUNK, "answers")], enrolled_ids=[2, 11])
     out = await cl.course_lookup("q", "s")
     assert out.case == cl.LookupCase.ENROLLED_MATCH
     assert [h.course_slug for h in out.hits] == ["custom-library"]
 
 
-async def test_scores_below_threshold_mean_no_match(patch_sources):
-    patch_sources(transcripts=[(NPM_CHUNK, cl.TRANSCRIPT_THRESHOLD - 0.01)],
-                  catalog=[(NPM_MODULE, cl.CATALOG_THRESHOLD - 0.01)])
-    out = await cl.course_lookup("how do I bake bread", "s")
-    assert out.case == cl.LookupCase.NO_MATCH
-    assert out.hits == []
+async def test_related_or_no_grades_mean_no_match(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, "related")], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.NO_MATCH and out.hits == []      # custom-library has transcripts: no catalog
 
 
 async def test_enrollment_failure_still_answers_with_no_course(patch_sources):
     # CHANGED (F1): was NOT_ENROLLED_MATCH; unknown enrollment now means no course is cited.
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.6)], enrollment_error=True)
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers")], enrollment_error=True)
     out = await cl.course_lookup("q", "s")
     assert out.case == cl.LookupCase.NO_MATCH
     assert out.enrolled_titles == []
@@ -105,21 +111,21 @@ async def test_enrollment_failure_still_answers_with_no_course(patch_sources):
 async def test_lecture_scope_ranks_current_lecture_first(patch_sources):
     # CHANGED (F1): react-perf is unlaunched, so the ranking property is shown inside custom-library.
     other = _chunk("custom-library", "Build a Custom Library", "7.2 - Publishing to npm")
-    patch_sources(transcripts=[(other, 0.80), (NPM_CHUNK, 0.50)], enrolled_ids=[2])
+    patch_sources(transcripts=[(other, "answers"), (NPM_CHUNK, "answers")], enrolled_ids=[2])
     scope = cl.ChatScope(course_slug="custom-library", lecture_title="8.1 - The npm link command")
     out = await cl.course_lookup("what does this mean", "s", scope)
     assert out.hits[0].title == "8.1 - The npm link command"
 
 
 async def test_catalog_hit_for_same_course_as_transcript_hit_is_dropped(patch_sources):
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
     out = await cl.course_lookup("q", "s")
     assert [h.source for h in out.hits] == ["transcript"]
 
 
 async def test_facts_and_cards(patch_sources):
     # CHANGED (F1): enrolled in the launched course instead of 9; was a NOT_ENROLLED facts block.
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], enrolled_ids=[2])
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], enrolled_ids=[2])
     out = await cl.course_lookup("q", "s")
     facts = cl.render_facts(out, cl.ChatScope(), weak_concepts=None)
     assert "CASE: ENROLLED_MATCH" in facts
@@ -143,7 +149,7 @@ JS_CHUNK = _chunk("javascript-deep-dive", "JavaScript Deep Dive", "3.2 - Closure
 async def test_case_follows_top_ranked_hit_in_unowned_lecture(patch_sources):
     # Watching React Perf (11, not owned) while owning JS Deep Dive (9): the current
     # lecture ranks first and is NOT enrolled, so the case must not be ENROLLED_MATCH.
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.5), (JS_CHUNK, 0.8)], enrolled_ids=[9])
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers"), (JS_CHUNK, "answers")], enrolled_ids=[9])
     scope = cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - React.memo and useCallback")
     out = await cl.course_lookup("what does this mean", "s", scope)
     # CHANGED (F1): the unowned current lecture is dropped; only the owned JS hit remains... but JS Deep
@@ -155,7 +161,7 @@ async def test_case_follows_top_ranked_hit_in_unowned_lecture(patch_sources):
 async def test_same_lecture_title_in_another_course_gets_no_lecture_boost(patch_sources):
     # Generic title "1.1 - Introduction" exists in Custom Library too; scope is React Perf.
     other_intro = _chunk("custom-library", "Build a Custom Library", "1.1 - Introduction")
-    patch_sources(transcripts=[(other_intro, 0.8), (MEMO_CHUNK, 0.5)], enrolled_ids=[2, 11])
+    patch_sources(transcripts=[(other_intro, "answers"), (MEMO_CHUNK, "answers")], enrolled_ids=[2, 11])
     scope = cl.ChatScope(course_slug="react-perf", lecture_title="1.1 - Introduction")
     out = await cl.course_lookup("q", "s", scope)
     # CHANGED (F1): react-perf (11) is not launched so only custom-library can appear; the boost
@@ -164,7 +170,7 @@ async def test_same_lecture_title_in_another_course_gets_no_lecture_boost(patch_
 
 
 async def test_malformed_enrollment_doc_does_not_fail_the_turn(patch_sources, monkeypatch):
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.6)])
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers")])
 
     async def malformed(student_id):
         return [{"title": "no id"}]
@@ -178,35 +184,19 @@ async def test_malformed_enrollment_doc_does_not_fail_the_turn(patch_sources, mo
 async def test_lecture_boost_survives_backticks_and_spacing_in_player_title(patch_sources):
     # tracks.ts names it "8.1 - The `npm link` command"; the transcript says "8.1 - The npm link command".
     other = _chunk("custom-library", "Build a Custom Library", "7.2 - Publishing to npm")
-    patch_sources(transcripts=[(other, 0.8), (NPM_CHUNK, 0.5)], enrolled_ids=[2])
+    patch_sources(transcripts=[(other, "answers"), (NPM_CHUNK, "answers")], enrolled_ids=[2])
     scope = cl.ChatScope(course_slug="custom-library", lecture_title="8.1 -  The `npm link` Command")
     out = await cl.course_lookup("what does this mean", "s", scope)
     assert out.hits[0].title == "8.1 - The npm link command"
 
 
-async def test_lecture_title_steers_the_transcript_search_but_not_the_catalog(patch_sources, monkeypatch):
-    # Live bug: in "1.1 - What is this course" of Build a Custom Library, "Give me an example"
-    # searched the catalog as "1.1 - What is this course Give me an example" and matched
-    # Product Engineering Essentials' overview (0.37) → a not-enrolled pointer to an unrelated course.
-    patch_sources(enrolled_ids=[2])
-    seen = {}
-
-    async def fake_transcripts(question, scope, top_k=8):
-        seen["transcript"] = question
-        return []
-
-    async def fake_catalog(query, top_k=5):
-        seen["catalog"] = query
-        return []
-
-    monkeypatch.setattr(cl, "_transcript_hits", fake_transcripts)
-    monkeypatch.setattr(cl.catalog_index, "search", fake_catalog)
+async def test_ask_searches_the_bare_question_and_passes_the_lecture_as_context(patch_sources):
+    patch_sources(transcripts=[], enrolled_ids=[2])
     scope = cl.ChatScope(course_slug="custom-library", lecture_title="1.1 - What is this course")
-
-    await cl.course_lookup("Give me an example", "s", scope)
-
-    assert seen == {"transcript": "1.1 - What is this course Give me an example",
-                    "catalog": "Give me an example"}
+    await cl.course_lookup("Give me an example", "s", scope, history=[{"role": "user", "content": "hi"}])
+    assert patch_sources.seen["questions"] == ["Give me an example"]
+    assert patch_sources.seen["kw"][0] == {"history": [{"role": "user", "content": "hi"}],
+                                           "lecture_title": "1.1 - What is this course"}
 
 
 def test_in_lecture_without_a_transcript_excerpt_gets_the_course_outline():
@@ -245,84 +235,73 @@ def test_chat_scope_in_player_defaults_off_and_positional_args_still_work():
 
 @pytest.fixture
 def patch_in_course(monkeypatch, patch_sources):
-    monkeypatch.setattr(cl, "TRANSCRIPT_THRESHOLD", 0.54)
-    monkeypatch.setattr(cl, "RELATED_THRESHOLD", 0.40)
-    seen = {"queries": []}
+    seen = {"graded": [], "lecture": []}
 
-    def apply(results=(), enrolled_ids=(), titles=None):
+    def apply(graded=(), context=None, enrolled_ids=()):
+        """graded: [(chunk, grade)] in fused order, as the reranked pipeline returns them.
+        context: [(chunk, score)] the current-lecture search can return (default: the graded chunks)."""
         patch_sources(enrolled_ids=enrolled_ids)
 
-        async def fake_search(query, course_slug, top_k=8):
-            seen["queries"].append(query)
-            seen["slug"] = course_slug
-            if callable(results):
-                return list(results(query))
-            return list(results)
+        async def fake_graded(question, scope, **kw):
+            seen["graded"].append((question, tuple(scope), kw))
+            gs = [Graded(Candidate(chunk=c, vec_score=0.5), g, f"why {g}") for c, g in graded]
+            outcome, ordered = decide(gs)
+            return pipeline.RetrievalResult(outcome, ordered, search_query=question)
 
         async def fake_lecture(query, course_slug, lecture_title):
-            seen["queries"].append(query)
-            rows = results(query) if callable(results) else results
-            return [(c, sc) for c, sc in rows if cl._norm(c.lecture_title) == cl._norm(lecture_title)]
-
-        monkeypatch.setattr(cl, "search_in_lecture", fake_lecture)
-
-        async def fake_titles(question, slug):
-            return dict(titles or {})
-
-        monkeypatch.setattr(cl, "_title_scores", fake_titles)
+            seen["lecture"].append(query)
+            rows = context if context is not None else [(c, 0.5) for c, _ in graded]
+            rows = [(c, s) for c, s in rows if cl._norm(c.lecture_title) == cl._norm(lecture_title)]
+            return sorted(rows, key=lambda t: t[1], reverse=True)
 
         async def no_catalog(query, top_k=5):
             raise AssertionError("the player tutor must not search the catalog")
 
-        async def no_global_transcripts(question, scope, top_k=8):
-            raise AssertionError("the player tutor must not search other courses' transcripts")
-
-        monkeypatch.setattr(cl, "search_in_course", fake_search)
+        monkeypatch.setattr(pipeline, "graded_search", fake_graded)
+        monkeypatch.setattr(cl, "search_in_lecture", fake_lecture)
         monkeypatch.setattr(cl.catalog_index, "search", no_catalog)
-        monkeypatch.setattr(cl, "_transcript_hits", no_global_transcripts)
         return seen
     return apply
 
 
 async def test_player_searches_only_this_course_with_the_lecture_title_and_skips_the_catalog(patch_in_course):
-    seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.61)])
+    seen = patch_in_course(graded=[(PUBLISH_CHUNK, "answers")])
     out = await cl.course_lookup("how do I publish", "s", PLAYER)
-    # relevance sees the bare question; the current-lecture context sees the prefixed one
-    assert seen["queries"] == ["how do I publish", "8.1 - The `npm link` command how do I publish"]
-    assert seen["slug"] == "custom-library"
+    assert seen["graded"][0][:2] == ("how do I publish", ("custom-library",))
+    assert seen["graded"][0][2]["lecture_title"] == "8.1 - The `npm link` command"
+    assert seen["lecture"] == ["8.1 - The `npm link` command how do I publish"]
     assert out.case == cl.LookupCase.IN_COURSE_MATCH
     assert [h.course_slug for h in out.hits] == ["custom-library"]
     assert out.hits[0].title == "11.1 - Publishing using `np`" and out.hits[0].start_time == 200
 
 
-@pytest.mark.parametrize("score,case,n_hits", [
-    (0.60, "IN_COURSE_MATCH", 1), (0.54, "IN_COURSE_MATCH", 1),
-    (0.47, "IN_COURSE_RELATED", 1), (0.40, "IN_COURSE_RELATED", 1),
-    (0.39, "IN_COURSE_NONE", 0), (0.10, "IN_COURSE_NONE", 0),
+@pytest.mark.parametrize("grade,case,n_hits", [
+    ("answers", "IN_COURSE_MATCH", 1), ("partial", "IN_COURSE_RELATED", 1),
+    ("related", "IN_COURSE_NONE", 0), ("no", "IN_COURSE_NONE", 0),
 ])
-async def test_player_outcome_follows_the_best_in_course_score(patch_in_course, score, case, n_hits):
-    patch_in_course(results=[(PUBLISH_CHUNK, score)])
+async def test_player_outcome_follows_the_grade(patch_in_course, grade, case, n_hits):
+    patch_in_course(graded=[(PUBLISH_CHUNK, grade)])
     out = await cl.course_lookup("q", "s", PLAYER)
     assert out.case == cl.LookupCase[case]
     assert len(out.hits) == n_hits
 
 
 async def test_player_with_no_results_is_in_course_none(patch_in_course):
-    patch_in_course(results=[])
+    patch_in_course(graded=[])
     out = await cl.course_lookup("how do I bake bread", "s", PLAYER)
     assert out.case == cl.LookupCase.IN_COURSE_NONE and out.hits == []
 
 
 async def test_player_match_keeps_only_match_strength_hits(patch_in_course):
     weak = _chunk("custom-library", "Build a Custom Library", "8.2 - Testing Our NPM Package", "symlink", start=10)
-    patch_in_course(results=[(PUBLISH_CHUNK, 0.62), (weak, 0.45)])
+    patch_in_course(graded=[(PUBLISH_CHUNK, "answers"), (weak, "partial")])
     out = await cl.course_lookup("q", "s", PLAYER)
     assert out.case == cl.LookupCase.IN_COURSE_MATCH
-    assert [h.score for h in out.hits] == [0.62]
+    assert [h.grade for h in out.hits] == ["answers"]
 
 
 async def test_player_drops_any_other_course_chunk_even_if_search_returns_one(patch_in_course):
-    patch_in_course(results=[(MEMO_CHUNK, 0.90), (PUBLISH_CHUNK, 0.45)])
+    patch_in_course(graded=[(MEMO_CHUNK, "answers"), (PUBLISH_CHUNK, "partial")])
     out = await cl.course_lookup("q", "s", PLAYER)
     assert [h.course_slug for h in out.hits] == ["custom-library"]
     assert out.case == cl.LookupCase.IN_COURSE_RELATED
@@ -330,46 +309,45 @@ async def test_player_drops_any_other_course_chunk_even_if_search_returns_one(pa
 
 async def test_player_does_not_sort_the_current_lecture_first(patch_in_course):
     here = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "npm link", start=30)
-    patch_in_course(results=[(PUBLISH_CHUNK, 0.70), (here, 0.58)])
+    patch_in_course(graded=[(PUBLISH_CHUNK, "answers"), (here, "answers")])
     out = await cl.course_lookup("what does this mean", "s", PLAYER)
     assert [h.title for h in out.hits] == ["11.1 - Publishing using `np`", "8.1 - The npm link command"]
     assert out.case == cl.LookupCase.IN_COURSE_MATCH
 
 
-async def test_title_match_lifts_a_weak_chunk_to_match_citing_that_lecture(patch_in_course):
+async def test_player_match_facts_show_band_and_reason_without_scores(patch_in_course):
     es = _chunk("custom-library", "Build a Custom Library", "10.1 - What Are ES Modules", "ECMAScript modules", start=251)
-    patch_in_course(results=[(es, 0.42)], titles={"10.1 - What Are ES Modules": 0.95, "8.1 - x": 0.2})
+    patch_in_course(graded=[(es, "answers")])
     out = await cl.course_lookup("what are ES modules", "s", PLAYER)
-    assert out.case == cl.LookupCase.IN_COURSE_MATCH
-    assert [(h.title, h.via_title) for h in out.hits] == [("10.1 - What Are ES Modules", True)]
     facts = cl.render_facts(out, PLAYER)
-    assert "[THIS COURSE · STRONG] 10.1 - What Are ES Modules @ 04:11 (score 0.42, title match)" in facts
+    assert "1. [THIS COURSE · STRONG] 10.1 - What Are ES Modules @ 04:11\n   why: why answers" in facts
+    assert "score" not in facts.split("Matches:")[1]
 
 
-async def test_off_topic_is_none_even_when_the_prefixed_search_scores_high(patch_in_course):
+async def test_off_topic_is_none_and_keeps_the_current_lecture_context(patch_in_course):
     here = _chunk("custom-library", "Build a Custom Library", "8.1 - The `npm link` command", "npm link", start=30)
-    # the title prefix inflates the score (0.61); the bare question does not (0.20)
-    patch_in_course(results=lambda q: [(here, 0.61 if q.startswith("8.1") else 0.20)])
+    seen = patch_in_course(graded=[], context=[(here, 0.61)])
     out = await cl.course_lookup("how does the event loop work", "s", PLAYER)
     assert out.case == cl.LookupCase.IN_COURSE_NONE and out.hits == []
     assert out.current_excerpt is not None and out.current_excerpt.title == "8.1 - The `npm link` command"
     facts = cl.render_facts(out, PLAYER)
     assert 'CURRENT LECTURE excerpt (context for "this"/"here" questions' in facts and "npm link" in facts
     assert "Matches:" not in facts
+    assert seen["graded"][0][0] == "how does the event loop work"
 
 
 async def test_weak_band_is_related_with_a_weak_label(patch_in_course):
-    patch_in_course(results=[(PUBLISH_CHUNK, 0.45)])
-    out = await cl.course_lookup("q", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
+    patch_in_course(graded=[(PUBLISH_CHUNK, "partial")])
+    scope = cl.ChatScope(course_slug="custom-library", in_player=True)
+    out = await cl.course_lookup("q", "s", scope)
     assert out.case == cl.LookupCase.IN_COURSE_RELATED
-    assert "[THIS COURSE · WEAK] 11.1 - Publishing using `np` @ 03:20 (score 0.45)" in cl.render_facts(
-        out, cl.ChatScope(course_slug="custom-library", in_player=True))
+    assert "[THIS COURSE · WEAK] 11.1 - Publishing using `np` @ 03:20" in cl.render_facts(out, scope)
 
 
 async def test_one_best_chunk_per_lecture_and_at_most_three(patch_in_course):
-    rows = [(_chunk("custom-library", "B", f"{i}.1 - L{i}", "t", start=i), 0.6 - i * 0.01) for i in range(5)]
-    rows.append((_chunk("custom-library", "B", "0.1 - L0", "dup", start=999), 0.5))
-    patch_in_course(results=rows)
+    rows = [(_chunk("custom-library", "B", f"{i}.1 - L{i}", "t", start=i), "answers") for i in range(5)]
+    rows.append((_chunk("custom-library", "B", "0.1 - L0", "dup", start=999), "answers"))
+    patch_in_course(graded=rows)
     out = await cl.course_lookup("q", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
     assert [h.title for h in out.hits] == ["0.1 - L0", "1.1 - L1", "2.1 - L2"] and out.hits[0].start_time == 0
 
@@ -387,10 +365,11 @@ async def test_title_scores_fall_back_to_word_overlap_without_embeddings(monkeyp
 async def test_player_with_no_lecture_selected_searches_the_bare_question_in_this_course(patch_in_course):
     # CoursePlayerPage sends the course title as `lecture` before a lecture is picked; the
     # route blanks it, so the scope has no lecture_title — still course-only.
-    seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.47)])
+    seen = patch_in_course(graded=[(PUBLISH_CHUNK, "partial")])
     scope = cl.ChatScope(course_slug="custom-library", in_player=True)
     out = await cl.course_lookup("how do I publish", "s", scope)
-    assert seen["queries"] == ["how do I publish"] and seen["slug"] == "custom-library"
+    assert seen["graded"][0][:2] == ("how do I publish", ("custom-library",))
+    assert seen["graded"][0][2]["lecture_title"] is None and seen["lecture"] == []
     assert out.case == cl.LookupCase.IN_COURSE_RELATED
     assert "MODE: in-lecture" not in cl.render_facts(out, scope)
 
@@ -399,7 +378,7 @@ async def test_ask_with_a_course_filter_is_unchanged(patch_sources):
     # The Ask page's course filter also sets course_slug: it must keep cross-course
     # search, the catalog and the enrolled / not-enrolled cases.
     # CHANGED (F1): still cross-course search, but only launched+enrolled hits are kept.
-    patch_sources(transcripts=[(MEMO_CHUNK, 0.6), (NPM_CHUNK, 0.6)], catalog=[(NPM_MODULE, 0.58)],
+    patch_sources(transcripts=[(MEMO_CHUNK, "answers"), (NPM_CHUNK, "answers")], catalog=[(NPM_MODULE, 0.58)],
                   enrolled_ids=[2, 11])
     out = await cl.course_lookup("q", "s", cl.ChatScope(course_slug="custom-library"))
     assert out.case == cl.LookupCase.ENROLLED_MATCH
@@ -407,21 +386,52 @@ async def test_ask_with_a_course_filter_is_unchanged(patch_sources):
 
 
 async def test_ask_scope_is_launched_and_owned_before_searching(patch_sources):
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62), (MEMO_CHUNK, 0.9)], enrolled_ids=[2, 11])
+    patch_sources(transcripts=[(NPM_CHUNK, "answers"), (MEMO_CHUNK, "answers")], enrolled_ids=[2, 11])
     out = await cl.course_lookup("npm link", "demo")
     assert patch_sources.scopes == [("custom-library",)]      # 11 is owned but unlaunched: not searched
     assert {h.course_slug for h in out.hits} == {"custom-library"}
 
 
-async def test_ask_with_no_launched_owned_course_never_searches(patch_sources, monkeypatch):
-    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], enrolled_ids=[9, 11])
+async def test_ask_empty_scope_never_searches_or_reranks(patch_sources, monkeypatch):
+    from app.retrieval import rerank as rr
+    from app.services.embeddings import embedding_service
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], enrolled_ids=[9, 11])   # the demo account
 
-    async def no_catalog(query, top_k=5):
-        raise AssertionError("an empty Ask scope must not search the catalog either")
+    async def boom(*a, **k):
+        raise AssertionError("an empty Ask scope must not embed, search, rerank or read the catalog")
 
-    monkeypatch.setattr(cl.catalog_index, "search", no_catalog)
+    monkeypatch.setattr(embedding_service, "embed", boom)
+    monkeypatch.setattr(rr, "_complete", boom)
+    monkeypatch.setattr(cl.catalog_index, "search", boom)
     out = await cl.course_lookup("how do I publish an npm library", "demo")
     assert out.case == cl.LookupCase.NO_MATCH and out.hits == [] and patch_sources.scopes == []
+
+
+async def test_partial_grades_are_enrolled_related_with_partial_labels(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, "partial")], enrolled_ids=[2])
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.ENROLLED_RELATED and [h.grade for h in out.hits] == ["partial"]
+    facts = cl.render_facts(out, cl.ChatScope())
+    assert "CASE: ENROLLED_RELATED" in facts and "[ENROLLED · PARTIAL] Build a Custom Library" in facts
+    assert "   why: why 8.1 - The npm link command" in facts
+    assert "the01.dev/course/2?chapter=7&sub=0&t=87" in facts
+
+
+async def test_answers_rank_before_partial(patch_sources):
+    other = _chunk("custom-library", "Build a Custom Library", "7.2 - Publishing to npm")
+    patch_sources(transcripts=[(other, "partial"), (NPM_CHUNK, "answers")], enrolled_ids=[2])
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.ENROLLED_MATCH and [h.grade for h in out.hits] == ["answers", "partial"]
+
+
+async def test_catalog_is_used_only_for_in_scope_courses_without_transcripts(patch_sources, monkeypatch):
+    from types import SimpleNamespace
+    patch_sources(transcripts=[], catalog=[(NPM_MODULE, 0.58)], enrolled_ids=[2])
+    monkeypatch.setattr(cl, "vector_store", SimpleNamespace(chunks=[NPM_CHUNK]))
+    assert (await cl.course_lookup("q", "s")).hits == []                     # custom-library has transcripts
+    monkeypatch.setattr(cl, "vector_store", SimpleNamespace(chunks=[MEMO_CHUNK]))
+    out = await cl.course_lookup("q", "s")
+    assert out.case == cl.LookupCase.ENROLLED_MATCH and [h.source for h in out.hits] == ["catalog"]
 
 
 async def test_search_in_course_goes_through_the_scoped_pipeline(monkeypatch):
@@ -494,16 +504,9 @@ def test_player_none_in_a_lecture_still_gets_the_outline():
     assert "No transcript excerpt for this lecture" in facts and "Chapter 1 - Introduction" in facts
 
 
-async def test_title_tag_is_set_even_when_the_bare_score_is_already_strong(patch_in_course):
-    patch_in_course(results=[(PUBLISH_CHUNK, 0.70)], titles={"11.1 - Publishing using `np`": 0.9})
-    out = await cl.course_lookup("how do I publish", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
-    assert out.hits[0].via_title is True
-    assert "score 0.70, title match" in cl.render_facts(out, cl.ChatScope(course_slug="custom-library", in_player=True))
-
-
 async def test_current_lecture_excerpt_is_not_listed_under_matches_unless_it_is_a_hit(patch_in_course):
     here = _chunk("custom-library", "Build a Custom Library", "8.1 - The `npm link` command", "SYMLINK-EXCERPT", start=30)
-    patch_in_course(results=[(PUBLISH_CHUNK, 0.70), (here, 0.20)])
+    patch_in_course(graded=[(PUBLISH_CHUNK, "answers")], context=[(PUBLISH_CHUNK, 0.7), (here, 0.2)])
     out = await cl.course_lookup("how do I publish", "s", PLAYER)
     facts = cl.render_facts(out, PLAYER)
     matches = facts.split("Matches:")[1]
@@ -551,7 +554,7 @@ async def test_current_lecture_context_holds_top_three_passages_in_time_order(pa
     L = "5.1 - Virtualizing the 5,000-Row Table"
     rows = [(_chunk("react-perf", "React Performance Patterns", L, f"passage at {t}", start=t), sc)
             for t, sc in ((300, 0.30), (60, 0.55), (180, 0.50), (120, 0.45), (240, 0.20))]
-    patch_in_course(results=rows)
+    patch_in_course(graded=[], context=rows)
     scope = cl.ChatScope(course_slug="react-perf", lecture_title=L, in_player=True)
     out = await cl.course_lookup("give me an example", "s", scope)
     assert [h.start_time for h in out.current_passages] == [60, 120, 180]  # top 3 by score, shown in time order
@@ -567,7 +570,7 @@ async def test_current_lecture_context_is_capped(patch_in_course):
     L = "5.1 - Virtualizing the 5,000-Row Table"
     rows = [(_chunk("react-perf", "React Performance Patterns", L, "x" * 2000, start=t * 60), 0.5 - t / 100)
             for t in range(3)]
-    patch_in_course(results=rows)
+    patch_in_course(graded=[], context=rows)
     scope = cl.ChatScope(course_slug="react-perf", lecture_title=L, in_player=True)
     out = await cl.course_lookup("explain this", "s", scope)
     line = next(l for l in cl.render_facts(out, scope).splitlines() if l.startswith("CURRENT LECTURE"))
@@ -666,20 +669,3 @@ def test_player_outline_does_not_repeat_the_description():
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
     snippet = " ".join(course["description"].split())[:60]
     assert facts.count(snippet) == 1
-
-
-async def test_title_matched_lecture_missing_from_the_fused_list_is_still_strong_via_title(patch_in_course, monkeypatch):
-    from app.retrieval import pipeline
-    seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.20)], titles={NPM_CHUNK.lecture_title: 0.75})
-
-    monkeypatch.setattr(pipeline, "lecture_ids_for_titles",
-                        lambda slug, keys: {cl._norm(NPM_CHUNK.lecture_title): NPM_CHUNK.lecture_id})
-
-    async def best(question, ids):
-        assert list(ids) == [NPM_CHUNK.lecture_id]
-        return {NPM_CHUNK.lecture_id: (NPM_CHUNK, 0.31)}
-
-    monkeypatch.setattr(pipeline, "best_chunk_for_lectures", best)
-    out = await cl.course_lookup("symlink", "s", PLAYER)
-    assert out.case == cl.LookupCase.IN_COURSE_MATCH
-    assert [(h.title, h.via_title) for h in out.hits] == [(NPM_CHUNK.lecture_title, True)]
