@@ -183,7 +183,7 @@ def test_merge_keeps_custom_library_and_is_idempotent(tmp_path):
     assert [c["course_id"] for c in data].count("demo") == 10
     assert not any(c["text"] == "old" for c in data)
     first = seed.read_text()
-    assert first.endswith("}\n]\n") or first.endswith("]\n")
+    assert first == json.dumps(json.loads(first), indent=2)  # exact format, no trailing newline
     assert b.merge(cat, seed, src, {}) == []
     assert seed.read_text() == first
 
@@ -218,4 +218,74 @@ def test_snapshot_anchors_written_once(tmp_path):
     a = b.snapshot_anchors(seed, out)
     assert a == {"4.1 - Proto": ["alpha"]}
     seed.write_text("[]")
-    assert b.snapshot_anchors(seed, out) == {"4.1 - Proto": ["alpha"]}  # existing snapshot wins
+    with pytest.raises(FileExistsError):
+        b.snapshot_anchors(seed, out)
+    assert json.loads(out.read_text()) == {"4.1 - Proto": ["alpha"]}
+
+
+def test_load_anchors_missing_or_empty_is_error(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        b.load_anchors(tmp_path / "nope.json")
+    (tmp_path / "e.json").write_text("{}")
+    with pytest.raises(ValueError):
+        b.load_anchors(tmp_path / "e.json")
+
+
+def test_cli_check_and_merge_fail_without_snapshot(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(b, "ANCHORS", tmp_path / "_anchors.json")
+    assert b.main(["--check"]) == 1
+    assert b.main(["--merge"]) == 1
+    assert not (tmp_path / "_anchors.json").exists()
+
+
+def test_unknown_anchor_key_is_a_problem(tmp_path):
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "demo.json").write_text(json.dumps(good()))
+    p = b.check(["demo"], CUR, src, {"9.9 - Gone": ["x"]})
+    assert any("9.9 - Gone" in x for x in p)
+    (tmp_path / "m").mkdir()
+    cat, seed, src2, _ = setup_merge(tmp_path / "m")
+    before = seed.read_text()
+    assert any("9.9 - Gone" in x for x in b.merge(cat, seed, src2, {"9.9 - Gone": ["x"]}))
+    assert seed.read_text() == before
+
+
+def test_validate_never_crashes_on_malformed_input():
+    for bad in (["str"], [None], [{"text": 5}], [{"text": "a", "lecture_id": ["x"]}], [{}], "nope", [{"text": "a", "lecture_id": "demo-0-0", "start_time": "0", "end_time": []}]):
+        p = b.validate_course("demo", bad, CUR, {})
+        assert p and all(isinstance(x, str) for x in p)
+
+
+def test_merge_refuses_when_old_seed_has_no_custom_chunks(tmp_path):
+    cat, seed, src, _ = setup_merge(tmp_path)
+    seed.write_text("[]")
+    assert any("custom-library" in x for x in b.merge(cat, seed, src, {}))
+    assert seed.read_text() == "[]"
+
+
+def test_merge_orders_courses_by_catalog_and_keeps_custom_bytes(tmp_path):
+    cat3 = CAT + [{"slug": "two", "title": "Two", "chapters": [{"name": "Chapter 1 - A", "subchapters": ["1.1 - Z"]}]}]
+    # catalog order: custom-library, demo, two  -> reorder so custom is in the middle
+    cat3 = [CAT[1], CAT[0], cat3[2]]
+    cat = tmp_path / "catalog.json"
+    cat.write_text(json.dumps(cat3))
+    cl = [
+        {"chunk_id": f"custom-library-0-{i}-0", "course_id": "custom-library", "course_title": "Build a Custom Library",
+         "lecture_id": f"custom-library-0-{i}", "lecture_title": f"1.{i} - X", "text": f"real {i}",
+         "start_time": 0, "end_time": 9, "embedding": [0.5, 0.25]} for i in (1, 0)
+    ]
+    seed = tmp_path / "seed.json"
+    seed.write_text(json.dumps(cl, indent=2))
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "demo.json").write_text(json.dumps(good()))
+    two = [mk("two-0-0", "1.1 - Z", i, i * 50, (i + 1) * 50) for i in range(5)]
+    for c in two:
+        c.update(course_id="two", course_title="Two")
+    (src / "two.json").write_text(json.dumps(two))
+    assert b.merge(cat, seed, src, {}) == []
+    data = json.loads(seed.read_text())
+    assert [c["course_id"] for c in data] == ["demo"] * 10 + ["custom-library"] * 2 + ["two"] * 5
+    assert data[10:12] == cl  # identical and same order
+    assert [c["chunk_id"] for c in data[:10]] == [f"demo-0-{l}-{n}" for l in (0, 1) for n in range(5)]

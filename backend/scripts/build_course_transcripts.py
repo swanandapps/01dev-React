@@ -14,6 +14,7 @@ custom-library (340 real chunks) is never touched.
 """
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -53,21 +54,30 @@ def load_curriculum(path=CATALOG):
 
 
 def snapshot_anchors(seed_path=SEED, out_path=ANCHORS):
-    """lecture_title -> [passage text]. An existing snapshot always wins."""
+    """lecture_title -> [passage text]. Creates the file; refuses to overwrite one."""
     out_path = Path(out_path)
     if out_path.exists():
-        return json.loads(out_path.read_text())
+        raise FileExistsError(f"{out_path} already exists; refusing to overwrite the anchor snapshot")
     anchors = {}
     for c in json.loads(Path(seed_path).read_text()):
         if c["lecture_id"].startswith(ANCHOR_LECTURE_PREFIXES):
             anchors.setdefault(c["lecture_title"], []).append(c["text"])
+    if not anchors:
+        raise ValueError("no hand-written anchor chunks found in the seed; nothing to snapshot")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(anchors, indent=2, ensure_ascii=False) + "\n")
     return anchors
 
 
-def anchors():
-    return snapshot_anchors(SEED, ANCHORS)
+def load_anchors(path=ANCHORS):
+    """Existing snapshot only. Raises if missing or empty (never regenerates)."""
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"{path} missing; run --snapshot-anchors on a seed that still has the hand-written chunks")
+    data = json.loads(path.read_text())
+    if not data:
+        raise ValueError(f"{path} is empty")
+    return data
 
 
 def _whole(v):
@@ -75,31 +85,51 @@ def _whole(v):
 
 
 def validate_course(slug, chunks, curriculum, anchors):
+    try:
+        return _validate_course(slug, chunks, curriculum, anchors)
+    except Exception as e:  # malformed input must be reported, never crash
+        return [f"malformed input: {type(e).__name__}: {e}"]
+
+
+def _validate_course(slug, chunks, curriculum, anchors):
     cur = curriculum[slug]
     problems = []
     valid_pairs = dict(cur["lectures"])  # id -> title
     by_lecture = {}
+    clean = []
     for i, c in enumerate(chunks):
+        if not isinstance(c, dict):
+            problems.append(f"#{i}: chunk is not an object")
+            continue
         tag = c.get("chunk_id", f"#{i}")
+        text = c.get("text")
+        if not isinstance(text, str):
+            problems.append(f"{tag}: text must be a string")
+            continue
+        lid = c.get("lecture_id")
+        if not isinstance(lid, str):
+            problems.append(f"{tag}: lecture_id must be a string")
+            continue
         if c.get("course_id") != slug:
             problems.append(f"{tag}: course_id {c.get('course_id')!r} != {slug!r}")
         if c.get("course_title") != cur["title"]:
             problems.append(f"{tag}: course_title {c.get('course_title')!r} != {cur['title']!r}")
-        lid = c.get("lecture_id")
         if valid_pairs.get(lid) != c.get("lecture_title"):
             problems.append(f"{tag}: lecture_title {c.get('lecture_title')!r} does not match curriculum for {lid!r}")
         if c.get("embedding") != []:
             problems.append(f"{tag}: embedding must be []")
-        if MD_RE.search(c.get("text", "")):
+        if MD_RE.search(text):
             problems.append(f"{tag}: markdown in text")
         by_lecture.setdefault(lid, []).append(c)
+        clean.append(c)
 
     seen = {}
-    for c in chunks:
-        t = c.get("text", "")
-        if t in seen and seen[t] != c.get("chunk_id"):
+    for c in clean:
+        t = c["text"]
+        if t in seen:
             problems.append(f"{c.get('chunk_id')}: duplicate text of {seen[t]}")
-        seen.setdefault(t, c.get("chunk_id"))
+        else:
+            seen[t] = c.get("chunk_id")
 
     for lid, title in cur["lectures"]:
         group = by_lecture.get(lid)
@@ -123,19 +153,17 @@ def validate_course(slug, chunks, curriculum, anchors):
             last = n == len(group) - 1
             lo = 20 if last and len(group) > 1 else 45
             if not (lo <= dur <= 75):
-                kind = "last passage " if last and len(group) > 1 else ""
-                problems.append(f"{tag}: {kind}duration {dur}s outside {lo}-75 s" if lo == 20
-                                else f"{tag}: duration {dur}s outside 45-75 s")
+                kind = "last passage " if lo == 20 else ""
+                problems.append(f"{tag}: {kind}duration {dur}s outside {lo}-75 s")
             if dur > 0:
-                wpm = len(c.get("text", "").split()) * 60 / dur
+                wpm = len(c["text"].split()) * 60 / dur
                 if not (100 <= wpm <= 180):
                     problems.append(f"{tag}: {wpm:.0f} wpm outside 100-180")
             prev_end = e
-        total = prev_end
-        if not (240 <= total <= 720):
-            problems.append(f"{lid}: lecture total {total}s outside 240-720 s")
+        if not (240 <= prev_end <= 720):
+            problems.append(f"{lid}: lecture total {prev_end}s outside 240-720 s")
         for text in anchors.get(title, []):
-            if not any(text in c.get("text", "") for c in group):
+            if not any(text in c["text"] for c in group):
                 problems.append(f"{lid}: anchor passage missing verbatim: {text[:50]!r}...")
     for lid in by_lecture:
         if lid not in valid_pairs:
@@ -158,6 +186,10 @@ def _load_staging(slug, src_dir):
 
 def check(slugs, curriculum, src_dir, anch):
     problems = []
+    all_titles = {t for c in curriculum.values() for _lid, t in c["lectures"]}
+    for key in anch:
+        if key not in all_titles:
+            problems.append(f"anchor {key!r} is not a lecture title in the curriculum")
     for slug in slugs:
         if slug not in curriculum:
             problems.append(f"{slug}: unknown course slug")
@@ -177,6 +209,8 @@ def merge(catalog_path, seed_path, src_dir, anch):
     if problems:
         return problems
     custom = [c for c in json.loads(Path(seed_path).read_text()) if c["course_id"] == CUSTOM]
+    if not custom:
+        return ["old seed has no custom-library chunks; refusing to merge"]
     merged = []
     for course in _catalog(catalog_path):
         slug = course["slug"]
@@ -188,7 +222,10 @@ def merge(catalog_path, seed_path, src_dir, anch):
             data = sorted(data, key=lambda c: (order[c["lecture_id"]],
                                                int(c["chunk_id"].rsplit("-", 1)[1])))
             merged += [{k: c[k] for k in FIELDS} for c in data]
-    Path(seed_path).write_text(json.dumps(merged, indent=2) + "\n")
+    seed_path = Path(seed_path)
+    tmp = seed_path.with_name(seed_path.name + ".tmp")
+    tmp.write_text(json.dumps(merged, indent=2))  # no trailing newline, like the current seed
+    os.replace(tmp, seed_path)
     return []
 
 
@@ -198,9 +235,21 @@ def main(argv=None):
     ap.add_argument("--merge", action="store_true", help="validate all 9, then write the seed")
     ap.add_argument("--snapshot-anchors", action="store_true")
     a = ap.parse_args(argv)
-    anch = anchors()
     if a.snapshot_anchors:
+        try:
+            anch = snapshot_anchors(SEED, ANCHORS)
+        except (FileExistsError, ValueError) as e:
+            print(f"ERROR: {e}")
+            return 1
         print(f"anchors: {sum(len(v) for v in anch.values())} passages in {len(anch)} lectures -> {ANCHORS}")
+        return 0
+    if a.check is None and not a.merge:
+        return 0
+    try:
+        anch = load_anchors(ANCHORS)
+    except (OSError, ValueError) as e:
+        print(f"ERROR: {e}")
+        return 1
     if a.check is not None:
         cur = load_curriculum()
         problems = check(a.check or list(cur), cur, SRC_DIR, anch)
@@ -208,13 +257,11 @@ def main(argv=None):
             print(p)
         print("OK" if not problems else f"{len(problems)} problem(s)")
         return 1 if problems else 0
-    if a.merge:
-        problems = merge(CATALOG, SEED, SRC_DIR, anch)
-        for p in problems:
-            print(p)
-        print("merged" if not problems else f"REFUSED: {len(problems)} problem(s)")
-        return 1 if problems else 0
-    return 0
+    problems = merge(CATALOG, SEED, SRC_DIR, anch)
+    for p in problems:
+        print(p)
+    print("merged" if not problems else f"REFUSED: {len(problems)} problem(s)")
+    return 1 if problems else 0
 
 
 if __name__ == "__main__":
