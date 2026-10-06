@@ -12,8 +12,10 @@ the event loop.
 # Env: app.main loads backend/.env at import, before any of this package's
 # code runs, so this module does no .env loading of its own.
 
+import hashlib
 import json
 import os
+import random
 import uuid
 
 from pydantic import ValidationError
@@ -105,6 +107,17 @@ def gen_objectives(document: str, title: str | None) -> list[dict]:
     return out[:6]
 
 
+def _shuffle_options(q: dict) -> dict:
+    """The model tends to put the right answer first. Shuffle options
+    deterministically (seeded by question text) and keep correctIndex pointing
+    at the same option text."""
+    opts = list(q["options"])
+    correct = opts[q["correctIndex"]]
+    seed = int(hashlib.sha256(q["question"].encode()).hexdigest()[:16], 16)
+    random.Random(seed).shuffle(opts)
+    return {**q, "options": opts, "correctIndex": opts.index(correct)}
+
+
 # ── Quiz for one objective (a specialized generator) ────────────────────────
 def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
     """n multiple-choice questions for one objective, with explanation + hint."""
@@ -142,7 +155,7 @@ def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
             options=["See the material", "Unrelated", "None", "All"],
             correctIndex=0, explanation="Refer to the material for this objective.",
             hint="Focus on the objective's key idea.").model_dump()]
-    return out[:n]
+    return [_shuffle_options(q) for q in out[:n]]
 
 
 # ── Final summary ───────────────────────────────────────────────────────────
