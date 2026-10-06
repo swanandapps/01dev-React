@@ -22,10 +22,12 @@ def patch_sources(monkeypatch):
     # Pin thresholds so these tests don't depend on Task 9's calibrated values.
     monkeypatch.setattr(cl, "TRANSCRIPT_THRESHOLD", 0.35)
     monkeypatch.setattr(cl, "CATALOG_THRESHOLD", 0.35)
+    seen_scopes: list = []
 
     def apply(transcripts=(), catalog=(), enrolled_ids=(), enrollment_error=False):
-        async def fake_transcripts(question, top_k=8):
-            return list(transcripts)
+        async def fake_transcripts(question, scope, top_k=8):
+            seen_scopes.append(tuple(scope))
+            return [(c, s) for c, s in transcripts if c.course_id in scope]
 
         async def fake_catalog(query, top_k=5):
             return list(catalog)
@@ -38,6 +40,8 @@ def patch_sources(monkeypatch):
         monkeypatch.setattr(cl, "_transcript_hits", fake_transcripts)
         monkeypatch.setattr(cl.catalog_index, "search", fake_catalog)
         monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
+
+    apply.scopes = seen_scopes
     return apply
 
 
@@ -183,10 +187,10 @@ async def test_lecture_title_steers_the_transcript_search_but_not_the_catalog(pa
     # Live bug: in "1.1 - What is this course" of Build a Custom Library, "Give me an example"
     # searched the catalog as "1.1 - What is this course Give me an example" and matched
     # Product Engineering Essentials' overview (0.37) → a not-enrolled pointer to an unrelated course.
-    patch_sources()
+    patch_sources(enrolled_ids=[2])
     seen = {}
 
-    async def fake_transcripts(question, top_k=8):
+    async def fake_transcripts(question, scope, top_k=8):
         seen["transcript"] = question
         return []
 
@@ -269,7 +273,7 @@ def patch_in_course(monkeypatch, patch_sources):
         async def no_catalog(query, top_k=5):
             raise AssertionError("the player tutor must not search the catalog")
 
-        async def no_global_transcripts(question, top_k=8):
+        async def no_global_transcripts(question, scope, top_k=8):
             raise AssertionError("the player tutor must not search other courses' transcripts")
 
         monkeypatch.setattr(cl, "search_in_course", fake_search)
@@ -401,29 +405,69 @@ async def test_ask_with_a_course_filter_is_unchanged(patch_sources):
     assert {h.course_slug for h in out.hits} == {"custom-library"}
 
 
-async def test_search_in_course_keeps_only_that_course_best_first(monkeypatch):
-    from app.models import SearchResult
-    results = [SearchResult(chunk=MEMO_CHUNK, score=0.9), SearchResult(chunk=PUBLISH_CHUNK, score=0.6),
-               SearchResult(chunk=NPM_CHUNK, score=0.5)]
+async def test_ask_scope_is_launched_and_owned_before_searching(patch_sources):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.62), (MEMO_CHUNK, 0.9)], enrolled_ids=[2, 11])
+    out = await cl.course_lookup("npm link", "demo")
+    assert patch_sources.scopes == [("custom-library",)]      # 11 is owned but unlaunched: not searched
+    assert {h.course_slug for h in out.hits} == {"custom-library"}
 
-    class FakeStore:
-        chunks = [r.chunk for r in results]
-        calls: list = []
 
-        def search(self, emb, top_k=5, threshold=0.25, query_text="", course_id=None):
-            self.calls.append((top_k, threshold, query_text, course_id))
-            return [r for r in results if course_id in (None, r.chunk.course_id)][:top_k]
+async def test_ask_with_no_launched_owned_course_never_searches(patch_sources, monkeypatch):
+    patch_sources(transcripts=[(NPM_CHUNK, 0.62)], enrolled_ids=[9, 11])
 
-    async def fake_embed(text):
-        return [1.0, 0.0]
+    async def no_catalog(query, top_k=5):
+        raise AssertionError("an empty Ask scope must not search the catalog either")
 
-    fake = FakeStore()
-    monkeypatch.setattr(cl, "vector_store", fake)
-    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
-    assert await cl.search_in_course("publish", "custom-library", top_k=1) == [(PUBLISH_CHUNK, 0.6)]
-    assert await cl.search_in_course("publish", "custom-library") == [(PUBLISH_CHUNK, 0.6), (NPM_CHUNK, 0.5)]
-    assert await cl.search_in_course("publish", "nope") == []
-    assert fake.calls[0] == (3, 0.0, "publish", "custom-library")  # the store scopes to the course itself
+    monkeypatch.setattr(cl.catalog_index, "search", no_catalog)
+    out = await cl.course_lookup("how do I publish an npm library", "demo")
+    assert out.case == cl.LookupCase.NO_MATCH and out.hits == [] and patch_sources.scopes == []
+
+
+async def test_search_in_course_goes_through_the_scoped_pipeline(monkeypatch):
+    from app.retrieval import pipeline
+    from app.retrieval.base import Candidate
+    calls = []
+
+    async def fake_search(q, scope, **kw):
+        calls.append((q, tuple(scope), kw))
+        return [Candidate(chunk=PUBLISH_CHUNK, vec_rank=1, vec_score=0.6), Candidate(chunk=NPM_CHUNK, lex_rank=1)]
+
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    assert await cl.search_in_course("publish", "custom-library", top_k=1) == [(PUBLISH_CHUNK, 0.6), (NPM_CHUNK, 0.0)]
+    assert calls[0] == ("publish", ("custom-library",), {"limit": 1, "per_lecture": None})
+    await cl.search_in_course("publish", "custom-library", top_k=None)
+    assert calls[1][2]["limit"] == pipeline.VEC_K + pipeline.LEX_K
+
+
+async def test_decisions_read_the_cosine_not_the_fused_score(monkeypatch):
+    # A lexical-only candidate carries a COMPUTED cosine (pipeline.search fills it); the thresholds see that.
+    from app.retrieval import pipeline
+    from app.retrieval.base import Candidate
+
+    async def fake_search(q, scope, **kw):
+        return [Candidate(chunk=NPM_CHUNK, lex_rank=1, fused=0.0164, cosine=0.57),
+                Candidate(chunk=PUBLISH_CHUNK, vec_rank=1, vec_score=0.61, fused=0.0163, cosine=0.61)]
+
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    assert await cl.search_in_course("q", "custom-library") == [(NPM_CHUNK, 0.57), (PUBLISH_CHUNK, 0.61)]
+
+
+async def test_search_in_lecture_filters_by_the_resolved_lecture(monkeypatch):
+    from app.retrieval import pipeline
+    from app.retrieval.base import Candidate
+    calls = []
+
+    async def fake_search(q, scope, **kw):
+        calls.append(kw)
+        return [Candidate(chunk=NPM_CHUNK, vec_rank=1, vec_score=0.7)]
+
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    monkeypatch.setattr(pipeline, "lecture_id_for",
+                        lambda slug, title: "custom-library-7-0" if "npm link" in title else None)
+    out = await cl.search_in_lecture("q", "custom-library", "8.1 - The `npm link` command")
+    assert out == [(NPM_CHUNK, 0.7)] and calls[0]["lecture_id"] == "custom-library-7-0"
+    assert await cl.search_in_lecture("q", "custom-library", "9.9 - No transcript") == []
+    assert len(calls) == 1
 
 
 def test_player_facts_name_only_this_course():
@@ -463,29 +507,6 @@ async def test_current_lecture_excerpt_is_not_listed_under_matches_unless_it_is_
     facts = cl.render_facts(out, PLAYER)
     matches = facts.split("Matches:")[1]
     assert "SYMLINK-EXCERPT" not in matches and "SYMLINK-EXCERPT" in facts.split("Matches:")[0]
-
-
-async def test_search_in_lecture_scores_only_that_lectures_chunks(monkeypatch):
-    other = _chunk("custom-library", "Build a Custom Library", "11.1 - Publishing using `np`", "np")
-    here = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "link")
-    here2 = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "link2")
-
-    class FakeStore:
-        chunks = [other, here, here2]
-        _embeddings = [[0.0, 1.0], [1.0, 0.0], [0.6, 0.8]]
-        _cosine_sim = staticmethod(cl.vector_store._cosine_sim)
-
-        def search(self, *a, **k):
-            raise AssertionError("must not rank the whole store")
-
-    async def fake_embed(text):
-        return [1.0, 0.0]
-
-    monkeypatch.setattr(cl, "vector_store", FakeStore())
-    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
-    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
-    out = await cl.search_in_lecture("q", "custom-library", "8.1 - The `npm link` command")
-    assert [(c.text, round(s, 2)) for c, s in out] == [("link", 1.0), ("link2", 0.6)]
 
 
 async def test_title_embedding_failure_falls_back_to_overlap_and_is_not_retried_in_the_cooldown(monkeypatch):

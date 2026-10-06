@@ -112,7 +112,8 @@ async def test_legacy_ask_uses_real_lookup_policy_and_navigate(monkeypatch, owne
                     title="T", score=0.6, enrolled=True, lecture_id="custom-library-5-2")
         return cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[cat, tr], enrolled_titles=[])
 
-    async def hits(q, top_k=8):
+    async def hits(q, scope, top_k=8):
+        assert tuple(scope) == ("custom-library",)   # ask mode: launched AND owned only (react-perf is unlaunched)
         return [(_chunk("custom-library-9-0"), 0.6), (_chunk("custom-library-5-2"), 0.5)]
 
     async def locate(what, slug):
@@ -171,7 +172,7 @@ async def test_catalog_only_match_is_partial_and_records_case(monkeypatch):
                      title="C", score=0.5, enrolled=True)
         return cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[cat], enrolled_titles=[])
 
-    async def hits(q, top_k=8):
+    async def hits(q, scope, top_k=8):
         return []
 
     monkeypatch.setattr(cl, "course_lookup", lookup)
@@ -180,9 +181,9 @@ async def test_catalog_only_match_is_partial_and_records_case(monkeypatch):
     assert (p.outcome, p.cited_lecture, p.lookup_case) == (PARTIAL, None, "enrolled_match")
 
 
-async def test_ask_ranking_is_uncapped_and_limited_to_launched_owned(monkeypatch, owner):
+async def test_ask_ranking_is_the_whole_fused_list_scoped_to_launched_owned(monkeypatch, owner):
     from app.services import course_lookup as cl
-    from app.services.vector_store import vector_store
+    from app.retrieval import pipeline
 
     def other(lid):
         c = _chunk(lid)
@@ -190,14 +191,15 @@ async def test_ask_ranking_is_uncapped_and_limited_to_launched_owned(monkeypatch
 
     seen = {}
 
-    async def hits(q, top_k=8):
-        seen["top_k"] = top_k
-        return [(other("react-perf-1-0"), 0.9), (_chunk("custom-library-5-2"), 0.8), (_chunk("custom-library-9-0"), 0.7)]
+    async def hits(q, scope, top_k=8):
+        seen["top_k"], seen["scope"] = top_k, tuple(scope)
+        rows = [(other("react-perf-1-0"), 0.9), (_chunk("custom-library-5-2"), 0.8), (_chunk("custom-library-9-0"), 0.7)]
+        return [(c, sc) for c, sc in rows if c.course_id in scope]
 
     monkeypatch.setattr(cl, "_transcript_hits", hits)
-    monkeypatch.setattr(vector_store, "chunks", [object()] * 1329)
     ranked = await rs.LegacySystem._ask_ranking("q")
-    assert seen["top_k"] == 1329 and ranked == ["custom-library-5-2", "custom-library-9-0"]
+    assert seen["top_k"] == pipeline.VEC_K + pipeline.LEX_K and seen["scope"] == ("custom-library",)
+    assert ranked == ["custom-library-5-2", "custom-library-9-0"]
 
 
 def test_watched_lecture_is_deterministic_non_gold_and_respects_explicit_title(monkeypatch):

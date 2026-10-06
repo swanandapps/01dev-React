@@ -72,10 +72,11 @@ def test_norms_follow_replaced_embeddings(monkeypatch):
 
 
 def test_search_in_course_never_touches_other_courses_chunks(monkeypatch):
+    from app.retrieval import factory, pipeline
+    from app.retrieval.memory import MemoryRetriever
     monkeypatch.setattr(embedding_service, "use_openai", True)
     st = _store()
     q = [0.5] * DIM
-    st._ensure_index()
     seen = []
 
     class Spy(list):
@@ -83,20 +84,22 @@ def test_search_in_course_never_touches_other_courses_chunks(monkeypatch):
             seen.append(i)
             return list.__getitem__(self, i)
 
-    st._embeddings = Spy(st._embeddings)  # same length, new id -> index rebuilds (reads every embedding once)
+    st._embeddings = Spy(st._embeddings)
     st._ensure_index()
     seen.clear()
 
     async def fake_embed(_):
         return q
 
-    monkeypatch.setattr(cl, "vector_store", st)
-    monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
+    monkeypatch.setattr(pipeline, "vector_store", st)
+    monkeypatch.setattr(factory, "_retriever", MemoryRetriever(st))
+    monkeypatch.setattr(embedding_service, "embed", fake_embed)
     out = asyncio.run(cl.search_in_course("x", "js-engine", top_k=None))
     assert out and all(c.course_id == "js-engine" for c, _ in out)
     assert seen and all(st.chunks[i].course_id == "js-engine" for i in seen)
-    # threshold 0.0 drops negative cosines, same as before; every scored chunk is accounted for
-    assert len(out) == len(st.search(q, top_k=90, threshold=0.0, course_id="js-engine"))
+    # js-engine has 30 chunks, 3 or 4 per lecture; the vector list keeps the best 3 per lecture (Task 9's
+    # over-fetch + cap), so 3 lectures lose one chunk: 27. Never another course's chunk.
+    assert len(out) == 27
 
 
 def test_partially_initialised_store_returns_empty_not_indexerror(monkeypatch):

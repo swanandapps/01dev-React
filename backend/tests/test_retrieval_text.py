@@ -44,4 +44,9 @@ def test_stem_es_plurals_short_plurals_and_exceptions():
 
 def test_stem_che_words_keep_the_e():
     assert tokenize("caches cache headaches") == ["cache", "cache", "headache"]
+
+
+def test_stem_che_rule_is_an_exact_word_set_so_attaches_stems_to_attach():
+    assert tokenize("attaches") == ["attach"]
+    assert tokenize("niches aches avalanches") == ["niche", "ache", "avalanche"]
     assert tokenize("matches patches watches") == ["match", "patch", "watch"]

@@ -11,9 +11,10 @@ import time
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, Sequence
 
 from app.models import TranscriptChunk
+from app.retrieval import pipeline
 from app.services import catalog_index, catalog_service, enrollment_service
 from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
@@ -131,22 +132,23 @@ def _mmss(seconds: int) -> str:
     return f"{m:02d}:{s:02d}"
 
 
-async def _transcript_hits(question: str, top_k: int = 8):
-    if not vector_store.chunks:
-        await vector_store.initialize()
-    emb = await embedding_service.embed(question)
-    return [(r.chunk, r.score) for r in vector_store.search(emb, top_k=top_k, threshold=0.0, query_text=question)]
+def _pairs(cands) -> list[tuple[TranscriptChunk, float]]:
+    """(chunk, cosine) in the hybrid search's fused order. The decision thresholds are calibrated on
+    cosines, not RRF scores, so they keep reading the candidate's cosine (a lexical-only candidate
+    carries a computed one; 0.0 only when its embedding is unknown)."""
+    return [(c.chunk, c.cosine if c.cosine is not None else (c.vec_score or 0.0)) for c in cands]
+
+
+async def _transcript_hits(question: str, scope: Sequence[str], top_k: int = 8):
+    """Ask: (chunk, cosine) from the hybrid search INSIDE the scope (launched AND owned), fused order."""
+    return _pairs(await pipeline.search(question, scope, limit=top_k))
 
 
 async def search_in_course(query: str, course_slug: str, top_k: Optional[int] = 8) -> list[tuple[TranscriptChunk, float]]:
-    """Best-first transcript chunks of ONE course. Scores only this course's chunks,
-    so another course's chunk can never stand in for this course's. top_k=None means every chunk."""
-    if not vector_store.chunks:
-        await vector_store.initialize()
-    emb = await embedding_service.embed(query)
-    results = vector_store.search(emb, top_k=len(vector_store.chunks), threshold=0.0, query_text=query,
-                                  course_id=course_slug)
-    return [(r.chunk, r.score) for r in results][:top_k]
+    """Fused-order transcript chunks of ONE course (another course's chunk is never scored).
+    top_k=None = the whole fused candidate list, no per-lecture cap."""
+    limit = top_k if top_k is not None else pipeline.VEC_K + pipeline.LEX_K
+    return _pairs(await pipeline.search(query, [course_slug], limit=limit, per_lecture=None))
 
 
 _TITLE_STOPWORDS = {"the", "and", "for", "with", "what", "are", "how", "does", "why", "our", "your", "that",
@@ -255,22 +257,12 @@ async def _title_scores(question: str, slug: str) -> dict[str, float]:
 
 
 async def search_in_lecture(query: str, course_slug: str, lecture_title: str) -> list[tuple[TranscriptChunk, float]]:
-    """Chunks of ONE lecture scored against the query, best first — scores only that
-    lecture's chunks instead of ranking the whole store."""
-    if not vector_store.chunks:
-        await vector_store.initialize()
-    here = _norm(lecture_title)
-    idx = [i for i, c in enumerate(vector_store.chunks)
-           if c.course_id == course_slug and _norm(c.lecture_title) == here]
-    if not idx:
+    """Chunks of ONE lecture for the query, fused order; [] when that lecture has no transcript."""
+    lid = pipeline.lecture_id_for(course_slug, lecture_title)
+    if not lid:
         return []
-    if not (embedding_service.use_openai and len(vector_store._embeddings) == len(vector_store.chunks)):
-        # keyword/hash dev fallback has no comparable per-chunk vectors: use the normal search
-        return [(c, s) for c, s in await search_in_course(query, course_slug, top_k=None)
-                if _norm(c.lecture_title) == here]
-    emb = await embedding_service.embed(query)
-    out = [(vector_store.chunks[i], vector_store._cosine_sim(emb, vector_store._embeddings[i])) for i in idx]
-    return sorted(out, key=lambda t: t[1], reverse=True)
+    return _pairs(await pipeline.search(query, [course_slug], lecture_id=lid,
+                                        limit=pipeline.VEC_K + pipeline.LEX_K, per_lecture=None))
 
 
 async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
@@ -286,6 +278,9 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     enrolled_ids, enrolled_titles = await _enrollments(student_id)
     if scope.in_player:
         return await _in_course_lookup(question, scope, enrolled_ids, enrolled_titles)
+    scope_slugs = pipeline.ask_scope(enrolled_ids)
+    if not scope_slugs:  # F1: nothing launched AND owned -> nothing to search, nothing to cite
+        return CourseLookup(case=LookupCase.NO_MATCH, hits=[], enrolled_titles=[])
     hits: list[Hit] = []
 
     # In the player, vague questions ("Give me an example") only find the right
@@ -293,7 +288,7 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     # question: a generic title ("1.1 - What is this course") matches other courses'
     # overviews and turned a vague question into a pointer to an unrelated course.
     transcript_q = f"{scope.lecture_title} {question}" if scope.lecture_title else question
-    for chunk, score in await _transcript_hits(transcript_q):
+    for chunk, score in await _transcript_hits(transcript_q, scope_slugs):
         if score < TRANSCRIPT_THRESHOLD:
             continue
         hits.append(transcript_hit(chunk, score, enrolled_ids))

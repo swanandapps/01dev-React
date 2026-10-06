@@ -40,10 +40,11 @@ async def test_follow_up_search_yields_cards(monkeypatch):
                             lecture_id="custom-library-3-1", lecture_title="4.1 - React.memo and useCallback", text="memo",
                             start_time=30, end_time=60)
 
-    async def fake_retrieve(q, top_k=5):
-        return [SearchResult(chunk=chunk, score=0.7)]
+    async def fake_hits(q, scope, top_k=8):
+        return [(chunk, 0.7)]
 
-    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    from app.services import course_lookup as cl_mod
+    monkeypatch.setattr(cl_mod, "_transcript_hits", fake_hits)
     from app.services import enrollment_service
 
     async def enrolled_2(uid):
@@ -75,22 +76,22 @@ def test_record_skill_observation_schema_constrains_confidence_and_describes_arg
 
 
 def _ask_tool_setup(monkeypatch, enrolled_ids, rows):
-    """rows: [(slug, course_title, lecture_id, lecture_title, score)] returned by grounding.retrieve."""
+    """rows: [(slug, course_title, lecture_id, lecture_title, score)] the scoped search can return."""
     from types import SimpleNamespace
 
-    from app.models import SearchResult, TranscriptChunk
-    from app.services import enrollment_service
+    from app.models import TranscriptChunk
+    from app.services import course_lookup as cl, enrollment_service
 
-    async def fake_retrieve(q, top_k=5):
-        return [SearchResult(chunk=TranscriptChunk(chunk_id=f"{s}-{i}", course_id=s, course_title=t, lecture_id=lid,
-                                                   lecture_title=lt, text="body", start_time=87, end_time=117),
-                             score=sc) for i, (s, t, lid, lt, sc) in enumerate(rows)]
+    async def fake_hits(q, scope, top_k=8):
+        return [(TranscriptChunk(chunk_id=f"{s}-{i}", course_id=s, course_title=t, lecture_id=lid,
+                                 lecture_title=lt, text="body", start_time=87, end_time=117), sc)
+                for i, (s, t, lid, lt, sc) in enumerate(rows) if s in scope]
 
     async def fake_enrolled(student_id):
         assert student_id == "alice"
         return [{"id": i, "title": f"course {i}"} for i in enrolled_ids]
 
-    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    monkeypatch.setattr(cl, "_transcript_hits", fake_hits)
     monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
     return SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice"))
 
@@ -195,24 +196,23 @@ async def test_follow_up_search_drops_results_below_the_transcript_threshold(mon
         return TranscriptChunk(chunk_id=cid, course_id="custom-library", course_title="Build a Custom Library",
                                lecture_id=cid, lecture_title=lecture, text="body", start_time=0, end_time=30)
 
-    async def fake_retrieve(q, top_k=5):
-        return [SearchResult(chunk=chunk("weak", "9.9 - Unrelated"), score=0.30),
-                SearchResult(chunk=chunk("good", "4.1 - React.memo"), score=0.70)]
+    async def fake_hits(q, scope, top_k=8):
+        return [(chunk("weak", "9.9 - Unrelated"), 0.30), (chunk("good", "4.1 - React.memo"), 0.70)]
 
     async def no_enrollments(student_id):
         return [{"id": 2, "title": "Build a Custom Library"}]
 
     assert 0.30 < course_lookup.TRANSCRIPT_THRESHOLD <= 0.70
-    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    monkeypatch.setattr(course_lookup, "_transcript_hits", fake_hits)
     monkeypatch.setattr(enrollment_service, "get_enrolled_courses", no_enrollments)
     runtime = SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice"))
     content, cards = await tutor_agent.search_course_content.coroutine(query="memo", runtime=runtime)
     assert [c["lecture_title"] for c in cards] == ["4.1 - React.memo"]
     assert "9.9 - Unrelated" not in content and "4.1 - React.memo" in content
 
-    async def only_weak(q, top_k=5):
-        return [SearchResult(chunk=chunk("weak", "9.9 - Unrelated"), score=0.30)]
-    monkeypatch.setattr(grounding, "retrieve", only_weak)
+    async def only_weak(q, scope, top_k=8):
+        return [(chunk("weak", "9.9 - Unrelated"), 0.30)]
+    monkeypatch.setattr(course_lookup, "_transcript_hits", only_weak)
     assert await tutor_agent.search_course_content.coroutine(query="memo", runtime=runtime) == \
         ("No matching course content.", [])
 
@@ -428,14 +428,14 @@ async def test_ask_stream_has_no_find_moment(monkeypatch):
 async def test_follow_up_search_in_the_player_stays_in_this_course(monkeypatch):
     from app.services import course_lookup
 
-    async def all_courses(q, top_k=5):
+    async def all_courses(q, scope, top_k=8):
         raise AssertionError("the player's follow-up search must not search every course")
 
     async def fake_search(query, course_slug, top_k=8):
         assert course_slug == "custom-library"
         return [(_moment_chunk(), 0.7), (_moment_chunk(lecture="8.1 - The `npm link` command", start=10), 0.30)]
 
-    monkeypatch.setattr(grounding, "retrieve", all_courses)
+    monkeypatch.setattr(course_lookup, "_transcript_hits", all_courses)
     monkeypatch.setattr(course_lookup, "search_in_course", fake_search)
     content, cards = await tutor_agent.search_course_content.coroutine(query="np", runtime=_player_runtime())
     assert [c["lecture_title"] for c in cards] == [LECTURE]

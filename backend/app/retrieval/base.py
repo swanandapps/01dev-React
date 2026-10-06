@@ -16,6 +16,7 @@ class Candidate:
     vec_score: Optional[float] = None
     lex_score: Optional[float] = None
     fused: float = 0.0
+    cosine: Optional[float] = None   # cosine to the question; set by pipeline.search for EVERY candidate (decision logic reads this)
 
 
 @runtime_checkable

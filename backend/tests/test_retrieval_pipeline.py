@@ -119,3 +119,17 @@ async def test_bm25_index_rebuilds_when_the_store_reloads(mem):
                                                    start_time=0, end_time=1)]
     store._embeddings = store._embeddings + [vec(0, 0, 0, 1)]
     assert [c.chunk_id for c, _ in await r.lexical_search(["brandnewword"], ["custom-library"], 5)] == ["n-0-0-0"]
+
+
+async def test_every_candidate_carries_its_cosine_including_lexical_only_ones(mem):
+    # "np" matches cl-10-0 lexically; vec top-30 over a 5-chunk corpus covers everything, so force a
+    # lexical-only candidate by making the vector list miss it.
+    store = pipeline.vector_store
+    out = await pipeline.search("publish with np", ["custom-library"])
+    assert out and all(c.cosine is not None for c in out)
+    lex_only = pipeline.Candidate(chunk=store.chunks[0], lex_rank=1)
+    pipeline._fill_cosines([lex_only], vec(1, 0, 0, 0))
+    assert lex_only.cosine == pytest.approx(store._cosine_sim(vec(1, 0, 0, 0), store._embeddings[0]))
+    with_vec = pipeline.Candidate(chunk=store.chunks[0], vec_rank=1, vec_score=0.42)
+    pipeline._fill_cosines([with_vec], vec(1, 0, 0, 0))
+    assert with_vec.cosine == 0.42

@@ -19,6 +19,7 @@ from langchain_openai import ChatOpenAI
 from app.services import (catalog_service, concept_explain, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
 from app.models import SearchResult
+from app.retrieval import pipeline
 from app.services import course_lookup as cl
 from app.services.course_lookup import TRANSCRIPT_THRESHOLD
 from app.services import tool_descriptions as D
@@ -62,11 +63,13 @@ async def search_course_content(
                    if c.course_id == in_course and s >= TRANSCRIPT_THRESHOLD]
         cards = [c.model_dump() for c in grounding.build_sources(results)]
     else:
-        # Ask: same policy as the lookup (course_lookup.ask_citable) — only launched AND enrolled
-        # courses, with the exact-lecture deep link. Over-fetch: unowned courses can crowd the top 5.
+        # Ask: search ONLY launched AND owned courses (F1, scope computed before searching), with the
+        # exact-lecture deep link. The ask_citable check stays as the same-policy backstop.
         enrolled_ids = await _enrolled_ids(runtime.context.student_id)
-        found = [r for r in await grounding.retrieve(query, top_k=15) if r.score >= TRANSCRIPT_THRESHOLD]
-        keep = [(r, h) for r in found if cl.ask_citable(h := cl.transcript_hit(r.chunk, r.score, enrolled_ids))][:5]
+        scope = pipeline.ask_scope(enrolled_ids)
+        pairs = await cl._transcript_hits(query, scope, top_k=15) if scope else []
+        keep = [(SearchResult(chunk=c, score=s), h) for c, s in pairs if s >= TRANSCRIPT_THRESHOLD
+                and cl.ask_citable(h := cl.transcript_hit(c, s, enrolled_ids))][:5]
         results = [r for r, _ in keep]
         cards = cl.to_cards(cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[h for _, h in keep],
                                             enrolled_titles=[]))
@@ -160,7 +163,9 @@ async def _locate_moment(what: str, slug: str):
         return None
     if score < cl.MOMENT_LECTURE_FLOOR:
         # No chunk of this lecture matches well: open it from the start, with a range that ends where its first chunk ends.
-        opening = min((c for c, _ in rows if cl._norm(c.lecture_title) == key), key=lambda c: c.start_time)
+        # The lecture's first chunk may not be among the fused candidates: look in the store too.
+        pool = [c for c, _ in rows] + [c for c in cl.vector_store.chunks if c.course_id == slug]
+        opening = min((c for c in pool if cl._norm(c.lecture_title) == key), key=lambda c: c.start_time)
         chunk = chunk.model_copy(update={"start_time": 0, "end_time": opening.end_time})
     return chunk, score
 

@@ -38,13 +38,13 @@ like okay ok yeah um uh vs versus""".split())
 _NO_STEM = frozenset({"series", "canvas", "alias", "status", "bus", "class", "process", "access", "address", "this", "does"})
 
 
-_CHE_WORDS = ("cache", "headache", "niche", "avalanche", "ache")
+_CHE_WORDS = frozenset({"caches", "headaches", "niches", "avalanches", "aches"})
 
 
 def _stem(t: str) -> str:
     if t in _NO_STEM:
         return t
-    if t.endswith("ches") and t[:-1].endswith(_CHE_WORDS):
+    if t in _CHE_WORDS:
         return t[:-1]
     if len(t) > 4 and t.endswith("ies"):
         return t[:-3] + "y"

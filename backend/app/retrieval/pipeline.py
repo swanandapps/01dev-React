@@ -79,5 +79,25 @@ async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[st
     lists = await asyncio.gather(
         *(_vector(r, e, scope, lecture_id) for e in embeddings),
         *(_lexical(r, tokenize(f"{q} {terms}"), scope, lecture_id) for q in queries))
-    return rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit,
-                     per_lecture=None if lecture_id else per_lecture)
+    out = rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit,
+                   per_lecture=None if lecture_id else per_lecture)
+    _fill_cosines(out, embeddings[0])
+    return out
+
+
+def _fill_cosines(cands: list[Candidate], question_embedding: list[float]) -> None:
+    """RRF scores are not cosines, and the Phase 1-3 decision thresholds are calibrated on cosines. Every
+    candidate carries its cosine to the question: the vector list's score when it has one, else (a
+    lexical-only candidate) computed from the store's embedding of that chunk. Unknown -> None."""
+    missing = [c for c in cands if c.vec_score is None]
+    pos = {}
+    if missing and question_embedding:
+        pos = {c.chunk_id: i for i, c in enumerate(vector_store.chunks)}
+    embs = vector_store._embeddings
+    for c in cands:
+        if c.vec_score is not None:
+            c.cosine = c.vec_score
+            continue
+        i = pos.get(c.chunk.chunk_id)
+        if i is not None and i < len(embs) and embs[i]:
+            c.cosine = vector_store._cosine_sim(question_embedding, embs[i])

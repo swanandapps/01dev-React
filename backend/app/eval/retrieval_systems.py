@@ -110,7 +110,7 @@ class LegacySystem:
     async def _ask_ranking(question: str) -> list[str]:
         """Every lecture the Ask page may cite (launched AND owned, via the real ask_citable), best first."""
         from app.services import course_lookup as cl
-        from app.services.vector_store import vector_store
+        from app.retrieval import pipeline
         enrolled, _ = await cl._enrollments(EVAL_STUDENT)
-        pairs = await cl._transcript_hits(question, top_k=len(vector_store.chunks))
+        pairs = await cl._transcript_hits(question, pipeline.ask_scope(enrolled), top_k=pipeline.VEC_K + pipeline.LEX_K)
         return _lecture_order((c, s) for c, s in pairs if cl.ask_citable(cl.transcript_hit(c, s, enrolled)))
