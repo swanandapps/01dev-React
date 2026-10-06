@@ -1210,7 +1210,7 @@
         "explanation": "Running npm link inside a library registers it by creating a global symlink from the package into the global node_modules.",
         "concept": "global-symlinks",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t2",
@@ -1225,7 +1225,7 @@
         "explanation": "npm link creates a global symlink from your library package to your global node_modules.",
         "concept": "global-symlinks",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t3",
@@ -1240,7 +1240,7 @@
         "explanation": "Without both steps, the symlink does not exist in your consuming project.",
         "concept": "global-symlinks",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t4",
@@ -1255,7 +1255,7 @@
         "explanation": "npm link creates a global symlink and then a local symlink in the consuming project, so changes in the library source are immediately reflected.",
         "concept": "global-symlinks",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t5",
@@ -1270,7 +1270,7 @@
         "explanation": "The lecture explains that npm link in the library creates a global symlink in the global node_modules, and npm link package-name in the consuming project creates a local symlink pointing to that global one.",
         "concept": "global-symlinks",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t6",
@@ -1285,7 +1285,7 @@
         "explanation": "If the global symlink does not exist, the consuming project cannot create a local symlink pointing to the library, so changes in the library won't be reflected in the consuming project.",
         "concept": "global-symlinks",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t7",
@@ -1300,7 +1300,7 @@
         "explanation": "npm link is a two-step process: npm link in the library, then npm link <package-name> in the consuming project.",
         "concept": "npm-link",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t8",
@@ -1315,7 +1315,7 @@
         "explanation": "npm link is essential because it lets you develop and test your library without publishing, saving time and avoiding version bumps.",
         "concept": "npm-link",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t9",
@@ -1330,7 +1330,7 @@
         "explanation": "npm link is a two-step process; without running npm link your-package-name in the consuming project, the symlink does not exist in that project.",
         "concept": "npm-link",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t10",
@@ -1345,7 +1345,7 @@
         "explanation": "Without running npm link <package-name> in the consuming project, the local symlink to the global one is missing.",
         "concept": "npm-link",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t11",
@@ -1360,7 +1360,7 @@
         "explanation": "If you do not rebuild or run the compiler in watch mode, the consuming project imports stale compiled output.",
         "concept": "npm-link",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t12",
@@ -1375,7 +1375,7 @@
         "explanation": "Running npm link inside the library creates the global symlink necessary for the consuming project to link to.",
         "concept": "npm-link",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t13",
@@ -1390,7 +1390,7 @@
         "explanation": "npm link lets you test your library in a consuming project without publishing, avoiding version bumps and speeding up development.",
         "concept": "local-package-testing",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t14",
@@ -1405,7 +1405,7 @@
         "explanation": "The lecture warns that with TypeScript you must rebuild the library after every change or run the compiler in watch mode, otherwise the consuming project imports stale compiled output.",
         "concept": "local-package-testing",
         "difficulty": "easy",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t15",
@@ -1420,7 +1420,7 @@
         "explanation": "Rebuilding or running the compiler in watch mode ensures the consuming project does not import stale output.",
         "concept": "local-package-testing",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t16",
@@ -1435,7 +1435,7 @@
         "explanation": "npm link creates symlinks that allow immediate reflection of library changes in the consuming app without publishing.",
         "concept": "local-package-testing",
         "difficulty": "medium",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t17",
@@ -1450,7 +1450,7 @@
         "explanation": "Using npm link requires rebuilding or watch mode to avoid stale output, whereas publishing provides fresh compiled packages automatically.",
         "concept": "local-package-testing",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       },
       {
         "id": "custom-library-t18",
@@ -1465,7 +1465,7 @@
         "explanation": "Without rebuilding, the consuming project imports stale output, causing confusion during debugging.",
         "concept": "local-package-testing",
         "difficulty": "hard",
-        "lecture": "8.1 - The npm link command"
+        "lecture": "8.1 - The `npm link` command"
       }
     ],
     "model": "gpt-4.1-mini",

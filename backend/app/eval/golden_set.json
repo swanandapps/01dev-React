@@ -1,12 +1,12 @@
 [
   {
     "question": "What does the npm link command do?",
-    "gold_chunk_ids": ["custom-lib-8-1-a", "custom-lib-8-1-c"],
+    "gold_chunk_ids": ["custom-library-7-0-5", "custom-library-7-0-7", "custom-library-7-0-8", "custom-library-7-0-9", "custom-library-7-0-12", "custom-library-7-0-13"],
     "gold_answer": "npm link lets you test your library locally inside another project without publishing to npm, by creating a global symlink to your library."
   },
   {
     "question": "Why is npm link a two-step process?",
-    "gold_chunk_ids": ["custom-lib-8-1-b"],
+    "gold_chunk_ids": ["custom-library-7-0-5", "custom-library-7-0-7", "custom-library-7-0-8", "custom-library-7-0-9", "custom-library-7-0-12", "custom-library-7-0-13"],
     "gold_answer": "First you run `npm link` inside the library directory to register a global link, then `npm link <name>` in the consuming project to use it."
   },
   {
