@@ -30,6 +30,13 @@ class Row:
     history: list[dict] = field(default_factory=list)
     lecture_title: Optional[str] = None
     navigate_phrase: Optional[str] = None
+    lecture_kind: str = "body"                    # intro | body | outro (kind of the gold lecture)
+    leaks_title: bool = False                     # question reuses words of the gold lecture's title
+    leaks_project: bool = False                   # question names the course's project (Ember, statekit, ...)
+
+    @property
+    def is_clean(self) -> bool:
+        return not self.leaks_title and not self.leaks_project and self.lecture_kind == "body"
 
     @classmethod
     def from_dict(cls, d: dict) -> "Row":
@@ -93,6 +100,11 @@ def summarize(rows: dict[str, Row], preds: list[Prediction]) -> dict:
     }
 
 
+def summarize_clean(rows: dict[str, Row], preds: list[Prediction]) -> dict:
+    """The `clean` slice: no title/project leakage and a body-lecture gold, so retrieval is not flattered."""
+    return summarize(rows, [p for p in preds if rows[p.row_id].is_clean])
+
+
 def per_course(rows: dict[str, Row], preds: list[Prediction]) -> dict[str, dict]:
     groups: dict[str, list[Prediction]] = {}
     for p in preds:
@@ -124,6 +136,11 @@ def render_markdown(run: dict) -> str:
             out += ["", "| course | " + " | ".join(keys) + " |", "|---" * (len(keys) + 1) + "|"]
             for slug, s in data["per_course"].items():
                 out.append(f"| {slug} | " + " | ".join(_fmt(s.get(k), k) for k in keys) + " |")
+        if data.get("clean"):
+            c = data["clean"]
+            out += ["", f"Clean slice (no leaks, body lectures) counts: {c['counts']}", "",
+                    "| metric | clean |", "|---|---|"]
+            out += [f"| {k} | {_fmt(c.get(k), k)} |" for k in METRIC_KEYS]
         out.append("")
     return "\n".join(out)
 
@@ -143,6 +160,12 @@ def compare(base: dict, new: dict) -> str:
             bv, nv = b.get(k), n.get(k)
             out.append(f"| {k} | {_fmt(bv, k)} | {_fmt(nv, k)} | {_delta(bv, nv, k)} |")
         out.append("")
+        bc, nc = base["modes"][mode].get("clean"), new["modes"][mode].get("clean")
+        if bc and nc:
+            out += [f"### {mode} / clean slice", "", hdr, "|---|---|---|---|"]
+            for k in METRIC_KEYS:
+                out.append(f"| {k} | {_fmt(bc.get(k), k)} | {_fmt(nc.get(k), k)} | {_delta(bc.get(k), nc.get(k), k)} |")
+            out.append("")
         bpc, npc = base["modes"][mode].get("per_course") or {}, new["modes"][mode].get("per_course") or {}
         for slug in sorted(set(bpc) | set(npc)):
             out += [f"### {mode} / {slug}", "", hdr, "|---|---|---|---|"]

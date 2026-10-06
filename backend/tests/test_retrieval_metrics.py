@@ -97,3 +97,18 @@ def test_compare_per_course_union_and_one_sided_modes():
     assert "| recall@1 | 0.500 | 1.000 | +0.500 |" in d
     assert "| latency_p95_ms | 500 | 500 | +0 |" in d
     assert d.endswith("\n")
+
+
+def test_clean_slice_excludes_leaks_and_non_body_gold():
+    rows = _rows()
+    rows["p2"].leaks_title = True
+    rows["p1"].lecture_kind = "body"
+    rows["n1"].leaks_project = True
+    assert [r.is_clean for r in rows.values()] == [True, False, False, True, True]
+    c = m.summarize_clean(rows, _preds())
+    assert c["counts"] == {"positives": 1, "negatives": 1, "navigate": 1, "errors": 0}
+    assert c["recall@1"] == 1.0 and c["false_cite_rate"] == 1.0
+    run = {"label": "x", "system": "s", "created": "t",
+           "modes": {"player": {"overall": m.summarize(rows, _preds()), "clean": c}}}
+    assert "Clean slice" in m.render_markdown(run)
+    assert "player / clean slice" in m.compare(run, run)

@@ -32,6 +32,9 @@ def test_styles_rotate_and_hand_set_loads():
     assert len({r["id"] for r in rows}) == len(rows)
     for r in rows:
         Row.from_dict(r)  # every field is a Row field
+    assert len(rows) == 18
+    tok = next(r for r in rows if r["id"] == "hand-tokenizer-loop")
+    assert tok["gold_lecture_ids"] == ["programming-language-5-1"]
 
 
 def test_validate_relabels_styles_and_drops_unknown_gold_chunks():
@@ -108,3 +111,101 @@ def test_negatives_cross_course_and_golden_rows():
     seed = json.loads((BACKEND / "app/data/seed_transcripts.json").read_text())
     golden = g.golden_rows(seed)
     assert len(golden) == 14 and golden[0]["gold_lecture_ids"] == ["custom-library-7-0"]
+
+
+def test_every_generated_row_loads_and_no_positive_has_only_an_outro_gold():
+    path = BACKEND / "eval/retrieval/generated_set.json"
+    rows = json.loads(path.read_text())
+    seed = json.loads((BACKEND / "app/data/seed_transcripts.json").read_text())
+    kinds = {lec["lecture_id"]: lec["kind"] for lec in g.lectures_from_seed(seed)}
+    assert len({r["id"] for r in rows}) == len(rows)
+    for d in rows:
+        r = Row.from_dict(d)
+        assert r.lecture_kind in ("intro", "body", "outro")
+        if r.expect == "covered":
+            assert r.gold_lecture_ids and any(kinds[lid] != "outro" for lid in r.gold_lecture_ids), r.id
+        else:
+            assert not r.gold_lecture_ids
+    assert sum(r.get("leaks_title", False) for r in rows) / len(rows) < 0.25
+
+
+def test_lecture_kinds_from_titles():
+    seed = json.loads((BACKEND / "app/data/seed_transcripts.json").read_text())
+    kinds = {lec["lecture_id"]: lec["kind"] for lec in g.lectures_from_seed(seed)}
+    assert kinds["web-apis-4-1"] == "outro" and kinds["custom-library-11-1"] == "outro"
+    assert kinds["react-perf-0-0"] == "intro" and kinds["custom-library-0-1"] == "intro"
+    assert kinds["react-perf-4-0"] == "body"
+
+
+def test_leak_tags():
+    assert g.leaks_title("what is an IIFE to the rescue", "6.5 - IIFE, To The Rescue")      # bigram "to the" + rescue
+    assert g.leaks_title("how do I handle tokens and lexemes", "6.1 - Tokens, Lexemes and Token Types")
+    assert not g.leaks_title("what does react do", "1.2 - Render vs Commit: What React Actually Does")
+    assert not g.leaks_title("why is my javascript slow", "2.1 - Why JavaScript Evolved This Way")
+    assert g.leaks_project("what datatypes does Ember have") and not g.leaks_project("what datatypes exist")
+
+
+def test_navigate_phrase_must_be_spoken_not_code():
+    for phrase in ["node --trace-opt flag", "set(partial, 'cart/addItem')", "one two three four five six seven eight"]:
+        raw = _good(["direct", "casual", "keyword"])
+        raw["navigate_phrase"] = phrase
+        assert g.validate_generation(raw, {"c-0-0-0"}, ["direct", "casual", "keyword"]) is None
+    assert not any("explained" in t or "video" in t for t in g.NAV_TEMPLATES)
+
+
+def test_cache_key_includes_prompt_version_and_model(monkeypatch):
+    lec = g.lectures_from_seed(_seed())[0]
+    a = g.lecture_sha(lec)
+    monkeypatch.setattr(g, "PROMPT_VERSION", "other")
+    assert g.lecture_sha(lec) != a
+    monkeypatch.setattr(g, "PROMPT_VERSION", "v2")
+    monkeypatch.setattr(g, "MODEL", "other-model")
+    assert g.lecture_sha(lec) != a
+
+
+async def test_retry_feedback_names_the_phrase_and_how_do_i_falls_back_to_direct(tmp_path, monkeypatch):
+    seen = []
+
+    async def fake_complete(system, user):
+        seen.append(user)
+        styles = user.split("Styles, in order:")[1].split("\n")[0]
+        if "how_do_i" in styles:
+            bad = _good(["direct", "casual", "keyword"])
+            bad["questions"][2]["question"] = "How do I understand the video?"
+            return bad
+        return _good(["direct", "casual", "direct"])
+
+    monkeypatch.setattr(g, "_complete", fake_complete)
+    lec = g.lectures_from_seed(_seed())[0]
+    gen = await g._generate(lec, ["direct", "casual", "how_do_i"])
+    assert gen and [q["style"] for q in gen["questions"]] == ["direct", "casual", "direct"]
+    assert 'forbidden phrase "How do I understand"' in seen[1] and len(seen) == 4
+
+
+def test_outro_gold_is_relabelled_or_dropped(monkeypatch):
+    monkeypatch.setattr(g, "RELABEL_MIN_SCORE", 0.5)
+    seed = [
+        {"chunk_id": "x-0-0-0", "course_id": "x", "course_title": "X", "lecture_id": "x-0-0", "lecture_title": "1.1 - Intro",
+         "text": "welcome", "start_time": 0, "end_time": 5},
+        {"chunk_id": "x-1-0-0", "course_id": "x", "course_title": "X", "lecture_id": "x-1-0", "lecture_title": "2.1 - Bodies",
+         "text": "the flamingo scheduler batches flamingo jobs every night", "start_time": 0, "end_time": 5},
+        {"chunk_id": "x-1-0-1", "course_id": "x", "course_title": "X", "lecture_id": "x-1-0", "lecture_title": "2.1 - Bodies",
+         "text": "unrelated gardening talk about tomatoes", "start_time": 5, "end_time": 9},
+        {"chunk_id": "x-2-0-0", "course_id": "x", "course_title": "X", "lecture_id": "x-2-0", "lecture_title": "3.1 - Where from Here?",
+         "text": "recap of the flamingo scheduler", "start_time": 0, "end_time": 5},
+    ]
+    lecs = g.lectures_from_seed(seed)
+    base = {"scope_course": "x", "expect": "covered", "gold_lecture_ids": ["x-2-0"], "gold_chunk_ids": ["x-2-0-0"],
+            "style": "keyword", "intent": "explain", "source": "generated", "lecture_kind": "outro"}
+    rows = [{**base, "id": "a", "question": "flamingo scheduler batches"}, {**base, "id": "b", "question": "what next?"}]
+    out = g.relabel_outros(rows, lecs)
+    assert [r["id"] for r in out] == ["a"]
+    assert out[0]["gold_lecture_ids"] == ["x-1-0", "x-2-0"] and out[0]["gold_chunk_ids"] == ["x-1-0-0"]
+
+
+def test_cross_course_rows_spread_over_the_course():
+    gen = [{"id": f"gen-s-{i}-0-q1", "question": f"term{i} question", "scope_course": "react-perf", "expect": "covered",
+            "gold_lecture_ids": [f"react-perf-{i}-0"], "style": "keyword", "intent": "explain"} for i in range(20)]
+    cross = g.cross_course_rows(gen)
+    assert len(cross) == g.CROSS_PER_PAIR
+    assert cross[-1]["id"].startswith("cross-s-14") or int(cross[-1]["id"].split("-")[2]) >= 14
