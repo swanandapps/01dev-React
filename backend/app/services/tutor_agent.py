@@ -18,6 +18,8 @@ from langchain_openai import ChatOpenAI
 
 from app.services import (catalog_service, concept_explain, enrollment_service, grounding, journey_service, memory_service,
                           skill_graph_service)
+from app.models import SearchResult
+from app.services import course_lookup as cl
 from app.services.course_lookup import TRANSCRIPT_THRESHOLD
 from app.services import tool_descriptions as D
 from app.services.llm import GEN_MODEL
@@ -26,6 +28,7 @@ from app.services.llm import GEN_MODEL
 @dataclass(frozen=True)
 class ChatContext:
     student_id: str
+    in_course: Optional[str] = None  # player only: the course being watched (spec §3.2, §3.3)
 
 
 def _dump(data) -> str:
@@ -57,13 +60,19 @@ async def search_course_content(
     runtime: ToolRuntime[ChatContext],
 ) -> tuple[str, list[dict]]:
     # Same bar as course_lookup: weak matches would surface as citation cards for unrelated lectures.
-    results = [r for r in await grounding.retrieve(query, top_k=5) if r.score >= TRANSCRIPT_THRESHOLD]
+    in_course = runtime.context.in_course
+    if in_course:  # player: this course only (spec §3.2)
+        pairs = await cl.search_in_course(query, in_course, top_k=5)
+        results = [SearchResult(chunk=c, score=s) for c, s in pairs
+                   if c.course_id == in_course and s >= TRANSCRIPT_THRESHOLD]
+    else:
+        results = [r for r in await grounding.retrieve(query, top_k=5) if r.score >= TRANSCRIPT_THRESHOLD]
     if not results:
         return "No matching course content.", []
-    enrolled_ids = await _enrolled_ids(runtime.context.student_id)
+    enrolled_ids = set() if in_course else await _enrolled_ids(runtime.context.student_id)
     cards = [c.model_dump() for c in grounding.build_sources(results)]
     text = "\n".join(
-        f"[{_enrollment_label(r.chunk.course_id, enrolled_ids)}] "
+        f"[{'THIS COURSE' if in_course else _enrollment_label(r.chunk.course_id, enrolled_ids)}] "
         f"{r.chunk.course_title} → {r.chunk.lecture_title} @ {c['timestamp']}: {r.chunk.text}"
         for r, c in zip(results, cards)
     )
@@ -124,8 +133,54 @@ async def explain_concept(
     return _dump(await concept_explain.explain_concept(runtime.context.student_id, concept))
 
 
+_NOT_FOUND = '{"found": false}'
+
+
+async def _locate_moment(what: str, slug: str):
+    """(chunk, score) of a real chunk of the course, or None. A lecture whose TITLE matches wins
+    (its best chunk for `what`, else its opening); otherwise the best chunk must clear MOMENT_THRESHOLD."""
+    titles = await cl._title_scores(what, slug)
+    best_title = max(titles, key=titles.get, default=None)
+    if best_title is not None and titles[best_title] >= cl.TITLE_THRESHOLD:
+        chunks = [(c, s) for c, s in await cl.search_in_lecture(what, slug, best_title) if c.course_id == slug]
+        if chunks:
+            chunk, score = max(chunks, key=lambda t: t[1])
+            if score >= cl.MOMENT_LECTURE_FLOOR:
+                return chunk, score
+            opening = min((c for c, _ in chunks), key=lambda c: c.start_time)
+            return opening.model_copy(update={"start_time": 0}), titles[best_title]
+    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=1) if c.course_id == slug]
+    if rows and rows[0][1] >= cl.MOMENT_THRESHOLD:
+        return rows[0]
+    return None
+
+
+@tool("find_moment", description=D.FIND_MOMENT, response_format="content_and_artifact")
+async def find_moment(
+    what: Annotated[str, "Short search phrase for the part to show, rewritten from the student's request, "
+                         "e.g. 'publish the package with np'."],
+    runtime: ToolRuntime[ChatContext],
+) -> tuple[str, Optional[dict]]:
+    """Only ever returns a real chunk of the watched course — the model cannot invent a time."""
+    slug = runtime.context.in_course
+    if not slug:
+        return _NOT_FOUND, None
+    hit = await _locate_moment(what, slug)
+    if not hit:
+        return _NOT_FOUND, None
+    chunk, score = hit
+    found = {"lecture_title": chunk.lecture_title, "start_time": chunk.start_time, "end_time": chunk.end_time,
+             "excerpt": chunk.text[:400], "score": round(score, 3)}
+    return _dump(found), {"course_slug": slug, "lecture_title": chunk.lecture_title, "start_time": chunk.start_time}
+
+
 TOOLS = [search_course_content, get_enrolled_courses, get_learning_strengths, get_learning_metrics,
          get_concept_confidence, search_history, record_skill_observation, explain_concept]
+
+
+def tools_for(in_course: Optional[str]) -> list:
+    """The tool list is chosen per turn: find_moment exists only inside the player."""
+    return TOOLS + [find_moment] if in_course else TOOLS
 
 
 @lru_cache(maxsize=1)
@@ -134,14 +189,14 @@ def _default_model() -> ChatOpenAI:
 
 
 async def stream_answer(*, system_prompt: str, history: list[dict], question: str, student_id: str,
-                        model: Optional[object] = None) -> AsyncIterator[dict]:
-    agent = create_agent(model or _default_model(), tools=TOOLS, system_prompt=system_prompt,
+                        model: Optional[object] = None, in_course: Optional[str] = None) -> AsyncIterator[dict]:
+    agent = create_agent(model or _default_model(), tools=tools_for(in_course), system_prompt=system_prompt,
                          context_schema=ChatContext)
     messages = [HumanMessage(t["content"]) if t["role"] == "user" else AIMessage(t["content"])
                 for t in history if t.get("role") in ("user", "assistant")]
     messages.append(HumanMessage(question))
     spoke = after_tool = False
-    async for chunk, meta in agent.astream({"messages": messages}, context=ChatContext(student_id=student_id),
+    async for chunk, meta in agent.astream({"messages": messages}, context=ChatContext(student_id=student_id, in_course=in_course),
                                            stream_mode="messages"):
         if isinstance(chunk, AIMessageChunk) and meta.get("langgraph_node") == "model" and chunk.text:
             if spoke and after_tool:
@@ -151,5 +206,8 @@ async def stream_answer(*, system_prompt: str, history: list[dict], question: st
             yield {"type": "token", "value": chunk.text}
         elif isinstance(chunk, ToolMessage):
             after_tool = True
-            if chunk.artifact:
+            if chunk.name == "find_moment":
+                if chunk.artifact:
+                    yield {"type": "moment", "moment": dict(chunk.artifact)}
+            elif chunk.artifact:
                 yield {"type": "cards", "cards": list(chunk.artifact)}

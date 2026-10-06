@@ -75,3 +75,14 @@ EXPLAIN_CONCEPT = (
     "closest name from known_concepts before saying there are no attempts. concept is the name as "
     "reported by get_learning_strengths."
 )
+
+FIND_MOMENT = (
+    "Video player only. Find the moment in THIS course where something is shown or said, so the "
+    "player can jump there. Call it whenever the student asks to be taken, shown or jumped to a "
+    "part (\"take me to where…\", \"show me the part about…\", \"where does he…\"). Pass `what` as a "
+    "short search phrase rewritten from the request (e.g. 'publish the package with np'). Returns "
+    "the lecture title, start/end second, an excerpt and a score — or {\"found\": false} when this "
+    "course has no such part. When found, the player jumps there by itself: tell the student in one "
+    "or two sentences what is there, naming that lecture and time exactly as returned. Never invent "
+    "a lecture or a time."
+)

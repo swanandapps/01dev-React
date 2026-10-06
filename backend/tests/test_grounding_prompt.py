@@ -53,3 +53,8 @@ def test_prompt_in_course_citation_and_length_rules():
     assert "never cite a lecture or time that is not listed under matches" in text
     assert "weak matches are only the closest moments" in text
     assert "a question that isn't about the current lecture gets a full answer" in text
+
+
+def test_prompt_lists_find_moment():
+    text = loader.read_grounding_prompt()
+    assert "find_moment" in text and "never invent a lecture or a time" in text.lower()

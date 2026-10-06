@@ -89,10 +89,13 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
     seen = {_card_key(c) for c in cards}
     extra: list[dict] = []
     answer: list[str] = []
+    moment: Optional[dict] = None
+    # Only the player gets find_moment; Ask turns call the agent exactly as before.
+    player_kw = {"in_course": req.scope.course_slug} if req.scope.in_player else {}
     try:
         async with contextlib.aclosing(tutor_agent.stream_answer(
                 system_prompt=system, history=history, question=question,
-                student_id=req.student_id, model=model)) as stream:
+                student_id=req.student_id, model=model, **player_kw)) as stream:
             async for event in stream:
                 if event["type"] == "token":
                     answer.append(event["value"])
@@ -102,6 +105,8 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
                         if _card_key(c) not in seen:
                             seen.add(_card_key(c))
                             extra.append(c)
+                elif event["type"] == "moment":
+                    moment = event["moment"]  # last find_moment call wins
     except Exception as e:  # noqa: BLE001 — never leak provider errors to the student
         print(f"[chat_turn] agent failed: {e!r}")
         yield {"type": "error", "message": _ERROR}
@@ -118,4 +123,8 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer))
     except Exception as e:  # noqa: BLE001 — never fail the answer over memory persistence
         print(f"[chat_turn] record_turn failed: {e!r}")
+    if moment and req.scope.in_player:
+        # Spec §3.3: once per turn, before done. The course is the watched one, never the model's.
+        yield {"type": "navigate", "course_slug": req.scope.course_slug,
+               "lecture_title": moment["lecture_title"], "start_time": int(moment["start_time"])}
     yield {"type": "done"}

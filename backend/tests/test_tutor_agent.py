@@ -251,3 +251,143 @@ async def test_explain_concept_tool_returns_json(monkeypatch):
         concept="react-memo",
         runtime=SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice")))
     assert json.loads(out)["attempts"] == 0
+
+
+# ---- find_moment (player only) — spec §3.3 + amendment-relevance.md item 7 ------
+
+LECTURE = "11.1 - Publishing using `np`"
+
+
+def _moment_chunk(course="custom-library", lecture=LECTURE, start=200):
+    from app.models import TranscriptChunk
+    return TranscriptChunk(chunk_id=f"{course}-10-0-3", course_id=course, course_title="Build a Custom Library",
+                           lecture_id=f"{course}-10-0", lecture_title=lecture, text="now run np " * 60,
+                           start_time=start, end_time=start + 55)
+
+
+def _player_runtime(slug="custom-library"):
+    from types import SimpleNamespace
+    return SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice", in_course=slug))
+
+
+def _stub(monkeypatch, *, titles=None, course=None, lecture=None):
+    from app.services import course_lookup
+
+    async def fake_titles(q, slug):
+        return titles or {}
+
+    async def fake_course(q, slug, top_k=8):
+        return course or []
+
+    async def fake_lecture(q, slug, title):
+        return lecture or []
+
+    monkeypatch.setattr(course_lookup, "_title_scores", fake_titles)
+    monkeypatch.setattr(course_lookup, "search_in_course", fake_course)
+    monkeypatch.setattr(course_lookup, "search_in_lecture", fake_lecture)
+
+
+def test_find_moment_is_bound_only_in_the_player():
+    assert tutor_agent.find_moment not in tutor_agent.TOOLS
+    assert tutor_agent.tools_for(None) == tutor_agent.TOOLS
+    assert tutor_agent.tools_for("custom-library") == tutor_agent.TOOLS + [tutor_agent.find_moment]
+
+
+def test_find_moment_schema_takes_only_what():
+    props = convert_to_openai_tool(tutor_agent.find_moment)["function"]["parameters"]["properties"]
+    assert list(props) == ["what"]
+
+
+async def test_find_moment_returns_the_best_in_course_chunk_above_the_moment_threshold(monkeypatch):
+    import json
+    _stub(monkeypatch, titles={LECTURE: 0.3}, course=[(_moment_chunk(), 0.66)])
+    content, artifact = await tutor_agent.find_moment.coroutine(what="publish with np", runtime=_player_runtime())
+    body = json.loads(content)
+    assert (body["lecture_title"], body["start_time"], body["end_time"], body["score"]) == (LECTURE, 200, 255, 0.66)
+    assert 0 < len(body["excerpt"]) <= 400
+    assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 200}
+
+
+async def test_find_moment_between_related_and_moment_threshold_is_not_found(monkeypatch):
+    _stub(monkeypatch, titles={LECTURE: 0.3}, course=[(_moment_chunk(), 0.406)])  # "event loop" case
+    assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
+
+
+async def test_find_moment_title_match_uses_that_lectures_best_chunk_even_if_low(monkeypatch):
+    import json
+    _stub(monkeypatch, titles={LECTURE: 0.7, "8.1 - x": 0.2}, lecture=[(_moment_chunk(start=90), 0.35)],
+          course=[])
+    content, artifact = await tutor_agent.find_moment.coroutine(what="publishing with np", runtime=_player_runtime())
+    assert json.loads(content)["start_time"] == 90 and artifact["lecture_title"] == LECTURE
+
+
+async def test_find_moment_title_match_with_no_decent_chunk_starts_at_zero(monkeypatch):
+    _stub(monkeypatch, titles={LECTURE: 0.7}, lecture=[(_moment_chunk(start=120), 0.2), (_moment_chunk(start=15), 0.1)])
+    content, artifact = await tutor_agent.find_moment.coroutine(what="np", runtime=_player_runtime())
+    assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 0}
+
+
+async def test_find_moment_never_returns_another_course(monkeypatch):
+    _stub(monkeypatch, course=[(_moment_chunk(course="react-perf", lecture="4.1 - React.memo"), 0.9)])
+    assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
+
+
+async def test_find_moment_without_a_course_in_context_is_not_found(monkeypatch):
+    from types import SimpleNamespace
+    from app.services import course_lookup
+
+    async def boom(*a, **k):
+        raise AssertionError("no course → no search")
+
+    monkeypatch.setattr(course_lookup, "search_in_course", boom)
+    monkeypatch.setattr(course_lookup, "_title_scores", boom)
+    runtime = SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice"))
+    assert await tutor_agent.find_moment.coroutine(what="x", runtime=runtime) == ('{"found": false}', None)
+
+
+async def test_player_stream_yields_a_moment_event_from_find_moment(monkeypatch):
+    _stub(monkeypatch, course=[(_moment_chunk(), 0.7)])
+    model = FakeToolModel(messages=iter([
+        AIMessage("", tool_calls=[{"name": "find_moment", "args": {"what": "publish with np"}, "id": "c1"}]),
+        AIMessage("It's at 03:20 in 11.1."),
+    ]))
+    events = await _collect(tutor_agent.stream_answer(
+        system_prompt="sys", history=[], question="take me to where you publish", student_id="alice",
+        model=model, in_course="custom-library"))
+    assert [e for e in events if e["type"] == "moment"] == [{"type": "moment", "moment": {
+        "course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 200}}]
+    assert not [e for e in events if e["type"] == "cards"]
+    assert "".join(e["value"] for e in events if e["type"] == "token").endswith("It's at 03:20 in 11.1.")
+
+
+async def test_ask_stream_has_no_find_moment(monkeypatch):
+    from app.services import course_lookup
+
+    async def boom(*a, **k):
+        raise AssertionError("find_moment must not run outside the player")
+
+    monkeypatch.setattr(course_lookup, "search_in_course", boom)
+    model = FakeToolModel(messages=iter([
+        AIMessage("", tool_calls=[{"name": "find_moment", "args": {"what": "publish"}, "id": "c1"}]),
+        AIMessage("ok"),
+    ]))
+    events = await _collect(tutor_agent.stream_answer(
+        system_prompt="sys", history=[], question="take me there", student_id="alice", model=model))
+    assert not [e for e in events if e["type"] == "moment"]
+
+
+async def test_follow_up_search_in_the_player_stays_in_this_course(monkeypatch):
+    from app.services import course_lookup
+
+    async def all_courses(q, top_k=5):
+        raise AssertionError("the player's follow-up search must not search every course")
+
+    async def fake_search(query, course_slug, top_k=8):
+        assert course_slug == "custom-library"
+        return [(_moment_chunk(), 0.7), (_moment_chunk(lecture="8.1 - The `npm link` command", start=10), 0.30)]
+
+    monkeypatch.setattr(grounding, "retrieve", all_courses)
+    monkeypatch.setattr(course_lookup, "search_in_course", fake_search)
+    content, cards = await tutor_agent.search_course_content.coroutine(query="np", runtime=_player_runtime())
+    assert [c["lecture_title"] for c in cards] == [LECTURE]
+    assert "[THIS COURSE]" in content and "ENROLLED" not in content

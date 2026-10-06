@@ -34,6 +34,8 @@ MAX_HITS = 5
 # single cutoff separates them; the title signal separates them (true >= 0.64, off-topic <= 0.34).
 RELATED_THRESHOLD = 0.40
 TITLE_THRESHOLD = 0.60
+MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter than RELATED: a wrong jump is worse)
+MOMENT_LECTURE_FLOOR = 0.30  # within a title-matched lecture, chunks below this -> start at 0
 IN_COURSE_K = 3
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
 TITLE_COOLDOWN = 300.0      # after a failure, use word overlap for this long before retrying

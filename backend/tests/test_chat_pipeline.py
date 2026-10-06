@@ -269,3 +269,58 @@ def test_missing_pointer_is_none_for_any_player_scope():
     lookup = cl.CourseLookup(case=cl.LookupCase.NOT_ENROLLED_MATCH, hits=[hit], enrolled_titles=[])
     assert chat_pipeline._missing_pointer(lookup, "answer", cl.ChatScope(course_slug="x", in_player=True)) is None
     assert chat_pipeline._missing_pointer(lookup, "answer", cl.ChatScope()) is not None
+
+
+# ---- navigate event (player only) — spec §3.3 --------------------------------
+
+M1 = {"course_slug": "custom-library", "lecture_title": "8.2 - Testing Our NPM Package", "start_time": 40}
+M2 = {"course_slug": "custom-library", "lecture_title": "11.1 - Publishing using `np`", "start_time": 200}
+
+
+def _player_agent(monkeypatch, calls, events, raise_at_end=False):
+    async def fake_stream(*, system_prompt, history, question, student_id, model=None, in_course=None):
+        calls["in_course"] = in_course
+        for e in events:
+            yield e
+        if raise_at_end:
+            raise RuntimeError("boom")
+    monkeypatch.setattr(tutor_agent, "stream_answer", fake_stream)
+
+
+def _player_req(q="take me to where you publish the npm package"):
+    scope = cl.ChatScope(course_slug="custom-library", lecture_title="8.1 - The `npm link` command", in_player=True)
+    return chat_pipeline.TurnRequest(question=q, student_id="alice", scope=scope, history=[],
+                                     memory_slug="custom-library")
+
+
+async def test_player_turn_emits_one_navigate_just_before_done_and_the_last_moment_wins(wired, monkeypatch):
+    _player_agent(monkeypatch, wired, [{"type": "moment", "moment": M1}, {"type": "token", "value": "Here."},
+                                       {"type": "moment", "moment": M2}])
+    events = [e async for e in chat_pipeline.chat_turn(_player_req())]
+    assert [e for e in events if e["type"] == "navigate"] == [{
+        "type": "navigate", "course_slug": "custom-library",
+        "lecture_title": "11.1 - Publishing using `np`", "start_time": 200}]
+    assert [e["type"] for e in events][-2:] == ["navigate", "done"]
+    assert "moment" not in [e["type"] for e in events]
+    assert wired["in_course"] == "custom-library"
+    assert wired["recorded"][0][3] == "Here."
+
+
+async def test_player_turn_without_a_moment_has_no_navigate(wired, monkeypatch):
+    _player_agent(monkeypatch, wired, [{"type": "token", "value": "Answer."}])
+    events = [e async for e in chat_pipeline.chat_turn(_player_req("what is npm link"))]
+    assert [e["type"] for e in events] == ["sources", "token", "done"]
+
+
+async def test_player_turn_agent_failure_sends_no_navigate(wired, monkeypatch):
+    _player_agent(monkeypatch, wired, [{"type": "moment", "moment": M2}], raise_at_end=True)
+    events = [e async for e in chat_pipeline.chat_turn(_player_req())]
+    assert [e["type"] for e in events] == ["sources", "error"]
+
+
+async def test_ask_turn_calls_the_agent_as_before_and_never_navigates(wired, monkeypatch):
+    # _agent's fake has no in_course parameter: passing it on an Ask turn would raise → error event.
+    _agent(monkeypatch, wired, events=[{"type": "moment", "moment": M2}, {"type": "token", "value": "x"}])
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    types = [e["type"] for e in events]
+    assert "navigate" not in types and "error" not in types and types[-1] == "done"
