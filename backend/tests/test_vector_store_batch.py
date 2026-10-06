@@ -10,7 +10,8 @@ from app.services.embeddings import embedding_service
 
 
 class FakeClient:
-    def __init__(self, fail_on_call=None):
+    def __init__(self, fail_on_call=None, short=False):
+        self.short = short
         self.calls = []
         self.fail_on_call = fail_on_call
         self.embeddings = SimpleNamespace(create=self._create)
@@ -19,16 +20,24 @@ class FakeClient:
         self.calls.append(list(input))
         if self.fail_on_call == len(self.calls):
             raise RuntimeError("boom")
-        return SimpleNamespace(data=[SimpleNamespace(embedding=[float(len(t)), 1.0]) for t in input])
+        # reversed order + explicit index: embed_many must sort by index
+        items = [SimpleNamespace(index=i, embedding=[float(len(t)), 1.0]) for i, t in enumerate(input)]
+        data = items[::-1]
+        if self.short:
+            data = data[:-1]
+        return SimpleNamespace(data=data)
 
 
 class FakePool:
     def __init__(self, cached=()):
-        self.cached = list(cached)
+        # list of ids (stored text == seed text "t"*(i+1)) or dict id -> stored text
+        if not isinstance(cached, dict):
+            cached = {c: "t" * (int(c.split("-")[1]) + 1) for c in cached}
+        self.cached = dict(cached)
         self.inserted = []
 
     async def fetch(self, sql, *a):
-        return [{"chunk_id": c, "emb": "[0.5,0.5]"} for c in self.cached]
+        return [{"chunk_id": c, "text": t, "emb": "[0.5,0.5]"} for c, t in self.cached.items()]
 
     async def executemany(self, sql, rows):
         self.inserted.extend(list(rows))
@@ -74,10 +83,12 @@ def test_failure_on_batch_two_keeps_batch_one_and_falls_back(monkeypatch):
     client, pool = FakeClient(fail_on_call=2), FakePool()
     _setup(monkeypatch, 0, client, pool)
     monkeypatch.setenv("DATABASE_URL", "postgres://stub")
+    seed = [c.model_dump() for c in _chunks(250)]
+    monkeypatch.setattr(vs, "json", SimpleNamespace(load=lambda f: seed))
     store = vs.InMemoryVectorStore()
-    asyncio.run(store.initialize())  # seed has >100 chunks: batch 2 fails, in-memory fallback runs
+    asyncio.run(store.initialize())  # batch 2 fails, in-memory fallback runs
     assert len(pool.inserted) == 100
-    assert len(store._embeddings) == len(store.chunks) > 100
+    assert len(store._embeddings) == len(store.chunks) == 250
     assert all(len(e) == 2 for e in store._embeddings)
 
 
@@ -102,3 +113,46 @@ def test_inmemory_path_batches(monkeypatch):
     assert sum(len(c) for c in client.calls) == n
     assert all(len(c) <= 100 for c in client.calls)
     assert len(store._embeddings) == n
+
+
+def test_changed_text_is_reembedded_and_upserted(monkeypatch):
+    client = FakeClient()
+    pool = FakePool(cached={"c-0": "t", "c-1": "OLD TEXT", "c-2": "ttt"})
+    store = _setup(monkeypatch, 3, client, pool)
+    asyncio.run(store._init_with_pgvector())
+    assert client.calls == [["tt"]]
+    assert [r[0] for r in pool.inserted] == ["c-1"]
+    assert pool.inserted[0][1] == "tt"
+    assert store._embeddings[1] == [2.0, 1.0]
+    assert store._embeddings[0] == [0.5, 0.5]
+
+
+def test_identical_text_not_reembedded(monkeypatch):
+    client = FakeClient()
+    pool = FakePool(cached=["c-0", "c-1"])
+    store = _setup(monkeypatch, 2, client, pool)
+    asyncio.run(store._init_with_pgvector())
+    assert client.calls == [] and pool.inserted == []
+
+
+def test_logged_counts_new_vs_changed(monkeypatch, capsys):
+    client = FakeClient()
+    pool = FakePool(cached={"c-0": "t", "c-1": "stale", "c-2": "stale"})
+    store = _setup(monkeypatch, 5, client, pool)  # c-3, c-4 are new
+    asyncio.run(store._init_with_pgvector())
+    out = capsys.readouterr().out
+    assert "2 new" in out and "2 changed" in out and "1 from pgvector cache" in out
+
+
+def test_embed_many_orders_by_index(monkeypatch):
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", FakeClient())
+    out = asyncio.run(embedding_service.embed_many(["a", "bb", "ccc"]))
+    assert out == [[1.0, 1.0], [2.0, 1.0], [3.0, 1.0]]
+
+
+def test_embed_many_raises_on_length_mismatch(monkeypatch):
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", FakeClient(short=True))
+    with pytest.raises(RuntimeError):
+        asyncio.run(embedding_service.embed_many(["a", "bb", "ccc"]))

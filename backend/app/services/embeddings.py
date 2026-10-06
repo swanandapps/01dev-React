@@ -32,11 +32,16 @@ class EmbeddingService:
             return [self._local_embed(t) for t in texts]
         out: List[List[float]] = []
         for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
             response = await self.client.embeddings.create(
                 model="text-embedding-3-small",
-                input=[t[:8000] for t in texts[i:i + batch_size]],
+                input=[t[:8000] for t in batch],
             )
-            out.extend(d.embedding for d in response.data)
+            if len(response.data) != len(batch):
+                raise RuntimeError(
+                    f"embeddings response size mismatch: got {len(response.data)}, expected {len(batch)}"
+                )
+            out.extend(d.embedding for d in sorted(response.data, key=lambda d: d.index))
         return out
 
     async def _openai_embed(self, text: str) -> List[float]:

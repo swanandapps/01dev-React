@@ -70,11 +70,18 @@ class InMemoryVectorStore:
 
         pool = await get_pool()
         rows = await pool.fetch(
-            "select chunk_id, embedding::text as emb from rag_chunks where embedding is not null"
+            "select chunk_id, text, embedding::text as emb from rag_chunks where embedding is not null"
         )
         cached = {r["chunk_id"]: _parse_vec(r["emb"]) for r in rows}
+        stored_text = {r["chunk_id"]: r["text"] for r in rows}
 
-        missing = [c for c in self.chunks if c.chunk_id not in cached]
+        # Re-embed chunks whose id is new OR whose text changed since it was stored.
+        new_count = sum(1 for c in self.chunks if c.chunk_id not in cached)
+        missing = [
+            c for c in self.chunks
+            if c.chunk_id not in cached or stored_text.get(c.chunk_id) != c.text
+        ]
+        changed_count = len(missing) - new_count
         for i in range(0, len(missing), EMBED_BATCH):
             batch = missing[i:i + EMBED_BATCH]
             embs = await embedding_service.embed_many([c.text for c in batch])
@@ -90,11 +97,11 @@ class InMemoryVectorStore:
             )
             for c, e in zip(batch, embs):
                 cached[c.chunk_id] = e
-        newly = len(missing)
         self._embeddings = [cached[c.chunk_id] for c in self.chunks]
 
         print(f"Vector store ready — {len(self.chunks)} chunks "
-              f"({newly} newly embedded, {len(self.chunks) - newly} from pgvector cache).")
+              f"({new_count} new, {changed_count} changed, "
+              f"{len(self.chunks) - len(missing)} from pgvector cache).")
 
     def search(
         self,
