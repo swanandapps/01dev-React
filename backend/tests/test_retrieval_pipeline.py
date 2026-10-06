@@ -79,3 +79,43 @@ async def test_lexical_candidates_are_capped_per_lecture_before_fusion(mem):
     store._embeddings = store._embeddings + [vec(0, 0, 0, 1)] * 8
     hits = await pipeline._lexical(factory.get_retriever(), ["zzword"], ["custom-library"], None)
     assert len(hits) == pipeline.LEX_PER_LECTURE
+    in_lecture = await pipeline.search("zzword", ["custom-library"], lecture_id="fl-0-0")
+    assert len([c for c in in_lecture if c.lex_rank]) == 8   # no caps inside one lecture
+
+
+async def test_fused_list_reaches_limit_when_one_lecture_dominates_vectors(mem):
+    from app.models import TranscriptChunk
+    store = pipeline.vector_store
+    many = [TranscriptChunk(chunk_id=f"d-0-0-{i}", course_id="custom-library", course_title="c", lecture_id="d-0-0",
+                            lecture_title="dominant", text="x", start_time=0, end_time=1) for i in range(40)]
+    others = [TranscriptChunk(chunk_id=f"o-{j}-0-0", course_id="custom-library", course_title="c", lecture_id=f"o-{j}-0",
+                              lecture_title=f"other {j}", text="y", start_time=0, end_time=1) for j in range(6)]
+    store.chunks = store.chunks + many + others
+    store._embeddings = store._embeddings + [vec(0, 0, 0, 1, 0.01 * i) for i in range(40)] + [vec(0, 0, 0, 0.5) for _ in range(6)]
+    out = await pipeline.search("unrelated", ["custom-library"])
+    assert len(out) == pipeline.LIMIT
+
+
+async def test_memory_vector_scores_match_vector_store_search(monkeypatch):
+    from app.services import vector_store as vs
+    store = InMemoryVectorStore()
+    store.chunks = [c for c, _ in CORPUS]
+    store._embeddings = [e for _, e in CORPUS]
+    q = vec(0.3, 0.5, 0.1, 0.7)
+    monkeypatch.setattr(vs.embedding_service, "use_openai", True)
+    want = {r.chunk.chunk_id: r.score for r in store.search(q, top_k=10, threshold=-1.0, course_id="custom-library")}
+    got = dict((c.chunk_id, s) for c, s in await MemoryRetriever(store).vector_search(q, ["custom-library"], 10))
+    assert want.keys() == got.keys()
+    assert all(abs(want[k] - got[k]) < 1e-9 for k in want)
+
+
+async def test_bm25_index_rebuilds_when_the_store_reloads(mem):
+    r = factory.get_retriever()
+    assert await r.lexical_search(["brandnewword"], ["custom-library"], 5) == []
+    from app.models import TranscriptChunk
+    store = r.store
+    store.chunks = store.chunks + [TranscriptChunk(chunk_id="n-0-0-0", course_id="custom-library", course_title="c",
+                                                   lecture_id="n-0-0", lecture_title="t", text="brandnewword",
+                                                   start_time=0, end_time=1)]
+    store._embeddings = store._embeddings + [vec(0, 0, 0, 1)]
+    assert [c.chunk_id for c, _ in await r.lexical_search(["brandnewword"], ["custom-library"], 5)] == ["n-0-0-0"]

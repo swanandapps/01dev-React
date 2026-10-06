@@ -22,8 +22,8 @@ LEX_OVERFETCH = 3     # fetch LEX_K * this, cap per lecture, keep LEX_K
 def ask_scope(enrolled_ids: set[int]) -> tuple[str, ...]:
     """Ask citation policy F1, as a search scope: catalog courses that are launched AND owned."""
     from app.services import course_lookup as cl  # same predicates as cl.ask_citable (the eval patches them)
-    return tuple(c["slug"] for c in catalog_service.all_courses()
-                 if c.get("slug") and c.get("id") in enrolled_ids and cl._is_launched(c.get("id")))
+    owned = [c for c in catalog_service.all_courses() if c.get("slug") and c.get("id") in enrolled_ids]
+    return tuple(c["slug"] for c in owned if cl._is_launched(c["id"]))  # all_courses() is lru_cached
 
 
 def lecture_id_for(slug: str, lecture_title: str) -> Optional[str]:
@@ -39,12 +39,14 @@ async def _ensure_loaded() -> None:
         await vector_store.initialize()
 
 
-def _cap_lexical(hits, k: int = LEX_K, per_lecture: int = LEX_PER_LECTURE):
+def _cap(hits, k: int, per_lecture: Optional[int]):
+    """Best-first hits, at most `per_lecture` per lecture (None = no cap), at most k in all."""
     out, per = [], {}
     for chunk, score in hits:
-        if per.get(chunk.lecture_id, 0) >= per_lecture:
-            continue
-        per[chunk.lecture_id] = per.get(chunk.lecture_id, 0) + 1
+        if per_lecture is not None:
+            if per.get(chunk.lecture_id, 0) >= per_lecture:
+                continue
+            per[chunk.lecture_id] = per.get(chunk.lecture_id, 0) + 1
         out.append((chunk, score))
         if len(out) == k:
             break
@@ -52,7 +54,13 @@ def _cap_lexical(hits, k: int = LEX_K, per_lecture: int = LEX_PER_LECTURE):
 
 
 async def _lexical(r, tokens, scope, lecture_id):
-    return _cap_lexical(await r.lexical_search(tokens, scope, LEX_K * LEX_OVERFETCH, lecture_id))
+    cap = None if lecture_id else LEX_PER_LECTURE   # inside one lecture the cap would cut recall to 5
+    return _cap(await r.lexical_search(tokens, scope, LEX_K * LEX_OVERFETCH, lecture_id), LEX_K, cap)
+
+
+async def _vector(r, embedding, scope, lecture_id):
+    cap = None if lecture_id else PER_LECTURE       # over-fetch so the fused list can still reach `limit`
+    return _cap(await r.vector_search(embedding, scope, VEC_K * LEX_OVERFETCH, lecture_id), VEC_K, cap)
 
 
 async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[str] = None, limit: int = LIMIT,
@@ -69,6 +77,7 @@ async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[st
     embeddings = await asyncio.gather(*(embedding_service.embed(q) for q in queries))
     terms = " ".join(extra_terms)
     lists = await asyncio.gather(
-        *(r.vector_search(e, scope, VEC_K, lecture_id) for e in embeddings),
+        *(_vector(r, e, scope, lecture_id) for e in embeddings),
         *(_lexical(r, tokenize(f"{q} {terms}"), scope, lecture_id) for q in queries))
-    return rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit, per_lecture=per_lecture)
+    return rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit,
+                     per_lecture=None if lecture_id else per_lecture)

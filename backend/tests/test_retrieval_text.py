@@ -40,3 +40,8 @@ def test_stem_es_plurals_short_plurals_and_exceptions():
     assert tokenize("indexes boxes matches") == ["index", "box", "match"]
     assert tokenize("refs keys maps args") == ["ref", "key", "map", "arg"]
     assert tokenize("series canvas alias status bus class") == ["series", "canvas", "alias", "status", "bus", "class"]
+
+
+def test_stem_che_words_keep_the_e():
+    assert tokenize("caches cache headaches") == ["cache", "cache", "headache"]
+    assert tokenize("matches patches watches") == ["match", "patch", "watch"]

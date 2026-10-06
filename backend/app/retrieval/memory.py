@@ -27,7 +27,8 @@ class MemoryRetriever:
         return idx
 
     def _index(self) -> BM25Index:
-        key = (id(self.store.chunks), len(self.store.chunks))
+        self.store._ensure_index()
+        key = self.store._indexed_for   # same invalidation signal as the store's norms/course index
         if self._bm25 is None or self._bm25_key != key:
             self._bm25 = BM25Index([lexical_doc(c) for c in self.store.chunks])
             self._bm25_key = key
