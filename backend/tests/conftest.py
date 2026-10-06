@@ -1,4 +1,4 @@
-"""Leak guard: no test may reach the real database or the real OpenAI embeddings.
+"""Leak guard: no test may reach the real database or the real OpenAI embeddings/chat completions.
 
 backend/.env points at a remote Postgres, so a test that forgets to stub the
 `store` singleton would otherwise read or DELETE real rows. The guards below
@@ -26,6 +26,12 @@ def _no_real_db_or_embeddings(monkeypatch):
         leaks.append("openai AsyncEmbeddings.create (real OpenAI, e.g. course_lookup._embed_titles)")
         raise AssertionError("test reached the real OpenAI embeddings client: stub it")
 
+    async def _blocked_chat_completions(self, *a, **k):
+        leaks.append("openai AsyncCompletions.create (real OpenAI chat completions, e.g. rerank/understand)")
+        raise AssertionError("test reached the real OpenAI chat completions: stub the module's _complete")
+
+    monkeypatch.setattr("openai.resources.chat.completions.completions.AsyncCompletions.create",
+                        _blocked_chat_completions)
     monkeypatch.setattr(db, "get_pool", _blocked_pool)
     monkeypatch.setattr("openai.resources.embeddings.AsyncEmbeddings.create", _blocked_embeddings_create)
     monkeypatch.setattr(type(embeddings.embedding_service), "_openai_embed", _blocked_openai)
