@@ -58,3 +58,8 @@ def test_prompt_in_course_citation_and_length_rules():
 def test_prompt_lists_find_moment():
     text = loader.read_grounding_prompt()
     assert "find_moment" in text and "never invent a lecture or a time" in text.lower()
+
+
+def test_prompt_vague_lecture_request_is_never_only_a_question():
+    text = " ".join(loader.read_grounding_prompt().split())
+    assert "is never answered with only a question back" in text
