@@ -3,82 +3,103 @@
     "id": 1,
     "slug": "programming-language",
     "title": "Build a Programming Language",
-    "description": "Dive into the genesis of syntax with 'Building a Programming Language'. This isn't about tweaking what's already there; it's about architecting something groundbreaking. Unearth the foundational elements of language design—parsing, compiling, and interpreting. We'll navigate through abstract syntax trees, tokenization, and grammars, turning them into tools you wield with precision",
+    "description": "Every language you use — C++, Java, Python, JavaScript — started as a grammar on someone's whiteboard. In 'Build a Programming Language' you'll design Ember, a small language of your own, and build its tokenizer, parser and tree-walking interpreter from scratch in JavaScript. Along the way you'll learn what separates syntax from semantics, how compilers, interpreters and transpilers really differ, and how an abstract syntax tree turns source text into a running program.",
     "launched": false,
     "url": "/course/1",
     "modules": [
       {
         "title": "First Principles: Human Language",
-        "description": "Discover the art of crafting a library that's as plug-and-play as it gets."
+        "description": "Trace the road from machine code to JavaScript, then borrow from human grammar to pin down what syntax and semantics really mean."
       },
       {
-        "title": "C++, Java Language Designs",
-        "description": "Uncover the architectural marvels of JavaScript's initial release."
+        "title": "Language Components",
+        "description": "Break any language into values, datatypes, expressions, variables, scope and control flow — the parts Ember will need."
       },
       {
-        "title": "Machine Code, Bytecode, Your code.",
-        "description": "Inject your genius into JS's prototype."
+        "title": "Machine Code, Bytecode, Your Code",
+        "description": "Follow source down to bytecode and machine code, and see how compilers, interpreters, transpilers and V8's JIT each get it there."
       },
       {
-        "title": "Javascript Architecture",
-        "description": "Craft functions like mask, shorten, highlight."
-      },
-      {
-        "title": "Compiler, Interpretor & Transpiler",
-        "description": "Navigate the tricky waters of window pollution."
-      },
-      {
-        "title": "Design a Language Grammer",
-        "description": "Tackle the client-side marvel with Window."
+        "title": "Design a Language Grammar",
+        "description": "Write Ember's grammar in BNF, with operator precedence and associativity baked into the rules."
       },
       {
         "title": "Lexical Analysis",
-        "description": "Tackle the client-side marvel with Window."
+        "description": "Turn raw Ember source into a stream of typed tokens with a hand-written tokenizer loop."
       },
       {
-        "title": "Build Abstract Syntax Tree",
-        "description": "Tackle the client-side marvel with Window."
+        "title": "Build an Abstract Syntax Tree",
+        "description": "Write a recursive-descent parser that turns tokens into a tree of expressions, statements, blocks and functions."
       },
       {
         "title": "Interpret a Language AST",
-        "description": "Tackle the client-side marvel with Window."
+        "description": "Walk the tree to run Ember programs — environments, scoping, hoisting, closures, conditionals and loops included."
       }
     ],
     "chapters": [
       {
         "name": "Chapter 1 - Introduction",
         "subchapters": [
-          "1.1 - Language History"
+          "1.1 - What We Will Build: Ember, a Language of Our Own",
+          "1.2 - Language History: From Machine Code to JavaScript"
         ]
       },
       {
-        "name": "Chapter 2 - Human Languages",
+        "name": "Chapter 2 - Human Languages vs Programming Languages",
         "subchapters": [
-          "2.1 - Libraries: First Principles"
+          "2.1 - What Human Languages Teach Us About Grammar",
+          "2.2 - Syntax vs Semantics: Is a Language Just Its Syntax?"
         ]
       },
       {
-        "name": "Chapter 3 - Is Programming Language a Syntax?",
+        "name": "Chapter 3 - Language Components",
         "subchapters": [
-          "2.1 - Libraries: First Principles"
+          "3.1 - Values, Datatypes and Expressions",
+          "3.2 - Variables, Scope and Control Flow"
         ]
       },
       {
-        "name": "Chapter 4 - Language Components",
+        "name": "Chapter 4 - Language Processors",
         "subchapters": [
-          "2.1 - Libraries: First Principles"
+          "4.1 - Machine Code, Bytecode and Your Code",
+          "4.2 - Compilers vs Interpreters vs Transpilers",
+          "4.3 - AOT vs JIT: How C++, Java, Python and V8 Run Your Code"
         ]
       },
       {
-        "name": "Chapter 5 - Language Processors",
+        "name": "Chapter 5 - Designing Ember's Grammar",
         "subchapters": [
-          "2.1 - Libraries: First Principles"
+          "5.1 - Writing Ember's Grammar in BNF",
+          "5.2 - Encoding Precedence and Associativity"
         ]
       },
       {
-        "name": "Chapter 6 - Compilers vs Interpreters vs Transpilers",
+        "name": "Chapter 6 - Lexical Analysis",
         "subchapters": [
-          "2.1 - Libraries: First Principles"
+          "6.1 - Tokens, Lexemes and Token Types",
+          "6.2 - Writing the Tokenizer Loop"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Building the Abstract Syntax Tree",
+        "subchapters": [
+          "7.1 - Recursive Descent: Turning Tokens into a Tree",
+          "7.2 - Parsing Statements, Blocks and Functions"
+        ]
+      },
+      {
+        "name": "Chapter 8 - Interpreting the AST",
+        "subchapters": [
+          "8.1 - Writing a Tree-Walking Evaluator",
+          "8.2 - Environments: Scoping, Hoisting and Closures",
+          "8.3 - Running Conditionals, Loops and Function Calls"
+        ]
+      },
+      {
+        "name": "Chapter 9 - Finale",
+        "subchapters": [
+          "9.1 - Running a Real Program in Ember",
+          "9.2 - Where from Here?"
         ]
       }
     ]
@@ -221,21 +242,21 @@
     "id": 4,
     "slug": "product-engineering",
     "title": "Product Engineering Essentials",
-    "description": "This is a 0.1% DEV track.",
+    "description": "The gap between a developer and a product engineer isn't syntax — it's knowing why the language behaves the way it does and how code actually reaches users. 'Product Engineering Essentials' starts with first-principles thinking and reading specs and source, then rebuilds JavaScript's architecture from JS 1.0 through prototypes, the event loop and functional patterns. You'll carry one running project the whole way — a link-preview widget you design from first principles, build with those patterns, then review, profile and ship to production.",
     "launched": false,
     "url": "/course/4",
     "modules": [
       {
         "title": "Language Fundamentals Mastery",
-        "description": "Deepen your understanding of JavaScript's core concepts."
+        "description": "Think from first principles, read specs and source like a senior engineer, and trace JavaScript from the JS 1.0 design to the [[PROTOTYPE]] chain you can hack yourself."
       },
       {
-        "title": "Asynchronous Programming Paradigms",
-        "description": "Explore the world of asynchronous JavaScript."
+        "title": "Async & Functional Patterns",
+        "description": "Take the event loop, promises and the microtask queue apart, then structure code with pure functions, composition and closures as state."
       },
       {
-        "title": "Functional Programming Techniques",
-        "description": "Elevate your coding skills by embracing functional programming principles."
+        "title": "Production Engineering",
+        "description": "Ship like a product engineer: review code well, profile before you optimise, and take a pull request all the way to production."
       }
     ],
     "chapters": [
@@ -633,40 +654,83 @@
     "id": 9,
     "slug": "javascript-deep-dive",
     "title": "JavaScript Deep Dive",
-    "description": "Go beneath the syntax and understand how JavaScript actually works — prototype inheritance, the V8 engine and hidden classes, and the event loop that keeps everything responsive. This course builds the mental models that separate engineers who use JavaScript from engineers who understand it.",
+    "description": "Go beneath the syntax and understand how JavaScript actually works — scope and closures, prototype inheritance and classes, the V8 engine and hidden classes, and the event loop that keeps everything responsive. You'll build mini-runtime, a small model of the JavaScript runtime written in JavaScript itself: a call stack, a scope-chain resolver, a prototype lookup and an event-loop simulator, one lecture at a time. This course builds the mental models that separate engineers who use JavaScript from engineers who understand it.",
     "launched": false,
     "url": "/course/9",
     "modules": [
       {
+        "title": "Execution, Scope & Closures",
+        "description": "Follow code from source text onto the call stack, then build mini-runtime's scope chain to explain hoisting, the TDZ and closures."
+      },
+      {
         "title": "Prototype Inheritance",
-        "description": "How objects delegate to their prototype, and why it's delegation not copying."
+        "description": "Bind this, wire up new, and see how objects delegate to their prototype — why it's delegation not copying, and why class is just sugar on top."
       },
       {
         "title": "V8 Hidden Classes",
-        "description": "How V8 optimizes property access and how to avoid deopts."
+        "description": "How V8 gives objects hidden shapes, how inline caches use them to optimize property access, and how to avoid deopts."
       },
       {
         "title": "The Event Loop",
-        "description": "Tasks vs microtasks, and why a resolved Promise beats setTimeout(0)."
+        "description": "Tasks vs microtasks, an event-loop simulator built by hand, and why a resolved Promise beats setTimeout(0)."
+      },
+      {
+        "title": "Putting It Together",
+        "description": "Trace one real bug through scope, prototypes, the engine and the event loop — every layer of mini-runtime at once."
       }
     ],
     "chapters": [
       {
+        "name": "Chapter 1 - How JavaScript Runs",
+        "subchapters": [
+          "1.1 - What We Will Build: mini-runtime",
+          "1.2 - From Source Text to Running Code",
+          "1.3 - Execution Contexts and the Call Stack"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Scope and Closures",
+        "subchapters": [
+          "2.1 - Lexical Scope and the Scope Chain",
+          "2.2 - Hoisting and the Temporal Dead Zone",
+          "2.3 - Closures: Functions That Remember Their Scope"
+        ]
+      },
+      {
+        "name": "Chapter 3 - Functions, this and new",
+        "subchapters": [
+          "3.1 - How this Gets Bound: The Four Rules",
+          "3.2 - Constructor Functions and the new Keyword"
+        ]
+      },
+      {
         "name": "Chapter 4 - Objects & Inheritance",
         "subchapters": [
-          "4.1 - Prototype Inheritance"
+          "4.1 - Prototype Inheritance",
+          "4.2 - Classes Are Sugar Over the Prototype Chain",
+          "4.3 - Writing Object.create and instanceof by Hand"
         ]
       },
       {
         "name": "Chapter 5 - Inside the Engine",
         "subchapters": [
-          "5.1 - V8 Engine and Hidden Classes"
+          "5.1 - V8 Engine and Hidden Classes",
+          "5.2 - Inline Caches and Monomorphic Code"
         ]
       },
       {
         "name": "Chapter 6 - Concurrency",
         "subchapters": [
-          "6.1 - The Event Loop and Microtasks"
+          "6.1 - The Event Loop and Microtasks",
+          "6.2 - Writing an Event Loop Simulator",
+          "6.3 - async/await Is Just .then Underneath"
+        ]
+      },
+      {
+        "name": "Chapter 7 - Finale",
+        "subchapters": [
+          "7.1 - Tracing One Bug Through Every Layer",
+          "7.2 - Where from Here?"
         ]
       }
     ]
@@ -675,30 +739,67 @@
     "id": 10,
     "slug": "web-apis",
     "title": "Web APIs and Real-Time",
-    "description": "Learn how the web moves data in real time. Start at the HTTP/WebSocket boundary — the Upgrade handshake — and understand when to reach for long-polling versus a full-duplex WebSocket connection, and what each one really costs.",
+    "description": "Learn how the web moves data in real time. You'll build a live match scoreboard and push its updates to the browser four ways — short polling, long-polling, Server-Sent Events and WebSockets — crossing the HTTP/WebSocket boundary at the Upgrade handshake. By the end you'll know when to reach for long-polling versus a full-duplex WebSocket connection, what each one really costs, and how to keep a live connection alive when the network isn't.",
     "launched": false,
     "url": "/course/10",
     "modules": [
       {
+        "title": "HTTP and Polling",
+        "description": "See why request/response can't push, then fake it for the scoreboard with short polling and long-polling."
+      },
+      {
         "title": "The Upgrade Handshake",
-        "description": "How an HTTP request becomes a WebSocket connection."
+        "description": "How an HTTP request becomes a WebSocket connection, and what travels over the wire once it does."
       },
       {
         "title": "Long-Polling vs WebSockets",
-        "description": "The real cost of each transport and when to use which."
+        "description": "The real cost of each transport, where Server-Sent Events fit between them, and when to use which."
+      },
+      {
+        "title": "Resilient Connections",
+        "description": "Reconnects with backoff, heartbeats and backpressure — what keeps a live UI alive on a bad network."
       }
     ],
     "chapters": [
       {
+        "name": "Chapter 1 - HTTP and the Push Problem",
+        "subchapters": [
+          "1.1 - What We Will Build: A Live Scoreboard",
+          "1.2 - The Request/Response Contract",
+          "1.3 - Short Polling the Scoreboard",
+          "1.4 - Long-Polling: Holding the Request Open"
+        ]
+      },
+      {
         "name": "Chapter 2 - The WebSocket Boundary",
         "subchapters": [
-          "2.2 - WebSocket Handshake"
+          "2.1 - The Upgrade Header: Asking HTTP to Switch Protocols",
+          "2.2 - WebSocket Handshake",
+          "2.3 - Frames, Opcodes and Masking",
+          "2.4 - The Browser WebSocket API"
         ]
       },
       {
         "name": "Chapter 3 - Choosing a Transport",
         "subchapters": [
-          "3.1 - Long-Polling vs WebSockets"
+          "3.1 - Long-Polling vs WebSockets",
+          "3.2 - Server-Sent Events: One-Way Push over HTTP",
+          "3.3 - Measuring the Cost: Bytes, Latency and Open Connections"
+        ]
+      },
+      {
+        "name": "Chapter 4 - Keeping Connections Alive",
+        "subchapters": [
+          "4.1 - Reconnecting with Exponential Backoff",
+          "4.2 - Heartbeats and Detecting Dead Connections",
+          "4.3 - Backpressure and bufferedAmount"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Finale",
+        "subchapters": [
+          "5.1 - Shipping the Scoreboard: One Transport per Feature",
+          "5.2 - Where from Here?"
         ]
       }
     ]
@@ -707,30 +808,76 @@
     "id": 11,
     "slug": "react-perf",
     "title": "React Performance Patterns",
-    "description": "Make React fast on purpose. Understand what actually triggers re-renders, how memoization and computed state cut wasted work, and how React.memo, useCallback, and useMemo fit together — including the reference-equality traps that quietly defeat them.",
+    "description": "Make React fast on purpose. You'll take a deliberately slow trading dashboard — a live 5,000-row price table with filters — profile it, and fix it one measured change at a time. Along the way you'll learn what actually triggers re-renders, how memoization and computed state cut wasted work, and how React.memo, useCallback, and useMemo fit together — including the reference-equality traps that quietly defeat them.",
     "launched": false,
     "url": "/course/11",
     "modules": [
       {
+        "title": "Render Fundamentals",
+        "description": "What actually triggers a re-render, render vs commit, and the shallow-equality checks React runs on every update."
+      },
+      {
+        "title": "Profiling First",
+        "description": "Use the React DevTools Profiler to find the components that render for nothing before you change a line."
+      },
+      {
         "title": "Memoization & Computed State",
-        "description": "Recompute only when dependencies change."
+        "description": "Restructure state first, then recompute derived data with useMemo only when its dependencies change."
       },
       {
         "title": "React.memo & useCallback",
-        "description": "Skip re-renders by keeping props referentially stable."
+        "description": "Skip re-renders by keeping props referentially stable, and dodge the inline-object and context traps that defeat memo."
+      },
+      {
+        "title": "Rendering Less",
+        "description": "Virtualize long lists and lean on useTransition so the dashboard stays responsive under real data."
       }
     ],
     "chapters": [
       {
+        "name": "Chapter 1 - How React Renders",
+        "subchapters": [
+          "1.1 - What We Will Build: A Dashboard That Lags on Purpose",
+          "1.2 - Render vs Commit: What React Actually Does",
+          "1.3 - What Triggers a Re-render",
+          "1.4 - Shallow Equality: How React Compares Props and State"
+        ]
+      },
+      {
+        "name": "Chapter 2 - Measure Before You Fix",
+        "subchapters": [
+          "2.1 - Profiling the Dashboard with React DevTools",
+          "2.2 - Reading the Flame Graph for Wasted Renders"
+        ]
+      },
+      {
         "name": "Chapter 3 - Cutting Wasted Work",
         "subchapters": [
-          "3.2 - Memoization and Computed State"
+          "3.1 - Moving State Down and Lifting Content Up",
+          "3.2 - Memoization and Computed State",
+          "3.3 - When useMemo Costs More Than It Saves"
         ]
       },
       {
         "name": "Chapter 4 - Stable References",
         "subchapters": [
-          "4.1 - React.memo and useCallback"
+          "4.1 - React.memo and useCallback",
+          "4.2 - Inline Objects and Functions That Break memo",
+          "4.3 - Splitting Context to Stop Re-render Storms"
+        ]
+      },
+      {
+        "name": "Chapter 5 - Rendering Less",
+        "subchapters": [
+          "5.1 - Virtualizing the 5,000-Row Table",
+          "5.2 - useTransition and useDeferredValue for Lag-Free Filtering"
+        ]
+      },
+      {
+        "name": "Chapter 6 - Finale",
+        "subchapters": [
+          "6.1 - Before and After: Profiling the Fixed Dashboard",
+          "6.2 - Where from Here?"
         ]
       }
     ]
