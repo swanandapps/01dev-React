@@ -153,17 +153,17 @@ async def test_best_chunk_for_lectures_scores_the_same_question_embedding_withou
 
 from app.retrieval import rerank as rr
 from app.retrieval.base import Candidate
-from app.services import course_lookup as cl
+from app.retrieval import titles
 
 
 @pytest.fixture
 def grader(monkeypatch):
     calls = []
 
-    async def no_titles(question, slug):
+    async def no_titles(*a, **kw):
         return {}
 
-    monkeypatch.setattr(cl, "_title_scores", no_titles)
+    monkeypatch.setattr(titles, "title_scores", no_titles)
 
     def set_reply(grades, why=None):
         async def fake(system, user):
@@ -204,13 +204,13 @@ async def test_graded_search_tells_the_reranker_about_navigation(mem, grader):
 
 
 async def test_graded_search_adds_title_matched_lectures_to_the_pool(mem, grader, monkeypatch):
-    async def titled(question, slug):
-        return {"11.1 - Publishing using `np`": 0.9}          # lecture cl-10-0, absent from the fused list
+    async def titled(*a, **kw):
+        return {("custom-library", "11.1 - Publishing using `np`"): 0.9}   # lecture cl-10-0, absent from the fused list
 
     async def fake_search(question, scope, **kw):
         return [Candidate(chunk=CORPUS[0][0], vec_rank=1, lex_rank=1, cosine=0.9)]
 
-    monkeypatch.setattr(cl, "_title_scores", titled)
+    monkeypatch.setattr(titles, "title_scores", titled)
     monkeypatch.setattr(pipeline, "search", fake_search)
     grader({"c2": "a"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
@@ -222,11 +222,97 @@ async def test_graded_search_pool_is_at_most_12(mem, grader, monkeypatch):
     async def many(question, scope, **kw):
         return [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}"})) for i in range(12)]
 
-    async def titled(question, slug):
-        return {"11.1 - Publishing using `np`": 0.9}
+    async def titled(*a, **kw):
+        return {("custom-library", "11.1 - Publishing using `np`"): 0.9}
 
-    monkeypatch.setattr(cl, "_title_scores", titled)
+    monkeypatch.setattr(titles, "title_scores", titled)
     monkeypatch.setattr(pipeline, "search", many)
     grader({"c1": "n"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
     assert len(res.graded) == 12 and any(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded)
+
+
+async def _enable_titles(monkeypatch):
+    from app.retrieval import titles as t
+    outline = {"custom-library": ["6.5 - IIFE, To The Rescue", "11.1 - Publishing using `np`"],
+               "react-perf": ["5.1 - Virtualizing the Table"]}
+    monkeypatch.setattr(catalog_service, "by_slug",
+                        lambda slug: {"chapters": [{"name": "c", "subchapters": outline[slug]}]} if slug in outline else None)
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", object())
+    monkeypatch.setattr(t, "_cache", {slug: (ts, [vec(1, 0, 0, 0)] * len(ts)) for slug, ts in outline.items()})
+    monkeypatch.setattr(t, "_failed_until", {})
+
+
+def _fused_only_first(monkeypatch):
+    async def fake_search(question, scope, **kw):
+        pipeline._remember(question, await embedding_service.embed(question))   # search's own (single) embedding
+        return [Candidate(chunk=CORPUS[0][0], vec_rank=1, lex_rank=1, cosine=0.9)]
+    monkeypatch.setattr(pipeline, "search", fake_search)
+
+
+async def test_title_signal_embeds_the_question_once_across_slugs(mem, monkeypatch):
+    calls = []
+
+    async def real_grader(system, user):
+        calls.append(user)
+        return {"g": {"c1": "n"}}
+
+    monkeypatch.setattr(rr, "_complete", real_grader)
+    await _enable_titles(monkeypatch)
+    _fused_only_first(monkeypatch)
+    once = []
+    orig = pipeline.best_chunk_for_lectures
+
+    async def counting(question, ids):
+        once.append(sorted(ids))
+        return await orig(question, ids)
+
+    monkeypatch.setattr(pipeline, "best_chunk_for_lectures", counting)
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library", "react-perf"])
+    assert mem == ["what is an IIFE?"]            # the question was embedded exactly once
+    assert len(once) == 1                          # one best_chunk_for_lectures call for ALL slugs
+    lectures = {g.candidate.chunk.lecture_id for g in res.graded}
+    assert {"cl-10-0", "rp-4-0"} <= lectures       # title-only lectures of both slugs reached the pool
+
+
+async def test_title_additions_never_come_from_outside_the_scope(mem, grader, monkeypatch):
+    await _enable_titles(monkeypatch)
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert {g.candidate.chunk.course_id for g in res.graded} == {"custom-library"}
+
+
+async def test_lecture_id_disables_title_additions(mem, grader, monkeypatch):
+    async def boom(*a, **kw):
+        raise AssertionError("title scoring must not run for a lecture-scoped search")
+
+    monkeypatch.setattr(titles, "title_scores", boom)
+    res = await pipeline.graded_search("publish with np", ["custom-library"], lecture_id="cl-10-0")
+    assert {g.candidate.chunk.lecture_id for g in res.graded} == {"cl-10-0"}
+
+
+async def test_title_failure_means_no_additions_and_no_exception(mem, grader, monkeypatch):
+    async def boom(*a, **kw):
+        raise RuntimeError("titles down")
+
+    monkeypatch.setattr(titles, "title_scores", boom)
+    _fused_only_first(monkeypatch)
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert res.outcome == pipeline.Outcome.COVERED and len(res.graded) == 1
+
+
+async def test_pool_edge_counts_only_the_kept_slice(mem, grader, monkeypatch):
+    """The title lecture sits at fused position 12 (the one the pool drops to make room): it is still 'missing'."""
+    async def titled(*a, **kw):
+        return {("custom-library", "11.1 - Publishing using `np`"): 0.9}
+
+    async def fake_search(question, scope, **kw):
+        out = [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}"})) for i in range(11)]
+        return out + [Candidate(chunk=CORPUS[1][0])]            # cl-10-0 as the 12th fused candidate
+
+    monkeypatch.setattr(titles, "title_scores", titled)
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    grader({"c1": "n"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert len(res.graded) == 12 and sum(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded) == 1

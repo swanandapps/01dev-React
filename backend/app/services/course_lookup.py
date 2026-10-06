@@ -14,7 +14,7 @@ from enum import Enum
 from typing import Optional, Sequence
 
 from app.models import TranscriptChunk
-from app.retrieval import pipeline
+from app.retrieval import pipeline, titles
 from app.services import catalog_index, catalog_service, enrollment_service
 from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
@@ -34,7 +34,7 @@ MAX_HITS = 5
 # real matches as low as 0.42 (ES modules), off-topic up to 0.45 (React reconciliation), so no
 # single cutoff separates them; the title signal separates them (true >= 0.64, off-topic <= 0.34).
 RELATED_THRESHOLD = 0.40
-TITLE_THRESHOLD = 0.60
+TITLE_THRESHOLD = titles.TITLE_THRESHOLD   # 0.60; owned by app.retrieval.titles
 MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter than RELATED: a wrong jump is worse)
 # find_moment ranks lectures by max(best chunk, title - TITLE_OFFSET). Measured on real embeddings
 # (27 phrasings, Build a Custom Library): 26/27 correct vs 21/27 for "title >= 0.60 wins outright"
@@ -69,9 +69,7 @@ IN_COURSE_K = 3
 CURRENT_PASSAGES = 3         # player: passages of the watched lecture given as context
 CURRENT_CONTEXT_CHARS = 1500  # ... capped in total
 DESCRIPTION_CHARS = 600  # longest catalog description is 546; product-engineering's project sits near char 430
-TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
-TITLE_PREWARM_TIMEOUT = 30.0  # startup batch for every course
-TITLE_COOLDOWN = 60.0       # after a failure, use word overlap for this long before retrying
+TITLE_COOLDOWN = titles.TITLE_COOLDOWN
 
 
 class LookupCase(str, Enum):
@@ -151,109 +149,27 @@ async def search_in_course(query: str, course_slug: str, top_k: Optional[int] = 
     return _pairs(await pipeline.search(query, [course_slug], limit=limit, per_lecture=None))
 
 
-_TITLE_STOPWORDS = {"the", "and", "for", "with", "what", "are", "how", "does", "why", "our", "your", "that",
-                    "this", "from", "into", "using", "use", "can", "you", "its", "was", "were", "who", "when"}
-_title_cache: dict[str, tuple[list[str], list[list[float]]]] = {}
-
-
-def _bare_title(title: str) -> str:
-    """"8.1 - The `npm link` command" -> "The npm link command"."""
-    return re.sub(r"^\s*\d+(\.\d+)*\s*-\s*", "", title).replace("`", "").strip()
-
-
-def _lecture_titles(slug: str) -> list[str]:
-    course = catalog_service.by_slug(slug)
-    return [t for ch in (course or {}).get("chapters", []) for t in ch.get("subchapters", [])]
-
-
-def _cosine(a: list[float], b: list[float]) -> float:
-    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
-    return sum(x * y for x, y in zip(a, b)) / (na * nb) if na and nb else 0.0
-
-
-def _words(text: str) -> set[str]:
-    return {w for w in re.findall(r"[a-z0-9]+", text.casefold()) if len(w) > 2 and w not in _TITLE_STOPWORDS}
-
-
-def _overlap_title_scores(question: str, titles: list[str]) -> dict[str, float]:
-    """No-embedding fallback: 1.0 when at least half of a title's content words are in the
-    question, else 0.0 (so the TITLE_THRESHOLD test still reads the same)."""
-    q = _words(question)
-    out = {}
-    for t in titles:
-        w = _words(_bare_title(t))
-        out[t] = 1.0 if w and len(w & q) / len(w) >= 0.5 else 0.0
-    return out
-
-
-_title_failed_until: dict[str, float] = {}
-
-
-async def _embed_titles(slug: str, titles: list[str]) -> list[list[float]]:
-    """One batched embed call per course, cached for the process."""
-    cached = _title_cache.get(slug)
-    if cached and cached[0] == titles:
-        return cached[1]
-    texts = [_bare_title(t) for t in titles]
-    resp = await asyncio.wait_for(
-        embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts),
-        timeout=TITLE_EMBED_TIMEOUT)
-    vecs = [d.embedding for d in resp.data]
-    _title_cache[slug] = (titles, vecs)
-    return vecs
-
-
-async def prewarm_titles() -> tuple[int, int]:
-    """Embed every launched-or-not catalog course's lecture titles in ONE batched call and fill
-    _title_cache, so the first player turn never pays (or fails) the build. Returns (titles, courses).
-    Raises on failure; deliberately never touches _title_failed_until (the lazy path stays a backup)."""
-    if not (embedding_service.use_openai and embedding_service.client):
-        raise RuntimeError("OpenAI embeddings unavailable")
-    per_course = {}
-    for course in catalog_service.all_courses():
-        slug = course.get("slug")
-        titles = _lecture_titles(slug) if slug else []
-        if titles:
-            per_course[slug] = titles
-    texts = [_bare_title(t) for ts in per_course.values() for t in ts]
-    if not texts:
-        return 0, 0
-    resp = await asyncio.wait_for(
-        embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts),
-        timeout=TITLE_PREWARM_TIMEOUT)
-    vecs = [d.embedding for d in resp.data]
-    i = 0
-    for slug, ts in per_course.items():
-        _title_cache[slug] = (ts, vecs[i:i + len(ts)])
-        i += len(ts)
-    return len(texts), len(per_course)
+# The title signal lives in app.retrieval.titles (cache, prewarm, scoring); these are thin legacy wrappers
+# kept until Task 15 rewires the consumers.
+_lecture_titles = titles.lecture_titles
+prewarm_titles = titles.prewarm
 
 
 async def _title_scores(question: str, slug: str) -> dict[str, float]:
     """Bare question vs each of the course's lecture titles (numbering and backticks stripped).
     Keys are the titles exactly as the course lists them. Falls back to word overlap when
-    embeddings are unavailable; after a failure the fallback is used for TITLE_COOLDOWN
-    seconds so an outage can't stall every turn. Reused by Task D's find_moment."""
-    titles = _lecture_titles(slug)
-    if not titles:
+    embeddings are unavailable; after a failure the fallback is used for TITLE_COOLDOWN seconds."""
+    if not titles.lecture_titles(slug):
         return {}
-    if (embedding_service.use_openai and embedding_service.client
-            and time.monotonic() >= _title_failed_until.get(slug, 0.0)):
+    q = None
+    if await titles.vectors(slug) is not None:
+        # The question embed is outside the cooldown: a transient failure here must not
+        # disable titles for the slug (it just uses word overlap for this turn).
         try:
-            vecs = await _embed_titles(slug, titles)
-        except Exception as e:  # noqa: BLE001 — title signal is best-effort
-            _title_failed_until[slug] = time.monotonic() + TITLE_COOLDOWN
-            print(f"[course_lookup] title embedding failed, word overlap for {TITLE_COOLDOWN:.0f}s: {e!r}")
-        else:
-            # The question embed is outside the cooldown: a transient failure here must not
-            # disable titles for the slug (it just fails this turn's lookup like any other embed).
-            try:
-                q = await embedding_service.embed(question)
-            except Exception as e:  # noqa: BLE001
-                print(f"[course_lookup] question embed failed, word overlap this turn: {e!r}")
-            else:
-                return {t: _cosine(q, v) for t, v in zip(titles, vecs)}
-    return _overlap_title_scores(question, titles)
+            q = await embedding_service.embed(question)
+        except Exception as e:  # noqa: BLE001
+            print(f"[course_lookup] question embed failed, word overlap this turn: {e!r}")
+    return {t: s for (_, t), s in (await titles.title_scores(q, [slug], question=question)).items()}
 
 
 async def search_in_lecture(query: str, course_slug: str, lecture_title: str) -> list[tuple[TranscriptChunk, float]]:

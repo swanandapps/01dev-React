@@ -278,7 +278,7 @@ async def test_v2_mapping(monkeypatch):
         assert list(scope) == ["custom-library"] and kw["history"] == [] and kw["lecture_title"] is None
         a, b = Candidate(chunk=_chunk("custom-library-9-0")), Candidate(chunk=_chunk("custom-library-5-2"))
         return pipeline.RetrievalResult(Outcome.PARTIAL, [Graded(b, "partial", "x"), Graded(a, "related", "y")],
-                                        fallback=True)
+                                        fallback=True, rerank_error="TimeoutError")
 
     async def fake_search(question, scope, **kw):
         return [Candidate(chunk=_chunk("custom-library-1-0")), Candidate(chunk=_chunk("custom-library-9-0"))]
@@ -288,5 +288,28 @@ async def test_v2_mapping(monkeypatch):
     p = await rs.V2System().predict(_row("a"), "player")
     assert (p.outcome, p.cited_lecture, p.fallback) == (PARTIAL, "custom-library-5-2", True)
     assert p.ranked_lectures == ["custom-library-5-2", "custom-library-9-0", "custom-library-1-0"]
-    assert p.shown_lectures == ["custom-library-5-2"]
+    assert p.shown_lectures == ["custom-library-5-2"] and p.lookup_case == "fallback:TimeoutError"
     assert (await rs.V2System().predict(_row("a"), "player", rank=False)).ranked_lectures == []
+
+
+async def test_v2_ask_scope_is_launched_and_owned_and_hides_the_lecture_title(monkeypatch):
+    from app.retrieval import pipeline
+    from app.retrieval.rerank import Outcome
+    from app.services import course_lookup as cl
+    seen = {}
+
+    async def fake_graded(question, scope, **kw):
+        seen.update(scope=list(scope), title=kw["lecture_title"])
+        return pipeline.RetrievalResult(Outcome.NOT_COVERED, [])
+
+    async def fake_search(question, scope, **kw):
+        return []
+
+    courses = [{"id": 2, "slug": "custom-library", "title": "A"}, {"id": 9, "slug": "react-perf", "title": "B"}]
+    monkeypatch.setattr(pipeline.catalog_service, "all_courses", lambda: courses)
+    monkeypatch.setattr(cl, "_is_launched", lambda cid: cid == 2)
+    monkeypatch.setattr(pipeline, "graded_search", fake_graded)
+    monkeypatch.setattr(pipeline, "search", fake_search)
+    await rs.own_every_course()
+    p = await rs.V2System().predict(_row("a", lecture_title="L"), "ask")
+    assert seen == {"scope": ["custom-library"], "title": None} and p.lookup_case == "not_covered"

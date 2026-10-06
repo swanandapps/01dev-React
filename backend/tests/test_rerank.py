@@ -213,16 +213,13 @@ async def test_slow_model_times_out_within_budget(monkeypatch):
 
 class _FakeClient:
     def __init__(self, choice):
-        self.opts, self._choice = {}, choice
+        self.kw, self._choice = {}, choice
         self.chat = self
         self.completions = self
 
-    def with_options(self, **kw):
-        self.opts = kw
-        return self
-
     async def create(self, **kw):
         from types import SimpleNamespace as NS
+        self.kw = kw
         return NS(choices=[self._choice])
 
 
@@ -239,4 +236,4 @@ async def test_complete_handles_refusal_length_and_none_content(monkeypatch, mes
     monkeypatch.setattr(llm, "client", client)
     out = await rr._complete("s", "u")
     assert {k: out[k] for k in want} == want
-    assert client.opts == {"timeout": rr.RERANK_TIMEOUT_S, "max_retries": 0}
+    assert client.kw["timeout"] == rr.RERANK_TIMEOUT_S

@@ -122,21 +122,28 @@ class V2System:
 
     async def predict(self, row: Row, mode: str, rank: bool = True) -> Prediction:
         from app.retrieval import pipeline
-        from app.services import catalog_service, tutor_agent
+        from app.services import tutor_agent
         t0 = time.perf_counter()
         if row.intent == "navigate":
             hit = await tutor_agent._locate_moment(row.navigate_phrase or row.question, row.scope_course)
             return Prediction(row.id, mode, [], NOT_COVERED, None,
                               moment_lecture=hit[0].lecture_id if hit else None, latency_ms=_ms(t0))
-        scope = [row.scope_course] if mode == "player" else launched_slugs(mode)
+        if mode == "player":
+            scope = [row.scope_course]
+        else:   # production Ask policy: launched AND owned (own_every_course enrollments, launched predicate patched in ask_all)
+            from app.services import course_lookup as cl
+            enrolled, _ = await cl._enrollments(EVAL_STUDENT)
+            scope = list(pipeline.ask_scope(enrolled))
         res = await pipeline.graded_search(row.question, scope, history=list(row.history),
-                                           lecture_title=row.lecture_title)
+                                           lecture_title=row.lecture_title if mode == "player" else None)
         ms = _ms(t0)
         best = res.best()
+        case = (f"fallback:{res.rerank_error}" if res.fallback
+                else f"{res.outcome.value}:salvaged" if res.rerank_error else res.outcome.value)
         return Prediction(row.id, mode, await self._ranking(row.question, scope, res) if rank else [],
                           res.outcome.value, best.candidate.chunk.lecture_id if best else None, latency_ms=ms,
                           shown_lectures=list(dict.fromkeys(g.candidate.chunk.lecture_id for g in res.cited())),
-                          fallback=res.fallback)
+                          fallback=res.fallback, lookup_case=case)
 
     @staticmethod
     async def _ranking(question: str, scope, res) -> list[str]:
@@ -144,5 +151,5 @@ class V2System:
         hybrid ranking, so recall@k sees every lecture the mode may cite."""
         from app.retrieval import pipeline
         graded = [g.candidate.chunk.lecture_id for g in res.graded]
-        rest = await pipeline.search(question, scope, limit=pipeline.VEC_K + pipeline.LEX_K, per_lecture=None)
+        rest = await pipeline.search(question, scope, limit=pipeline.VEC_K + pipeline.LEX_K)
         return list(dict.fromkeys(graded + [c.chunk.lecture_id for c in rest]))

@@ -208,6 +208,7 @@ async def _main(a) -> int:
         print(f"Refusing to run: --compare label {a.compare!r} has no report in {REPORTS}")
         return 2
     from app.eval import retrieval_systems as rs
+    from app.retrieval import titles as title_index
     from app.services import course_lookup as cl
     modes = a.modes.split(",")
     if a.all_launched and "ask_all" not in modes:
@@ -215,7 +216,7 @@ async def _main(a) -> int:
     await vector_store.initialize()
     await rs.own_every_course()
     if "player" in modes:
-        await cl.prewarm_titles()  # as the server does at startup
+        await title_index.prewarm()  # as the server does at startup
     if any(m.startswith("ask") for m in modes):
         from app.services import catalog_index
         await catalog_index.ensure_built()  # built once per process; keep that one-off cost out of the latencies

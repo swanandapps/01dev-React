@@ -2,6 +2,7 @@ import pytest
 
 from app.models import TranscriptChunk
 from app.services import course_lookup as cl
+from app.retrieval import titles as title_index
 from app.services import enrollment_service
 from app.services.catalog_index import CatalogEntry
 
@@ -525,15 +526,15 @@ async def test_title_embedding_failure_falls_back_to_overlap_and_is_not_retried_
     monkeypatch.setattr(cl.embedding_service, "use_openai", True)
     monkeypatch.setattr(cl.embedding_service, "client", Boom)
     monkeypatch.setattr(cl.embedding_service, "embed", fake_embed)
-    monkeypatch.setattr(cl, "_title_cache", {})
-    monkeypatch.setattr(cl, "_title_failed_until", {})
+    monkeypatch.setattr(title_index, "_cache", {})
+    monkeypatch.setattr(title_index, "_failed_until", {})
     monkeypatch.setattr(cl.catalog_service, "by_slug", lambda slug: {"chapters": [
         {"name": "c", "subchapters": ["10.1 - What Are ES Modules"]}]})
     first = await cl._title_scores("what are ES modules", "custom-library")
     second = await cl._title_scores("what are ES modules", "custom-library")
     assert first == second == {"10.1 - What Are ES Modules": 1.0}
     assert calls["n"] == 1
-    cl._title_failed_until["custom-library"] = 0.0  # cooldown over -> retries
+    title_index._failed_until["custom-library"] = 0.0  # cooldown over -> retries
     await cl._title_scores("what are ES modules", "custom-library")
     assert calls["n"] == 2
 
@@ -600,8 +601,8 @@ def _fake_embeddings_client(monkeypatch, behaviour):
 
     monkeypatch.setattr(cl.embedding_service, "use_openai", True)
     monkeypatch.setattr(cl.embedding_service, "client", SimpleNamespace(embeddings=SimpleNamespace(create=create)))
-    monkeypatch.setattr(cl, "_title_cache", {})
-    monkeypatch.setattr(cl, "_title_failed_until", {})
+    monkeypatch.setattr(title_index, "_cache", {})
+    monkeypatch.setattr(title_index, "_failed_until", {})
     return batches
 
 
@@ -611,9 +612,9 @@ async def test_prewarm_titles_embeds_every_course_in_one_call_and_fills_the_cach
     expected = {c["slug"]: cl._lecture_titles(c["slug"]) for c in cl.catalog_service.all_courses()}
     expected = {k: v for k, v in expected.items() if v}
     assert len(batches) == 1 and n_courses == len(expected) and n_titles == sum(map(len, expected.values()))
-    assert set(cl._title_cache) == set(expected)
+    assert set(title_index._cache) == set(expected)
     for slug, titles in expected.items():
-        assert cl._title_cache[slug][0] == titles and len(cl._title_cache[slug][1]) == len(titles)
+        assert title_index._cache[slug][0] == titles and len(title_index._cache[slug][1]) == len(titles)
 
 
 async def test_prewarm_failure_raises_but_sets_no_cooldown(monkeypatch):
@@ -623,7 +624,7 @@ async def test_prewarm_failure_raises_but_sets_no_cooldown(monkeypatch):
     _fake_embeddings_client(monkeypatch, boom)
     with pytest.raises(RuntimeError):
         await cl.prewarm_titles()
-    assert cl._title_failed_until == {} and cl._title_cache == {}
+    assert title_index._failed_until == {} and title_index._cache == {}
 
 
 async def test_question_embed_failure_does_not_trigger_the_title_cooldown(monkeypatch):
@@ -635,7 +636,7 @@ async def test_question_embed_failure_does_not_trigger_the_title_cooldown(monkey
 
     monkeypatch.setattr(cl.embedding_service, "embed", flaky)
     scores = await cl._title_scores("npm link", "custom-library")  # falls back for this turn only
-    assert scores and cl._title_failed_until == {}
+    assert scores and title_index._failed_until == {}
 
     async def ok(text):
         return [1.0, 0.0]
@@ -650,7 +651,7 @@ async def test_title_build_failure_still_sets_a_short_cooldown(monkeypatch):
 
     _fake_embeddings_client(monkeypatch, boom)
     await cl._title_scores("npm link", "custom-library")
-    assert 0 < cl._title_failed_until["custom-library"] - cl.time.monotonic() <= 60.0
+    assert 0 < title_index._failed_until["custom-library"] - cl.time.monotonic() <= 60.0
 
 
 def test_description_cap_keeps_product_engineerings_project():

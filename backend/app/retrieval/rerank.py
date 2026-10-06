@@ -69,8 +69,9 @@ async def _complete(system: str, user: str) -> Optional[dict]:
     from app.services.llm import GEN_MODEL, llm
     if not llm.client:
         return {"_error": "no client", "_text": ""}
-    resp = await llm.client.with_options(timeout=RERANK_TIMEOUT_S, max_retries=0).chat.completions.create(
+    resp = await llm.client.chat.completions.create(
         model=GEN_MODEL, temperature=0.0, max_tokens=MAX_TOKENS, response_format={"type": "json_object"},
+        timeout=RERANK_TIMEOUT_S,   # per-call; not with_options (that would drop the LangSmith wrapper)
         messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
     choice = resp.choices[0]
     text = choice.message.content or ""
@@ -175,10 +176,11 @@ async def rerank(question: str, cands: list[Candidate], *, intent: str = "explai
     try:
         raw = await asyncio.wait_for(_complete(SYSTEM, build_user_prompt(question, cands, intent)),
                                      timeout=RERANK_TIMEOUT_S)
-        parsed, why = None, "no reply"
+        parsed, why, salvaged = None, "no reply", False
         if isinstance(raw, dict) and "_error" in raw:
             why = str(raw["_error"])
             parsed = salvage_grades(raw.get("_text", ""), len(cands))
+            salvaged = bool(parsed)
             if parsed:
                 print(f"[rerank] salvaged {len(parsed)} grades from {why} output: {question[:80]!r}")
         elif raw is not None:
@@ -190,7 +192,7 @@ async def rerank(question: str, cands: list[Candidate], *, intent: str = "explai
     if not parsed:
         return _fall_back(question, cands, why)
     return RerankResult([Graded(c, *parsed.get(i, ("no", "not graded"))) for i, c in enumerate(cands, 1)],
-                        fallback=False)
+                        fallback=False, error=f"salvaged: {why}" if salvaged else None)
 
 
 def decide(graded: list[Graded]) -> tuple[Outcome, list[Graded]]:

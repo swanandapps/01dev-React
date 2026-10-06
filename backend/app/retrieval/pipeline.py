@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
-from app.retrieval import factory
+from app.retrieval import factory, titles
 from app.retrieval.base import Candidate, rrf_fuse
 from app.retrieval.rerank import CITED, MAX_CANDIDATES, Graded, Outcome, decide, rerank
 from app.retrieval.text import norm_title, tokenize
@@ -165,6 +165,7 @@ class RetrievalResult:
     intent: str = "explain"
     search_query: str = ""
     fallback: bool = False
+    rerank_error: Optional[str] = None   # why the reranker fell back, or "salvaged: ..." when it was repaired
     timings_ms: dict = field(default_factory=dict)
 
     def cited(self) -> list[Graded]:
@@ -182,23 +183,36 @@ def _ms(t0: float) -> float:
     return round((time.perf_counter() - t0) * 1000, 1)
 
 
-async def _title_candidates(question: str, scope: Sequence[str], have: set[str]) -> list[Candidate]:
-    """Lectures whose TITLE matches the question but whose chunks ranked in neither fused list, as rerank
-    candidates (their best chunk, scored on the same question embedding). Best-effort: [] on any failure."""
-    from app.services import course_lookup as cl  # lazy: course_lookup imports this module
+async def _title_candidates(question: str, scope: Sequence[str], cands: list[Candidate]) -> tuple[list[Candidate], list[Candidate]]:
+    """(kept fused candidates, title-matched additions). Lectures whose TITLE matches the question
+    (titles.TITLE_THRESHOLD) but that the kept fused slice lacks are added to the rerank pool (best title score
+    first, at most MAX_TITLE_ADDED, pool <= MAX_CANDIDATES) with their best chunk scored on the SAME question
+    embedding search already computed: one embedding, one best_chunk_for_lectures call across every slug.
+    Best-effort: any failure means no additions."""
+    kept = cands[:MAX_CANDIDATES]
     try:
-        found = []
+        scores = await titles.title_scores(_recent.get(question), scope, question=question)
+        matched: dict[str, float] = {}   # lecture_id -> best title score
         for slug in scope:
-            keys = {cl._norm(t) for t, sc in (await cl._title_scores(question, slug)).items()
-                    if sc >= cl.TITLE_THRESHOLD}
-            ids = [lid for lid in lecture_ids_for_titles(slug, keys).values() if lid not in have]
-            if ids:
-                found.extend((await best_chunk_for_lectures(question, ids)).values())
-        found.sort(key=lambda t: t[1], reverse=True)
-        return [Candidate(chunk=c, cosine=cos) for c, cos in found[:MAX_TITLE_ADDED]]
+            by_key = {norm_title(t): sc for (s, t), sc in scores.items() if s == slug and sc >= titles.TITLE_THRESHOLD}
+            for key, lid in lecture_ids_for_titles(slug, by_key).items():
+                matched[lid] = max(matched.get(lid, 0.0), by_key[key])
+        order = sorted(matched, key=matched.get, reverse=True)[:MAX_TITLE_ADDED]
+        k = len(order)
+        while True:   # the kept slice shrinks by the number added, which depends on what the slice already holds
+            kept = cands[:MAX_CANDIDATES - k]
+            have = {c.chunk.lecture_id for c in kept}
+            missing = [lid for lid in order if lid not in have]
+            if len(missing) >= k:
+                break
+            k = len(missing)
+        if not missing:
+            return kept, []
+        found = await best_chunk_for_lectures(question, missing)
+        return kept, [Candidate(chunk=found[lid][0], cosine=found[lid][1]) for lid in missing if lid in found]
     except Exception as e:  # noqa: BLE001 — the title signal is best-effort
         print(f"[pipeline] title candidates failed: {e!r}")
-        return []
+        return cands[:MAX_CANDIDATES], []
 
 
 async def graded_search(question: str, scope: Sequence[str], *, intent: str = "explain",
@@ -212,11 +226,11 @@ async def graded_search(question: str, scope: Sequence[str], *, intent: str = "e
     if not scope:
         return RetrievalResult(Outcome.NOT_COVERED, [], intent=intent, search_query=question)
     cands = await search(question, scope, lecture_id=lecture_id)
-    extra = [] if lecture_id else await _title_candidates(question, scope, {c.chunk.lecture_id for c in cands})
-    pool = cands[:MAX_CANDIDATES - len(extra)] + extra
+    kept, extra = (cands[:MAX_CANDIDATES], []) if lecture_id else await _title_candidates(question, scope, cands)
+    pool = kept + extra
     t_retrieve = _ms(t0)
     t1 = time.perf_counter()
     rr = await rerank(question, pool, intent=intent)
     outcome, ordered = decide(rr.graded)
     return RetrievalResult(outcome, ordered, intent=intent, search_query=question, fallback=rr.fallback,
-                           timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})
+                           rerank_error=rr.error, timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})

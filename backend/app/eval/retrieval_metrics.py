@@ -95,7 +95,7 @@ def summarize(rows: dict[str, Row], preds: list[Prediction]) -> dict:
         "partial_rate_pos": _mean(p.outcome == PARTIAL for _, p in pos),
         "false_cite_rate": _mean(p.outcome in (COVERED, PARTIAL) for _, p in neg),
         "navigate_accuracy": _mean(p.moment_lecture in r.gold_lecture_ids for r, p in nav),
-        "fallback_rate": _mean(p.fallback for _, p in ok),
+        "fallback_rate": _mean(p.fallback for _, p in explain),
         "latency_p50_ms": percentile(lat, 50),
         "latency_p95_ms": percentile(lat, 95),
         "counts": {"positives": len(pos), "negatives": len(neg), "navigate": len(nav),
