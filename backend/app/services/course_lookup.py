@@ -412,7 +412,7 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
                 link = deep_link(h)
                 page = f" — link: the01.dev{link}" if link else ""
                 lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}){page}")
-            if h.reason:
+            if h.reason and not h.reason.startswith("fallback:"):   # hide fallback mechanics from the model
                 lines.append(f"   why: {h.reason}")
             lines.append(f'   "{h.text[:600]}"')
     return "\n".join(lines)

@@ -669,3 +669,29 @@ def test_player_outline_does_not_repeat_the_description():
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
     snippet = " ".join(course["description"].split())[:60]
     assert facts.count(snippet) == 1
+
+
+async def test_fallback_reasons_are_not_shown_to_the_model(patch_sources, monkeypatch):
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], enrolled_ids=[2])
+    out = await cl.course_lookup("q", "s")
+    out.hits[0].reason = "fallback: top of both vector and lexical search, cosine above threshold"
+    assert "why:" not in cl.render_facts(out, cl.ChatScope())
+    out.hits[0].reason = "defines npm link"
+    assert "   why: defines npm link" in cl.render_facts(out, cl.ChatScope())
+
+
+async def test_out_of_scope_chunk_graded_answers_is_dropped_everywhere(patch_sources, monkeypatch):
+    patch_sources(transcripts=[(NPM_CHUNK, "answers")], enrolled_ids=[2, 11])
+
+    async def leaky(question, scope, **kw):
+        gs = [Graded(Candidate(chunk=MEMO_CHUNK, vec_score=0.9), "answers", "react-perf leak"),
+              Graded(Candidate(chunk=NPM_CHUNK, vec_score=0.6), "answers", "in scope")]
+        outcome, ordered = decide(gs)
+        return pipeline.RetrievalResult(outcome, ordered, search_query=question)
+
+    monkeypatch.setattr(pipeline, "graded_search", leaky)
+    out = await cl.course_lookup("q", "s")
+    assert [h.course_slug for h in out.hits] == ["custom-library"]
+    facts = cl.render_facts(out, cl.ChatScope())
+    assert "React Performance" not in facts and "react-perf leak" not in facts
+    assert {c["course_id"] for c in cl.to_cards(out)} == {"custom-library"}

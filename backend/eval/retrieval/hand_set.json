@@ -16,5 +16,8 @@
   {"id": "hand-neg-k8s", "question": "what are Kubernetes pods?", "scope_course": "react-perf", "expect": "not_covered", "style": "off_topic", "source": "hand"},
   {"id": "hand-neg-sourdough", "question": "how do I bake sourdough bread?", "scope_course": "custom-library", "expect": "not_covered", "style": "off_topic", "source": "hand"},
   {"id": "hand-followup-np", "question": "ok how do I use it to publish?", "scope_course": "custom-library", "expect": "covered", "gold_lecture_ids": ["custom-library-10-0"], "style": "follow_up", "source": "hand", "history": [{"role": "user", "content": "what is the np package?"}, {"role": "assistant", "content": "np is a small tool that runs the checks and steps for publishing an npm package."}]},
-  {"id": "hand-followup-lecture", "question": "why does wrapping it like this create its own scope?", "scope_course": "custom-library", "expect": "covered", "gold_lecture_ids": ["custom-library-5-2"], "style": "follow_up", "source": "hand", "lecture_title": "6.5 - IIFE, To The Rescue"}
+  {"id": "hand-followup-lecture", "question": "why does wrapping it like this create its own scope?", "scope_course": "custom-library", "expect": "covered", "gold_lecture_ids": ["custom-library-5-2"], "style": "follow_up", "source": "hand", "lecture_title": "6.5 - IIFE, To The Rescue"},
+  {"id": "hand-vague-weak", "question": "what am I weak at?", "scope_course": "custom-library", "expect": "not_covered", "style": "vague", "source": "hand"},
+  {"id": "hand-vague-this", "question": "what does this mean?", "scope_course": "custom-library", "expect": "not_covered", "style": "vague", "source": "hand"},
+  {"id": "hand-vague-example", "question": "give me an example", "scope_course": "custom-library", "expect": "not_covered", "style": "vague", "source": "hand", "lecture_title": "1.1 - What is this course"}
 ]

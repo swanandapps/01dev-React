@@ -110,3 +110,8 @@ def test_prompt_has_the_enrolled_related_case_and_why_lines():
     assert "CASE: ENROLLED_RELATED" in text
     assert "Your course touches on this in {lecture} at {mm:ss} — {link}" in text
     assert 'may carry a "why:" line' in text
+
+
+def test_enrolled_match_says_partial_only_touches_on_it():
+    text = " ".join(loader.read_grounding_prompt().split())
+    assert "A match marked PARTIAL only touches on it: if you mention it, say the course touches on it there, never that it covers it." in text

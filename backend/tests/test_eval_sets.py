@@ -32,7 +32,9 @@ def test_styles_rotate_and_hand_set_loads():
     assert len({r["id"] for r in rows}) == len(rows)
     for r in rows:
         Row.from_dict(r)  # every field is a Row field
-    assert len(rows) == 18
+    assert len(rows) == 21
+    assert {r["id"] for r in rows if r["style"] == "vague"} == {"hand-vague-weak", "hand-vague-this", "hand-vague-example"}
+    assert all(r["expect"] == "not_covered" and not r.get("gold_lecture_ids") for r in rows if r["style"] == "vague")
     tok = next(r for r in rows if r["id"] == "hand-tokenizer-loop")
     assert tok["gold_lecture_ids"] == ["programming-language-5-1"]
 
