@@ -12,6 +12,10 @@ used and production data is never read or written:
                  checks.
   --full         also run each question through the full tutor (real OpenAI key from
                  backend/.env) and print the answer (long ones cut to head … tail) and first-token latency.
+  --player       instead of the Ask questions, run in-player tutor turns on Build a Custom
+                 Library (real model, twice each): course-first answers, find_moment ->
+                 navigate, no other course named. Records lookup case, hits, find_moment
+                 calls, navigate, first-token latency and the full answer.
   --whole        with --full, print whole answers, uncut.
 
 With --full every question runs as a fresh student ("<uid>-q1", "<uid>-q2", …, each
@@ -24,6 +28,7 @@ DATABASE_URL, retrieval may upsert missing chunk embeddings into rag_chunks
 case doesn't match or, under --full, any turn ends in an error event.
 """
 import asyncio
+import re
 import sys
 import time
 from pathlib import Path
@@ -52,6 +57,91 @@ QUESTIONS = [
 ]
 
 
+PLAYER_COURSE = "custom-library"
+L11, L81, L11P, L101 = ("1.1 - What is this course", "8.1 - The `npm link` command",
+                        "11.1 - Publishing using `np`", "10.1 - What Are ES Modules")
+# (id, question, lecture on screen, expected navigate target or None = must not navigate)
+PLAYER_QUESTIONS = [
+    ("B1", "take me to where you publish the npm package", L11, L11P),
+    ("B2", "how does the event loop work", L81, None),
+    ("B3", "give me an example", L11, None),
+    ("1", "take me to the part where you write the commands for publishing the npm library", L11, L11P),
+    ("2", "how does the event loop work?", L81, None),
+    ("3", "what are ES modules?", L81, None),
+    ("4", "take me to ES modules", L81, L101),
+    ("5", "explain React reconciliation", L81, None),
+    ("6", "give me an example", L11, None),
+    ("7", "what does np do that npm publish doesn't?", L11P, None),
+]
+
+
+async def player_checks(uid: str) -> int:
+    from app.services import tutor_agent
+    from app.services.vector_store import vector_store
+    others = [c["title"] for c in catalog_service.all_courses() if c["slug"] != PLAYER_COURSE]
+    calls: list[dict] = []
+    orig = tutor_agent._locate_moment
+
+    async def spy(what, slug):
+        r = await orig(what, slug)
+        calls.append({"what": what, "result": None if r is None else
+                      {"lecture": r[0].lecture_title, "start": r[0].start_time, "score": round(r[1], 3)}})
+        return r
+    tutor_agent._locate_moment = spy
+    failures = 0
+    for cid, q, lecture, jump_to in PLAYER_QUESTIONS:
+        for run in (1, 2):
+            student = f"{uid}-p{cid}-r{run}"
+            scope = ChatScope(course_slug=PLAYER_COURSE, lecture_title=lecture, in_player=True)
+            lk = await course_lookup(q, student, scope)
+            calls.clear()
+            req = chat_pipeline.TurnRequest(question=q, student_id=student, scope=scope, history=[],
+                                            memory_slug=PLAYER_COURSE)
+            t0, first, text, navs, problems = time.perf_counter(), None, [], [], []
+            async for e in chat_pipeline.chat_turn(req):
+                if e["type"] == "token":
+                    first = first or time.perf_counter() - t0
+                    text.append(e["value"])
+                elif e["type"] == "navigate":
+                    navs.append(e)
+                elif e["type"] == "error":
+                    problems.append(f"error event: {e.get('message')}")
+            answer = "".join(text).strip()
+            low = answer.lower()
+            named = [t for t in others if t.lower() in low]
+            if named:
+                problems.append(f"names another course: {named}")
+            if re.search(r"the01\.dev/course/(?!2\b)\d+", answer):
+                problems.append("links another course page")
+            if len(navs) > 1:
+                problems.append(f"{len(navs)} navigate events")
+            if jump_to is None and navs:
+                problems.append(f"jumped when it should not: {navs[0]}")
+            if jump_to is not None and not navs:
+                problems.append("no navigate event")
+            if jump_to is not None and navs and navs[-1]["lecture_title"] != jump_to:
+                problems.append(f"jumped to {navs[-1]['lecture_title']!r}, expected {jump_to!r}")
+            if navs and not any(c.course_id == PLAYER_COURSE and c.lecture_title == navs[-1]["lecture_title"]
+                                and c.start_time == navs[-1]["start_time"] for c in vector_store.chunks):
+                problems.append("navigate start_time is not a real chunk start")
+            failures += bool(problems)
+            print(f"=== case {cid} run {run} [{'auto-ok' if not problems else 'AUTO-FAIL'}] watching {lecture!r}")
+            print(f"Q: {q}")
+            print(f"LookupCase: {lk.case.value}")
+            for h in lk.hits:
+                band = "STRONG" if h.via_title or h.score >= 0.54 else "WEAK"
+                print(f"  hit: {h.title} @ {h.start_time}s score={h.score:.3f} band={band} via_title={h.via_title}")
+            cur = lk.current_excerpt
+            print(f"  current: {cur.title + ' @ ' + str(cur.start_time) + 's ' + format(cur.score, '.3f') if cur else None}")
+            print(f"find_moment calls: {calls or 'none'}")
+            print(f"navigate: {navs or 'none'}")
+            print(f"first token: {first or 0:.2f}s")
+            for p in problems:
+                print(f"  X {p}")
+            print(f"ANSWER: {answer}\n")
+    return failures
+
+
 def _arg(flag: str) -> str | None:
     if flag in sys.argv:
         i = sys.argv.index(flag)
@@ -68,10 +158,15 @@ async def main() -> None:
 
     # --full writes audit/memory/skill rows and --enroll writes enrollments: never outside
     # the in-memory store. Checked before any store or OpenAI call.
-    if (full or enroll_arg is not None) and not isinstance(store, InMemoryStore):
-        print(f"demo_check: --full and --enroll only run against the in-memory store, not "
+    player = "--player" in sys.argv
+    if (full or player or enroll_arg is not None) and not isinstance(store, InMemoryStore):
+        print(f"demo_check: --full, --player and --enroll only run against the in-memory store, not "
               f"{type(store).__name__}. Re-run with `env DATABASE_URL= ...`.")
         sys.exit(2)
+    if player:
+        assert isinstance(store, InMemoryStore)
+        print(f"store: {type(store).__name__} · in-player checks on {PLAYER_COURSE}\n")
+        sys.exit(1 if await player_checks(uid) else 0)
 
     ids: list[int] = []
     if enroll_arg is not None:
