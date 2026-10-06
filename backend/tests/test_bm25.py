@@ -27,3 +27,8 @@ def test_repeated_query_terms_count_once_and_ties_break_by_position():
 
 def test_empty_corpus():
     assert BM25Index([]).search(["np"], None, 5) == []
+
+
+def test_k_zero_or_negative_returns_empty():
+    assert BM25Index(DOCS).search(["np"], None, 0) == []
+    assert BM25Index(DOCS).search(["np"], None, -1) == []
