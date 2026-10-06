@@ -4,6 +4,8 @@ import os
 from typing import List, Optional
 
 from app.models import TranscriptChunk, SearchResult
+from app.retrieval.embed_cache import EmbedCache
+from app.retrieval.enrichment import apply_enrichment, embed_input, text_sha
 from app.services.embeddings import embedding_service
 
 _STOP_WORDS = {
@@ -66,7 +68,7 @@ class InMemoryVectorStore:
             data = json.load(f)
 
         self._indexed_for = (None, None)  # force norms/course index rebuild after re-init
-        self.chunks = [TranscriptChunk(**item) for item in data]
+        self.chunks = apply_enrichment([TranscriptChunk(**item) for item in data])
         self._embeddings = []
 
         if os.getenv("DATABASE_URL") and embedding_service.use_openai:
@@ -78,8 +80,28 @@ class InMemoryVectorStore:
                 self._embeddings = []
 
         print(f"Computing embeddings for {len(self.chunks)} transcript chunks (in-memory)...")
-        self._embeddings = await embedding_service.embed_many([c.text for c in self.chunks])
+        self._embeddings = await self._embed_chunks(self.chunks)
         print(f"Vector store ready — {len(self.chunks)} chunks indexed (in-memory).")
+
+    async def _embed_chunks(self, chunks: List[TranscriptChunk]) -> List[List[float]]:
+        """Embed embed_text (raw text for un-enriched chunks), <= EMBED_BATCH inputs per call. With
+        RAG_EMBED_CACHE set (local eval only) vectors are read from / appended to the disk cache."""
+        cache = EmbedCache.from_env() if embedding_service.use_openai else None
+        texts = [embed_input(c) for c in chunks]
+        if cache is None:
+            return await embedding_service.embed_many(texts, batch_size=EMBED_BATCH)
+        keys = [c.content_hash or text_sha(t) for c, t in zip(chunks, texts)]
+        have = cache.get_many(keys)
+        todo = [i for i, k in enumerate(keys) if k not in have]
+        for start in range(0, len(todo), EMBED_BATCH):
+            batch = todo[start:start + EMBED_BATCH]
+            embs = await embedding_service.embed_many([texts[i] for i in batch], batch_size=EMBED_BATCH)
+            fresh = {keys[i]: e for i, e in zip(batch, embs)}
+            cache.put_many(fresh)
+            have.update(fresh)
+        if todo:
+            print(f"Embedding cache: {len(todo)} embedded, {len(chunks) - len(todo)} from {cache.path}")
+        return [have[k] for k in keys]
 
     async def _init_with_pgvector(self):
         """Reuse persisted embeddings; only embed (and store) chunks not yet cached."""
@@ -87,21 +109,22 @@ class InMemoryVectorStore:
 
         pool = await get_pool()
         rows = await pool.fetch(
-            "select chunk_id, text, embedding::text as emb from rag_chunks where embedding is not null"
+            "select chunk_id, text, meta->>'content_hash' as h, embedding::text as emb "
+            "from rag_chunks where embedding is not null"
         )
         cached = {r["chunk_id"]: _parse_vec(r["emb"]) for r in rows}
-        stored_text = {r["chunk_id"]: r["text"] for r in rows}
+        stored_key = {r["chunk_id"]: (r["h"] or r["text"]) for r in rows}
 
-        # Re-embed chunks whose id is new OR whose text changed since it was stored.
+        # Re-embed chunks whose id is new OR whose embed_text (content_hash) / text changed since stored.
         new_count = sum(1 for c in self.chunks if c.chunk_id not in cached)
         missing = [
             c for c in self.chunks
-            if c.chunk_id not in cached or stored_text.get(c.chunk_id) != c.text
+            if c.chunk_id not in cached or stored_key.get(c.chunk_id) != (c.content_hash or c.text)
         ]
         changed_count = len(missing) - new_count
         for i in range(0, len(missing), EMBED_BATCH):
             batch = missing[i:i + EMBED_BATCH]
-            embs = await embedding_service.embed_many([c.text for c in batch])
+            embs = await embedding_service.embed_many([embed_input(c) for c in batch])
             await pool.executemany(
                 """insert into rag_chunks (chunk_id, text, meta, embedding)
                    values ($1, $2, $3, $4::vector)

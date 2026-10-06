@@ -195,6 +195,7 @@ def _git_sha() -> str:
 
 
 async def _main(a) -> int:
+    os.environ.setdefault("RAG_EMBED_CACHE", str(BACKEND / "data" / "cache" / "embeddings"))
     from app.services.embeddings import embedding_service
     from app.services.vector_store import vector_store
     if os.getenv("DATABASE_URL"):

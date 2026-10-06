@@ -29,15 +29,17 @@ class FakeClient:
 
 
 class FakePool:
-    def __init__(self, cached=()):
+    def __init__(self, cached=(), hashes=None):
         # list of ids (stored text == seed text "t"*(i+1)) or dict id -> stored text
         if not isinstance(cached, dict):
             cached = {c: "t" * (int(c.split("-")[1]) + 1) for c in cached}
         self.cached = dict(cached)
+        self.hashes = dict(hashes or {})
         self.inserted = []
 
     async def fetch(self, sql, *a):
-        return [{"chunk_id": c, "text": t, "emb": "[0.5,0.5]"} for c, t in self.cached.items()]
+        return [{"chunk_id": c, "text": t, "h": self.hashes.get(c), "emb": "[0.5,0.5]"}
+                for c, t in self.cached.items()]
 
     async def executemany(self, sql, rows):
         self.inserted.extend(list(rows))
@@ -103,6 +105,7 @@ def test_no_missing_chunks_no_embed_calls(monkeypatch):
 
 
 def test_inmemory_path_batches(monkeypatch):
+    monkeypatch.delenv("RAG_EMBED_CACHE", raising=False)
     client = FakeClient()
     monkeypatch.setattr(embedding_service, "use_openai", True)
     monkeypatch.setattr(embedding_service, "client", client)
@@ -156,3 +159,50 @@ def test_embed_many_raises_on_length_mismatch(monkeypatch):
     monkeypatch.setattr(embedding_service, "client", FakeClient(short=True))
     with pytest.raises(RuntimeError):
         asyncio.run(embedding_service.embed_many(["a", "bb", "ccc"]))
+
+
+def _seed_two():
+    return [dict(chunk_id=f"custom-library-5-2-{i}", course_id="custom-library", course_title="Build a Custom Library",
+                 lecture_id="custom-library-5-2", lecture_title="6.5 - IIFE, To The Rescue", text=t,
+                 start_time=60 * i, end_time=60 * i + 60, embedding=[])
+            for i, t in enumerate(["We wrap it.", "Then call it."])]
+
+
+def test_initialize_enriches_and_embeds_embed_text(monkeypatch):
+    client = FakeClient()
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", client)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("RAG_EMBED_CACHE", raising=False)
+    monkeypatch.setattr(vs, "json", SimpleNamespace(load=lambda f: _seed_two()))
+    store = vs.InMemoryVectorStore()
+    asyncio.run(store.initialize())
+    assert store.chunks[1].embed_text.startswith("Build a Custom Library › ")
+    assert "Previously: We wrap it." in store.chunks[1].embed_text
+    assert [t for c in client.calls for t in c] == [c.embed_text for c in store.chunks]
+    assert store.chunks[1].text == "Then call it."          # raw text unchanged
+
+
+def test_embed_cache_skips_openai_on_the_second_boot(monkeypatch, tmp_path):
+    client = FakeClient()
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    monkeypatch.setattr(embedding_service, "client", client)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("RAG_EMBED_CACHE", str(tmp_path))
+    monkeypatch.setattr(vs, "json", SimpleNamespace(load=lambda f: _seed_two()))
+    first = vs.InMemoryVectorStore()
+    asyncio.run(first.initialize())
+    n_calls = len(client.calls)
+    second = vs.InMemoryVectorStore()
+    asyncio.run(second.initialize())
+    assert n_calls == 1 and len(client.calls) == 1          # second boot: all from the cache
+    assert second._embeddings == first._embeddings
+
+
+def test_pg_path_reembeds_when_the_content_hash_changes(monkeypatch):
+    client = FakeClient()
+    store = _setup(monkeypatch, 2, client, FakePool(cached=["c-0", "c-1"], hashes={"c-0": "same", "c-1": "old"}))
+    store.chunks[0].content_hash, store.chunks[0].embed_text = "same", "E0"
+    store.chunks[1].content_hash, store.chunks[1].embed_text = "new", "E1"
+    asyncio.run(store._init_with_pgvector())
+    assert client.calls == [["E1"]]
