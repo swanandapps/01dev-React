@@ -16,7 +16,7 @@ class EmbeddingService:
                 from app.services.tracing import maybe_trace
                 # timeout + bounded exponential-backoff retries (SDK-native)
                 self.client = maybe_trace(AsyncOpenAI(api_key=self.api_key, timeout=30.0, max_retries=3))
-                print("EmbeddingService: using OpenAI {EMBED_MODEL}")
+                print(f"EmbeddingService: using OpenAI {EMBED_MODEL}")
             except ImportError:
                 self.use_openai = False
                 print("EmbeddingService: openai package not found, using local fallback")
