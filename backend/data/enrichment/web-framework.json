@@ -22,21 +22,20 @@
   },
   "web-framework-0-0-1": {
    "text_sha": "e254af302292fe14",
-   "summary": "Outlines the course goal to build a framework with middleware, routing, and response handling, emphasizing understanding every underlying line of code.",
+   "summary": "The course teaches how to build a web framework from scratch, starting with understanding HTTP basics like requests, headers, bodies, and status codes.",
    "keywords": [
     "createApp",
     "app.use",
     "app.get",
-    "middleware",
-    "routing",
     "res.json",
-    "HTTP headers",
+    "HTTP basics",
+    "request",
+    "headers",
     "status codes"
    ],
    "questions": [
-    "What will the final Tern framework code look like for handling routes and middleware?",
-    "What foundational HTTP concepts are covered in chapter one?",
-    "Why is it important to understand every line of code in a web framework?"
+    "What will I learn in the first chapter of the course?",
+    "What does the example code with createApp and app.get demonstrate?"
    ]
   },
   "web-framework-0-0-2": {
@@ -58,124 +57,123 @@
   },
   "web-framework-0-0-3": {
    "text_sha": "207537f7835d5b0c",
-   "summary": "Explains building a router starting from simple string matching to a radix tree for efficient routing with dynamic parameters and wildcards.",
+   "summary": "The course covers plugin design and implementation, including building a JSON/form data body parser and static file server, using a consistent file layout with Node 18+.",
    "keywords": [
-    "router",
-    "radix tree",
-    "dynamic parameters",
-    "wildcards",
-    "routing performance",
-    "if statement routing"
+    "plugins",
+    "body parser",
+    "JSON",
+    "form data",
+    "static file server",
+    "Node 18",
+    "file layout",
+    "server.js"
    ],
    "questions": [
-    "What is a radix tree and why is it used in routing?",
-    "How do dynamic parameters like :id work in routing?",
-    "What are the limitations of naive string matching for routing?"
+    "What plugins will be built in the course?",
+    "What Node version is required for the course?",
+    "What files are included in the project layout?"
    ]
   },
   "web-framework-0-0-4": {
    "text_sha": "f9ded08f819186e2",
-   "summary": "Introduces middleware patterns including error-handling middleware with four arguments, explaining Express-style next function usage.",
+   "summary": "Typing code along helps learn by debugging, and the course prioritizes clear, educational code over production-ready speed or features.",
    "keywords": [
-    "middleware",
-    "next function",
-    "error-handling middleware",
-    "Express middleware pattern"
+    "typing along",
+    "clear code",
+    "teaching framework",
+    "production frameworks",
+    "async code"
    ],
    "questions": [
-    "What is middleware in a web framework?",
-    "How does error-handling middleware differ from regular middleware?",
-    "What is the role of the next function in middleware?"
+    "Why should I type code instead of copying?",
+    "Is the framework built production-ready?",
+    "What programming concepts should I know before starting?"
    ]
   },
   "web-framework-0-0-5": {
    "text_sha": "2d345adf7a5dea94",
-   "summary": "Describes adding user-friendly request and response objects with helpers like query, params, status, json, send, and support for HTML and binary data.",
+   "summary": "HTTP was invented by Tim Berners-Lee at CERN to enable linked documents across computers using URLs, HTML, and the HyperText Transfer Protocol.",
    "keywords": [
-    "req object",
-    "res object",
-    "query params",
-    "status code",
-    "res.json",
-    "res.send",
-    "HTML response",
-    "binary response"
+    "Tim Berners-Lee",
+    "CERN",
+    "URL",
+    "HTML",
+    "HTTP",
+    "linked documents",
+    "web history"
    ],
    "questions": [
-    "What helper methods are added to the request and response objects?",
-    "How do you send JSON or HTML responses in a custom framework?",
-    "What is the purpose of query and params on the request object?"
+    "Who invented HTTP and why?",
+    "What three things were needed for the web idea to work?",
+    "What does HTTP stand for?"
    ]
   },
   "web-framework-0-0-6": {
    "text_sha": "777ef01804a38f77",
-   "summary": "Covers designing a plugin system and building plugins like a JSON/form body parser and a static file server.",
+   "summary": "HTTP 0.9 was a simple protocol where clients requested HTML documents with a GET line and servers responded with HTML only, without headers or status codes.",
    "keywords": [
-    "plugin system",
-    "body parser",
-    "JSON parser",
-    "form data parser",
-    "static file server",
-    "framework plugins"
+    "HTTP 0.9",
+    "GET",
+    "index.html",
+    "HTML only",
+    "no headers",
+    "no status codes",
+    "early HTTP"
    ],
    "questions": [
-    "How can a plugin system be designed for a web framework?",
-    "What plugins are commonly built for web frameworks?",
-    "How does a body parser plugin work?"
+    "What was the format of HTTP 0.9 requests and responses?",
+    "Why couldn't HTTP 0.9 support images or other content types?",
+    "How did servers indicate errors in HTTP 0.9?"
    ]
   },
   "web-framework-0-0-7": {
    "text_sha": "a19945c297331fad",
-   "summary": "Compares Tern's routing speed to Express and Fastify, discusses production differences, and outlines stable file structure for the project.",
+   "summary": "HTTP 1.0 introduced versioning, headers, and status codes; HTTP 1.1 added persistent connections and the Host header to support multiple websites on one server.",
    "keywords": [
-    "routing performance",
-    "Fastify vs Express",
-    "Tern framework",
-    "file layout",
-    "server.js",
-    "parser.js",
-    "router.js"
+    "HTTP 1.0",
+    "HTTP 1.1",
+    "persistent connections",
+    "Host header",
+    "status codes",
+    "versioning"
    ],
    "questions": [
-    "Why is Fastify faster than Express in routing?",
-    "What files make up the Tern framework's codebase?",
-    "How does Tern compare to production frameworks?"
+    "What features did HTTP 1.0 add?",
+    "What is the significance of persistent connections in HTTP 1.1?",
+    "Why is the Host header important?"
    ]
   },
   "web-framework-0-0-8": {
    "text_sha": "7a3cf46af88eb199",
-   "summary": "Explains HTTP's origin, its stateless text protocol design over TCP, and the fundamental client-server request-response model.",
+   "summary": "HTTP is a stateless, text-based protocol over TCP where clients initiate requests and servers respond once; this design enables scalable web servers and supports plugins like cookies.",
    "keywords": [
     "HTTP",
-    "stateless protocol",
-    "TCP",
-    "request-response",
-    "HTTP 0.9",
-    "HTTP 1.0",
-    "HTTP 1.1",
-    "persistent connections"
+    "stateless",
+    "text protocol",
+    "cookies",
+    "sessions",
+    "plugins"
    ],
    "questions": [
-    "What problem did HTTP solve in 1989?",
     "Why is HTTP considered stateless?",
-    "How does HTTP use TCP to send requests and responses?"
+    "How does HTTP use TCP streams?",
+    "Can the server send data without a client request?"
    ]
   },
   "web-framework-0-1-0": {
    "text_sha": "530010a87154b1ae",
-   "summary": "Use curl with the -v flag to observe the HTTP wire format showing the request line with method, target, and protocol version.",
+   "summary": "HTTP requests on the wire start with a request line containing method, path, and version separated by spaces, as shown using curl with the -v flag.",
    "keywords": [
     "HTTP wire format",
     "curl -v",
     "HTTP request line",
-    "method",
-    "target",
-    "protocol version"
+    "GET / HTTP/1.1",
+    "method"
    ],
    "questions": [
-    "How can I see the raw HTTP request sent by a client?",
-    "What are the three parts of an HTTP request line?",
-    "How do I use curl to inspect HTTP traffic?"
+    "What does an HTTP request line look like on the wire?",
+    "How can I see the raw HTTP request and response using curl?",
+    "What are the three parts of an HTTP request line?"
    ]
   },
   "web-framework-0-1-1": {
@@ -198,21 +196,19 @@
   },
   "web-framework-0-1-2": {
    "text_sha": "12f2cbef2f412757",
-   "summary": "HTTP requests and responses use CRLF sequences to separate lines, with headers ending in a double CRLF, and responses start with a status line including version, status code, and reason phrase.",
+   "summary": "HTTP requests end headers with a double CRLF sequence and responses start with a status line followed by headers, a blank line, and then the body bytes.",
    "keywords": [
-    "CRLF",
     "HTTP request bytes",
     "end of headers",
     "HTTP response status line",
-    "status code",
-    "reason phrase",
     "Content-Type",
-    "Content-Length"
+    "Content-Length",
+    "HTTP/1.1 200 OK"
    ],
    "questions": [
     "What byte sequence marks the end of HTTP headers?",
-    "What are the components of an HTTP response status line?",
-    "How are headers separated in HTTP messages?"
+    "What is the format of an HTTP response status line?",
+    "How are headers and body separated in HTTP messages?"
    ]
   },
   "web-framework-0-1-3": {
@@ -321,19 +317,21 @@
   },
   "web-framework-0-2-4": {
    "text_sha": "7c959e94c4c832e5",
-   "summary": "The first digit of status codes guides client and proxy behavior, so APIs should use codes honestly; the lecture concludes with a preview of building a TCP server in the next chapter.",
+   "summary": "HTTP status code first digits categorize responses for clients and proxies, so APIs should use correct codes like 404 for missing resources, not 200 with error messages.",
    "keywords": [
-    "HTTP status code first digit",
+    "HTTP status codes",
+    "status code categories",
+    "404",
+    "200",
     "API design",
-    "HTTP client behavior",
-    "net.createServer",
-    "TCP server",
-    "HTTP parsing"
+    "clients",
+    "proxies",
+    "caches"
    ],
    "questions": [
-    "Why is the first digit of an HTTP status code important?",
-    "How should APIs use HTTP status codes correctly?",
-    "What is the next step after learning HTTP basics in this course?"
+    "Why does the first digit of an HTTP status code matter?",
+    "What status code should an API return when a resource doesn't exist?",
+    "How do clients and proxies use HTTP status code categories?"
    ]
   },
   "web-framework-1-0-0": {
@@ -355,19 +353,19 @@
   },
   "web-framework-1-0-1": {
    "text_sha": "f8953f8b1f154276",
-   "summary": "Create a TCP server with net.createServer that logs client connections and listens on port 3000, demonstrating the server waits for connections and curl can connect but hangs without a response.",
+   "summary": "Use net.createServer in Node.js to create a TCP server that listens on port 3000 and logs when a client connects, demonstrated by connecting with curl.",
    "keywords": [
     "net.createServer",
+    "Node.js",
     "socket",
     "server.listen",
-    "port 3000",
     "curl",
-    "TCP connection"
+    "TCP server"
    ],
    "questions": [
-    "How do you log when a client connects using net.createServer?",
-    "What happens when you connect to a TCP server with curl but the server sends no response?",
-    "How do you start a server listening on a specific port with Node.js net module?"
+    "How do you create a TCP server in Node.js?",
+    "What happens when a client connects to a net.createServer server?",
+    "Why does curl hang when connecting to a server that doesn't send a response?"
    ]
   },
   "web-framework-1-0-2": {
@@ -388,19 +386,19 @@
   },
   "web-framework-1-0-3": {
    "text_sha": "13754c923e784c96",
-   "summary": "Use JSON.stringify on chunk.toString() to visualize CRLF characters in HTTP headers, and explain that data events represent byte chunks, not full HTTP requests.",
+   "summary": "Show how to inspect raw incoming data chunks by printing JSON.stringify of chunk.toString(), revealing HTTP header line endings and explaining that data events are raw byte arrivals, not full requests.",
    "keywords": [
-    "JSON.stringify",
-    "CRLF",
     "chunk.toString()",
-    "HTTP headers",
+    "JSON.stringify",
     "data event",
-    "TCP stream"
+    "HTTP headers",
+    "keep-alive",
+    "POST request"
    ],
    "questions": [
-    "How can you make CRLF characters visible when logging HTTP request data?",
-    "Why doesn't one data event always correspond to one HTTP request?",
-    "What does a data event on a TCP socket represent?"
+    "How can you see the raw bytes received on a socket in Node.js?",
+    "What do the backslash r backslash n sequences represent in HTTP headers?",
+    "Why are data events not equivalent to complete HTTP requests?"
    ]
   },
   "web-framework-1-0-4": {
@@ -475,57 +473,55 @@
   },
   "web-framework-1-1-3": {
    "text_sha": "a3e3984997e25757",
-   "summary": "Separate the request target into pathname and query string by splitting at the question mark; parse content-length header to determine body length and extract the body from the buffer.",
+   "summary": "parseRequest reads the Content-Length header to determine the HTTP request body length, extracts the body from the buffer if fully received, and returns the consumed byte count for pipelined requests.",
    "keywords": [
-    "request target",
-    "pathname",
-    "query string",
-    "content-length",
-    "HTTP body",
-    "buffer slicing",
-    "body parsing"
+    "parseRequest",
+    "Content-Length",
+    "HTTP body parsing",
+    "buffer.subarray",
+    "consumed bytes",
+    "pipelined requests"
    ],
    "questions": [
-    "How do you split the HTTP request target into path and query string?",
-    "How is the Content-Length header used to parse the HTTP request body?",
-    "What do you do if the buffer does not yet contain the full body?"
+    "How does parseRequest determine the length of the HTTP request body?",
+    "What does parseRequest return to indicate how many bytes were consumed?",
+    "Why is it important to return the consumed byte count when parsing requests?"
    ]
   },
   "web-framework-1-1-4": {
    "text_sha": "b1298c2e67a1516b",
-   "summary": "Accumulate incoming data chunks in a pending buffer, repeatedly parse requests from it, handle errors by sending 400 responses, and note the need to limit header and body sizes to prevent memory exhaustion.",
+   "summary": "The server accumulates incoming data chunks in a pending buffer, repeatedly parses complete requests with parseRequest, handles errors by sending 400 responses, and logs parsed request details including method, path, headers, and body.",
    "keywords": [
     "Buffer.concat",
     "data event",
-    "pending buffer",
     "parseRequest loop",
-    "error handling",
-    "HTTP 400",
-    "memory limits",
-    "curl testing"
+    "try catch",
+    "400 response",
+    "curl -d",
+    "HTTP request parsing"
    ],
    "questions": [
-    "How do you handle multiple HTTP requests arriving in one data event?",
-    "How do you respond to malformed HTTP requests during parsing?",
-    "Why is it important to limit header and body sizes in a real server?"
+    "How does the server handle incoming data chunks to parse multiple requests?",
+    "What happens if parseRequest throws an error during parsing?",
+    "How can you test the HTTP server parsing with curl including a POST body?"
    ]
   },
   "web-framework-1-2-0": {
    "text_sha": "e49f8d8dcf249093",
-   "summary": "Demonstrates sending a raw HTTP response by manually constructing the status line, headers, and body as a string and writing it to the socket.",
+   "summary": "This passage shows how to send a raw HTTP response by writing a status line, headers, and body as a string directly to the socket in a Node.js server.",
    "keywords": [
-    "raw HTTP response",
+    "HTTP response",
     "status line",
     "headers",
+    "body",
     "socket.write",
-    "HTTP/1.1 200 OK",
-    "Content-Type",
-    "Content-Length"
+    "Node.js",
+    "raw HTTP"
    ],
    "questions": [
-    "How do you manually send an HTTP response over a socket?",
+    "How do you send a raw HTTP response in Node.js?",
     "What is the structure of a raw HTTP response?",
-    "How do you write bytes directly to a socket in Node.js?"
+    "How do you write bytes directly to a socket in a server?"
    ]
   },
   "web-framework-1-2-1": {
@@ -646,18 +642,20 @@
   },
   "web-framework-2-0-3": {
    "text_sha": "9a5fb1d89c391691",
-   "summary": "Measure naive router performance showing linear time complexity O(n) as route count grows, and explain why this is acceptable for small apps but scales poorly.",
+   "summary": "Naive routing matches routes by scanning all routes linearly, which scales linearly with app size and depends on registration order, causing correctness and scalability issues.",
    "keywords": [
-    "performance measurement",
-    "linear time complexity",
+    "naive routing",
+    "linear time",
     "O(n)",
-    "route lookup cost",
-    "scalability"
+    "route matching",
+    "Express routing",
+    "routing performance",
+    "route registration order"
    ],
    "questions": [
-    "What is the time complexity of a naive router's find method?",
-    "How does route count affect lookup time in a naive router?",
-    "Is linear time routing lookup a problem in real applications?"
+    "What does it mean for routing to have linear time complexity?",
+    "Why can naive routing cause correctness problems?",
+    "How does Express handle route matching?"
    ]
   },
   "web-framework-2-0-4": {
@@ -746,19 +744,20 @@
   },
   "web-framework-2-1-4": {
    "text_sha": "3edf9d558a188b70",
-   "summary": "Demonstrates building a radix tree with routes like /users and /user, showing node splitting and handler assignment, and explains lookup by matching child prefixes with startsWith and consuming characters.",
+   "summary": "This passage explains how registering similar routes like '/user' and '/users' splits nodes in a radix tree, assigns handlers, and how the lookup function traverses the tree using prefix matching with startsWith.",
    "keywords": [
     "radix tree",
     "node splitting",
-    "route insertion",
+    "handler assignment",
     "lookup",
     "startsWith",
-    "handler assignment"
+    "prefix matching",
+    "path traversal"
    ],
    "questions": [
-    "How does the radix tree handle inserting /users and /user routes?",
-    "How does the lookup function find a matching route in the radix tree?",
-    "What role does startsWith play in the lookup process?"
+    "How does the radix tree handle registering similar routes like '/user' and '/users'?",
+    "What happens to the handler when a new node is created with an empty path?",
+    "How does the lookup function traverse the radix tree to find a matching route?"
    ]
   },
   "web-framework-2-1-5": {
@@ -817,51 +816,52 @@
   },
   "web-framework-2-2-2": {
    "text_sha": "2e09b511335ea063",
-   "summary": "Prioritize static children over param and wildcard by storing paramChild and wildcardChild separately, ensuring static routes have lookup precedence.",
+   "summary": "Dynamic routing lookup tries static children first, then parameter children by extracting parameter values from the path segment, using a recursive search function with node, path, and params.",
    "keywords": [
-    "static priority",
+    "dynamic routing",
+    "static children",
     "paramChild",
-    "wildcardChild",
-    "route specificity",
-    "lookup order"
+    "recursive search",
+    "path segment",
+    "parameter value"
    ],
    "questions": [
-    "How does the router prioritize static routes over dynamic ones?",
-    "What guarantee does storing paramChild and wildcardChild separately provide?",
-    "Why does registration order stop mattering with this design?"
+    "How does the routing engine prioritize static children over parameter children?",
+    "What is the role of the recursive search function in routing lookup?",
+    "How are parameter values extracted from the path during lookup?"
    ]
   },
   "web-framework-2-2-3": {
    "text_sha": "384f531f7795dbb2",
-   "summary": "Implement recursive lookup trying static children first, then paramChild capturing parameter values, and finally wildcardChild capturing remaining path.",
+   "summary": "Routing lookup tries static, then param, then wildcard children in order, backtracking and cleaning params if static branches fail, storing wildcard matches as params.star.",
    "keywords": [
-    "recursive lookup",
-    "static children",
-    "paramChild",
-    "wildcardChild",
-    "parameter extraction",
-    "route matching"
+    "routing lookup order",
+    "static branch",
+    "param branch",
+    "wildcard",
+    "backtracking",
+    "params.star",
+    "clean up params"
    ],
    "questions": [
-    "What is the order of trying children during route lookup?",
-    "How are parameter values extracted during lookup?",
-    "What happens when a wildcard node is matched?"
+    "What is the order of trying static, param, and wildcard branches in routing lookup?",
+    "How does backtracking work when a static branch fails?",
+    "How are wildcard matches stored in params?"
    ]
   },
   "web-framework-2-2-4": {
    "text_sha": "b776da55732daf16",
-   "summary": "Backtracking allows trying param routes if static fails, cleaning params on failure; test cases show correct param extraction and wildcard matching.",
+   "summary": "Testing routing registrations shows correct param extraction for static, param, and wildcard routes, with edge cases like trailing slashes needing conscious decisions.",
    "keywords": [
-    "backtracking",
-    "route matching",
-    "param cleanup",
-    "test cases",
-    "wildcard matching"
+    "param extraction",
+    "wildcard routes",
+    "trailing slashes",
+    "routing tests"
    ],
    "questions": [
-    "Why is backtracking necessary in route lookup?",
-    "How does the router handle failed static matches?",
-    "What are example routes that demonstrate param and wildcard matching?"
+    "How does the routing engine handle param extraction for various route patterns?",
+    "What happens when a route with a wildcard is matched?",
+    "Why are trailing slashes considered an edge case in routing?"
    ]
   },
   "web-framework-2-2-5": {
@@ -882,21 +882,20 @@
   },
   "web-framework-3-0-0": {
    "text_sha": "42bcaf43ff6507b6",
-   "summary": "Middleware is a function that processes requests and responses, receiving req, res, and next, enabling tasks like logging, authentication, and parsing before the main handler runs.",
+   "summary": "Middleware is a function that processes requests and responses before the main handler, enabling tasks like logging, authentication, JSON parsing, CORS headers, and timing.",
    "keywords": [
     "middleware",
-    "req",
-    "res",
+    "request",
+    "response",
     "next function",
     "logging",
-    "authentication",
     "JSON body parsing",
     "CORS headers"
    ],
    "questions": [
-    "What is middleware in web frameworks?",
-    "What arguments does a middleware function receive?",
-    "Why use middleware instead of putting code in every handler?"
+    "What is middleware in a web framework?",
+    "What tasks can middleware perform on a request?",
+    "How does middleware relate to the request and response?"
    ]
   },
   "web-framework-3-0-1": {
@@ -1108,20 +1107,20 @@
   },
   "web-framework-3-2-3": {
    "text_sha": "e48180f20bf984b7",
-   "summary": "The final error handler sets the HTTP status code, logs errors, sends a response or closes the socket if headers are sent, and demonstrates registering error middleware after routes to handle thrown errors.",
+   "summary": "This passage explains how to implement error-handling middleware that sets the HTTP status code from err.statusCode or defaults to 500, logs errors with console.error, and handles response writing or socket closing if headers are sent.",
    "keywords": [
-    "finalHandler",
-    "statusCode",
+    "error-handling middleware",
+    "err.statusCode",
     "console.error",
     "res.headersSent",
-    "error middleware registration",
-    "HTTP 500",
-    "error response"
+    "HTTP status 500",
+    "app.use",
+    "next"
    ],
    "questions": [
-    "What does the final error handler do when handling errors?",
-    "Why must error middleware be registered after routes that can throw errors?",
-    "What happens if headers are already sent when an error occurs?"
+    "How do you determine the HTTP status code in error-handling middleware?",
+    "Why is console.error used in error-handling middleware?",
+    "What should you do if headers are already sent when handling an error?"
    ]
   },
   "web-framework-3-2-4": {
@@ -1345,21 +1344,21 @@
   },
   "web-framework-4-2-1": {
    "text_sha": "c6232a38237cf68d",
-   "summary": "Explains res.html sets content-type to text/html with UTF-8 charset to avoid browser decoding issues, treats undefined JSON as null, and warns about manual HTML escaping to prevent XSS.",
+   "summary": "res.json converts undefined to null to avoid sending nothing; res.html sets content-type to text/html with utf-8 charset to prevent browser decoding errors; res.text sends plain text without escaping; res.send adapts based on input type.",
    "keywords": [
+    "res.json",
+    "JSON.stringify",
+    "undefined",
     "res.html",
     "content-type",
-    "text/html",
-    "UTF-8 charset",
-    "JSON.stringify undefined",
-    "XSS",
-    "HTML escaping",
-    "res.text"
+    "utf-8",
+    "res.text",
+    "res.send"
    ],
    "questions": [
-    "Why include charset=utf-8 in the content-type for res.html?",
     "What happens if res.json is called with undefined?",
-    "Does res.html automatically escape user input to prevent XSS?"
+    "Why include charset=utf-8 in the Content-Type header for HTML responses?",
+    "Does res.text escape user input automatically?"
    ]
   },
   "web-framework-4-2-2": {
@@ -1439,19 +1438,19 @@
   },
   "web-framework-5-0-1": {
    "text_sha": "035fbb369641e86d",
-   "summary": "Plugins are installed by calling app.register with the plugin and options; app.decorate adds reusable properties to the app and prevents silent overwrites with error checks.",
+   "summary": "The plugin system uses app.register to add plugins with options, and app.decorate to safely add reusable properties to the app, preventing silent overwrites and enabling dependency checks.",
    "keywords": [
     "app.register",
-    "plugin installation",
+    "plugin",
+    "options object",
     "app.decorate",
-    "decorators",
-    "hasDecorator",
-    "plugin options"
+    "app.hasDecorator",
+    "plugin dependency"
    ],
    "questions": [
-    "How do you install a plugin in this web framework?",
-    "What does app.decorate do and why is it important?",
-    "How can a plugin check if a decorator already exists?"
+    "How do you register a plugin in the app?",
+    "What does app.decorate do in the plugin architecture?",
+    "How can a plugin check if another plugin's decorator exists?"
    ]
   },
   "web-framework-5-0-2": {
@@ -1543,19 +1542,21 @@
   },
   "web-framework-5-1-2": {
    "text_sha": "0043cc13a6ce7834",
-   "summary": "Form data is parsed using URLSearchParams to decode URL-encoded fields, converting them into an object with shared helper functions.",
+   "summary": "Use URLSearchParams with Object.fromEntries to parse URL-encoded text bodies, handling plus signs and percent escapes, while enforcing a configurable size limit before buffering.",
    "keywords": [
-    "form data",
     "URLSearchParams",
-    "application/x-www-form-urlencoded",
-    "percent encoding",
     "Object.fromEntries",
-    "shared helper"
+    "body parser",
+    "limit",
+    "buffering",
+    "percent escapes",
+    "plus sign",
+    "plugin options"
    ],
    "questions": [
-    "How is URL-encoded form data parsed in the body parser?",
-    "What role does URLSearchParams play in parsing form data?",
-    "How are repeated keys handled in form data parsing?"
+    "How does URLSearchParams help parse URL-encoded request bodies?",
+    "Why is it important to enforce a size limit before buffering the request body?",
+    "How can the same helper function be shared between query string and body parsing?"
    ]
   },
   "web-framework-5-1-3": {
@@ -1577,19 +1578,21 @@
   },
   "web-framework-5-1-4": {
    "text_sha": "5edb5cfd0605fe15",
-   "summary": "The body parser handles content-type parameters flexibly, treats empty JSON bodies as empty objects, and can be applied globally or scoped per route using plugin prefixing.",
+   "summary": "Test body parsing with curl for JSON and form data, observe error handling for invalid JSON and oversized bodies, and understand global versus per-route middleware application.",
    "keywords": [
-    "content-type parameters",
-    "charset=utf-8",
-    "empty JSON body",
-    "plugin prefix scoping",
-    "global middleware",
-    "per-route middleware"
+    "curl",
+    "POST",
+    "application/json",
+    "res.json",
+    "req.body",
+    "400 error",
+    "413 error",
+    "middleware"
    ],
    "questions": [
-    "How does the body parser handle content-type headers with parameters?",
-    "What happens when the JSON body is empty?",
-    "Can the body parser plugin be applied per route instead of globally?"
+    "How can curl be used to test JSON and form data body parsing?",
+    "What response codes are returned for invalid JSON and bodies exceeding the size limit?",
+    "Should body parsing middleware be applied globally or per route, and how does prefix scoping affect this?"
    ]
   },
   "web-framework-5-2-0": {
@@ -1613,20 +1616,20 @@
   },
   "web-framework-5-2-1": {
    "text_sha": "fadd8c3fe0f7c0cc",
-   "summary": "Prevent path traversal attacks by decoding URL components and verifying that requested file paths stay within the root directory, rejecting requests with null bytes or paths escaping the root.",
+   "summary": "Prevent path traversal attacks by decoding the URL path, joining it safely with the root directory, and verifying the final path stays within the root before serving files.",
    "keywords": [
     "path traversal",
     "decodeURIComponent",
     "path.join",
-    "security",
-    "null byte",
-    "file path validation",
-    "403 response"
+    "req.params.star",
+    "path.sep",
+    "403 response",
+    "null byte"
    ],
    "questions": [
-    "What is a path traversal attack and how can it be prevented?",
-    "Why should URL paths be decoded before processing in a static file server?",
-    "How do you verify that a requested file path does not escape the root directory?"
+    "What is path traversal and why is it dangerous?",
+    "How can decodeURIComponent help prevent path traversal?",
+    "How do you verify a requested file path stays within a root directory?"
    ]
   },
   "web-framework-5-2-2": {
@@ -1665,20 +1668,20 @@
   },
   "web-framework-5-2-4": {
    "text_sha": "577f82e27d0b1063",
-   "summary": "Implement caching with ETag and last-modified headers to enable 304 Not Modified responses, improving performance and bandwidth; register the static plugin and test security against path traversal.",
+   "summary": "Implement HTTP caching with ETag by responding 304 Not Modified when the client's if-none-match header matches, improving load speed and reducing bandwidth in the static file server plugin.",
    "keywords": [
-    "ETag",
-    "last-modified",
+    "if-none-match",
     "304 Not Modified",
-    "caching",
+    "curl -i",
+    "static plugin",
     "app.register",
-    "path traversal test",
-    "curl --path-as-is"
+    "body parser",
+    "static server"
    ],
    "questions": [
-    "How does ETag caching improve static file server performance?",
-    "What headers are used to support conditional GET requests?",
-    "How can you test a static server's protection against path traversal attacks?"
+    "How does the if-none-match header improve static file serving?",
+    "What response should the server send when the ETag matches the client's if-none-match?",
+    "How do you register a static file server plugin with a root and prefix?"
    ]
   },
   "web-framework-6-0-0": {
@@ -1718,37 +1721,40 @@
   },
   "web-framework-6-0-2": {
    "text_sha": "840da924fa66f1ef",
-   "summary": "Fastify boosts performance by creating request and reply objects from prebuilt classes to stabilize V8 hidden classes and by shifting computation from request time to startup time.",
+   "summary": "Fastify improves speed by creating request and reply objects from prebuilt classes to keep V8 hidden classes stable and by doing most work at startup, not per request, following the principle of moving computation from the hot path to setup.",
    "keywords": [
     "Fastify",
     "V8 hidden classes",
-    "request object",
-    "reply object",
-    "performance optimization",
-    "precomputation"
+    "createRequest factory",
+    "prebuilt classes",
+    "performance engineering",
+    "precompute",
+    "router registration",
+    "schema compilation"
    ],
    "questions": [
-    "How does Fastify avoid allocating closures per request?",
-    "What is the performance principle behind Fastify's design?",
-    "Why is precomputing work at startup beneficial?"
+    "How does Fastify keep V8's hidden classes stable?",
+    "What is the performance principle behind Fastify's speed?",
+    "When does Fastify perform most of its computation, at startup or per request?"
    ]
   },
   "web-framework-6-0-3": {
    "text_sha": "f29f57bd9aa56046",
-   "summary": "Using autocannon to benchmark Tern and Express shows similar performance on few routes, but Fastify's radix tree excels with many routes, while Tern's other costs limit its speed.",
+   "summary": "Using autocannon to load test, Tern and Express show similar performance with one route, but adding 500 routes highlights Tern's radix tree advantage, though other costs like string parsing and closure allocations affect overall speed.",
    "keywords": [
     "autocannon",
-    "Tern",
-    "Express",
-    "benchmarking",
+    "Node load-testing",
+    "Tern app",
+    "Express app",
     "radix tree",
-    "routing performance",
-    "Node.js"
+    "string parsing",
+    "closure allocation",
+    "response object"
    ],
    "questions": [
-    "How can you benchmark Node.js frameworks like Tern and Express?",
-    "Why does Fastify's radix tree outperform others with many routes?",
-    "What limits Tern's overall speed despite fast routing?"
+    "How do Tern and Express compare in load testing with one route?",
+    "What happens to Tern's performance when adding 500 routes?",
+    "What other costs affect Tern's overall speed besides routing?"
    ]
   },
   "web-framework-6-0-4": {
@@ -1808,59 +1814,58 @@
   },
   "web-framework-6-1-2": {
    "text_sha": "dc1db3ec0dacb8d2",
-   "summary": "Tern uses a radix tree router and scoped plugins with prefix and decorate, while Express uses regex-based linear routing and router mounting without encapsulation; Tern parses body from a Buffer unlike Express's streaming approach.",
+   "summary": "Express routers support mounting without encapsulation, and Express streams request bodies for memory efficiency, unlike our plugin-based body parsing from a Buffer.",
    "keywords": [
-    "Tern router",
-    "radix tree",
-    "Express router",
-    "regex routing",
-    "plugin scoping",
-    "prefix",
-    "decorate",
-    "body parsing"
+    "Express routers",
+    "mounting",
+    "encapsulation",
+    "body-parser",
+    "streaming bodies",
+    "Buffer",
+    "serve-static",
+    "send package"
    ],
    "questions": [
-    "How does Tern's router differ from Express's router?",
-    "What is the difference between Tern's and Express's body parsing approaches?",
-    "What plugin features does Tern have that Express routers lack?"
+    "How does Express handle request body parsing compared to our framework?",
+    "What are the benefits of Express's serve-static package?",
+    "What is the difference between Express routers and our plugin scoping?"
    ]
   },
   "web-framework-6-1-3": {
    "text_sha": "6ffccac6e3f0b79f",
-   "summary": "Express benefits from years of bug fixes and handles complex static serving edge cases like path traversal, ranges, dotfiles, symlinks, encodings, and caching, which Tern currently lacks.",
-   "keywords": [
-    "Express",
-    "serve-static",
-    "path traversal",
-    "ranges",
-    "dotfiles",
-    "symlinks",
-    "encodings",
-    "caching directives"
-   ],
-   "questions": [
-    "What edge cases does Express's static server handle that Tern does not?",
-    "Why is Express considered more mature than Tern?",
-    "What kinds of bugs and security fixes has Express accumulated over time?"
-   ]
-  },
-  "web-framework-6-1-4": {
-   "text_sha": "beb51b4a2f4a4ed1",
-   "summary": "Choosing a framework depends on needs: Fastify for performance, Express for ecosystem, Hono for edge runtimes, and Tern as a learning tool; building Tern improves debugging and understanding of middleware and routing internals.",
+   "summary": "Choosing a web framework depends on needs: Fastify for performance and schemas, Express for ecosystem, Hono for edge runtimes, and Tern mainly as a learning project.",
    "keywords": [
     "Fastify",
     "Express",
     "Hono",
     "Tern",
-    "performance",
-    "ecosystem",
+    "web frameworks",
     "edge runtimes",
-    "middleware debugging"
+    "Request and Response objects"
    ],
    "questions": [
-    "When should you choose Fastify, Express, Hono, or Tern?",
-    "What debugging insights does building Tern provide?",
-    "How can you extend Tern with plugins like cookie parsing or gzip compression?"
+    "When should I choose Fastify over Express?",
+    "Why is Hono preferred for edge runtimes like Cloudflare Workers?",
+    "What is the recommended use case for the Tern framework?"
+   ]
+  },
+  "web-framework-6-1-4": {
+   "text_sha": "beb51b4a2f4a4ed1",
+   "summary": "Understanding framework internals aids debugging; adding features like cookie parsing or gzip as plugins teaches HTTP concepts and improves Tern.",
+   "keywords": [
+    "cookie parsing",
+    "plugins",
+    "req.cookies",
+    "res.cookie",
+    "gzip",
+    "zlib module",
+    "request timeouts",
+    "debugging"
+   ],
+   "questions": [
+    "How can adding a cookie parsing plugin improve my understanding of HTTP?",
+    "What are some simple plugins to add to Tern to extend its functionality?",
+    "Why is having an accurate mental model important for debugging frameworks?"
    ]
   },
   "web-framework-6-2-0": {
@@ -1921,21 +1926,21 @@
   },
   "web-framework-6-2-3": {
    "text_sha": "8932c2074557e086",
-   "summary": "Suggested roadmap for extending the framework: add chunked encoding, timeouts, cookies, sessions, compression, CORS, rate limiting, HTTPS, and study HTTP/2 and HTTP/3 protocols.",
+   "summary": "Enhance the web framework by adding plugins for cookies, sessions, compression, CORS, and rate limiting, then explore HTTPS with TLS and study HTTP/2 and HTTP/3 protocols and parsers.",
    "keywords": [
-    "chunked transfer encoding",
-    "timeouts",
     "cookies",
     "sessions",
     "compression",
     "CORS",
     "rate limiting",
-    "HTTPS"
+    "TLS",
+    "HTTPS",
+    "HTTP/2"
    ],
    "questions": [
-    "What features can be added next to improve the web framework?",
-    "How does HTTP/2 multiplexing affect the parser design?",
-    "Which resources are recommended for learning more about HTTP and parsers?"
+    "How can I add cookies and sessions support to my web framework?",
+    "What changes when switching from HTTP to HTTPS with TLS?",
+    "Where can I find readable source code for web frameworks built on web standards?"
    ]
   },
   "web-framework-6-2-4": {

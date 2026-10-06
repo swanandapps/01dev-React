@@ -21,19 +21,19 @@
   },
   "real-time-0-0-1": {
    "text_sha": "1d18109eda85c65d",
-   "summary": "Defines a real-time system as one where the server can push updates to the client immediately without client requests, emphasizing server-initiated communication.",
+   "summary": "A real-time system lets the server send updates to the client immediately without the client requesting them, emphasizing server-initiated communication over timing precision.",
    "keywords": [
-    "real-time system definition",
+    "real-time system",
     "server push",
     "client-server communication",
     "HTTP",
-    "latency",
-    "push-based updates"
+    "server initiated",
+    "real-time definition"
    ],
    "questions": [
-    "What distinguishes a real-time system from a non-real-time system?",
-    "Why is server-initiated communication important in real-time systems?",
-    "Is low latency alone sufficient to define a real-time system?"
+    "What defines a real-time system in terms of server and client communication?",
+    "Is a system that updates only on page refresh considered real-time?",
+    "Why is the direction of initiation important in real-time systems?"
    ]
   },
   "real-time-0-0-2": {
@@ -93,21 +93,21 @@
   },
   "real-time-0-0-5": {
    "text_sha": "a2f195da1368aea4",
-   "summary": "Explains the deliberate choice to avoid libraries like ws or socket.io to deepen understanding by building WebSocket features from scratch.",
+   "summary": "The course avoids using ws or socket.io libraries initially to teach WebSockets by implementing core protocols like Sec-WebSocket-Accept and frame unmasking for deeper understanding.",
    "keywords": [
-    "WebSocket",
-    "ws library",
+    "ws",
     "socket.io",
+    "WebSockets",
     "Sec-WebSocket-Accept",
-    "frame unmasking",
-    "Node.js net module",
-    "debugging",
+    "frame payload unmasking",
+    "polling",
+    "long-polling",
     "proxy"
    ],
    "questions": [
-    "Why avoid using ws or socket.io libraries in this course?",
-    "What WebSocket features will be implemented manually?",
-    "How does building WebSocket code from scratch help debugging?"
+    "Why avoid using ws or socket.io libraries in the core course?",
+    "What WebSocket protocol details will be implemented manually in the course?",
+    "How does understanding WebSocket internals help with debugging connections?"
    ]
   },
   "real-time-0-1-0": {
@@ -144,17 +144,19 @@
   },
   "real-time-0-1-2": {
    "text_sha": "8c42036a019d61f9",
-   "summary": "Shows that increasing polling frequency reduces latency but greatly increases wasted work, making polling unsuitable for instant updates.",
+   "summary": "Polling faster reduces latency but greatly increases wasted requests, making it inefficient for instant updates like chat but acceptable for infrequent refreshes like dashboards.",
    "keywords": [
-    "polling frequency",
+    "polling",
     "latency",
-    "wasted work",
-    "real-time updates",
-    "trade-offs"
+    "load tradeoff",
+    "dashboard refresh",
+    "chat latency",
+    "wasted requests"
    ],
    "questions": [
-    "What happens if you poll more frequently?",
-    "Why is polling a poor choice for instant messaging?"
+    "What happens if you poll faster to reduce latency?",
+    "Why is polling inefficient for instant messaging?",
+    "When is polling a suitable technique for refreshing data?"
    ]
   },
   "real-time-0-1-3": {
@@ -191,18 +193,21 @@
   },
   "real-time-0-1-5": {
    "text_sha": "b490d79e2247a5a8",
-   "summary": "Summarizes trade-offs: WebSockets offer low latency and overhead but require stateful connections, while polling is stateless but slower; Pulse uses WebSockets.",
+   "summary": "WebSockets provide low latency and low overhead with stateful long-lived connections, while polling is stateless but slower and less efficient; WebSockets suit instant bidirectional push in chat apps.",
    "keywords": [
     "WebSockets",
-    "stateful connection",
-    "scaling",
     "polling",
-    "real-time chat",
-    "presence board"
+    "statefulness",
+    "scaling",
+    "low latency",
+    "per-message overhead",
+    "instant push",
+    "chat presence"
    ],
    "questions": [
-    "What are the scaling challenges of WebSockets?",
-    "Why choose WebSockets over polling for chat and presence?"
+    "What are the advantages and disadvantages of WebSockets compared to polling?",
+    "Why does WebSockets' statefulness affect scaling?",
+    "Which real-time communication method is best for instant bidirectional updates?"
    ]
   },
   "real-time-0-2-0": {
@@ -349,18 +354,17 @@
   },
   "real-time-1-0-2": {
    "text_sha": "b60b405468ae5e23",
-   "summary": "WebSocket frames can be split or combined across TCP data events, so parsers must buffer bytes and only process complete frames to avoid bugs under load.",
+   "summary": "WebSocket frames can be split or combined in TCP data events, so always buffer incoming bytes and only process a frame when fully received.",
    "keywords": [
     "WebSocket frame",
-    "TCP data event",
+    "data events",
     "buffering",
-    "frame parsing",
-    "message boundaries",
-    "stream parsing"
+    "TCP",
+    "frame parsing"
    ],
    "questions": [
-    "Why must WebSocket parsers buffer incoming bytes?",
-    "Can a WebSocket frame be split across multiple TCP data events?",
+    "Why must WebSocket frames be buffered before processing?",
+    "Can a single TCP data event contain multiple WebSocket frames?",
     "What happens if a parser assumes one data event equals one message?"
    ]
   },
@@ -488,39 +492,39 @@
   },
   "real-time-1-2-0": {
    "text_sha": "14c63c642c21ce4a",
-   "summary": "The WebSocket frame's first byte contains the FIN bit, RSV1-3 reserved bits, and an opcode indicating frame type, decoded using bitwise operations.",
+   "summary": "The WebSocket frame's first byte contains the FIN bit, RSV1-3 reserved bits, and an opcode indicating frame type like text, binary, or control frames.",
    "keywords": [
     "WebSocket frame",
     "FIN bit",
     "RSV1",
-    "RSV2",
     "RSV3",
     "opcode",
-    "bitwise operations",
-    "RFC 6455"
+    "RFC 6455",
+    "decodeFrame"
    ],
    "questions": [
     "What does the FIN bit in a WebSocket frame indicate?",
-    "What are the reserved bits RSV1 to RSV3 used for in WebSocket frames?",
-    "How do you extract the opcode from the first byte of a WebSocket frame?"
+    "What are the possible opcode values in a WebSocket frame and their meanings?",
+    "What are RSV1 to RSV3 bits used for in a WebSocket frame?"
    ]
   },
   "real-time-1-2-1": {
    "text_sha": "608e6c66f51d66c3",
-   "summary": "The second byte of a WebSocket frame holds the MASK bit and a 7-bit payload length, with extended lengths handled by reading additional bytes as big-endian integers.",
+   "summary": "The second byte of a WebSocket frame includes a MASK bit and a 7-bit payload length, with extended lengths handled by additional bytes and masking indicating client-to-server frames.",
    "keywords": [
     "WebSocket frame",
     "MASK bit",
     "payload length",
-    "big-endian",
     "readUInt16BE",
     "readBigUInt64BE",
-    "RFC 6455"
+    "big-endian",
+    "Node.js",
+    "frame length"
    ],
    "questions": [
     "How is the payload length encoded in a WebSocket frame?",
-    "What does a MASK bit value of 1 signify in a WebSocket frame?",
-    "How do you read extended payload lengths in WebSocket frames?"
+    "What does the MASK bit signify in a WebSocket frame?",
+    "How do you read extended payload lengths in WebSocket frames using Node.js?"
    ]
   },
   "real-time-1-2-2": {
@@ -666,19 +670,20 @@
   },
   "real-time-2-0-4": {
    "text_sha": "b2d8e961c359f541",
-   "summary": "Implement handshake timeouts and buffer size limits to prevent slowloris attacks by destroying sockets that don't complete handshake in time or send excessive headers.",
+   "summary": "Implement a timeout and buffer size limit during the WebSocket handshake to prevent slowloris attacks and resource exhaustion.",
    "keywords": [
-    "handshake timeout",
+    "TCP connection",
+    "handshake",
     "slowloris attack",
-    "socket destroy",
-    "buffer size limit",
-    "security",
-    "TCP connection"
+    "timeout",
+    "socket",
+    "handshake buffer",
+    "WebSocket server"
    ],
    "questions": [
-    "Why should you implement a handshake timeout on WebSocket connections?",
-    "How can you protect the server from slowloris-style attacks?",
-    "What buffer size limit is recommended during handshake?"
+    "Why set a timeout during the WebSocket handshake?",
+    "How can a slowloris attack affect a WebSocket server?",
+    "What is the purpose of capping the handshake buffer size?"
    ]
   },
   "real-time-2-0-5": {
@@ -773,36 +778,38 @@
   },
   "real-time-2-1-4": {
    "text_sha": "7762c968d0630c11",
-   "summary": "Add a MAX_CLIENTS limit to refuse new connections politely with HTTP 503 when the server is full, preventing resource exhaustion and crashes.",
+   "summary": "Add a MAX_CLIENTS limit to the WebSocket server to refuse new connections politely with a 503 error when the client registry is full.",
    "keywords": [
     "MAX_CLIENTS",
+    "client registry",
+    "WebSocket upgrade",
+    "503 Service Unavailable",
     "connection limit",
-    "HTTP 503",
-    "Service Unavailable",
-    "resource exhaustion",
     "file descriptors",
     "memory limit"
    ],
    "questions": [
-    "Why limit the number of clients on a WebSocket server?",
-    "How to refuse new connections when the server is full?",
-    "What HTTP status code should be sent when refusing connections due to overload?"
+    "How can I limit the number of clients connected to a WebSocket server?",
+    "What HTTP status code should be sent when the server is too busy to accept new WebSocket connections?",
+    "Why is it important to limit the number of live WebSocket connections?"
    ]
   },
   "real-time-2-2-0": {
    "text_sha": "27ca3de8afa31c17",
-   "summary": "Implement a broadcast function that sends the same encoded WebSocket frame to all clients efficiently by encoding once outside the loop.",
+   "summary": "Implement broadcasting by encoding a WebSocket frame once and sending it to all connected clients to efficiently share messages.",
    "keywords": [
     "broadcast",
-    "WebSocket",
     "encodeFrame",
-    "JSON.stringify",
-    "server frames",
-    "unmasked frames"
+    "registry",
+    "server.js",
+    "payload",
+    "frame",
+    "JSON.stringify"
    ],
    "questions": [
-    "How do you efficiently broadcast the same message to multiple WebSocket clients?",
-    "Why should the WebSocket frame be encoded once outside the loop when broadcasting?"
+    "How do you broadcast a message to all connected WebSocket clients?",
+    "Why should you encode the WebSocket frame once before sending to multiple clients?",
+    "What is the purpose of the broadcast function in a WebSocket server?"
    ]
   },
   "real-time-2-2-1": {
@@ -908,36 +915,38 @@
   },
   "real-time-3-0-2": {
    "text_sha": "6ce0e4c2f74c1789",
-   "summary": "Client IDs are stored in Sets instead of socket objects for serialization across processes and to avoid stale socket references, with sockets fetched from a registry at send time.",
+   "summary": "Store socket ids in a Set instead of socket objects to ensure serializability across processes and avoid stale socket references by using a single source of truth registry.",
    "keywords": [
-    "client IDs",
-    "socket registry",
-    "serialization",
+    "Set",
+    "socket ids",
+    "serializable",
     "Redis",
-    "stale references",
-    "socket objects"
+    "registry",
+    "socket reference",
+    "rooms module"
    ],
    "questions": [
-    "Why store client IDs instead of socket objects in room membership?",
-    "How does using IDs help with multi-process setups?",
+    "Why store socket ids instead of socket objects in a Set?",
+    "How does using ids help when moving to Redis?",
     "What prevents stale socket references in rooms?"
    ]
   },
   "real-time-3-0-3": {
    "text_sha": "00ac51d249aa592a",
-   "summary": "Room names are validated with a regex to prevent abuse, rooms per client are capped, and empty rooms are deleted to avoid memory leaks and server bloat.",
+   "summary": "Validate room names with a regex allowing lowercase letters, digits, and dashes up to 32 characters, limit rooms per client to prevent memory attacks, and delete empty rooms to avoid memory leaks.",
    "keywords": [
     "room name validation",
-    "regex",
+    "regular expression",
+    "room limit",
     "memory attack",
-    "room cap",
-    "empty room cleanup",
-    "garbage collection"
+    "empty-room garbage collection",
+    "Set",
+    "Map"
    ],
    "questions": [
-    "How do you validate room names?",
+    "How should room names be validated?",
     "Why limit the number of rooms per client?",
-    "How do you clean up empty rooms?"
+    "How do you clean up empty rooms in the rooms Map?"
    ]
   },
   "real-time-3-0-4": {
@@ -961,19 +970,19 @@
   },
   "real-time-3-0-5": {
    "text_sha": "54d1cbf5eb449d78",
-   "summary": "Example: Ben in general and design rooms shows how two indexes allow quick removal from multiple rooms on disconnect, avoiding costly scans of all rooms.",
+   "summary": "Maintain a Map of rooms to Sets of socket ids and a per-socket record of joined rooms to efficiently remove a socket from all rooms on disconnect without scanning all rooms.",
    "keywords": [
-    "example",
+    "rooms Map",
+    "Set of socket ids",
+    "socket record",
+    "disconnect handling",
     "room membership",
-    "disconnect",
-    "two indexes",
-    "performance",
-    "client removal"
+    "disconnect storm"
    ],
    "questions": [
-    "How does the example illustrate efficient client removal from rooms?",
-    "What problem does the second index solve?",
-    "Why is scanning all rooms on disconnect costly?"
+    "How is room membership stored for efficient removal?",
+    "What happens when a socket closes?",
+    "Why avoid scanning all rooms on socket disconnect?"
    ]
   },
   "real-time-3-1-0": {
@@ -1051,21 +1060,19 @@
   },
   "real-time-3-1-4": {
    "text_sha": "4924c8477a28c7bb",
-   "summary": "Test room membership by joining clients to rooms and verifying members shrink on disconnect; prepare to implement publish for room-based message fan-out.",
+   "summary": "Test room membership by joining tabs to rooms, verifying member counts, and observing room removal when empty, preparing for implementing message fan-out to room members.",
    "keywords": [
-    "testing",
+    "rooms.members",
     "room membership",
-    "publish",
     "fan-out",
-    "client disconnect",
-    "room removal",
-    "general room",
-    "design room"
+    "publish",
+    "real-time rooms",
+    "room registry"
    ],
    "questions": [
-    "How can you verify room membership updates on client disconnect?",
-    "What happens when the last member leaves a room?",
-    "What is the next step after ensuring membership consistency?"
+    "How can I verify the number of members in a room?",
+    "What happens to a room when its last member leaves?",
+    "What is fan-out in the context of rooms?"
    ]
   },
   "real-time-3-2-0": {
@@ -1089,19 +1096,20 @@
   },
   "real-time-3-2-1": {
    "text_sha": "f3fea4fef321c6da",
-   "summary": "Publishing to N members requires O(N) writes, so optimizations focus on minimizing per-recipient work and avoiding allocations to handle high message rates efficiently.",
+   "summary": "Publishing messages to N members requires O(N) socket writes, so encoding once and avoiding per-recipient allocation optimizes performance for large fan-outs.",
    "keywords": [
-    "fan-out cost",
-    "O(N) writes",
+    "fan-out",
     "socket writes",
-    "optimization",
+    "O(N)",
+    "encoding",
     "per-recipient allocation",
-    "Node.js performance"
+    "Node.js",
+    "real-time messaging"
    ],
    "questions": [
-    "What is the computational cost of publishing messages to a room with N members?",
-    "Why is it important to avoid per-recipient allocation during fan-out?",
-    "How many socket writes per second can Node handle on one core?"
+    "Why is publishing to a room with N members O(N) writes?",
+    "How can we optimize message publishing to many recipients?",
+    "What happens to performance when adding per-user filtering in message fan-out?"
    ]
   },
   "real-time-3-2-2": {
@@ -1140,20 +1148,20 @@
   },
   "real-time-3-2-4": {
    "text_sha": "2cb350197ea4d197",
-   "summary": "Using the same Buffer for multiple socket writes saves memory upfront, but slow clients holding queued frames increase memory use, so backpressure checks and limits prevent resource exhaustion.",
+   "summary": "Using the same Buffer for multiple socket writes avoids upfront copying, but slow clients holding references cause memory backpressure, so monitoring write queues and capping memory per client is essential.",
    "keywords": [
     "socket.write",
-    "Buffer reuse",
+    "Buffer",
     "backpressure",
     "write queue",
-    "memory usage",
+    "memory cap",
     "slow clients",
-    "resource limits"
+    "Node.js"
    ],
    "questions": [
-    "How does Node handle writing the same Buffer to many sockets?",
-    "Why does backpressure checking matter for memory usage?",
-    "What happens if many clients are slow to receive messages?"
+    "How does Node.js handle writing the same Buffer to multiple sockets?",
+    "Why is backpressure important when writing to slow clients?",
+    "How can memory usage be controlled for many slow clients?"
    ]
   },
   "real-time-3-2-5": {
@@ -1176,17 +1184,18 @@
   },
   "real-time-4-0-0": {
    "text_sha": "4a411f6d7dae3643",
-   "summary": "Clients can disconnect ungracefully due to network changes or device shutdowns, causing the server to miss disconnection events.",
+   "summary": "Real networks can cause clients to disconnect silently without server events, so this lecture explains why and how to detect such disconnections.",
    "keywords": [
-    "client disconnect",
-    "ungraceful disconnect",
-    "network issues",
+    "client disconnection",
+    "close frame",
     "TCP connection",
-    "close frame"
+    "network issues",
+    "NAT idle timeout"
    ],
    "questions": [
     "Why might a server not detect when a client disconnects?",
-    "What are examples of ungraceful client disconnections?"
+    "What network scenarios cause silent client disconnections?",
+    "How can silent disconnections be detected?"
    ]
   },
   "real-time-4-0-1": {
@@ -1260,55 +1269,54 @@
   },
   "real-time-4-1-0": {
    "text_sha": "eadcf35308fde960",
-   "summary": "Implement a server-side ping/pong heartbeat using WebSocket control frames with opcodes 0x9 (ping) and 0xA (pong) to detect dead clients and drop them after timeout.",
+   "summary": "Implement a ping/pong heartbeat protocol by sending WebSocket control frames with opcode 0x9 (ping) every 30 seconds and dropping clients that fail to respond.",
    "keywords": [
-    "WebSocket",
     "ping",
     "pong",
     "opcode 0x9",
     "opcode 0xA",
+    "control frames",
     "heartbeat",
     "setInterval",
-    "isAlive flag"
+    "encodeFrame"
    ],
    "questions": [
-    "How do you send a ping frame in WebSocket using opcode 0x9?",
-    "What is the purpose of the isAlive flag in a heartbeat implementation?",
-    "How does the server detect and drop clients that do not respond to pings?"
+    "What opcode is used for WebSocket ping frames?",
+    "How do you implement a heartbeat check to drop unresponsive clients?",
+    "What happens if a client does not respond to a ping in time?"
    ]
   },
   "real-time-4-1-1": {
    "text_sha": "e9734ca67861efe4",
-   "summary": "Mark clients as alive upon receiving any frame, especially pong frames (opcode 0xA), by setting isAlive true and updating lastSeen timestamp in the frame handler.",
+   "summary": "Mark clients as alive upon receiving any frame, especially pong frames (opcode 0xA), to avoid dropping active clients even if pong responses are delayed.",
    "keywords": [
     "handleFrame",
     "opcode 0xA",
     "pong",
     "isAlive",
-    "lastSeen",
-    "heartbeat response"
+    "lastSeen"
    ],
    "questions": [
-    "How should the server update client status upon receiving a pong frame?",
-    "Why mark a client as alive on any received frame, not just pong?",
-    "What fields are updated to track client liveness in the frame handler?"
+    "How do you mark a client as alive when receiving a pong frame?",
+    "Why should any received frame update the client's isAlive status?",
+    "What fields are updated on receiving any client frame?"
    ]
   },
   "real-time-4-1-2": {
    "text_sha": "fdbffd550c4df09e",
-   "summary": "Avoid mutating the client registry during iteration by collecting dead client IDs first; use timer.unref() to prevent interval from blocking Node shutdown and provide a stop function.",
+   "summary": "Avoid mutating the client registry during iteration by collecting dead client IDs first, use timer.unref() to not block shutdown, and provide a stop function to clear the heartbeat interval.",
    "keywords": [
     "Map iteration",
     "dropClient",
     "timer.unref()",
-    "clearInterval",
-    "heartbeat cleanup",
+    "stop function",
+    "heartbeat interval",
     "Node.js shutdown"
    ],
    "questions": [
-    "Why should you avoid deleting entries from a Map while iterating it?",
+    "Why should you avoid deleting Map entries during iteration?",
     "What does timer.unref() do in a Node.js interval?",
-    "How can you cleanly stop a heartbeat interval for testing?"
+    "How can you cleanly stop the heartbeat interval in tests?"
    ]
   },
   "real-time-4-1-3": {
@@ -1535,18 +1543,20 @@
   },
   "real-time-5-0-4": {
    "text_sha": "5ab1f6945f3513a7",
-   "summary": "To avoid duplicate message delivery from receiving your own Redis-published messages, either rely solely on broker delivery or tag messages with server IDs to ignore echoes.",
+   "summary": "When a process publishes and subscribes to Redis, it receives its own message twice, causing duplicate delivery; this can be fixed by not delivering locally or tagging messages with the server id.",
    "keywords": [
-    "message echo",
-    "Redis pub/sub",
-    "duplicate delivery",
-    "server ID tagging",
-    "message deduplication"
+    "Redis",
+    "publish",
+    "subscribe",
+    "echo",
+    "message duplication",
+    "server id",
+    "broker"
    ],
    "questions": [
-    "What causes message duplication when using Redis pub/sub across processes?",
-    "How can duplicate message delivery be prevented in a distributed pub/sub system?",
-    "What are the pros and cons of ignoring local delivery versus tagging messages?"
+    "Why does a process receive its own Redis message twice?",
+    "How can message duplication be prevented in Redis pub/sub?",
+    "What are two ways to fix the echo problem in Redis pub/sub?"
    ]
   },
   "real-time-5-0-5": {
@@ -1797,20 +1807,20 @@
   },
   "real-time-6-0-3": {
    "text_sha": "2758127254067a17",
-   "summary": "Client reconnect logic uses full jitter exponential backoff to spread reconnect attempts, while health checks via a /healthz endpoint help the load balancer avoid sending traffic to draining servers.",
+   "summary": "This passage explains implementing client-side WebSocket reconnection with exponential backoff and full jitter, and describes backend health checks via HTTP GET to a /healthz endpoint for load balancer awareness.",
    "keywords": [
-    "WebSocket reconnect",
-    "exponential backoff",
+    "WebSocket",
     "full jitter",
     "health checks",
     "/healthz endpoint",
+    "SIGTERM",
     "load balancer",
-    "SIGTERM draining"
+    "Pulse process"
    ],
    "questions": [
-    "How is full jitter implemented in WebSocket reconnect logic?",
-    "What is the purpose of the /healthz endpoint in load balancing?",
-    "How does the load balancer handle servers that are shutting down?"
+    "How do you implement WebSocket reconnection with exponential backoff and jitter?",
+    "What is the purpose of the /healthz endpoint in backend health checks?",
+    "How does the load balancer use health checks to avoid sending traffic to shutting down servers?"
    ]
   },
   "real-time-6-0-4": {
@@ -1852,20 +1862,18 @@
   },
   "real-time-6-1-1": {
    "text_sha": "f97b222e7a0adc31",
-   "summary": "Using sorted sets with timestamps for presence avoids stale entries after server crashes by expiring old scores, enabling self-healing presence tracking without explicit disconnects.",
+   "summary": "Use Redis sorted sets with timestamps for presence tracking to handle server crashes by aging out stale user entries automatically.",
    "keywords": [
     "Redis",
     "sorted set",
-    "presence tracking",
-    "ZADD",
+    "timestamps",
     "heartbeat",
-    "self-healing",
-    "crash recovery"
+    "self-healing"
    ],
    "questions": [
-    "Why prefer sorted sets with timestamps over plain sets for presence?",
-    "How does the system handle server crashes in presence tracking?",
-    "What is the role of heartbeat ticks in presence updates?"
+    "Why use a sorted set with timestamps instead of a plain set for user presence?",
+    "How does the system handle server crashes affecting user presence?",
+    "What role do heartbeat ticks play in presence management?"
    ]
   },
   "real-time-6-1-2": {
@@ -1888,38 +1896,37 @@
   },
   "real-time-6-1-3": {
    "text_sha": "ed67ae793f67c013",
-   "summary": "Presence changes trigger a Redis PUBLISH event without data, prompting all servers to read the sorted set and send updated presence snapshots to local clients, ensuring consistent state.",
+   "summary": "Servers publish presence change events on a Redis channel and update local clients by reading the authoritative sorted set snapshot to avoid ordering and duplication issues.",
    "keywords": [
     "Redis",
     "PUBLISH",
-    "pub/sub",
-    "presence update",
+    "presence change",
+    "sorted set",
     "snapshot",
     "debounced snapshot",
     "message broker"
    ],
    "questions": [
-    "How do servers notify each other of presence changes?",
+    "How do servers notify clients about presence changes?",
     "Why does the presence change event carry no data?",
-    "How is consistency maintained when updating client presence?"
+    "How does reading from the source of truth prevent ordering and duplication problems?"
    ]
   },
   "real-time-6-1-4": {
    "text_sha": "0f0e78f1573cc9cd",
-   "summary": "Redis is a single point of failure; servers must handle Redis disconnections gracefully by continuing local service, reconnecting automatically, and handling error events to avoid crashes.",
+   "summary": "Redis is a single point of failure; servers must keep local connections alive, handle Redis reconnection with error event handling to avoid crashes and report degraded state.",
    "keywords": [
     "Redis",
     "single point of failure",
-    "reconnect",
+    "reconnection strategy",
     "error event",
-    "WebSocket",
-    "fault tolerance",
-    "redis client"
+    "local WebSocket",
+    "degraded mode"
    ],
    "questions": [
     "What happens if Redis goes down in this system?",
-    "How should servers handle Redis connection errors?",
-    "Can local WebSocket connections continue without Redis?"
+    "How should servers behave during Redis outages?",
+    "Why must the Redis client's error event be handled?"
    ]
   },
   "real-time-6-1-5": {

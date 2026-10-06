@@ -59,6 +59,14 @@
   {
    "term": "outside a model",
    "replacement": "outside a module"
+  },
+  {
+   "term": "type model",
+   "replacement": "type module"
+  },
+  {
+   "term": "model resolution",
+   "replacement": "module resolution"
   }
  ]
 }

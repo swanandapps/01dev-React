@@ -38,21 +38,21 @@
   },
   "react-perf-0-0-2": {
    "text_sha": "1cf3dfdc4a131e24",
-   "summary": "The starting app structure includes components like App.jsx and Dashboard.jsx, with a custom hook useTicks.js simulating live price updates; state is poorly placed causing unnecessary recomputations.",
+   "summary": "The project structure includes components and a custom hook useTicks.js that simulates live price updates, with Dashboard.jsx managing state inefficiently to demonstrate performance issues.",
    "keywords": [
-    "React components",
     "App.jsx",
     "Dashboard.jsx",
+    "FilterBar.jsx",
+    "PriceTable.jsx",
+    "PriceRow.jsx",
     "useTicks.js",
     "custom hook",
-    "state placement",
-    "recomputation",
-    "memoization"
+    "state management"
    ],
    "questions": [
-    "What components make up the starting React app structure?",
-    "What does the useTicks.js hook do in the app?",
-    "Why does the app perform poorly initially?"
+    "What files and components make up the project structure?",
+    "What does the useTicks.js custom hook do?",
+    "How is state managed in Dashboard.jsx and why is it inefficient?"
    ]
   },
   "react-perf-0-0-3": {
@@ -210,20 +210,21 @@
   },
   "react-perf-0-2-2": {
    "text_sha": "4869aab1ed0336ef",
-   "summary": "Changing state in a parent component causes it and all its children to re-render recursively, demonstrated by typing in Dashboard.jsx causing thousands of PriceRow re-renders.",
+   "summary": "Typing in a filter state triggers Dashboard to re-render, causing PriceTable and all PriceRow components to re-render even if their data hasn't changed, demonstrating React's default re-render behavior.",
    "keywords": [
-    "React state update",
-    "parent re-render",
-    "child re-render",
-    "Dashboard.jsx",
-    "PriceRow",
     "useState",
-    "re-render cascade"
+    "setFilter",
+    "re-render",
+    "Dashboard.jsx",
+    "PriceTable",
+    "PriceRow",
+    "props",
+    "React rendering"
    ],
    "questions": [
-    "What happens when a parent component's state changes in React?",
-    "Why do all child components re-render when a parent re-renders?",
-    "How can I observe re-renders in React components?"
+    "What causes Dashboard and its child components to re-render?",
+    "Why do all PriceRow components re-render even if their data is unchanged?",
+    "How does React handle re-rendering when a parent component updates state?"
    ]
   },
   "react-perf-0-2-3": {
@@ -310,48 +311,52 @@
   },
   "react-perf-0-3-3": {
    "text_sha": "009e72ad0b64258a",
-   "summary": "Creating new arrays or functions inline on every render changes their references, causing memoized components and effects to re-run unnecessarily.",
+   "summary": "React compares props and state by reference, so creating new arrays or functions inline causes memoized components to re-render unnecessarily.",
    "keywords": [
     "React",
-    "memoization",
-    "new array reference",
-    "new function reference",
-    "useEffect dependencies",
-    "useMemo dependencies"
+    "props",
+    "state",
+    "reference equality",
+    "memoized component",
+    "useEffect",
+    "useMemo",
+    "dependency array"
    ],
    "questions": [
-    "Why does creating a new array or function inline cause re-renders?",
-    "How do new references affect useEffect and useMemo dependencies?",
-    "What happens if a memoized component receives a prop with a new reference every render?"
+    "Why does a memoized component re-render when receiving an array created inline?",
+    "How does React compare dependencies in useEffect and useMemo?",
+    "Why does creating a new function inline cause re-renders in React?"
    ]
   },
   "react-perf-0-3-4": {
    "text_sha": "d33068ecb87ab631",
-   "summary": "React relies on cheap reference checks, so developers must keep references stable using useMemo for values and useCallback for functions to avoid unnecessary renders.",
+   "summary": "React uses cheap reference checks (not deep comparisons) to detect changes, so developers must keep references stable using useMemo for values and useCallback for functions.",
    "keywords": [
     "React",
     "reference equality",
     "useMemo",
     "useCallback",
-    "stable references",
-    "performance optimization"
+    "deep comparison",
+    "Profiler",
+    "render optimization"
    ],
    "questions": [
     "Why does React use reference checks instead of deep comparisons?",
-    "How can developers keep references stable to optimize React performance?",
-    "What hooks help maintain stable references for values and functions?"
+    "How can developers keep references stable to avoid unnecessary renders?",
+    "What React hooks help maintain stable references for values and functions?"
    ]
   },
   "react-perf-1-0-0": {
    "text_sha": "3712b4d3ca74ac61",
-   "summary": "Use React DevTools Profiler on a development build to measure component performance and compare relative render times before and after optimizations.",
+   "summary": "Use the React DevTools Profiler in a development build to measure React component performance on your dashboard, noting that production builds run faster and absolute times are relative.",
    "keywords": [
     "React DevTools",
     "Profiler",
     "development build",
     "production build",
-    "component names",
-    "performance measurement"
+    "React Developer Tools extension",
+    "Chrome",
+    "Firefox"
    ],
    "questions": [
     "How do I set up React DevTools Profiler for performance measurement?",
@@ -377,19 +382,20 @@
   },
   "react-perf-1-0-2": {
    "text_sha": "72186040416ffc2f",
-   "summary": "Interpret the commit chart in Profiler to measure render durations; aim for under 16ms per interaction for smooth UI, using baseline times for comparison.",
+   "summary": "The Profiler's commit chart shows the time React takes to commit changes; a single keystroke causing a 90ms commit is too slow for smooth 60fps interaction, which needs under 16ms.",
    "keywords": [
     "commit chart",
+    "commit time",
     "React Profiler",
-    "render duration",
-    "frame rate",
+    "keystroke performance",
     "16 milliseconds",
-    "baseline measurement"
+    "60 frames per second",
+    "performance baseline"
    ],
    "questions": [
     "What does each bar in the React Profiler commit chart represent?",
-    "Why is 16 milliseconds a key threshold for UI responsiveness?",
-    "How do I establish a baseline render time for performance?"
+    "Why is 90 milliseconds per keystroke considered slow?",
+    "What is the target commit time for smooth UI interactions?"
    ]
   },
   "react-perf-1-0-3": {
@@ -411,19 +417,19 @@
   },
   "react-perf-1-0-4": {
    "text_sha": "b934be8cddd488f7",
-   "summary": "Use the ranked view to find slow components among many; many small renders can cumulatively cause performance issues, as with thousands of PriceRow renders.",
+   "summary": "The ranked view in React Profiler sorts components by render time, revealing many small but costly renders (like thousands of PriceRow components) causing performance issues.",
    "keywords": [
     "ranked view",
-    "slow components",
-    "performance bottleneck",
-    "many small renders",
+    "React Profiler",
+    "component render time",
     "PriceRow",
-    "React Profiler"
+    "wasted renders",
+    "flame graph"
    ],
    "questions": [
-    "What is the purpose of the ranked view in React Profiler?",
-    "How can many small renders affect performance?",
-    "What does 'death by a thousand cuts' mean in React rendering?"
+    "How does the ranked view help identify slow components?",
+    "What does seeing many small slow components indicate?",
+    "What is the next step after identifying expensive components in profiling?"
    ]
   },
   "react-perf-1-1-0": {
@@ -445,19 +451,18 @@
   },
   "react-perf-1-1-1": {
    "text_sha": "23a87a04758ba7f5",
-   "summary": "Not all wasted renders need fixing; use the ranked view to focus on costly renders, as cheap components like FilterBar re-render without impact.",
+   "summary": "The flame graph shows that some components like FilterBar re-render without prop changes, but small wasted renders may not need fixing; focus on costly renders using the ranked view.",
    "keywords": [
-    "wasted renders",
-    "ranked view",
+    "flame graph",
+    "wasted render",
     "FilterBar",
-    "React Profiler",
-    "performance cost",
-    "cheap components"
+    "ranked view",
+    "useTicks"
    ],
    "questions": [
-    "Why might some wasted renders not need fixing?",
-    "How does the ranked view help prioritize performance fixes?",
-    "What does it mean when a parent component renders but a child’s props don’t change?"
+    "How can I identify wasted renders in a React flame graph?",
+    "Why might a component re-render even if its props haven't changed?",
+    "When should I ignore small wasted renders in performance analysis?"
    ]
   },
   "react-perf-1-1-2": {
@@ -480,20 +485,19 @@
   },
   "react-perf-1-1-3": {
    "text_sha": "a372c626fddfb70f",
-   "summary": "Use the commit chart to spot components rendering too often; a fat bar means expensive recomputation, while many thin bars suggest memoizing children.",
+   "summary": "Use the commit chart to find components rendering too often, distinguishing between many small renders (memoize children) and few expensive renders (avoid recomputing) for optimization.",
    "keywords": [
     "commit chart",
-    "React Profiler",
+    "render frequency",
     "Dashboard",
     "PriceTable",
     "memoize",
-    "recomputation",
-    "performance optimization"
+    "recompute"
    ],
    "questions": [
-    "How can the commit chart help identify performance issues?",
-    "What does a fat bar versus many thin bars represent in the ranked view?",
-    "When should you avoid recomputing versus memoizing children?"
+    "How do I use the commit chart to detect excessive component renders?",
+    "What does a fat bar versus many thin bars in the ranked view indicate?",
+    "When should I memoize children versus avoid recomputing in React?"
    ]
   },
   "react-perf-1-1-4": {
@@ -516,116 +520,110 @@
   },
   "react-perf-2-0-0": {
    "text_sha": "5379b035af389eda",
-   "summary": "Place state in the smallest component that uses it to reduce unnecessary re-renders of large component subtrees.",
+   "summary": "Place state in the component where it is used to minimize re-renders of large subtrees, since parent re-renders cause all children to re-render.",
    "keywords": [
-    "React state placement",
+    "state placement",
     "component re-render",
-    "state location",
-    "performance optimization"
+    "React state",
+    "subtree re-render"
    ],
    "questions": [
     "Why should state be placed where it is used in React?",
-    "How does moving state down affect component re-rendering?",
-    "What is the impact of holding state high up in the component tree?"
+    "What happens to child components when a parent component re-renders?",
+    "How does moving state down affect React component re-renders?"
    ]
   },
   "react-perf-2-0-1": {
    "text_sha": "c58dacd7d423dbf5",
-   "summary": "Identify which state variables are shared and which are local to optimize by moving only non-shared state down to smaller components.",
+   "summary": "State used by multiple components, like filter text, must stay higher, but state used by only one small component, like hoveredSymbol, can be moved down to reduce unnecessary re-renders.",
    "keywords": [
     "useState",
-    "shared state",
-    "local state",
-    "React component optimization",
-    "re-rendering"
+    "filter state",
+    "hoveredSymbol",
+    "React state sharing",
+    "component re-render optimization"
    ],
    "questions": [
-    "How do you determine if state should be moved down in React?",
-    "What happens when shared state is updated in a parent component?",
-    "Why can't the filter state be moved down in this example?"
+    "When should state be kept high in the component tree?",
+    "Which state is a good candidate to move down in React?",
+    "How does shared state affect component re-renders?"
    ]
   },
   "react-perf-2-0-2": {
    "text_sha": "bb27bc374673b418",
-   "summary": "Move non-shared state and its handlers into a smaller component to drastically reduce re-render time, demonstrated by moving hoveredSymbol into SymbolTooltip.",
+   "summary": "Moving hoveredSymbol state and its handlers into a new SymbolTooltip component reduces re-renders drastically, improving hover performance by 30x without memoization.",
    "keywords": [
-    "React useState",
-    "state lifting down",
     "SymbolTooltip",
-    "performance profiling",
-    "re-render optimization"
+    "useState",
+    "hover handlers",
+    "React Profiler"
    ],
    "questions": [
-    "How does moving hoveredSymbol state into SymbolTooltip improve performance?",
-    "What is the effect on re-render time after moving state down?",
-    "Why do only certain components re-render after moving state?"
+    "How can moving state into a smaller component improve performance?",
+    "What was the performance improvement after moving hoveredSymbol state?",
+    "Why did moving hoveredSymbol state reduce re-renders?"
    ]
   },
   "react-perf-2-0-3": {
    "text_sha": "3e6b51b204d71d1b",
-   "summary": "Lift content up by passing expensive children as props to stateful wrappers to prevent unnecessary re-renders when wrapper state changes.",
+   "summary": "Lifting content up means rendering expensive children in the parent and passing them as children props to a stateful wrapper, preventing unnecessary re-renders when the wrapper's state changes.",
    "keywords": [
     "lifting content up",
-    "React children prop",
-    "stateful wrapper",
-    "component re-render",
-    "performance optimization"
+    "children prop",
+    "ResizablePanel",
+    "React re-render optimization"
    ],
    "questions": [
     "What does lifting content up mean in React?",
-    "How does passing children from a parent prevent re-renders?",
-    "Why does a stateful wrapper re-render its children when state changes?"
+    "How does passing children as props prevent re-renders?",
+    "Why lift content up when a stateful wrapper surrounds expensive children?"
    ]
   },
   "react-perf-2-0-4": {
    "text_sha": "fb0fa3355896d6a9",
-   "summary": "Using stable children references from the parent allows React to skip re-rendering children when a wrapper's state changes, avoiding stale dependency issues.",
+   "summary": "Because children props keep the same reference when created by the parent, React skips re-rendering them when the wrapper's state changes; move state down or lift content up before using memoization.",
    "keywords": [
-    "React children reference",
-    "re-render skipping",
+    "children prop reference",
+    "React re-render",
     "stateful wrapper",
-    "performance optimization",
-    "memoization alternative"
+    "memoization"
    ],
    "questions": [
     "Why does React skip re-rendering children with the same reference?",
-    "How does passing children from the parent avoid stale dependencies?",
-    "When should memoization be used after moving state and lifting content?"
+    "What is the recommended order of optimization techniques before memoization?",
+    "How does reference equality affect React rendering?"
    ]
   },
   "react-perf-2-1-0": {
    "text_sha": "f884ecdc78d5b28b",
-   "summary": "Filtering and sorting a large list on every render causes performance issues, especially when triggered by frequent updates like price ticks or keystrokes.",
+   "summary": "Filtering and sorting a large list on every render causes performance issues in Dashboard.jsx, as these computations run on every price tick, keystroke, and selection change.",
    "keywords": [
     "filter",
     "sort",
     "Dashboard.jsx",
-    "performance",
     "render",
     "rows",
-    "price tick"
+    "computation"
    ],
    "questions": [
     "Why does filtering and sorting on every render cause performance problems?",
-    "What triggers the Dashboard component to re-render frequently?",
-    "How is the visibleRows variable currently computed?"
+    "What operations are causing heavy computation in Dashboard.jsx?",
+    "When does the filtering and sorting run in the Dashboard component?"
    ]
   },
   "react-perf-2-1-1": {
    "text_sha": "521525e9a433c1e3",
-   "summary": "Using console.time reveals the filtering and sorting takes about 11ms each render, even when inputs haven't changed, highlighting unnecessary recomputation.",
+   "summary": "Using console.time reveals filtering and sorting take about 11ms per render, even when inputs haven't changed, highlighting the need for memoization to avoid redundant computations.",
    "keywords": [
     "console.time",
-    "performance measurement",
     "filter",
     "sort",
-    "render",
     "memoization"
    ],
    "questions": [
-    "How can you measure the time taken by a computation in React?",
-    "Why is recomputing filtering and sorting on every render inefficient?",
-    "What problem does memoization solve in this context?"
+    "How can you measure the time taken by filtering and sorting in React?",
+    "Why is memoization needed for filtering and sorting in this case?",
+    "What does console.time show about the cost of filtering and sorting?"
    ]
   },
   "react-perf-2-1-2": {
@@ -647,19 +645,20 @@
   },
   "react-perf-2-1-3": {
    "text_sha": "cf5ea836d3951f44",
-   "summary": "useMemo wraps the filtering and sorting logic with dependencies [rows, filter, sortKey], so React recomputes visibleRows only when these inputs change.",
+   "summary": "useMemo memoizes the filtered and sorted rows by running the computation only when dependencies (rows, filter, sortKey) change, preventing unnecessary recalculations on re-renders.",
    "keywords": [
     "useMemo",
+    "memoization",
     "filter",
     "sort",
-    "dependencies",
+    "dependency array",
     "Object.is",
-    "visibleRows"
+    "React hook"
    ],
    "questions": [
-    "How do you use useMemo to memoize a filtered and sorted list?",
-    "What does React use to compare dependencies in useMemo?",
-    "When does useMemo recompute the memoized value?"
+    "How does useMemo help optimize filtering and sorting in React?",
+    "What dependencies should be included in useMemo for filtering and sorting?",
+    "How does React decide whether to recompute useMemo's function?"
    ]
   },
   "react-perf-2-1-4": {
@@ -681,68 +680,66 @@
   },
   "react-perf-2-1-5": {
    "text_sha": "5e919cc146817a44",
-   "summary": "Memoization avoids redundant filtering and sorting work when inputs don't change, but overusing useMemo can add overhead; memoization only helps if inputs remain identical.",
+   "summary": "Memoization with useMemo avoids redundant filtering and sorting unless inputs change, but overusing it can add overhead; new arrays cause recomputation, which is expected behavior.",
    "keywords": [
-    "memoization",
     "useMemo",
-    "performance optimization",
-    "over-memoizing",
+    "memoization",
+    "computed state",
     "dependency comparison",
-    "render"
+    "performance overhead",
+    "array identity"
    ],
    "questions": [
-    "Why is memoization beneficial for computed state like filtered lists?",
-    "What are the risks of overusing useMemo?",
-    "Why does memoization not prevent recomputation when the rows array changes?"
+    "What is the main benefit of memoization for computed state?",
+    "Why can overusing useMemo hurt performance?",
+    "Why does useMemo recompute when a new rows array arrives?"
    ]
   },
   "react-perf-2-2-0": {
    "text_sha": "710f1d2dcebe036e",
-   "summary": "useMemo has a cost due to storing and comparing dependencies, so avoid wrapping everything blindly and measure performance before using it.",
+   "summary": "useMemo has a performance cost due to storing values and comparing dependencies, so avoid wrapping everything in it without measuring its benefit.",
    "keywords": [
     "useMemo",
-    "React performance",
     "dependency array",
+    "React performance",
     "memoization cost",
-    "performance measurement"
+    "render optimization"
    ],
    "questions": [
-    "Why can useMemo sometimes slow down React apps?",
-    "What costs are involved in using useMemo?",
-    "When should you avoid using useMemo?"
+    "What is the performance cost of using useMemo in React?",
+    "Why shouldn't you wrap every calculation in useMemo?",
+    "How does React handle dependencies in useMemo?"
    ]
   },
   "react-perf-2-2-1": {
    "text_sha": "def0afeda9833a06",
-   "summary": "Memoizing a calculation like totalVolume with useMemo can be slower if dependencies change every render, causing cache misses and extra overhead.",
+   "summary": "Memoizing a calculation with changing dependencies every render can cause extra overhead, making useMemo slower than just recalculating.",
    "keywords": [
     "useMemo",
-    "dependency array",
-    "cache miss",
-    "React profiling",
-    "performance overhead"
+    "dependency change",
+    "profiling",
+    "React performance",
+    "cache miss"
    ],
    "questions": [
     "What happens if useMemo dependencies change every render?",
-    "Why can useMemo cause slower performance with new arrays each tick?",
-    "How does React handle dependency comparison in useMemo?"
+    "How does useMemo behave when the dependency array contains a new array each tick?",
+    "Why can useMemo cause slower performance in some cases?"
    ]
   },
   "react-perf-2-2-2": {
    "text_sha": "8ff0a9f960c65478",
-   "summary": "Memoizing trivial calculations is inefficient because their cost is less than useMemo's overhead; measure with console.time and consider memoizing only if calculations take a millisecond or more.",
+   "summary": "Memoizing trivial computations like string concatenation or small additions wastes time because dependency checks cost more; measure with console.time and memoize only if calculation takes about a millisecond or more.",
    "keywords": [
     "useMemo",
-    "performance measurement",
+    "trivial computation",
     "console.time",
-    "memoization overhead",
-    "React docs",
-    "CPU throttling"
+    "React docs"
    ],
    "questions": [
-    "When is it worth memoizing a calculation in React?",
-    "How can you measure if a calculation is slow enough to memoize?",
-    "Why is memoizing trivial calculations a bad idea?"
+    "When is memoizing trivial computations counterproductive?",
+    "How can you measure if a calculation is worth memoizing?",
+    "What rule of thumb does React documentation suggest for using useMemo?"
    ]
   },
   "react-perf-2-2-3": {
@@ -764,35 +761,33 @@
   },
   "react-perf-2-2-4": {
    "text_sha": "ea3dc78ac5033e87",
-   "summary": "Decide to use useMemo only if restructuring state isn't possible and the computation is slow with stable inputs; otherwise skip it to avoid unnecessary complexity.",
+   "summary": "Decide to use useMemo only if restructuring state doesn't help and the computation is slow with stable inputs; otherwise, avoid it to prevent wasted work.",
    "keywords": [
-    "useMemo",
-    "performance optimization",
+    "useMemo decision",
     "state restructuring",
     "React.memo",
-    "useCallback",
-    "decision procedure"
+    "useCallback"
    ],
    "questions": [
-    "What is the recommended decision process for using useMemo?",
+    "What is the decision process for using useMemo effectively?",
     "When should you remove useMemo from a calculation?",
-    "What tools help prevent unnecessary re-renders beyond useMemo?"
+    "What tools help avoid unnecessary re-renders besides useMemo?"
    ]
   },
   "react-perf-3-0-0": {
    "text_sha": "898cc6fb2a12b3d8",
-   "summary": "React.memo prevents unnecessary re-renders by skipping component updates when props are unchanged, demonstrated by wrapping PriceRow to optimize rendering.",
+   "summary": "React.memo prevents unnecessary re-renders of PriceRow components by skipping updates when props remain unchanged.",
    "keywords": [
     "React.memo",
     "PriceRow",
     "re-render",
     "props",
     "function component",
-    "performance optimization"
+    "onSelect callback"
    ],
    "questions": [
-    "What does React.memo do in React components?",
-    "How can React.memo help with performance in a list of components?",
+    "What does React.memo do for a component?",
+    "How can React.memo help with many PriceRow components re-rendering?",
     "What props does the PriceRow component receive?"
    ]
   },
@@ -849,38 +844,36 @@
   },
   "react-perf-3-0-4": {
    "text_sha": "6ebaed7fa996dd75",
-   "summary": "Combining React.memo with useCallback reduces re-renders significantly, shown by fewer PriceRow updates and faster commits when handleSelect is memoized and passed down.",
+   "summary": "Using React.memo with PriceRow reduces re-renders from five thousand to a few hundred, improving performance significantly, especially when combined with useCallback.",
    "keywords": [
     "React.memo",
     "useCallback",
-    "performance improvement",
-    "re-render reduction",
-    "PriceRow",
+    "re-render optimization",
     "flame graph",
     "commit time"
    ],
    "questions": [
-    "What is the performance impact of using React.memo with useCallback together?",
-    "Why does React.memo alone not improve performance if props have new references?",
-    "What happens if useCallback is used without React.memo on the child?"
+    "How does React.memo affect the flame graph and commit time?",
+    "Why do React.memo and useCallback need to be used together?",
+    "What happens when typing in the filter after applying React.memo?"
    ]
   },
   "react-perf-3-1-0": {
    "text_sha": "9983dc8dea7a9ba6",
-   "summary": "React.memo optimizations can silently fail due to inline objects, arrays, or functions passed as props, which cause new references each render and break memo's shallow comparison.",
+   "summary": "React.memo optimizations can silently fail if inline objects, arrays, or functions are passed as props, so avoiding inline definitions helps maintain memo's effectiveness.",
    "keywords": [
     "React.memo",
     "inline objects",
     "inline arrays",
     "inline functions",
     "props",
-    "shallow equality",
-    "React Profiler"
+    "React Profiler",
+    "performance optimization"
    ],
    "questions": [
-    "Why does React.memo sometimes fail silently?",
-    "What common prop patterns break React.memo optimizations?",
-    "How can inline objects or functions affect memoized components?"
+    "Why does React.memo optimization sometimes silently fail?",
+    "What common prop patterns break React.memo?",
+    "How can inline objects or functions affect memoization?"
    ]
   },
   "react-perf-3-1-1": {
@@ -919,20 +912,20 @@
   },
   "react-perf-3-1-3": {
    "text_sha": "730ae42ebd851d9c",
-   "summary": "Avoid inline function props like onRemove={() => removeSymbol(r.symbol)} by passing stable callbacks and data separately, letting the child component handle arguments to maintain stable references.",
+   "summary": "To avoid creating new closures each render, pass a stable function prop and the data separately, letting the child component combine them to keep props stable and memo effective.",
    "keywords": [
-    "inline functions",
-    "stable callbacks",
-    "React.memo",
-    "onRemove",
+    "stable function",
     "closures",
-    "props",
-    "performance"
+    "onRemove",
+    "React props",
+    "callback pattern",
+    "memo optimization",
+    "per-row closures"
    ],
    "questions": [
-    "Why do inline functions as props break React.memo?",
-    "How can passing stable callbacks plus data fix memo re-renders?",
-    "What pattern avoids per-row closures in callbacks?"
+    "How can inline arrow functions in props cause performance issues?",
+    "What is a pattern to avoid per-render closures in React props?",
+    "How do you pass callbacks and data separately to maintain stable props?"
    ]
   },
   "react-perf-3-1-4": {
@@ -972,19 +965,19 @@
   },
   "react-perf-3-2-1": {
    "text_sha": "f6c135adc21c0dc1",
-   "summary": "When a context value changes, all components consuming that context re-render regardless of React.memo, causing performance issues in large lists like 5000 rows.",
+   "summary": "Using useContext causes all consuming components to re-render when the context value changes, bypassing React.memo optimizations that only prevent parent-triggered re-renders.",
    "keywords": [
-    "context update",
     "useContext",
     "React.memo",
-    "re-render all consumers",
-    "performance issue",
-    "large lists"
+    "context value change",
+    "re-render",
+    "DashboardContext",
+    "consumer components"
    ],
    "questions": [
+    "What happens to components using useContext when the context value changes?",
     "Does React.memo prevent re-renders caused by context updates?",
-    "What happens to components consuming context when the context value changes?",
-    "Why do all 5000 rows re-render when the filter changes?"
+    "Why do all rows re-render when the context provider value changes?"
    ]
   },
   "react-perf-3-2-2": {
@@ -1041,36 +1034,36 @@
   },
   "react-perf-4-0-0": {
    "text_sha": "3643798fd4d551b7",
-   "summary": "Virtualization (windowing) improves performance by rendering only visible table rows plus a buffer, avoiding costly rendering of all 5,000 rows.",
+   "summary": "Virtualization (windowing) improves performance by rendering only visible rows plus a buffer instead of all 5,000 rows in the DOM.",
    "keywords": [
     "virtualization",
     "windowing",
     "rendering optimization",
-    "React",
+    "DOM nodes",
+    "memoization",
     "PriceTable.jsx",
-    "DOM performance",
-    "memoization"
+    "Profiler"
    ],
    "questions": [
-    "What is virtualization in rendering large lists?",
-    "How can rendering only visible rows improve performance?",
-    "Why doesn't memoization solve the problem of rendering thousands of rows?"
+    "What is virtualization or windowing in rendering large lists?",
+    "Why does rendering all 5,000 rows cause performance issues?",
+    "How can rendering only visible rows improve performance?"
    ]
   },
   "react-perf-4-0-1": {
    "text_sha": "8cbcba320598c1f0",
-   "summary": "Virtualization uses a fixed-height container with overflow:auto and a tall empty div to simulate full scroll height, rendering only visible rows absolutely positioned at correct offsets.",
+   "summary": "Virtualization uses a fixed-height container with overflow auto and a tall empty div to simulate full scroll height, rendering only visible rows absolutely positioned.",
    "keywords": [
-    "virtualization",
-    "scrollable height",
-    "overflow:auto",
-    "absolute positioning",
     "fixed height container",
+    "overflow auto",
+    "scrollable height",
+    "absolute positioning",
+    "row height",
     "scrollbar behavior"
    ],
    "questions": [
-    "How does virtualization simulate the full scroll height?",
-    "What CSS properties are used to create a scrollable container for virtualization?",
+    "How does virtualization simulate the full scroll height with fewer DOM nodes?",
+    "What CSS properties are used to implement virtualization in a table?",
     "How are visible rows positioned in a virtualized list?"
    ]
   },
@@ -1112,20 +1105,20 @@
   },
   "react-perf-4-0-4": {
    "text_sha": "e01afb43c064cc1d",
-   "summary": "Virtualization reduces DOM nodes drastically, improving performance but has trade-offs like reduced find-in-page and screen reader context, requiring ARIA attributes for accessibility.",
+   "summary": "Virtualization reduces DOM nodes from 5,000 to about 30, cutting render time from 300ms to under 10ms, but has accessibility trade-offs requiring aria attributes.",
    "keywords": [
     "virtualization benefits",
-    "DOM node reduction",
-    "performance improvement",
-    "find-in-page limitation",
-    "screen reader accessibility",
-    "ARIA attributes",
-    "trade-offs"
+    "render time reduction",
+    "DOM node count",
+    "scrolling performance",
+    "aria attributes",
+    "accessibility trade-offs",
+    "screen reader"
    ],
    "questions": [
-    "How does virtualization improve rendering performance?",
-    "What are accessibility challenges with virtualization?",
-    "How can ARIA attributes help with virtualized lists?"
+    "How much does virtualization reduce render time and DOM nodes?",
+    "What are the accessibility concerns when using virtualization?",
+    "How does virtualization affect scrolling smoothness?"
    ]
   },
   "react-perf-4-1-0": {
@@ -1166,19 +1159,20 @@
   },
   "react-perf-4-1-2": {
    "text_sha": "17da8eace9055676",
-   "summary": "React renders transitions in the background and interrupts them for urgent updates, keeping input responsive and allowing UI feedback with isPending during deferred rendering.",
+   "summary": "React's useTransition renders updates in the background and interrupts slow renders for urgent ones, keeping input responsive and allowing UI feedback with isPending for lag indication.",
    "keywords": [
+    "React",
+    "useTransition",
     "concurrent rendering",
     "isPending",
-    "startTransition",
-    "interrupt render",
-    "background render",
-    "React 18 transitions"
+    "input responsiveness",
+    "background rendering",
+    "interrupt render"
    ],
    "questions": [
-    "What happens when a new urgent update arrives during a transition render?",
-    "How can isPending be used to indicate loading state during transitions?",
-    "Why does input stay responsive when using useTransition with slow table rendering?"
+    "How does React keep input responsive during slow renders?",
+    "What does isPending indicate in useTransition?",
+    "How does React handle multiple state updates with useTransition?"
    ]
   },
   "react-perf-4-1-3": {
@@ -1200,20 +1194,20 @@
   },
   "react-perf-4-1-4": {
    "text_sha": "9bbc69e58ee7b9de",
-   "summary": "useTransition and useDeferredValue improve perceived performance by prioritizing renders but do not reduce total work; they wrap state updates, not timers or fetches.",
+   "summary": "useTransition and similar tools prioritize rendering to improve app feel but don't reduce total work, so real optimizations should come first and transitions only wrap state updates, not timers or fetches.",
    "keywords": [
     "useTransition",
-    "useDeferredValue",
     "render prioritization",
-    "perceived performance",
-    "React 18",
     "state updates",
+    "timers",
+    "fetches",
+    "performance optimization",
     "render interruptions"
    ],
    "questions": [
-    "Do useTransition and useDeferredValue make rendering faster or just feel faster?",
-    "What kinds of updates do transitions wrap in React?",
-    "Why keep inputValue separate from transition updates?"
+    "Do transitions make rendering faster or just feel faster?",
+    "What types of updates can transitions wrap?",
+    "Why keep inputValue state separate when using transitions?"
    ]
   },
   "react-perf-5-0-0": {
@@ -1234,18 +1228,18 @@
   },
   "react-perf-5-0-1": {
    "text_sha": "232df1b5419a4bd6",
-   "summary": "A healthy React profile shows components rendering only when props change, reducing commit time from 90ms to 4ms by avoiding unnecessary renders.",
+   "summary": "Profiling shows the dashboard's render time dropped from 90ms to 4ms, with only necessary components re-rendering, indicating efficient React rendering behavior.",
    "keywords": [
-    "React Profiler",
+    "React profiling",
     "commit chart",
     "flame graph",
-    "props change",
-    "render optimization"
+    "render time",
+    "props change"
    ],
    "questions": [
-    "What does a healthy React render profile look like?",
-    "How can you tell if a component is rendering unnecessarily?",
-    "What does the flame graph indicate about component renders?"
+    "How can you tell if a React component is rendering efficiently?",
+    "What does a short blue bar in the commit chart indicate?",
+    "Why do some components remain gray in the flame graph during profiling?"
    ]
   },
   "react-perf-5-0-2": {
@@ -1302,18 +1296,19 @@
   },
   "react-perf-5-1-0": {
    "text_sha": "5396095af946794e",
-   "summary": "This passage introduces the course recap, describing how a slow trading dashboard was profiled and optimized step-by-step using React DevTools Profiler.",
+   "summary": "This passage summarizes improving a slow React trading dashboard by profiling with React DevTools Profiler and fixing performance issues step-by-step.",
    "keywords": [
+    "React Performance Patterns",
     "React DevTools Profiler",
     "performance profiling",
-    "render optimization",
     "trading dashboard",
-    "React performance"
+    "wasted work",
+    "performance optimization"
    ],
    "questions": [
     "How can React DevTools Profiler help identify performance issues?",
     "What was the initial problem with the trading dashboard?",
-    "What is the benefit of measuring performance changes one at a time?"
+    "What is the benefit of fixing performance issues one measured change at a time?"
    ]
   },
   "react-perf-5-1-1": {

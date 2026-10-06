@@ -130,98 +130,95 @@
   },
   "custom-library-0-1-3": {
    "text_sha": "3289cb72f0da9f90",
-   "summary": "The library ensures consistent formatting of titles regardless of backend data quality and shortens long paragraphs for better homepage display.",
+   "summary": "The library will provide utility functions to format titles and shorten long paragraphs for better display on the homepage and detailed article pages.",
    "keywords": [
-    "title formatting",
-    "data consistency",
-    "paragraph shortening",
-    "custom string methods",
-    "frontend formatting"
+    "utility function",
+    "formatting",
+    "shorten paragraph",
+    "production application",
+    "custom code"
    ],
    "questions": [
-    "How does the library handle inconsistent title formatting?",
-    "Why shorten paragraphs on a homepage?",
-    "What benefits does using a custom method for formatting provide?"
+    "How can titles be formatted consistently in a production application?",
+    "What method can be used to shorten long paragraphs for homepage display?",
+    "Why is custom code needed for formatting and shortening content?"
    ]
   },
   "custom-library-0-1-4": {
    "text_sha": "9e8c25c7a688272a",
-   "summary": "The library supports highlighting words in custom colors and masking sensitive content while preserving context for specific use cases.",
+   "summary": "The library enables highlighting specific words in chosen colors and masking words to moderate content without losing context.",
    "keywords": [
-    "highlighting text",
-    "color customization",
-    "content masking",
-    "sensitive data",
-    "string manipulation"
+    "highlight word",
+    "color highlight",
+    "mask words",
+    "content moderation",
+    "utility function"
    ],
    "questions": [
-    "How can text be highlighted in different colors using the library?",
-    "What does masking content mean and when is it useful?",
-    "Can the library help with content moderation?"
+    "How can a developer highlight a word in a specific color using the library?",
+    "Is it possible to mask words to moderate content without losing context?",
+    "What content moderation features does the library provide?"
    ]
   },
   "custom-library-0-1-5": {
    "text_sha": "3e3df537efca4305",
-   "summary": "The library includes methods to mask sensitive data like mobile numbers and emails and format currencies for different locales.",
+   "summary": "The library includes methods to mask sensitive data like mobile numbers and emails and format currencies for different regions.",
    "keywords": [
-    "masking sensitive data",
+    "mask sensitive data",
     "mobile number masking",
     "email masking",
     "currency formatting",
-    "locales"
+    "utility methods"
    ],
    "questions": [
-    "How does the library mask sensitive information?",
-    "Can the library format currencies for different countries?",
-    "What types of sensitive data can be handled by the library?"
+    "How can sensitive information like mobile numbers and emails be masked?",
+    "Can the library format currencies for different regions such as India, Europe, and the USA?",
+    "What kind of utility methods does the library provide for data formatting?"
    ]
   },
   "custom-library-0-1-6": {
    "text_sha": "792aea1e1fd918c1",
-   "summary": "The library will extend JavaScript's string capabilities like lodash does for arrays, providing a suite of string manipulation utilities and integration techniques.",
+   "summary": "The library will extend JavaScript string methods similar to lodash for arrays, providing comprehensive string manipulation and formatting utilities.",
    "keywords": [
-    "lodash",
-    "string manipulation library",
+    "string manipulation",
+    "text formatting",
+    "text masking",
     "JavaScript string methods",
-    "library integration",
-    "utility functions"
+    "custom library"
    ],
    "questions": [
-    "How is this string library similar to lodash?",
-    "What kinds of string operations will the library provide?",
-    "Why is understanding library integration important?"
+    "How does the library compare to lodash in extending built-in methods?",
+    "What types of string operations will the library support?",
+    "Why is understanding library integration with JavaScript important?"
    ]
   },
   "custom-library-0-2-0": {
    "text_sha": "33aa6190bb73b34b",
-   "summary": "Use the mental model 'expectation versus reality' to organize learning by comparing what you expect from JavaScript outputs versus what actually happens.",
+   "summary": "Use the mental model 'expectation versus reality' to organize learning by comparing what you expect from JavaScript code output versus the actual output.",
    "keywords": [
     "mental models",
     "expectation versus reality",
-    "JavaScript learning",
-    "console.log",
-    "knowledge gap"
+    "JavaScript output",
+    "learning organization"
    ],
    "questions": [
     "What is the 'expectation versus reality' mental model?",
     "How can mental models help organize learning in JavaScript?",
-    "Why might JavaScript topics seem complex initially?"
+    "Why is it important to compare expected and actual outputs in coding?"
    ]
   },
   "custom-library-0-2-1": {
    "text_sha": "158cfe2df1a78804",
-   "summary": "Applying 'expectation versus reality' by predicting the output of console.log comparing number 1 and string '1' to reveal knowledge gaps.",
+   "summary": "Apply 'expectation versus reality' by predicting the output of console.log comparing number 1 and string '1' to reveal knowledge gaps in JavaScript behavior.",
    "keywords": [
     "console.log",
-    "number vs string",
-    "JavaScript comparison",
     "expectation versus reality",
-    "type coercion introduction"
+    "number vs string"
    ],
    "questions": [
-    "What happens when you compare number 1 and string '1' in JavaScript?",
-    "How does expectation versus reality reveal knowledge gaps?",
-    "What is an example of a simple JavaScript comparison that challenges expectations?"
+    "How can I use console.log to test my expectations in JavaScript?",
+    "What happens when comparing number 1 and string '1' in JavaScript?",
+    "Why is predicting output useful for identifying knowledge gaps?"
    ]
   },
   "custom-library-0-2-2": {
@@ -258,34 +255,30 @@
   },
   "custom-library-0-2-4": {
    "text_sha": "635fb91d4b21b083",
-   "summary": "JavaScript's type coercion originated from early developer requests to make comparisons like '404' == 404 true by forcefully converting strings to numbers.",
+   "summary": "Brandon Eich adapted JavaScript to meet developer requests by implementing type coercion, converting strings to numbers to make comparisons like '404' == 404 true.",
    "keywords": [
-    "type coercion origin",
-    "Brendan Eich",
-    "early JavaScript",
-    "developer requests",
-    "string to number conversion"
+    "Brandon Eich",
+    "JavaScript history"
    ],
    "questions": [
-    "Why was type coercion introduced in JavaScript?",
-    "Who influenced the creation of type coercion?",
-    "How does JavaScript handle comparing '404' and 404?"
+    "Who is Brandon Eich and what was his role in JavaScript?",
+    "Why does '404' == 404 evaluate to true in JavaScript?",
+    "What is type coercion in JavaScript?"
    ]
   },
   "custom-library-0-2-5": {
    "text_sha": "f669720ba6d0de2c",
-   "summary": "Type coercion was intended as a feature to help adoption but became a bug; strict equality operator (===) fixes this by preventing coercion.",
+   "summary": "Type coercion in JavaScript can cause unexpected behavior by forcefully converting types, but using the strict equality operator (===) prevents this and matches expectations.",
    "keywords": [
-    "type coercion bug",
+    "type coercion",
+    "JavaScript bugs",
     "strict equality operator",
-    "JavaScript ===",
-    "feature vs bug",
-    "forceful conversion"
+    "type conversion"
    ],
    "questions": [
-    "How does the strict equality operator prevent type coercion?",
-    "Why did type coercion become considered a bug?",
-    "What is the difference between == and === in JavaScript?"
+    "What problems can type coercion cause in JavaScript?",
+    "How does the strict equality operator (===) differ from loose equality (==)?",
+    "How can I avoid bugs caused by type coercion?"
    ]
   },
   "custom-library-0-2-6": {
@@ -306,34 +299,31 @@
   },
   "custom-library-0-2-7": {
    "text_sha": "6c6b86b666c88063",
-   "summary": "The 'beware' mental model warns against false confidence in understanding type coercion, emphasizing that initial explanations can lead to misconceptions.",
+   "summary": "Use the mental model 'train of thoughts' to compress complex concepts into a simple, sequential chain of reasoning for better understanding.",
    "keywords": [
-    "beware mental model",
-    "type coercion misconceptions",
-    "JavaScript pitfalls",
-    "false confidence",
-    "concept caution"
+    "train of thoughts",
+    "mental models",
+    "concept compression"
    ],
    "questions": [
-    "Why should you be cautious about your understanding of type coercion?",
-    "What false impressions can arise about type coercion?",
-    "How does the 'beware' mental model help in learning?"
+    "What is the 'train of thoughts' mental model?",
+    "How can chaining thoughts help understand complex concepts?",
+    "Why is organizing ideas sequentially useful in learning?"
    ]
   },
   "custom-library-0-2-8": {
    "text_sha": "739aae84f8e7cfaf",
-   "summary": "Type coercion behaves differently with addition: when adding number 1 and string '1', JavaScript converts the number to string and concatenates to '11'.",
+   "summary": "Beware of false impressions about type coercion: in addition, JavaScript converts numbers to strings causing '1' + 1 to be '11', not 2, showing coercion can behave oppositely.",
    "keywords": [
     "type coercion",
     "string concatenation",
     "JavaScript addition",
-    "number plus string",
-    "dynamic coercion"
+    "1 + '1'"
    ],
    "questions": [
-    "What happens when you add number 1 and string '1' in JavaScript?",
-    "How does type coercion affect addition versus equality?",
-    "Why does 1 + '1' result in '11'?"
+    "How does type coercion behave differently in addition versus equality?",
+    "Why does 1 + '1' result in '11' in JavaScript?",
+    "What false impressions might I have about type coercion?"
    ]
   },
   "custom-library-0-2-9": {
@@ -386,19 +376,18 @@
   },
   "custom-library-1-0-2": {
    "text_sha": "a9cb06baaf10dd9c",
-   "summary": "Wrapper libraries like fetch and Axios improve existing JavaScript features such as API calls by providing better syntax and usability over XMLHttpRequest.",
+   "summary": "Fetch API improved making API calls over XMLHttpRequest, and libraries like Axios further wrap fetch for better usability and performance.",
    "keywords": [
-    "wrapper library",
-    "fetch API",
+    "fetch",
     "Axios",
-    "XMLHttpRequest",
-    "API calls",
+    "API call",
+    "wrapper library",
     "JavaScript"
    ],
    "questions": [
-    "What does a wrapper library do?",
-    "How does fetch improve API calls compared to XMLHttpRequest?",
-    "Why do developers use Axios over fetch?"
+    "What is XMLHttpRequest used for in JavaScript?",
+    "Why was fetch introduced as an alternative to XMLHttpRequest?",
+    "What advantages does Axios provide over fetch?"
    ]
   },
   "custom-library-1-0-3": {
@@ -437,20 +426,19 @@
   },
   "custom-library-1-0-5": {
    "text_sha": "3d53d3c759cf096c",
-   "summary": "Frameworks combine multiple libraries to provide features like state management, routing, and fast single-page applications, simplifying full-stack development.",
+   "summary": "Frameworks enhance vanilla web apps by providing data reactivity, state management, and routing, enriching both development and user experience beyond simple libraries.",
    "keywords": [
     "framework",
+    "library",
+    "data reactivity",
     "state management",
     "routing",
-    "single-page application",
-    "Next.js",
-    "module bundler",
-    "full-stack development"
+    "vanilla web application"
    ],
    "questions": [
-    "What distinguishes a framework from a library?",
-    "What features do frameworks typically provide?",
-    "How do frameworks simplify application development?"
+    "What features do frameworks provide that improve web applications?",
+    "How do frameworks differ from libraries in web development?",
+    "Why are frameworks considered beneficial for both developers and users?"
    ]
   },
   "custom-library-1-0-6": {
@@ -549,18 +537,17 @@
   },
   "custom-library-10-0-12": {
    "text_sha": "a4605170acdb9e53",
-   "summary": "Configure npm package.json to allow missing test script as a warning, and ensure you are logged into npm via terminal before publishing.",
+   "summary": "You can customize the npm package.json test script to avoid errors during publishing, and you must be logged into npm via the terminal to publish successfully.",
    "keywords": [
-    "npm login",
-    "package.json",
     "test script",
     "npm publish",
-    "unclean working tree"
+    "warning",
+    "unclean working directory"
    ],
    "questions": [
-    "How do I handle missing test scripts when publishing an npm package?",
+    "How can I prevent npm from stopping the publish process due to missing tests?",
     "Do I need to be logged into npm to publish a package?",
-    "What does 'unclean working tree' mean when publishing?"
+    "What does an unclean working directory mean when publishing?"
    ]
   },
   "custom-library-10-0-13": {
@@ -627,33 +614,34 @@
   },
   "custom-library-10-0-2": {
    "text_sha": "a8ba45d5f295013c",
-   "summary": "The np package is introduced as a better tool for publishing npm packages with version management, requiring pushing code to a GitHub repository first.",
+   "summary": "The np package is introduced as a tool to help publish npm packages, and the code must first be pushed to a GitHub repository.",
    "keywords": [
-    "np package",
-    "npm publish alternative",
+    "np",
+    "npm package",
     "GitHub repository",
-    "version management"
+    "publish package",
+    "ESM"
    ],
    "questions": [
     "What is the np package used for?",
-    "Why should I push my code to GitHub before publishing?",
-    "How does np improve npm package publishing?"
+    "Why do I need to push my code to GitHub before publishing?",
+    "What is the starting point before publishing a library with np?"
    ]
   },
   "custom-library-10-0-3": {
    "text_sha": "1809385faafd99ae",
-   "summary": "When creating a GitHub repository for your library, choose a unique name to avoid conflicts, often by adding a personal identifier.",
+   "summary": "When naming an npm package, ensure the name is unique by adding a personal identifier to avoid conflicts before initializing and committing the repository.",
    "keywords": [
+    "npm package name",
+    "unique package name",
     "GitHub repository",
-    "unique repository name",
-    "library naming",
     "git commit",
-    "git push"
+    "initialize repository"
    ],
    "questions": [
-    "Why should my GitHub repository name be unique?",
-    "How do I initialize and push my library code to GitHub?",
-    "What is a good practice for naming npm package repositories?"
+    "How do I avoid naming conflicts when publishing an npm package?",
+    "What steps are involved in initializing a GitHub repository for my library?",
+    "Why should I add my name to the package name?"
    ]
   },
   "custom-library-10-0-4": {
@@ -751,20 +739,18 @@
   },
   "custom-library-10-1-0": {
    "text_sha": "ff3a8deb63fc9db4",
-   "summary": "Added new methods to the library: maskPhone to mask mobile numbers, betterDateTime to format dates, and highlight to find and highlight words in various HTML tags with custom colors.",
+   "summary": "Added new library methods: maskPhone to mask mobile numbers, betterDateTime to format dates, and highlight to find and style specific words in various HTML tags.",
    "keywords": [
-    "maskPhone",
-    "betterDateTime",
     "highlight",
     "DOM nodes",
-    "custom color",
-    "HTML tags",
-    "mask mobile numbers"
+    "mask phone method",
+    "date formatting",
+    "highlight text"
    ],
    "questions": [
     "What does the maskPhone method do?",
-    "How can the highlight method be customized?",
-    "Which HTML tags does the highlight method support?"
+    "How does the highlight function work on different HTML tags?",
+    "What is the purpose of betterDateTime method?"
    ]
   },
   "custom-library-10-1-1": {
@@ -785,104 +771,94 @@
   },
   "custom-library-10-1-10": {
    "text_sha": "d4e8b6c9714b0ee8",
-   "summary": "Demonstrates using the moderate function to mask specific words like 'AI' in paragraphs, showing real-time text moderation.",
+   "summary": "Shows how to use the moderate function to mask a specific word (e.g., AI) in a paragraph and explains highlight function usage on HTML tags.",
    "keywords": [
     "moderate function",
-    "masking words",
-    "Vue.js",
-    "text moderation",
-    "AI masking"
+    "mask word",
+    "highlight function",
+    "HTML tags",
+    "paragraph"
    ],
    "questions": [
-    "How does the moderate function work?",
-    "How do you mask the word 'AI' in text?",
-    "Where do you apply text moderation?"
+    "How do you mask a word using moderate?",
+    "What HTML tags can highlight work on?",
+    "How is highlight function different from moderate?"
    ]
   },
   "custom-library-10-1-11": {
    "text_sha": "7c6b977b76538e6b",
-   "summary": "Explains that the highlight function runs on specified HTML tags and is best triggered by events like button clicks or on app mount for dynamic highlighting.",
+   "summary": "Explains triggering the highlight function on application mount to highlight a specific word with a chosen color in specified HTML tags like paragraphs.",
    "keywords": [
     "highlight function",
-    "HTML tags",
-    "event-driven",
-    "Vue.js",
-    "app mounted",
-    "dynamic highlight"
+    "application mount",
+    "highlight word",
+    "HTML tag",
+    "event trigger"
    ],
    "questions": [
-    "How is the highlight function triggered?",
-    "Which HTML tags can highlight target?",
-    "Why run highlight on app mount?"
+    "When can you trigger the highlight function?",
+    "How do you specify the word and color to highlight?",
+    "Which HTML tags can be targeted for highlighting?"
    ]
   },
   "custom-library-10-1-12": {
    "text_sha": "db44c705cd1f3785",
-   "summary": "Troubleshoot missing exports in a custom library by verifying exported functions like highlight, findPosition, and formatCurrency.",
+   "summary": "Troubleshoots missing highlight export in the library and checks available exports like mask, email, maskPhone, betterDateTime, and highlight.",
    "keywords": [
-    "custom library",
-    "exports",
-    "highlight function",
-    "findPosition",
-    "formatCurrency",
-    "mask",
-    "email",
-    "mask phone"
+    "highlight export",
+    "library exports",
+    "package exports"
    ],
    "questions": [
-    "Why is the highlight function not recognized in my custom library?",
-    "How do I check which functions are exported from my library?",
-    "What functions should be exported to use highlight and mask phone?"
+    "What to do if highlight function is not found?",
+    "Which functions are exported by the library?",
+    "How to verify exports in the library?"
    ]
   },
   "custom-library-10-1-13": {
    "text_sha": "282df0f794acbd3e",
-   "summary": "Add missing functions such as maskPhone, betterDateTime, and highlight to the library exports to make them available for use.",
+   "summary": "Adds missing exports maskPhone, betterDateTime, and highlight to the library and notices maskPhone needs formatting fixes.",
    "keywords": [
-    "maskPhone",
-    "betterDateTime",
     "highlight",
     "library exports",
-    "add functions"
+    "function formatting"
    ],
    "questions": [
-    "How do I add new functions like maskPhone and betterDateTime to my library exports?",
-    "What should I do if a newly added function is not available in the library?",
-    "Which functions need to be exported for masking phone numbers?"
+    "Which new methods need to be exported?",
+    "What issue was found with maskPhone function?",
+    "How to fix export issues in the library?"
    ]
   },
   "custom-library-10-1-14": {
    "text_sha": "dc39b65d6d4d4503",
-   "summary": "Refactor maskPhone function to accept phone number and visible digits as arguments, allowing a customizable masking symbol with a default of '*'.",
+   "summary": "Refactors maskPhone function to accept phone number and visible digits as arguments, adds customizable masking symbol with default star.",
    "keywords": [
-    "maskPhone",
+    "maskPhone function",
     "function arguments",
+    "visible digits",
     "custom symbol",
-    "default symbol",
-    "string prototype",
-    "phone number masking"
+    "string prototype"
    ],
    "questions": [
-    "How can I customize the maskPhone function to accept visible digits?",
-    "How do I add a custom masking symbol to the maskPhone function?",
-    "Why should maskPhone accept the phone number as an argument instead of using string prototype?"
+    "How is maskPhone function refactored?",
+    "What arguments does maskPhone accept?",
+    "How to customize the masking symbol?"
    ]
   },
   "custom-library-10-1-15": {
    "text_sha": "8d0c45be29f499ef",
-   "summary": "Include formatCurrency and betterDateTime functions in the library, commit changes, and prepare for publishing with npm commands.",
+   "summary": "Demonstrates updating the library code, committing changes with git, pushing to remote, and running the library build process using npx.",
    "keywords": [
-    "formatCurrency",
-    "betterDateTime",
+    "format currency",
     "git commit",
     "git push",
-    "npm publish",
-    "library update"
+    "npx",
+    "library build"
    ],
    "questions": [
-    "How do I add formatCurrency and betterDateTime functions to my library?",
-    "What git commands should I use to commit and push library updates?",
-    "How do I publish updated library versions to npm?"
+    "How do you commit and push updates to a library using git?",
+    "What command runs the library build process after pushing changes?",
+    "How do you add currency formatting to the library?"
    ]
   },
   "custom-library-10-1-16": {
@@ -903,69 +879,64 @@
   },
   "custom-library-10-1-17": {
    "text_sha": "f27c69fa328a671d",
-   "summary": "Demonstrate the highlight method by searching for specific words in text and introduce masking methods for phone, email, and currency on a payment page.",
+   "summary": "Shows using the highlight method to find specific terms like 'predict' or 'risk' in text and introduces masking methods for data privacy.",
    "keywords": [
     "highlight method",
     "masking methods",
-    "mask phone",
-    "mask email",
-    "format currency",
-    "payment page"
+    "predict",
+    "risk"
    ],
    "questions": [
-    "How does the highlight method find and highlight specific words?",
-    "What masking functions can be used on a payment page?",
-    "How do I apply maskPhone and maskEmail functions in my app?"
+    "What is the highlight method used for in text processing?",
+    "How can you find specific words like 'predict' or 'risk' in a dataset?",
+    "What are masking methods used for in data handling?"
    ]
   },
   "custom-library-10-1-18": {
    "text_sha": "f8e0e8499f55a2a3",
-   "summary": "Import and use formatCurrency, maskEmail, and maskPhone functions in the frontend, encountering and troubleshooting errors like 'string.replace is not a function'.",
+   "summary": "Explains importing and using functions like formatCurrency, maskEmail, and maskPhone to format currency and mask sensitive information on a payment page.",
    "keywords": [
-    "formatCurrency",
-    "maskEmail",
-    "maskPhone",
     "import functions",
-    "string.replace error",
-    "frontend usage"
+    "payment page",
+    "string.replace error"
    ],
    "questions": [
-    "How do I import masking and formatting functions into my frontend app?",
-    "What causes the 'string.replace is not a function' error?",
-    "How can I fix errors when using formatCurrency or maskEmail?"
+    "How do you use formatCurrency to format a value?",
+    "What functions are used to mask email and phone data?",
+    "Why might string.replace cause an error when masking?"
    ]
   },
   "custom-library-10-1-19": {
    "text_sha": "813321961eedcbd8",
-   "summary": "Fix formatCurrency errors by providing the required currency code argument (e.g., INR) and reinstall the library to reflect recent changes.",
+   "summary": "Describes troubleshooting errors in formatCurrency by providing a currency code argument, refreshing, and reinstalling the library after code changes.",
    "keywords": [
-    "formatCurrency",
     "currency code",
     "INR",
-    "library reinstall",
-    "fix errors"
+    "invalid count values",
+    "reinstall library",
+    "error troubleshooting"
    ],
    "questions": [
-    "Why does formatCurrency require a currency code argument?",
-    "How do I fix invalid count values error in formatCurrency?",
-    "Why is reinstalling the library necessary after making changes?"
+    "Why is a currency code argument needed in formatCurrency?",
+    "What causes 'invalid count values' error in currency formatting?",
+    "Why should you reinstall the library after making code changes?"
    ]
   },
   "custom-library-10-1-2": {
    "text_sha": "f65b1723d1950f77",
-   "summary": "Describes version bumping for the library release, choosing minor or major based on added methods, and the importance of tests for reliable publishing.",
+   "summary": "Describes version bumping (minor or major) when adding methods and the importance of tests to sensibly manage package publishing.",
    "keywords": [
+    "package publishing",
     "version bump",
     "minor release",
     "major release",
-    "package development",
-    "npm version",
-    "tests"
+    "tests",
+    "package development"
    ],
    "questions": [
-    "When should you make a minor vs major version bump?",
+    "When should you do a minor or major version bump?",
     "Why are tests important before publishing a package?",
-    "What does npm version do during release?"
+    "What happens if tests fail during publishing?"
    ]
   },
   "custom-library-10-1-20": {
@@ -1035,67 +1006,62 @@
   },
   "custom-library-10-1-4": {
    "text_sha": "cdb107cc1a718e46",
-   "summary": "Shows installing the published library via npm install, verifying it in node_modules, and preparing to import and use it in the Vue app.",
+   "summary": "Shows how to install the custom library package via npm and verify its presence in node_modules for usage in a project.",
    "keywords": [
     "npm install",
     "node_modules",
-    "import library",
-    "Vue.js",
-    "package usage"
+    "custom library",
+    "package installation",
+    "library usage"
    ],
    "questions": [
-    "How do you install a published npm package?",
-    "Where can you find installed packages?",
-    "How do you start using a library in a Vue app?"
+    "How do you install a custom library package?",
+    "Where can you verify the installed package files?",
+    "What is the next step after installing the package?"
    ]
   },
   "custom-library-10-1-5": {
    "text_sha": "029f5cca748b0369",
-   "summary": "Demonstrates identifying article titles in the Vue app that need conversion to title case using the library's toTitleCase function.",
+   "summary": "Introduces the homepage displaying articles and highlights the need to convert article titles to title case for better presentation.",
    "keywords": [
+    "articles",
     "title case",
-    "toTitleCase",
-    "Vue.js",
     "article titles",
-    "string formatting"
+    "data display"
    ],
    "questions": [
-    "How do you convert text to title case?",
-    "What is the purpose of toTitleCase function?",
-    "Where do you apply title case in the app?"
+    "What is the issue with article titles on the homepage?",
+    "Why convert titles to title case?",
+    "Where is the article data rendered?"
    ]
   },
   "custom-library-10-1-6": {
    "text_sha": "74bded9de5e7befb",
-   "summary": "Explains importing the toTitleCase function from the ECMAScript module library and using it to convert article titles dynamically in the Vue app.",
+   "summary": "Explains importing the toTitleCase function from the ECMAScript module library and using it to convert article titles to title case.",
    "keywords": [
-    "ES modules",
+    "ECMAScript module",
     "import function",
-    "toTitleCase",
-    "Vue.js",
-    "tree shaking"
+    "tree shaking",
+    "title case conversion"
    ],
    "questions": [
-    "How do you import a specific function from a library?",
-    "What is tree shaking in ES modules?",
-    "How is toTitleCase applied to article titles?"
+    "How do you import a specific function from the library?",
+    "What does toTitleCase function do?",
+    "What is tree shaking in ECMAScript modules?"
    ]
   },
   "custom-library-10-1-7": {
    "text_sha": "27399f1843b22de2",
-   "summary": "Shows using the shorten function from the library to truncate article content with customizable length and ending string.",
+   "summary": "Demonstrates using the shorten function from the library to truncate article content by passing the content to it.",
    "keywords": [
     "shorten",
-    "truncate text",
-    "Vue.js",
-    "library function",
-    "string length",
-    "custom ending"
+    "article content",
+    "function usage",
+    "content truncation"
    ],
    "questions": [
-    "How do you shorten text content?",
-    "What parameters does shorten accept?",
-    "How do you customize the ending of shortened text?"
+    "How do you shorten article content using the library?",
+    "What argument does the shorten function accept?"
    ]
   },
   "custom-library-10-1-8": {
@@ -1117,36 +1083,34 @@
   },
   "custom-library-10-1-9": {
    "text_sha": "c060c3ca600aeb5d",
-   "summary": "Introduces using moderate and highlight functions from the library to mask words and highlight text in blog articles within the Vue app.",
+   "summary": "Describes using moderate and highlight functions from the library to mask unwanted words and highlight specific words in blog article paragraphs.",
    "keywords": [
     "moderate",
     "highlight",
     "mask words",
-    "Vue.js",
-    "blog articles",
-    "text processing"
+    "blog article",
+    "paragraph",
+    "library functions"
    ],
    "questions": [
-    "How do you mask words in text?",
-    "What is the purpose of the highlight function?",
-    "How to use moderate and highlight in Vue?"
+    "What is the purpose of the moderate function?",
+    "How does the highlight function work in blog articles?",
+    "Which words can be masked or highlighted?"
    ]
   },
   "custom-library-11-0-0": {
    "text_sha": "f3c2748cb1dcffe9",
-   "summary": "Axios library distributes different builds for Node.js, registering itself globally using code similar to the UMD pattern to support various environments.",
+   "summary": "The Axios library's distribution folder contains different builds for Node.js and browsers, including a UMD build that registers the library globally, similar to a technique learned earlier.",
    "keywords": [
     "Axios",
     "dist folder",
-    "Node.js",
-    "UMD pattern",
     "global registration",
     "library distribution"
    ],
    "questions": [
-    "How does Axios register itself globally in Node.js?",
-    "What is the purpose of the dist folder in Axios?",
-    "What kind of code pattern does Axios use for global registration?"
+    "What types of builds does the Axios library distribute?",
+    "How does Axios register its library globally?",
+    "What is contained in the Axios dist folder?"
    ]
   },
   "custom-library-11-0-1": {
@@ -1168,19 +1132,17 @@
   },
   "custom-library-11-0-2": {
    "text_sha": "739a4c41db03ca27",
-   "summary": "Library developers create different builds for browser, ECMAScript modules, and Node.js to ensure compatibility, but simple prototypes like string.prototype work universally.",
+   "summary": "For broad compatibility, using String.prototype methods works across environments, but Axios provides separate builds for browser, ECMAScript modules, and Node.js as covered in the course.",
    "keywords": [
-    "library builds",
-    "browser compatibility",
-    "ECMAScript modules",
-    "Node.js",
-    "string.prototype",
-    "cross-environment"
+    "String.prototype",
+    "browser build",
+    "ECMAScript module",
+    "Node.js build"
    ],
    "questions": [
-    "Why do library developers create different builds for different environments?",
-    "When is it sufficient to use a universal prototype like string.prototype?",
-    "What environments are commonly targeted by library builds?"
+    "Why might you use String.prototype methods for compatibility?",
+    "What different builds does Axios provide for various environments?",
+    "How does Axios handle different JavaScript environments in its distribution?"
    ]
   },
   "custom-library-11-1-0": {
@@ -1217,17 +1179,17 @@
   },
   "custom-library-11-1-10": {
    "text_sha": "c09db71c42af97a5",
-   "summary": "Describes the module pattern implemented with IIFE for code encapsulation and contrasts browser window with backend global object.",
+   "summary": "The module pattern using IIFE standardizes code encapsulation in JavaScript, and on the backend the global object is named global instead of window.",
    "keywords": [
-    "module pattern",
-    "IIFE",
     "code encapsulation",
-    "window vs global",
-    "backend JavaScript"
+    "global object",
+    "window",
+    "global"
    ],
    "questions": [
-    "What is an IIFE and how is it used in the module pattern?",
-    "What is the difference between window and global objects?"
+    "What is an IIFE and how does it relate to the module pattern?",
+    "Why is the global object called global on the backend instead of window?",
+    "How does the module pattern improve JavaScript code structure?"
    ]
   },
   "custom-library-11-1-11": {
@@ -1309,36 +1271,35 @@
   },
   "custom-library-11-1-3": {
    "text_sha": "c837d7b8b528da5f",
-   "summary": "Describes how JavaScript creates temporary wrapper objects to access methods on primitive values and stores these methods on prototypes.",
+   "summary": "JavaScript uses temporary wrapper objects to access methods on primitive values, with these methods stored in the prototype of the wrapper object.",
    "keywords": [
+    "JavaScript",
     "wrapper objects",
     "prototype",
-    "JavaScript methods",
-    "string methods",
-    "toUpperCase"
+    "methods",
+    "primitive values"
    ],
    "questions": [
     "What are wrapper objects in JavaScript?",
-    "Where are methods like toUpperCase stored for strings?",
-    "When does JavaScript create wrapper objects?"
+    "Where are methods like toUpperCase stored for primitive values?",
+    "Why does a primitive value need to be wrapped to access methods?"
    ]
   },
   "custom-library-11-1-4": {
    "text_sha": "45ae0f665b1473ef",
-   "summary": "Uses an analogy of water waves to explain how prototype objects are created temporarily when accessing methods like toUpperCase or array methods.",
+   "summary": "Accessing methods on primitives triggers temporary wrapper objects created by the V8 engine, analogous to water creating waves only when disturbed.",
    "keywords": [
-    "prototype chain",
+    "V8 engine",
     "wrapper objects",
-    "JavaScript methods",
+    "prototype",
     "array methods",
-    "toUpperCase",
     "push",
-    "pop",
-    "splice"
+    "pop"
    ],
    "questions": [
-    "How does the prototype chain work when accessing methods?",
-    "What triggers the creation of prototype objects in JavaScript?"
+    "How does the V8 engine handle method access on primitives?",
+    "What analogy explains the temporary nature of wrapper objects?",
+    "When are wrapper objects created in JavaScript?"
    ]
   },
   "custom-library-11-1-5": {
@@ -1358,16 +1319,19 @@
   },
   "custom-library-11-1-6": {
    "text_sha": "1ef889003ba83a2f",
-   "summary": "Highlights that modifying Object.prototype affects all prototypes and demonstrates adding methods to Object.prototype to extend all built-in types.",
+   "summary": "Adding properties to object.prototype affects all prototypes like string, array, and number, demonstrating prototype inheritance across JavaScript types.",
    "keywords": [
-    "Object.prototype",
+    "object.prototype",
     "prototype inheritance",
-    "extending prototypes",
-    "JavaScript built-in types"
+    "string prototype",
+    "array prototype",
+    "number prototype",
+    "methods"
    ],
    "questions": [
-    "What happens if you add a method to Object.prototype?",
-    "Which JavaScript types inherit from Object.prototype?"
+    "What happens if you add a method to object.prototype?",
+    "Which prototypes inherit from object.prototype?",
+    "How does prototype inheritance work across different JavaScript types?"
    ]
   },
   "custom-library-11-1-7": {
@@ -1387,83 +1351,80 @@
   },
   "custom-library-11-1-8": {
    "text_sha": "c8dcabeb1b93d8d0",
-   "summary": "Introduces the window object as a global container for browser environment variables and APIs, and explains adding custom libraries to window.",
+   "summary": "The window object represents the browser environment including HTML, CSS, JavaScript, and Web APIs, and libraries like axios and lodash add themselves to it.",
    "keywords": [
     "window object",
-    "global object",
-    "web APIs",
-    "adding libraries to window",
+    "browser environment",
+    "Web APIs",
     "axios",
-    "lodash"
+    "lodash",
+    "global variables"
    ],
    "questions": [
-    "What is the window object in JavaScript?",
-    "How can you add your own library to the window object?"
+    "What does the window object represent in the browser?",
+    "Why do libraries add themselves to the window object?",
+    "What kind of data and APIs does the window object include?"
    ]
   },
   "custom-library-11-1-9": {
    "text_sha": "6a6762c065050d90",
-   "summary": "Explains window pollution caused by leaking variables to the global scope and introduces function scoping and the module pattern to encapsulate code.",
+   "summary": "Adding libraries directly to the window causes global pollution, so encapsulating code inside functions and using the module pattern prevents variable leakage.",
    "keywords": [
     "window pollution",
-    "global scope",
-    "function scope",
+    "global object",
     "module pattern",
-    "IIFE"
+    "variable leakage"
    ],
    "questions": [
-    "What causes window pollution in JavaScript?",
-    "How does the module pattern help prevent global variable leaks?"
+    "What is window pollution in JavaScript?",
+    "How does encapsulating code inside functions help prevent global pollution?",
+    "What is the module pattern and why is it used?"
    ]
   },
   "custom-library-11-2-0": {
    "text_sha": "3692d5903b0f52db",
-   "summary": "Encourages creating custom libraries tailored for personal use, teams, or open source, such as UI, crypto, or animation libraries, based on problems you want to solve.",
+   "summary": "Encourages creating custom libraries tailored to personal, team, or organizational needs, such as UI, crypto, or animation libraries.",
    "keywords": [
     "custom library",
     "UI library",
     "crypto library",
     "animation library",
-    "open source",
     "library architecture"
    ],
    "questions": [
-    "What kinds of custom libraries can I create after this course?",
-    "Why should I create a library for my team or organization?",
-    "How can I decide what problem my custom library should solve?"
+    "What are some examples of custom libraries I can create?",
+    "Who can I create a custom library for?",
+    "Why should I consider building a custom library?"
    ]
   },
   "custom-library-11-2-1": {
    "text_sha": "8633c2dfdb0e91e8",
-   "summary": "Emphasizes focusing on understanding architecture and design over memorizing syntax, encouraging building projects that solve real problems.",
+   "summary": "Stresses the importance of focusing on solving real problems and understanding architecture over memorizing syntax when building libraries.",
    "keywords": [
-    "library architecture",
-    "design over syntax",
-    "project building",
-    "open source contribution",
-    "software design"
+    "open source",
+    "syntax",
+    "project motivation"
    ],
    "questions": [
     "Why is understanding architecture more important than memorizing syntax?",
-    "How can building a project help me learn better than just reading syntax?",
-    "What motivates creating open source projects?"
+    "Should I create a library for open source or personal use?",
+    "What motivates someone to start building a custom library?"
    ]
   },
   "custom-library-11-2-2": {
    "text_sha": "3b930064542206e6",
-   "summary": "Highlights the importance of defining architecture details like encapsulation, integration, folder structure, and automated processes in designing software.",
+   "summary": "Highlights the necessity of designing module integration, encapsulation, scope, module resolution, and folder structure in library architecture.",
    "keywords": [
-    "software architecture",
-    "encapsulation",
-    "integration",
+    "module resolution",
+    "scope",
     "folder structure",
-    "middleware",
-    "module resolution"
+    "library design",
+    "architecture"
    ],
    "questions": [
-    "What architectural aspects should I define when designing a library?",
-    "Why is encapsulation important in software design?",
-    "How do folder structures relate to middleware and frontend organization?"
+    "What architectural decisions are important when designing a library?",
+    "How does module resolution affect library design?",
+    "Why is encapsulation important in library architecture?"
    ]
   },
   "custom-library-11-2-3": {
@@ -1485,44 +1446,43 @@
   },
   "custom-library-11-2-4": {
    "text_sha": "d32ecff20df13d26",
-   "summary": "Invites learners to join a community for support and sharing projects, offering access to resources and encouragement to continue improving design skills.",
+   "summary": "Invites learners to join a community for ongoing support, coding wisdom, and project collaboration to improve design skills.",
    "keywords": [
-    "coding community",
-    "LinkedIn",
-    "project sharing",
-    "software design skills",
-    "coding wisdom"
+    "community",
+    "coding wisdom",
+    "project collaboration",
+    "LinkedIn"
    ],
    "questions": [
-    "How can I connect with others to discuss coding projects?",
-    "Where can I find resources and support after this course?",
-    "Why is joining a coding community beneficial?"
+    "Where can I get support and advice after this course?",
+    "What benefits come from joining a coding community?",
+    "How can I continue improving my library design skills?"
    ]
   },
   "custom-library-2-0-0": {
    "text_sha": "cd3c702756440a67",
-   "summary": "JavaScript version 1.0's performance depends heavily on the quality of the underlying browser engine.",
+   "summary": "JavaScript version 1.0's performance depends heavily on the quality of the underlying engine in the browser.",
    "keywords": [
     "JavaScript 1.0",
     "browser engine",
-    "performance"
+    "JavaScript engine"
    ],
    "questions": [
-    "Why does the browser's performance depend on its underlying engine?",
-    "What influences the quality of JavaScript execution in early browsers?"
+    "Why does the browser's performance depend on the underlying engine?",
+    "What affects the quality of JavaScript execution in browsers?"
    ]
   },
   "custom-library-2-0-1": {
    "text_sha": "5057fb2859f64488",
-   "summary": "The browser's improvement is tied to the quality of its underlying JavaScript engine.",
+   "summary": "The overall improvement of browsers is tied to enhancements in their underlying JavaScript engines.",
    "keywords": [
     "browser improvement",
     "JavaScript engine",
-    "performance"
+    "browser performance"
    ],
    "questions": [
-    "How is browser improvement related to the JavaScript engine?",
-    "What role does the JavaScript engine play in browser capabilities?"
+    "How can browsers become better over time?",
+    "What role does the JavaScript engine play in browser quality?"
    ]
   },
   "custom-library-2-0-2": {
@@ -1592,37 +1552,34 @@
   },
   "custom-library-2-1-0": {
    "text_sha": "a920f5a4e8d92f09",
-   "summary": "Inheritance means passing properties from ancestors to descendants, illustrated by evolution from amoeba to monkeys inheriting traits over time.",
+   "summary": "Inheritance means passing properties from one entity to another over generations, illustrated by biological evolution from amoeba to monkeys.",
    "keywords": [
     "inheritance",
-    "evolution",
     "properties",
     "amoeba",
     "monkeys",
-    "descendants"
+    "natural inheritance"
    ],
    "questions": [
-    "What is inheritance in the context of natural evolution?",
-    "How do properties get passed from one generation to another?",
-    "Why is inheritance important in understanding lineage?"
+    "What is inheritance in the context of this explanation?",
+    "How does inheritance occur in nature according to the example?",
+    "What example is used to illustrate inheritance?"
    ]
   },
   "custom-library-2-1-1": {
    "text_sha": "a855d45eaf308fd5",
-   "summary": "Humans inherit common properties like two eyes and two hands from monkeys, showing inheritance occurs only when new life is created out of necessity.",
+   "summary": "Inheritance happens only when there is a need, shown by humans inheriting traits from monkeys and amoebas, emphasizing the concept of purposeful property transfer.",
    "keywords": [
     "inheritance",
+    "need",
     "humans",
     "monkeys",
-    "properties",
-    "need",
-    "creation",
-    "life"
+    "creation"
    ],
    "questions": [
+    "When does inheritance occur according to this explanation?",
     "What properties do humans inherit from monkeys?",
-    "When does inheritance occur according to natural law?",
-    "Why does inheritance not happen randomly?"
+    "Why is the concept of 'need' important in inheritance?"
    ]
   },
   "custom-library-2-1-2": {
@@ -1645,19 +1602,16 @@
   },
   "custom-library-2-2-0": {
    "text_sha": "f85fbebd81672a37",
-   "summary": "JavaScript strings have methods like toUpperCase(), which can be called using dot notation, hinting that strings behave like objects with accessible properties.",
+   "summary": "Demonstrates that a string literal like 'pablo' is of type string and introduces calling the toUpperCase() method to convert it to uppercase.",
    "keywords": [
     "JavaScript",
     "string",
-    "toUpperCase",
-    "dot notation",
-    "methods",
-    "data type"
+    "data type",
+    "method invocation"
    ],
    "questions": [
     "What is the data type of a string literal in JavaScript?",
-    "How do you convert a string to uppercase in JavaScript?",
-    "Can you use dot notation on a string in JavaScript?"
+    "How do you convert a string to uppercase in JavaScript?"
    ]
   },
   "custom-library-2-2-1": {
@@ -1693,18 +1647,17 @@
   },
   "custom-library-2-2-3": {
    "text_sha": "066c4d9fdcdaf85b",
-   "summary": "JavaScript internally creates string objects using the String constructor, allowing strings to have properties and methods accessible like objects.",
+   "summary": "Explains that strings in JavaScript behave like objects when methods are called, using internal conversion and the String constructor function.",
    "keywords": [
     "JavaScript",
-    "String constructor",
     "string object",
-    "methods",
-    "prototype"
+    "String constructor",
+    "methods on string"
    ],
    "questions": [
-    "How can you explicitly create a string object in JavaScript?",
-    "What is the role of the String constructor function?",
-    "Why do strings have methods if they are primitive values?"
+    "Why can you call methods on a string literal in JavaScript?",
+    "How does JavaScript internally treat strings when accessing methods?",
+    "What is the purpose of the String constructor function?"
    ]
   },
   "custom-library-2-2-4": {
@@ -1804,18 +1757,17 @@
   },
   "custom-library-2-3-2": {
    "text_sha": "21fb127d6875c28b",
-   "summary": "When a method is called on a string primitive, JavaScript temporarily converts it into a string object to access the method from the String prototype.",
+   "summary": "A string temporarily converts into an object to access methods like toUpperCase, which are stored on the String prototype.",
    "keywords": [
-    "string primitive",
-    "string object",
-    "temporary object",
+    "string",
+    "object",
     "String prototype",
-    "toUpperCase"
+    "method invocation"
    ],
    "questions": [
-    "How does JavaScript handle method calls on string primitives?",
-    "Why does a string primitive behave like an object when calling methods?",
-    "Where are string methods like toUpperCase stored?"
+    "Why does a string convert into an object when calling toUpperCase?",
+    "Where is the toUpperCase method stored?",
+    "How does JavaScript allow string methods to be called?"
    ]
   },
   "custom-library-2-3-3": {
@@ -1910,18 +1862,20 @@
   },
   "custom-library-2-4-2": {
    "text_sha": "2372ee16b559fae1",
-   "summary": "The second prototype layer is an empty object containing built-in object methods, ensuring string methods like toUpperCase and push work correctly.",
+   "summary": "JavaScript uses built-in prototype objects like Object.prototype to provide methods such as toUpperCase and push to other objects through inheritance.",
    "keywords": [
-    "empty object",
-    "built-in object methods",
-    "toUpperCase",
+    "JavaScript",
+    "prototype",
+    "Object.prototype",
+    "inheritance",
     "push",
-    "prototype chain"
+    "pop",
+    "built-in methods"
    ],
    "questions": [
-    "What does the second prototype layer contain in JavaScript?",
-    "How are built-in string methods like toUpperCase available?",
-    "Why is an empty object important in the prototype chain?"
+    "What is Object.prototype in JavaScript?",
+    "How do built-in methods like toUpperCase become available to objects?",
+    "What role does the prototype play in method inheritance?"
    ]
   },
   "custom-library-2-4-3": {
@@ -1941,17 +1895,18 @@
   },
   "custom-library-2-4-4": {
    "text_sha": "5fb526877ef43782",
-   "summary": "Primitive string values exist separately until a method like toUpperCase is called, which converts the primitive into a string object with indexed characters.",
+   "summary": "Primitive values like strings are stored independently, but when methods like toUpperCase are called, JavaScript converts them into string objects to access prototype methods.",
    "keywords": [
-    "primitive string",
+    "primitive values",
+    "string",
     "string object",
-    "toUpperCase",
-    "method call conversion"
+    "JavaScript conversion",
+    "prototype methods"
    ],
    "questions": [
-    "How are primitive strings stored before method calls?",
-    "What happens to a string when toUpperCase is called?",
-    "How does JavaScript represent string characters internally?"
+    "How does JavaScript handle primitive string values when calling methods?",
+    "Why does a string value get converted to a string object?",
+    "Where are primitive values stored in JavaScript?"
    ]
   },
   "custom-library-2-4-5": {
@@ -2116,35 +2071,34 @@
   },
   "custom-library-2-5-7": {
    "text_sha": "7eec82c7f8b1d547",
-   "summary": "The prototype system creates temporary objects (waves) for method access that are created and destroyed to manage memory efficiently in JavaScript.",
+   "summary": "JavaScript's prototype system temporarily calculates and destroys values to avoid memory overload, activating only when specific property lookups occur on objects like strings.",
    "keywords": [
-    "prototype system",
+    "JavaScript prototype",
+    "object prototype",
     "memory management",
-    "JavaScript inheritance",
-    "temporary objects",
-    "waves"
+    "string prototype"
    ],
    "questions": [
-    "How does JavaScript manage memory with prototype objects?",
-    "What are 'waves' in the context of JavaScript prototypes?",
-    "Why are prototype objects created and destroyed?"
+    "How does JavaScript's prototype system help manage memory?",
+    "When does the prototype system activate to calculate values?",
+    "What role does the object prototype play in JavaScript?"
    ]
   },
   "custom-library-2-5-8": {
    "text_sha": "256cea40a69c1ba2",
-   "summary": "Adding a method to object.prototype makes it accessible on all derived prototypes like string, array, and number, demonstrating the strict inheritance chain in JavaScript.",
+   "summary": "Adding properties to Object.prototype makes them available on String, Array, and Number prototypes, demonstrated by converting a string to an array and accessing the added method.",
    "keywords": [
-    "object.prototype",
-    "inheritance chain",
-    "string.prototype",
-    "array.prototype",
-    "number.prototype",
-    "JavaScript prototype"
+    "Object.prototype",
+    "String prototype",
+    "Array prototype",
+    "Number prototype",
+    "prototype inheritance",
+    "JavaScript methods"
    ],
    "questions": [
-    "Does adding a method to object.prototype affect arrays and numbers?",
-    "How strict is JavaScript's prototype inheritance?",
-    "Why do all prototypes inherit from object.prototype?"
+    "What happens when you add a property to Object.prototype?",
+    "How does prototype inheritance affect arrays and strings?",
+    "Can methods added to Object.prototype be accessed on arrays?"
    ]
   },
   "custom-library-2-5-9": {
@@ -2181,35 +2135,27 @@
   },
   "custom-library-3-0-1": {
    "text_sha": "626be111f1f7151f",
-   "summary": "Explains starting to add basic custom functions like title case conversion and highlights the evolving role of AI tools like ChatGPT in coding.",
+   "summary": "Introduces adding basic custom string functions like title case to a library and emphasizes evolving coding practices with AI tools like ChatGPT.",
    "keywords": [
     "title case",
-    "custom functions",
-    "ChatGPT",
-    "AI coding tools",
-    "JavaScript functions"
+    "function1",
+    "AI tools",
+    "coding evolution"
    ],
    "questions": [
-    "What is the first custom function to add in the string utility library?",
-    "How can AI tools assist in writing basic code?",
-    "Why should developers evolve their coding practices with new tools?"
+    "What is the first function added to the custom library?",
+    "How should coding practices evolve with AI tools?"
    ]
   },
   "custom-library-3-0-10": {
    "text_sha": "9ba89bf59411e704",
-   "summary": "Describes capitalizing the first character of each word and converting the rest to lowercase using charAt(0), slice(1), toUpperCase(), and toLowerCase().",
+   "summary": "Demonstrates capitalizing the first character of each word and lowercasing the rest using charAt, slice, toUpperCase, and toLowerCase.",
    "keywords": [
-    "charAt(0)",
-    "slice(1)",
-    "toUpperCase()",
-    "toLowerCase()",
-    "string manipulation",
-    "title case"
+    "slice"
    ],
    "questions": [
-    "How do you capitalize the first letter of a word in JavaScript?",
-    "How do you convert the rest of the word to lowercase?",
-    "What string methods help transform words for title casing?"
+    "How do you capitalize the first letter of a word?",
+    "How do you lowercase the rest of the word after the first character?"
    ]
   },
   "custom-library-3-0-11": {
@@ -2230,17 +2176,17 @@
   },
   "custom-library-3-0-12": {
    "text_sha": "8bdb27de687e2bad",
-   "summary": "Introduces the concept of shortening a paragraph to create a preview with a 'read more' link using basic JavaScript.",
+   "summary": "Introduces a method to shorten paragraphs for UI display, hinting at future UI integration but currently focusing on basic JavaScript implementation.",
    "keywords": [
-    "shortening paragraph",
+    "shorten paragraph",
+    "UI integration",
+    "basic JavaScript",
     "read more",
-    "JavaScript preview",
-    "text truncation"
+    "blog display"
    ],
    "questions": [
-    "Why would you want to shorten a paragraph on a homepage?",
-    "How can you create a preview of a long text in JavaScript?",
-    "What is the purpose of a 'read more' link in blog previews?"
+    "Why shorten paragraphs in a UI?",
+    "How is paragraph shortening implemented initially?"
    ]
   },
   "custom-library-3-0-13": {
@@ -2260,34 +2206,29 @@
   },
   "custom-library-3-0-14": {
    "text_sha": "87ce8c4844cab162",
-   "summary": "Describes implementing the shorten method by converting 'this' to string and defining parameters limit and ending for substring extraction.",
+   "summary": "Explains adding a 'limit' method to the library that converts the object to string and extracts a substring with a customizable ending.",
    "keywords": [
-    "this keyword",
-    "toString()",
-    "substring",
-    "limit parameter",
-    "ending parameter"
+    "limit method",
+    "custom ending",
+    "library method"
    ],
    "questions": [
-    "How do you access the string value inside a prototype method?",
-    "What parameters control the substring length and ending text in a shorten method?",
-    "Why convert 'this' to a string before processing?"
+    "How do you convert an object to a string before substring?",
+    "What does the limit method do with the ending parameter?"
    ]
   },
   "custom-library-3-0-15": {
    "text_sha": "09838db9673488c6",
-   "summary": "Shows returning a substring from zero to limit and appending a customizable ending string, typically ellipsis or 'read more'.",
+   "summary": "Details returning a substring from zero to a specified limit and padding it with a customizable ending like ellipsis.",
    "keywords": [
     "substring",
-    "string padding",
-    "custom ending",
-    "ellipsis",
-    "string concatenation"
+    "limit",
+    "padding",
+    "custom ending"
    ],
    "questions": [
-    "How do you return a substring with a custom ending?",
-    "What is a typical ending used when shortening text?",
-    "How can you allow users to customize the ending string?"
+    "How do you return a substring up to a limit?",
+    "How do you add a custom ending to a shortened string?"
    ]
   },
   "custom-library-3-0-16": {
@@ -2307,17 +2248,16 @@
   },
   "custom-library-3-0-17": {
    "text_sha": "3e2f4b94c2eedd3c",
-   "summary": "Mentions the term 'monkey patch' for adding methods to prototypes and references a console.log extension for easier debugging.",
+   "summary": "Mentions testing the shorten paragraph method and references 'monkey patch' as a term related to extending functionality.",
    "keywords": [
+    "shorten paragraph",
     "monkey patch",
-    "prototype extension",
     "console.log extension",
-    "debugging tools"
+    "testing methods"
    ],
    "questions": [
-    "What is monkey patching in JavaScript?",
-    "How can you add methods to built-in prototypes?",
-    "Are there tools to enhance console.log output?"
+    "What is monkey patching?",
+    "How do you test a custom method in the library?"
    ]
   },
   "custom-library-3-0-18": {
@@ -2338,17 +2278,16 @@
   },
   "custom-library-3-0-19": {
    "text_sha": "5a740fa1470beb23",
-   "summary": "Begins implementing maskEmail method on String.prototype to hide parts of an email except the first letter and domain, with customizable mask symbol.",
+   "summary": "Introduces a mask email method added to String.prototype to hide parts of an email, allowing a custom masking symbol.",
    "keywords": [
-    "maskEmail",
-    "email masking",
+    "mask email",
+    "String.prototype",
     "custom mask symbol",
-    "String.prototype method"
+    "email masking"
    ],
    "questions": [
-    "How do you create a maskEmail method on String.prototype?",
-    "What parts of the email are visible or masked?",
-    "How can users customize the masking symbol?"
+    "How do you mask parts of an email string?",
+    "How can you customize the symbol used for masking?"
    ]
   },
   "custom-library-3-0-2": {
@@ -2369,17 +2308,16 @@
   },
   "custom-library-3-0-20": {
    "text_sha": "e5db5efffb82025d",
-   "summary": "Explains maskEmail method accepts a symbol parameter for masking and does not require the email as argument since it's called on the string instance.",
+   "summary": "Explains that the mask email function does not take the email as argument but accepts a symbol for masking, and shows how it is invoked.",
    "keywords": [
-    "maskEmail parameters",
+    "mask email function",
     "mask symbol",
-    "prototype method arguments",
-    "string instance"
+    "function invocation",
+    "no email argument"
    ],
    "questions": [
-    "Why doesn't maskEmail need an email argument?",
-    "How do you pass the mask symbol to maskEmail?",
-    "How is the mask symbol used in masking?"
+    "Why doesn't mask email take the email as an argument?",
+    "How do you pass a custom mask symbol to the function?"
    ]
   },
   "custom-library-3-0-21": {
@@ -2414,17 +2352,16 @@
   },
   "custom-library-3-0-23": {
    "text_sha": "4c1f7509dc519f53",
-   "summary": "Combines masked user and domain parts joined by '@' and tests the maskEmail method, encountering an error related to undefined 'str' variable.",
+   "summary": "Describes combining masked left part, a joining character, and right part of an email string, and debugging an undefined variable error.",
    "keywords": [
-    "combine masked email",
-    "join with @",
-    "maskEmail test",
-    "undefined variable error"
+    "mask email",
+    "string concatenation",
+    "undefined variable",
+    "repeat error"
    ],
    "questions": [
-    "How do you combine masked user and domain parts into an email?",
-    "What error occurs when testing maskEmail and why?",
-    "How to fix 'str is not defined' in maskEmail implementation?"
+    "How do you combine masked parts of an email?",
+    "What causes 'cannot read properties of undefined' error in this context?"
    ]
   },
   "custom-library-3-0-24": {
@@ -2445,52 +2382,49 @@
   },
   "custom-library-3-0-25": {
    "text_sha": "98e2b0aa310cf787",
-   "summary": "Use destructuring assignment to extract parts of a split string and rename variables for clarity when handling email parts.",
+   "summary": "Demonstrates using destructuring to split a string into two parts named A and B for easier manipulation and joining with a dot separator.",
    "keywords": [
-    "destructuring assignment",
-    "variable renaming",
-    "string split",
-    "email parsing",
+    "string splitting",
+    "variable naming",
+    "string join",
     "part A",
     "part B"
    ],
    "questions": [
-    "How do you destructure parts of a split string in JavaScript?",
-    "Why rename variables when destructuring?",
-    "How can you handle multiple parts of an email string?"
+    "How can I split a string into two parts using destructuring?",
+    "What is a readable way to name parts of a split string?",
+    "How do I join two string parts with a dot separator?"
    ]
   },
   "custom-library-3-0-26": {
    "text_sha": "7f509ee205c546fe",
-   "summary": "Create a mask email function that replaces sensitive parts with a default or custom symbol, and introduce a findPositions method to locate word occurrences in a string.",
+   "summary": "Shows how to mask sensitive information in a string with a custom symbol like asterisk or hashtag using a masking function.",
    "keywords": [
     "mask email",
+    "masking function",
     "custom symbol",
-    "default parameter",
-    "findPositions",
-    "string occurrences",
-    "index tracking"
+    "sensitive information",
+    "string masking"
    ],
    "questions": [
-    "How do you mask parts of an email with a custom symbol?",
-    "What is the purpose of the findPositions function?",
-    "How can you find all occurrences of a word in a string?"
+    "How can I mask sensitive parts of a string with a custom symbol?",
+    "Can I use symbols other than asterisks for masking?",
+    "What does a masking function do in string processing?"
    ]
   },
   "custom-library-3-0-27": {
    "text_sha": "87b559c17878d89d",
-   "summary": "Implement findPositions method on string prototype to analyze a string and find all indices of a given word using this as the string object.",
+   "summary": "Introduces a findPositions method on string prototype to find all occurrences and indices of a word within a large string.",
    "keywords": [
-    "findPositions",
     "string prototype",
-    "this keyword",
-    "string object",
-    "method implementation"
+    "occurrences",
+    "indices",
+    "string search"
    ],
    "questions": [
-    "How do you add a method to the string prototype?",
-    "What does the this keyword refer to inside a string method?",
-    "How can you find all positions of a word in a string?"
+    "How do I find all positions of a word in a string?",
+    "What does adding a method to String.prototype do?",
+    "How can I get indices of multiple occurrences of a substring?"
    ]
   },
   "custom-library-3-0-28": {
@@ -2543,84 +2477,76 @@
   },
   "custom-library-3-0-30": {
    "text_sha": "4ec3f0b9cb70a0b9",
-   "summary": "Update the search position by adding 1 to the last found index to avoid infinite loops and continue finding subsequent substring occurrences.",
+   "summary": "Explains looping through a string using indexOf with a moving start position to find multiple occurrences of a substring.",
    "keywords": [
-    "index update",
-    "position plus one",
-    "avoid infinite loop",
-    "substring search",
-    "string.indexOf"
+    "looping",
+    "start position",
+    "string index"
    ],
    "questions": [
-    "Why add 1 to the last found index when searching for substrings?",
-    "How do you avoid infinite loops when searching multiple occurrences?",
-    "How does string.indexOf work with a starting position?"
+    "How can I find multiple occurrences of a substring using indexOf?",
+    "Why do I need to update the start position when searching repeatedly?",
+    "How does looping with indexOf work to find all matches?"
    ]
   },
   "custom-library-3-0-31": {
    "text_sha": "b21a7da4bdffca92",
-   "summary": "Demonstrate findPositions usage on a sample string to find all indices of a word, showing it works for multiple occurrences including at the start.",
+   "summary": "Shows how to increment the search start position by one after each found index to avoid repeated matches in string searching.",
    "keywords": [
-    "findPositions usage",
-    "string example",
-    "multiple occurrences",
-    "index positions",
-    "string search"
+    "search start position",
+    "increment position",
+    "string searching",
+    "index tracking"
    ],
    "questions": [
-    "How do you call findPositions on a string?",
-    "Can findPositions find occurrences at the start of a string?",
-    "What output does findPositions return for multiple matches?"
+    "Why should I start searching from position plus one after a match?",
+    "How do I avoid finding the same substring repeatedly?",
+    "What is the role of position + 1 in substring search loops?"
    ]
   },
   "custom-library-3-0-32": {
    "text_sha": "7ebaa2be7afab314",
-   "summary": "Summarize string utility functions created so far: title case, shorten, mask email, and findPositions, emphasizing multiple ways to implement them.",
+   "summary": "Demonstrates testing the findPositions method on sample text, confirming it returns correct indices for all occurrences of a word.",
    "keywords": [
-    "string utilities",
-    "title case",
-    "shorten",
-    "mask email",
-    "findPositions",
-    "function implementation"
+    "findPositions test",
+    "string utility functions",
+    "string methods"
    ],
    "questions": [
-    "What string utility functions have been created?",
-    "Are there multiple ways to implement these functions?",
-    "Why is understanding the code important when writing utilities?"
+    "How can I test if findPositions returns correct indices?",
+    "What string utility functions have been created so far?",
+    "How do I verify multiple occurrences are found in a string?"
    ]
   },
   "custom-library-3-0-33": {
    "text_sha": "43ae2d90dbaab183",
-   "summary": "Explain limitations of simple substring search and introduce regular expressions as a powerful tool for complex pattern matching in text manipulation.",
+   "summary": "Explains that for complex pattern matching beyond simple substring search, regular expressions are more efficient and powerful.",
    "keywords": [
     "regular expressions",
-    "regex",
     "pattern matching",
     "text manipulation",
-    "complex search",
+    "advanced search",
     "string cleaning"
    ],
    "questions": [
-    "Why might simple substring search be insufficient?",
-    "What are regular expressions used for?",
-    "How do regular expressions help in text manipulation?"
+    "When should I use regular expressions instead of looping with indexOf?",
+    "What are the benefits of using regex for text pattern finding?",
+    "How do regular expressions help in complex string operations?"
    ]
   },
   "custom-library-3-0-4": {
    "text_sha": "2d8d20644ba1498b",
-   "summary": "Explains that prototype methods access the string value via 'this' instead of passing it as an argument, highlighting the difference from regular functions.",
+   "summary": "Explains that title case is a function acting on an object, and arguments are passed at the start, not during built-in function calls.",
    "keywords": [
-    "this keyword",
-    "prototype methods",
-    "string value access",
-    "JavaScript methods",
-    "function arguments"
+    "title case",
+    "function argument",
+    "built-in functionality",
+    "console.log",
+    "function invocation"
    ],
    "questions": [
-    "How do prototype methods access the string they operate on?",
-    "Why don't you pass the string as an argument to prototype methods?",
-    "What is the role of 'this' inside a prototype method?"
+    "How do you pass arguments to built-in functions?",
+    "Why does console.log(arg) return nothing in this context?"
    ]
   },
   "custom-library-3-0-5": {
@@ -2658,18 +2584,17 @@
   },
   "custom-library-3-0-7": {
    "text_sha": "1050f6badd9e5647",
-   "summary": "Confirms that invoking the custom toTitleCase method logs the parent string object, verifying correct method binding and usage.",
+   "summary": "Describes using prototype methods to add custom functions to strings, accessing the parent string object via 'this' inside the method.",
    "keywords": [
-    "toTitleCase",
-    "method invocation",
+    "prototype method",
+    "custom methods",
+    "this keyword",
     "parent object",
-    "JavaScript prototype",
-    "custom method test"
+    "string object"
    ],
    "questions": [
-    "What does logging 'this' inside toTitleCase show?",
-    "How do you verify that a custom prototype method is bound to the string instance?",
-    "What is the parent object when a prototype method is called?"
+    "How do you add methods to a library using prototype?",
+    "What does 'this' refer to inside a prototype method?"
    ]
   },
   "custom-library-3-0-8": {
@@ -2690,18 +2615,15 @@
   },
   "custom-library-3-0-9": {
    "text_sha": "1c216f9da0df3f73",
-   "summary": "Converts the string into an array of words to iterate over each word for transformation in the title case method.",
+   "summary": "Shows converting a string to an array of words to iterate and transform each word individually.",
    "keywords": [
     "string to array",
-    "split",
-    "iterate words",
-    "title case",
-    "JavaScript array"
+    "iterate array",
+    "word transformation"
    ],
    "questions": [
-    "How do you convert a string into an array of words in JavaScript?",
-    "Why convert the string to an array for title case conversion?",
-    "How can you iterate over each word in a string?"
+    "How do you convert a string into an array of words?",
+    "Why convert a string to an array for transformation?"
    ]
   },
   "custom-library-3-1-0": {
@@ -2709,31 +2631,26 @@
    "summary": "Regular expressions are powerful tools for pattern matching and text processing across programming languages, useful for fixing formatting issues like extra whitespace.",
    "keywords": [
     "regular expressions",
-    "pattern matching",
     "text processing",
-    "whitespace",
     "JavaScript"
    ],
    "questions": [
     "What are regular expressions used for?",
-    "How can regular expressions help fix formatting issues in text?",
-    "Why are regular expressions considered powerful in programming?"
+    "How can regular expressions help fix formatting issues?"
    ]
   },
   "custom-library-3-1-1": {
    "text_sha": "130c95350eb4b054",
-   "summary": "Traditional methods like looping to fix multiple whitespaces are inefficient; regular expressions provide a more effective way to match and replace patterns in text.",
+   "summary": "Traditional looping to fix multiple whitespaces is inefficient; regular expressions provide a more effective way to find and replace patterns like multiple spaces.",
    "keywords": [
     "looping",
-    "whitespace replacement",
+    "replace",
     "regular expressions",
-    "pattern matching",
-    "text formatting"
+    "pattern matching"
    ],
    "questions": [
     "Why is looping inefficient for fixing multiple whitespaces?",
-    "How do regular expressions improve text formatting tasks?",
-    "What is the advantage of using regular expressions over traditional code for pattern matching?"
+    "How do regular expressions improve text replacement tasks?"
    ]
   },
   "custom-library-3-1-2": {
@@ -2754,130 +2671,112 @@
   },
   "custom-library-3-1-3": {
    "text_sha": "44e6600d9ac4187b",
-   "summary": "Adding the global flag 'g' to a regular expression enables matching and replacing all occurrences of a pattern in a string.",
+   "summary": "In JavaScript, regular expressions can be created with the RegExp constructor or inline using slashes and flags like 'g' for global matching, simplifying text processing.",
    "keywords": [
-    "global flag",
-    "g flag",
     "regular expressions",
-    "replace all",
-    "JavaScript"
+    "flags",
+    "global flag",
+    "replace function"
    ],
    "questions": [
-    "What does the global flag 'g' do in a regular expression?",
-    "How can you replace all instances of a word in a string using regex?",
-    "How do you write a regex literal with flags in JavaScript?"
+    "How do you create regular expressions in JavaScript?",
+    "What does the global flag 'g' do in a regular expression?"
    ]
   },
   "custom-library-3-1-4": {
    "text_sha": "49bdeeb995c07d9c",
-   "summary": "Character classes like [0-9] in regular expressions match any digit, allowing replacement of any number in a string with another word.",
+   "summary": "Regular expressions can match character ranges like digits [0-9], allowing replacement of any number in text with a specified string.",
    "keywords": [
-    "character classes",
-    "[0-9]",
     "regular expressions",
-    "digit matching",
-    "string replacement"
+    "[0-9]",
+    "pattern matching",
+    "replace"
    ],
    "questions": [
     "How do you match any digit using regular expressions?",
-    "What does the character class [0-9] represent in regex?",
-    "How can you replace digits in a string using regex?"
+    "How can you replace numbers in a string using regex?"
    ]
   },
   "custom-library-3-1-5": {
    "text_sha": "d05bdf0656953c75",
-   "summary": "Using the plus '+' quantifier in regex groups multiple consecutive matches (like digits) together for replacement instead of replacing each individually.",
+   "summary": "Adding a plus '+' quantifier to a regex pattern groups consecutive matches (like digits) so they are replaced as a whole, not individually.",
    "keywords": [
+    "regular expressions",
     "plus quantifier",
-    "+",
-    "regex groups",
-    "pattern grouping",
-    "replace multiple matches"
+    "grouping",
+    "pattern matching",
+    "replace"
    ],
    "questions": [
-    "What is the purpose of the '+' quantifier in regular expressions?",
-    "How do you group multiple consecutive digits for replacement in regex?",
-    "Why does adding '+' change how replacements occur in regex?"
+    "What does the '+' quantifier do in regular expressions?",
+    "How can you replace a group of digits instead of individual digits?"
    ]
   },
   "custom-library-3-1-6": {
    "text_sha": "f9971ace8f0ea6e0",
-   "summary": "Regular expressions can match complex patterns and tools like regex101 help visualize and test patterns such as newline characters and tokens.",
+   "summary": "Regular expressions can detect newline characters and other special tokens, and tools like regex101 help visualize and test these patterns.",
    "keywords": [
-    "regex101",
+    "regular expressions",
     "newline character",
-    "\\n",
-    "pattern testing",
-    "regular expressions"
+    "pattern matching"
    ],
    "questions": [
-    "How can you test and visualize regular expressions?",
-    "What pattern matches newline characters in regex?",
-    "What tools help with learning and debugging regex patterns?"
+    "How do you match newline characters with regex?",
+    "What tools can help test and visualize regular expressions?"
    ]
   },
   "custom-library-3-1-7": {
    "text_sha": "f579e69b3d61a2bd",
-   "summary": "Regex supports ranges and case sensitivity, allowing matching of characters within specified ranges and differentiating uppercase from lowercase letters.",
+   "summary": "Regex supports matching character ranges and case sensitivity, enabling complex pattern searches across strings, making it a versatile programming tool.",
    "keywords": [
-    "character ranges",
-    "case sensitivity",
     "regular expressions",
-    "[8-10]",
-    "capital letters"
+    "character ranges",
+    "pattern matching",
+    "JavaScript"
    ],
    "questions": [
-    "How do character ranges work in regular expressions?",
-    "Does regex differentiate between uppercase and lowercase letters?",
-    "How can you match only capital letters using regex?"
+    "How does regex handle case sensitivity?",
+    "What are character ranges in regular expressions?"
    ]
   },
   "custom-library-3-1-8": {
    "text_sha": "fce0cac17421f7e1",
-   "summary": "You don't need to memorize all regex syntax; resources like regex cheat sheets provide templates to customize, making regex essential for text processing in libraries.",
+   "summary": "You don't need to memorize all regex syntax; resources like regex cheat sheets provide templates to customize, but understanding regex basics is essential for text processing.",
    "keywords": [
-    "regex cheat sheet",
     "regular expressions",
-    "text processing",
-    "learning regex",
-    "templates"
+    "pattern templates",
+    "learning"
    ],
    "questions": [
     "Do I need to memorize all regular expression syntax?",
-    "Where can I find templates or cheat sheets for regex?",
-    "Why is regex important for building text processing libraries?"
+    "Where can I find templates for regular expressions?"
    ]
   },
   "custom-library-3-2-0": {
    "text_sha": "fb078e8763256b52",
-   "summary": "Introduces creating a method to normalize whitespace in strings by replacing multiple spaces with a single space using regular expressions.",
+   "summary": "Normalize white space in strings by replacing multiple spaces with a single space using regular expressions.",
    "keywords": [
-    "normalizeWhiteSpace",
     "regular expressions",
-    "whitespace normalization",
-    "string methods",
-    "String.prototype"
+    "white space normalization",
+    "string methods"
    ],
    "questions": [
-    "How can I normalize multiple whitespaces in a string to a single space?",
-    "What is the purpose of a whitespace normalization method in a string library?",
-    "How do regular expressions help in cleaning up extra spaces in strings?"
+    "How can I normalize white space in a string?",
+    "What does normalizeWhiteSpace method do?"
    ]
   },
   "custom-library-3-2-1": {
    "text_sha": "38bb9f4a1a143e4e",
-   "summary": "Defines the normalizeWhiteSpace method on String.prototype using string.replace with a regex pattern to replace multiple spaces with one space.",
+   "summary": "Create a String prototype method normalizeWhiteSpace that uses string.replace with a regex pattern to replace multiple spaces with one space.",
    "keywords": [
-    "String.prototype.normalizeWhiteSpace",
+    "String.prototype",
+    "normalizeWhiteSpace",
     "string.replace",
-    "regex pattern",
-    "whitespace replacement",
-    "JavaScript string methods"
+    "regex pattern"
    ],
    "questions": [
-    "How do you implement a normalizeWhiteSpace method on String.prototype?",
-    "What regex pattern is used to replace multiple whitespaces with a single space?",
-    "Does normalizeWhiteSpace require any arguments?"
+    "How to add normalizeWhiteSpace method to String prototype?",
+    "What regex pattern replaces multiple spaces with one space?"
    ]
   },
   "custom-library-3-2-10": {
@@ -2913,19 +2812,15 @@
   },
   "custom-library-3-2-12": {
    "text_sha": "ee0db4962233790b",
-   "summary": "Demonstrates adding methods like formatNumber and formatCurrency to String.prototype using regular expressions for formatting numbers and currencies in strings.",
+   "summary": "Introduce formatNumber and formatCurrency methods to format numbers and currency strings appropriately for e-commerce use cases.",
    "keywords": [
-    "String.prototype",
-    "formatNumber",
-    "formatCurrency",
-    "regular expressions",
     "number formatting",
-    "currency formatting"
+    "currency formatting",
+    "e-commerce"
    ],
    "questions": [
-    "How do you add a custom method to String.prototype?",
-    "What is the purpose of formatNumber and formatCurrency methods?",
-    "How can regular expressions be used in formatting numbers and currencies?"
+    "How to format numbers with commas?",
+    "How to format currency strings in a library?"
    ]
   },
   "custom-library-3-2-13": {
@@ -2946,67 +2841,57 @@
   },
   "custom-library-3-2-14": {
    "text_sha": "48df92e26cd3975c",
-   "summary": "Shows testing the formatNumber method on a string variable and troubleshooting errors like 'not a function' due to possible spelling mistakes or unsaved files.",
+   "summary": "Test formatNumber method on a string representing a number and troubleshoot 'not a function' error due to missing or misspelled method.",
    "keywords": [
-    "formatNumber",
-    "string methods",
-    "debugging",
-    "JavaScript errors",
-    "not a function"
+    "string method",
+    "not a function error",
+    "method testing"
    ],
    "questions": [
-    "What causes the 'not a function' error when calling a custom method?",
-    "How can you debug issues with prototype method usage?",
-    "What should you check if a custom method on a string is not recognized?"
+    "Why does formatNumber give 'not a function' error?",
+    "How to test formatNumber on a string?"
    ]
   },
   "custom-library-3-2-15": {
    "text_sha": "80676d4b7f10a694",
-   "summary": "Clarifies that formatNumber is added to String.prototype, so it only works on strings, not numbers; numbers must be converted to strings before using the method.",
+   "summary": "Explain that formatNumber is added to String prototype but must be called on strings, not numbers, requiring conversion if needed.",
    "keywords": [
     "String.prototype",
     "type conversion",
-    "formatNumber",
-    "JavaScript types",
     "number to string"
    ],
    "questions": [
-    "Why does formatNumber not work on number types?",
-    "How do you use a String.prototype method on a number?",
-    "What type conversion is needed to use string methods on numbers?"
+    "Why must formatNumber be called on strings?",
+    "How to use formatNumber on numbers?"
    ]
   },
   "custom-library-3-2-16": {
    "text_sha": "81774d087bafe09b",
-   "summary": "Demonstrates formatting a number as currency using the formatCurrency method and shows passing different currency codes like 'INR' for rupees.",
+   "summary": "Demonstrate formatCurrency method usage with different currency codes and fix parameter order to correctly format currency strings.",
    "keywords": [
-    "formatCurrency",
-    "currency formatting",
-    "String.prototype",
-    "currency codes",
-    "INR",
-    "JavaScript formatting"
+    "currency code",
+    "parameter order",
+    "string formatting"
    ],
    "questions": [
-    "How do you format a number as currency using a custom method?",
-    "How can you specify different currency codes in formatCurrency?",
-    "What happens if the currency code parameter is missing?"
+    "How to format currency with different codes?",
+    "What is the correct parameter order for formatCurrency?"
    ]
   },
   "custom-library-3-2-17": {
    "text_sha": "a5d4afed69de589d",
-   "summary": "Fixes parameter order for formatCurrency so the currency code is the first argument, enabling correct formatting for currencies like INR.",
+   "summary": "Summarize custom library methods created so far including title case, shorten, mask email, find positions, normalize white space, moderate, format number, and format currency.",
    "keywords": [
-    "formatCurrency",
-    "parameter order",
-    "currency code",
-    "JavaScript functions",
-    "method parameters"
+    "custom library methods",
+    "title case",
+    "mask email",
+    "normalize white space",
+    "format number",
+    "format currency"
    ],
    "questions": [
-    "Why does the order of parameters matter in formatCurrency?",
-    "How do you fix issues with passing currency codes to formatCurrency?",
-    "What is the correct parameter order for formatCurrency?"
+    "What methods have been created in the custom library?",
+    "Which string manipulation methods are included in the library?"
    ]
   },
   "custom-library-3-2-18": {
@@ -3043,17 +2928,14 @@
   },
   "custom-library-3-2-3": {
    "text_sha": "ccc2aa661521a266",
-   "summary": "Tests the normalizeWhiteSpace method and fixes a capitalization error in the method name to successfully normalize spaces in a sample string.",
+   "summary": "Test the normalizeWhiteSpace method and fix a capitalization error to successfully normalize white spaces in a string.",
    "keywords": [
-    "normalizeWhiteSpace test",
-    "method debugging",
-    "capitalization error",
-    "string normalization test"
+    "string method testing",
+    "string normalization"
    ],
    "questions": [
-    "How do you test the normalizeWhiteSpace method?",
-    "What common mistake can cause 'not a function' errors when calling string methods?",
-    "How do you fix a capitalization error in method names?"
+    "How to test normalizeWhiteSpace method?",
+    "What causes 'not a function' error when calling normalizeWhiteSpace?"
    ]
   },
   "custom-library-3-2-4": {
@@ -3090,33 +2972,29 @@
   },
   "custom-library-3-2-6": {
    "text_sha": "5c19502890980248",
-   "summary": "Uses string.replace with a regex pattern constructed from the input word to replace occurrences in the paragraph with a masked version.",
+   "summary": "Create a method to mask a specific word in a paragraph string by replacing occurrences using a regex pattern with a global flag.",
    "keywords": [
-    "string.replace",
-    "dynamic regex pattern",
-    "masking words",
-    "template literals",
-    "global flag"
+    "mask method",
+    "string replacement",
+    "paragraph masking"
    ],
    "questions": [
-    "How do you create a regex pattern from a variable word?",
-    "What is the role of the global flag in replacing words?",
-    "How do you replace all occurrences of a word in a string?"
+    "How to mask a word in a paragraph using regex?",
+    "What does the global flag do in regex replacement?"
    ]
   },
   "custom-library-3-2-7": {
    "text_sha": "5967f4360aacad1a",
-   "summary": "Discusses using template literals to insert the word into the regex pattern and the global flag to replace all matches in the string.",
+   "summary": "Use template literals to dynamically create regex patterns for masking words, keeping the first character and masking the rest globally.",
    "keywords": [
     "template literals",
-    "regex pattern from variable",
+    "masking words",
     "global flag",
     "string masking"
    ],
    "questions": [
-    "How do you use template literals to create a regex pattern from a variable?",
-    "Why is the global flag important when masking words?",
-    "Can you mask multi-word phrases with this method?"
+    "How to create dynamic regex patterns with template literals?",
+    "How to mask a word but keep its first character?"
    ]
   },
   "custom-library-3-2-8": {
@@ -3137,17 +3015,13 @@
   },
   "custom-library-3-2-9": {
    "text_sha": "fa9c87d4e026fd8f",
-   "summary": "Tests the moderate method with sample text and normalizes whitespace but finds the word replacement is not working as expected.",
+   "summary": "Debug masking function by testing word replacement and combining it with normalizeWhiteSpace to ensure correct masking and spacing.",
    "keywords": [
-    "moderate method test",
-    "normalizeWhiteSpace",
-    "debugging word replacement",
-    "string masking test"
+    "masking function"
    ],
    "questions": [
-    "How do you test the moderate method with sample text?",
-    "What might cause word replacement to fail in a regex-based method?",
-    "How can normalizeWhiteSpace help before masking?"
+    "How to debug a word masking function?",
+    "Why combine normalizeWhiteSpace with masking?"
    ]
   },
   "custom-library-3-3-0": {
@@ -3183,18 +3057,17 @@
   },
   "custom-library-3-3-2": {
    "text_sha": "dbe0d30e8336b423",
-   "summary": "Refactor methods into pure functions by removing string.prototype and then create a single library object to hold all methods.",
+   "summary": "This passage explains removing methods from String.prototype and converting them into pure functions within a custom library object for better organization.",
    "keywords": [
+    "String.prototype",
     "pure functions",
     "function keyword",
-    "library object",
-    "refactoring methods",
-    "JavaScript functions"
+    "custom library object"
    ],
    "questions": [
-    "How do you convert prototype methods into pure functions?",
-    "What is the benefit of having a single library object?",
-    "How do you remove string.prototype from method definitions?"
+    "Why remove methods from String.prototype?",
+    "How to convert prototype methods into pure functions?",
+    "What is the purpose of creating a custom library object?"
    ]
   },
   "custom-library-3-3-3": {
@@ -3247,82 +3120,77 @@
   },
   "custom-library-3-4-0": {
    "text_sha": "7a6207c742c1b790",
-   "summary": "Demonstrates testing a custom JavaScript library by integrating it into a simple blog HTML application.",
+   "summary": "Demonstrates testing the custom library by integrating it into a simple blog HTML application.",
    "keywords": [
     "custom library",
-    "testing library",
-    "HTML application",
-    "JavaScript integration",
-    "blog app"
+    "testing",
+    "blog application",
+    "HTML",
+    "library.js"
    ],
    "questions": [
-    "How do I test my custom JavaScript library in a real application?",
-    "What kind of application can I use to test my library?",
-    "How do I integrate a library.js file into an HTML project?"
+    "How can I test my custom JavaScript library in a simple web application?",
+    "What kind of application is suitable for testing a new JavaScript library?",
+    "How do I prepare an HTML file to use a custom library?"
    ]
   },
   "custom-library-3-4-1": {
    "text_sha": "d1d0fbacfc827cb3",
-   "summary": "Shows how to include the custom library using a script tag and select HTML elements with querySelectorAll to prepare for manipulation.",
+   "summary": "Shows how to include the custom library using a script tag and select HTML elements by tag name to manipulate them.",
    "keywords": [
     "script tag",
-    "include library.js",
-    "querySelectorAll",
-    "select h3 elements",
-    "DOM manipulation"
+    "library.js",
+    "h3 elements"
    ],
    "questions": [
-    "How do I include my custom library in an HTML page?",
+    "How do I include a custom JavaScript library in an HTML page?",
     "How can I select all h3 elements in the DOM using JavaScript?",
-    "What is the purpose of querySelectorAll in this context?"
+    "What is the purpose of querySelectorAll in manipulating HTML elements?"
    ]
   },
   "custom-library-3-4-2": {
    "text_sha": "46f44b3563a63a34",
-   "summary": "Illustrates looping through selected h3 elements and applying the custom toTitleCase string method from the library to change their inner text.",
+   "summary": "Uses the custom library's toTitleCase method to convert all h3 element texts to title case on the webpage.",
    "keywords": [
-    "loop through elements",
-    "toTitleCase",
-    "string prototype method",
-    "innerText manipulation",
-    "custom string methods"
+    "string prototype",
+    "looping DOM elements",
+    "text formatting"
    ],
    "questions": [
-    "How do I apply a custom string method to multiple DOM elements?",
-    "What does the toTitleCase method do to text content?",
-    "How can I change the innerText of h3 elements using a library method?"
+    "How can I convert all h3 element texts to title case using a custom method?",
+    "What is the usage of innerText in modifying HTML content?",
+    "How do I apply a string prototype method to multiple DOM elements?"
    ]
   },
   "custom-library-3-4-3": {
    "text_sha": "535e7b018fa6bb3f",
-   "summary": "Extends testing by selecting paragraph elements and applying the custom shorten method with parameters to limit text length and add an ending.",
+   "summary": "Demonstrates shortening paragraph texts using the custom library's shorten method with parameters for limit and ending.",
    "keywords": [
-    "querySelectorAll p",
-    "shorten method",
-    "string prototype",
-    "limit text length",
-    "custom library functions"
+    "shorten",
+    "paragraph elements",
+    "limit parameter",
+    "ending parameter"
    ],
    "questions": [
-    "How do I select all paragraph elements for manipulation?",
+    "How do I shorten paragraph texts using a custom string method?",
     "What parameters does the shorten method accept?",
-    "How can I shorten text content with a custom method?"
+    "How can I apply text shortening to multiple paragraphs in the DOM?"
    ]
   },
   "custom-library-3-4-4": {
    "text_sha": "a8836a15aed0933b",
-   "summary": "Summarizes how the custom library methods toTitleCase and shorten are used seamlessly on DOM elements after importing via script tag, and hints at discussing pros and cons of prototype extension next.",
+   "summary": "Summarizes how the custom library methods toTitleCase and shorten are used on the blog app without extra code and hints at discussing prototype method pros and cons next.",
    "keywords": [
-    "string.prototype extension",
-    "toTitleCase",
     "shorten",
+    "string.prototype",
     "library integration",
-    "pros and cons of prototype"
+    "pros and cons",
+    "custom library"
    ],
    "questions": [
-    "How do custom methods added to String.prototype work in a web app?",
-    "What are the benefits of using prototype extensions for a library?",
-    "What issues might arise from extending native prototypes?"
+    "How do the custom methods toTitleCase and shorten simplify text manipulation?",
+    "What are the benefits of adding methods to String.prototype?",
+    "What issues might arise from extending prototypes in JavaScript?"
    ]
   },
   "custom-library-4-0-0": {
@@ -3343,18 +3211,20 @@
   },
   "custom-library-4-0-1": {
    "text_sha": "14490362e5b239f3",
-   "summary": "Using prototype extensions offers zero learning curve for developers but directly manipulates JavaScript internals, which can lead to security and stability concerns.",
+   "summary": "Extending JavaScript's String.prototype allows seamless use of new functions like uppercase, split, pop, and push without learning curve but risks internal architecture manipulation.",
    "keywords": [
-    "prototype extension",
-    "security concerns",
-    "JavaScript internals",
-    "learning curve",
-    "String.prototype"
+    "String.prototype",
+    "extend prototype",
+    "JavaScript string methods",
+    "uppercase",
+    "split",
+    "pop",
+    "push"
    ],
    "questions": [
-    "Why do prototype extensions have zero learning curve for developers?",
-    "What are the risks of manipulating JavaScript internals via prototype?",
-    "Why can extending String.prototype be sensitive?"
+    "What happens when you extend String.prototype in JavaScript?",
+    "Why is there no learning curve when using extended string methods?",
+    "What are the risks of modifying JavaScript's internal prototypes?"
    ]
   },
   "custom-library-4-0-2": {
@@ -3375,34 +3245,31 @@
   },
   "custom-library-4-0-3": {
    "text_sha": "6bff3a5e631ad2ce",
-   "summary": "Prototype.js library caused naming collisions with native JavaScript when both implemented getElementByClassName differently, leading to compatibility issues.",
+   "summary": "The library prototype.js implemented a custom getElementByClassName method before JavaScript standardized it, leading to conflicts when both existed.",
    "keywords": [
     "prototype.js",
-    "naming collisions",
     "getElementByClassName",
-    "JavaScript compatibility",
-    "monkey patching"
+    "JavaScript library conflict",
+    "custom DOM methods"
    ],
    "questions": [
-    "What was the naming collision issue with prototype.js and JavaScript?",
-    "How did prototype.js implement getElementByClassName differently?",
-    "What problems arise from monkey patching built-in methods?"
+    "What was prototype.js's getElementByClassName method?",
+    "How did prototype.js's method conflict with JavaScript's later implementation?",
+    "Why did prototype.js create issues when JavaScript standardized getElementByClassName?"
    ]
   },
   "custom-library-4-0-4": {
    "text_sha": "f45a8de6c43b958d",
-   "summary": "JavaScript's native getElementByClassName returns a NodeList, conflicting with prototype.js's array return, causing iteration and functionality breakage.",
+   "summary": "prototype.js returned an array from getElementByClassName allowing array methods, while JavaScript returned a non-iterable node list, causing confusion and breaking code.",
    "keywords": [
-    "NodeList",
-    "array",
-    "getElementByClassName",
-    "prototype.js conflict",
-    "iteration issues"
+    "prototype.js",
+    "array vs node list",
+    "JavaScript DOM iteration"
    ],
    "questions": [
-    "What is the difference between NodeList and array in JavaScript?",
-    "Why did prototype.js's getElementByClassName break after browser updates?",
-    "How does return type affect method compatibility?"
+    "What is the difference between prototype.js's and JavaScript's getElementByClassName return types?",
+    "Why couldn't developers iterate over JavaScript's node list like an array?",
+    "How did this difference cause confusion for developers using prototype.js?"
    ]
   },
   "custom-library-4-0-5": {
@@ -3439,18 +3306,16 @@
   },
   "custom-library-4-0-7": {
    "text_sha": "7138f7486d84e8c9",
-   "summary": "Modifying built-in prototypes is discouraged as it risks conflicts, maintenance issues, and violates principles of not altering objects you don't own.",
+   "summary": "Overwriting prototype methods causes maintenance issues as JavaScript's native implementations override custom ones, so modifying prototypes is discouraged except in specific cases.",
    "keywords": [
-    "prototype modification",
-    "best practices",
-    "maintenance issues",
-    "do not modify objects you don't own",
-    "JavaScript philosophy"
+    "prototype overwrite",
+    "JavaScript maintenance issues",
+    "library design"
    ],
    "questions": [
-    "Why is modifying built-in prototypes discouraged?",
-    "What principles does prototype modification violate?",
-    "When might it be acceptable to extend prototypes?"
+    "What happens when JavaScript overrides custom prototype methods?",
+    "Why is modifying prototypes generally discouraged in library design?",
+    "When is it appropriate to add methods to prototypes?"
    ]
   },
   "custom-library-4-0-8": {
@@ -3503,18 +3368,17 @@
   },
   "custom-library-4-1-1": {
    "text_sha": "8f32476e2357f26a",
-   "summary": "Using prototype for widely distributed libraries is discouraged due to potential code pollution, but it's still a common approach and useful for learning JavaScript's inheritance system.",
+   "summary": "Using prototype is fine for personal projects or small sets of methods, but not recommended for widely used libraries with millions of downloads.",
    "keywords": [
-    "prototype inheritance",
-    "JavaScript library creation",
-    "code pollution",
-    "library distribution",
-    "JavaScript architecture"
+    "prototype",
+    "JavaScript library",
+    "personal project",
+    "library creation"
    ],
    "questions": [
-    "Why is using prototype not recommended for public libraries?",
-    "What benefits does learning prototype provide about JavaScript?",
-    "Is prototype still used in popular JavaScript libraries?"
+    "When is it appropriate to use prototype in JavaScript?",
+    "Why might prototype not be suitable for large-scale libraries?",
+    "What does using prototype teach about JavaScript?"
    ]
   },
   "custom-library-4-2-0": {
@@ -3568,18 +3432,18 @@
   },
   "custom-library-4-2-3": {
    "text_sha": "87d7c679f939a572",
-   "summary": "Adding custom methods to prototypes risks naming collisions with future JavaScript updates, which can break applications if method names overlap.",
+   "summary": "JavaScript updates can override existing prototype methods if they share the same name, causing older code to break when browsers implement new native methods like getElementByClassName.",
    "keywords": [
-    "prototype naming collision",
-    "JavaScript updates",
+    "JavaScript",
+    "prototype",
     "method override",
-    "breaking changes",
-    "prototype.js"
+    "browser update",
+    "native methods"
    ],
    "questions": [
-    "What happens if a JavaScript update adds a method with the same name as a custom prototype method?",
-    "Why do naming collisions on prototypes cause maintenance issues?",
-    "What is an example of a conflict caused by prototype.js and native JavaScript methods?"
+    "What happens if JavaScript adds a new method with the same name as a prototype method?",
+    "Why can browser updates break existing JavaScript code using prototypes?",
+    "How does method naming affect compatibility with browser updates?"
    ]
   },
   "custom-library-4-2-4": {
@@ -3615,18 +3479,19 @@
   },
   "custom-library-4-2-6": {
    "text_sha": "8a912fedf2c3014a",
-   "summary": "Prototypes remain useful for personal projects and learning JavaScript internals but are risky for large projects due to potential conflicts and maintenance issues.",
+   "summary": "Prototype.js remains useful for personal projects and learning JavaScript architecture but is not recommended for large projects or public releases due to security and control concerns.",
    "keywords": [
-    "prototype usage",
+    "Prototype.js",
     "personal projects",
-    "JavaScript internals",
-    "large project risks",
-    "maintenance"
+    "JavaScript architecture",
+    "security checks",
+    "large projects",
+    "library control"
    ],
    "questions": [
-    "When is it appropriate to use prototypes in JavaScript projects?",
-    "Why are prototypes risky for large-scale applications?",
-    "How do prototypes help in understanding JavaScript architecture?"
+    "Is Prototype.js still relevant for modern JavaScript projects?",
+    "Why is Prototype.js not recommended for large or public projects?",
+    "What benefits does Prototype.js offer for learning JavaScript?"
    ]
   },
   "custom-library-4-2-7": {
@@ -3681,143 +3546,120 @@
   },
   "custom-library-5-0-10": {
    "text_sha": "fec3f24335502461",
-   "summary": "Including the Axios library via a CDN script tag adds it to the window object, making its HTTP methods globally accessible in the browser environment.",
+   "summary": "Adding the axios library via a CDN script tag integrates it into the window object, making its methods globally accessible in the browser.",
    "keywords": [
-    "Axios",
+    "axios",
     "CDN",
     "script tag",
-    "window object",
-    "HTTP methods"
+    "window object"
    ],
    "questions": [
-    "How does adding Axios via CDN affect the window object?",
-    "What methods does Axios expose on the window object?",
-    "How can external libraries be loaded globally in a browser?"
+    "How do you add axios to a web page using CDN?",
+    "Where does axios attach its methods when loaded in the browser?"
    ]
   },
   "custom-library-5-0-11": {
    "text_sha": "37817788144c09c8",
-   "summary": "Inspecting the window object after loading Axios reveals all its methods like create, delete, get, post, and patch, demonstrating how libraries attach to window.",
+   "summary": "Inspecting the window object after loading axios reveals axios's methods like create, delete, get, post, and patch are accessible as part of the window object.",
    "keywords": [
+    "axios",
     "window object",
-    "Axios methods",
+    "methods",
     "create",
     "delete",
-    "get",
     "post",
     "patch"
    ],
    "questions": [
-    "What methods does Axios add to the window object?",
-    "How can you verify a library is attached to the window object?",
-    "What is the significance of libraries attaching methods to window?"
+    "What axios methods appear on the window object?",
+    "How can you verify axios is loaded globally?"
    ]
   },
   "custom-library-5-0-12": {
    "text_sha": "333ee007cdec4829",
-   "summary": "Lodash library attaches itself to the window object under the name '_' instead of 'lodash', unlike axios which uses its own name.",
+   "summary": "Loading lodash via CDN adds it to the window object under the underscore (_) name, hiding its identity but exposing all its utility methods.",
    "keywords": [
-    "window object",
     "lodash",
-    "axios",
     "CDN",
-    "script tag",
-    "global namespace",
-    "_"
+    "window object",
+    "underscore",
+    "utility methods"
    ],
    "questions": [
-    "How does lodash attach itself to the window object?",
-    "Why don't I see lodash under the name 'lodash' on the window object?",
-    "How can I access lodash methods from the browser console?"
+    "How does lodash expose itself on the window object?",
+    "Why is lodash accessed via underscore (_) in the browser?"
    ]
   },
   "custom-library-5-0-13": {
    "text_sha": "a8af8ba69266a50b",
-   "summary": "The lodash methods are accessible via the '_' property on the window object, and this approach is also tested for React to see how it integrates globally.",
+   "summary": "Searching the window object reveals lodash's methods under the underscore (_) namespace, including add, assign, and other manipulation functions.",
    "keywords": [
-    "lodash",
-    "_",
     "window object",
-    "React",
-    "CDN",
-    "global variables",
-    "library integration"
+    "underscore",
+    "methods",
+    "add",
+    "assign",
+    "manipulation"
    ],
    "questions": [
-    "Where can I find lodash methods on the window object?",
-    "How do React and lodash differ in their global integration?",
-    "What does the window object store when loading libraries via script tags?"
+    "Where are lodash methods found on the window object?",
+    "What are some lodash methods accessible via underscore?"
    ]
   },
   "custom-library-5-0-14": {
    "text_sha": "65b6da63e4ff4c5f",
-   "summary": "React library also attaches itself to the window object when loaded via CDN, similar to axios and lodash, confirming that major libraries expose themselves globally.",
+   "summary": "Loading React via CDN adds it to the window object, confirming that major libraries integrate with the window to expose their APIs globally.",
    "keywords": [
     "React",
-    "window object",
     "CDN",
-    "global namespace",
-    "axios",
-    "lodash",
-    "library loading"
+    "window object"
    ],
    "questions": [
-    "Does React attach itself to the window object when loaded from CDN?",
-    "How do major JavaScript libraries expose themselves globally?",
-    "Where can I find React on the window object after loading it?"
+    "How does React expose itself when loaded via CDN?",
+    "Do major libraries attach to the window object?"
    ]
   },
   "custom-library-5-0-15": {
    "text_sha": "7f490c14db99ba6a",
-   "summary": "JavaScript libraries interact with the JavaScript environment through the window object, which acts as a middleman for global access to library objects like lodash, React, and axios.",
+   "summary": "Libraries like lodash, React, and axios interact with JavaScript through the window object as a middleman, not directly with JavaScript itself.",
    "keywords": [
     "window object",
-    "JavaScript libraries",
-    "global access",
-    "lodash",
+    "library interaction",
     "React",
     "axios",
-    "library integration"
+    "JavaScript"
    ],
    "questions": [
-    "How do JavaScript libraries interact with the JavaScript environment?",
-    "What role does the window object play in library integration?",
-    "Why do libraries like lodash, React, and axios appear on the window object?"
+    "How do libraries interact with JavaScript in the browser?",
+    "What role does the window object play for libraries?"
    ]
   },
   "custom-library-5-0-16": {
    "text_sha": "6bb9ed57dac92ca9",
-   "summary": "Custom libraries can be added to the window object as an object with methods, just like popular libraries, enabling global access without special permissions.",
+   "summary": "Custom libraries can be attached to the window object as an object with methods, enabling global access similar to popular libraries like axios and lodash.",
    "keywords": [
     "window object",
     "custom library",
-    "global object",
-    "JavaScript",
-    "library registration",
-    "global namespace"
+    "global access",
+    "library object",
+    "methods"
    ],
    "questions": [
-    "How can I add my custom library to the window object?",
-    "What are the benefits of attaching a library to the window object?",
-    "Do I need permission to add objects to the window in JavaScript?"
+    "How can you make a custom library globally accessible?",
+    "Why attach a custom library to the window object?"
    ]
   },
   "custom-library-5-0-2": {
    "text_sha": "844a1402c81ee710",
-   "summary": "The browser provides built-in Web APIs like alert, setTimeout, localStorage, sessionStorage, and history, which JavaScript can access to interact with the browser environment.",
+   "summary": "Web APIs or browser APIs like setTimeout, localStorage, sessionStorage, and browser history provide additional functionality beyond HTML, CSS, and JavaScript in the browser environment.",
    "keywords": [
     "Web APIs",
     "browser API",
-    "alert",
-    "setTimeout",
-    "localStorage",
-    "sessionStorage",
-    "history"
+    "browser history"
    ],
    "questions": [
-    "What are some examples of browser-provided Web APIs?",
-    "How can JavaScript interact with browser features like storage and history?",
-    "What built-in functions does the browser provide to JavaScript?"
+    "What are Web APIs in the browser?",
+    "Which browser features are accessible via Web APIs?"
    ]
   },
   "custom-library-5-0-3": {
@@ -3838,35 +3680,32 @@
   },
   "custom-library-5-0-4": {
    "text_sha": "8af4218b7ea0258f",
-   "summary": "All HTML data is stored inside the window object's document property, including nodes, stylesheets, scripts, and event handlers essential for the browser's operation.",
+   "summary": "The document object stores all HTML data including links, scripts, child nodes, and stylesheets, representing the web page's structured content.",
    "keywords": [
-    "window.document",
+    "document object",
     "HTML nodes",
-    "stylesheets",
-    "scripts",
-    "event handlers"
+    "child nodes",
+    "scripts"
    ],
    "questions": [
-    "Where is HTML data stored within the window object?",
-    "What kinds of data can be found inside window.document?",
-    "How are event handlers related to the window object?"
+    "Where is HTML data stored in the browser?",
+    "What does the document object contain?"
    ]
   },
   "custom-library-5-0-5": {
    "text_sha": "ebc688c7c4c90080",
-   "summary": "The window object holds event handlers, animation controls, 3D implementations, and timing functions like setInterval and setTimeout, managing browser-related functionalities.",
+   "summary": "The window object holds event handlers, browser methods like prompt, screen info, animation, 3D implementations, and timing functions such as setInterval and setTimeout.",
    "keywords": [
     "window object",
     "event handlers",
+    "prompt",
+    "screen",
     "animation",
-    "3D",
-    "setInterval",
-    "setTimeout"
+    "3D implementation"
    ],
    "questions": [
-    "What browser functionalities are managed by the window object?",
-    "How does the window object handle timing functions?",
-    "What kinds of event-related methods are stored in the window object?"
+    "What kind of methods are stored in the window object?",
+    "Where are event handlers managed in the browser?"
    ]
   },
   "custom-library-5-0-6": {
@@ -3887,18 +3726,16 @@
   },
   "custom-library-5-0-7": {
    "text_sha": "c59307408d374381",
-   "summary": "The window object provides a comprehensive interface to the entire web ecosystem, exposing variables, browser APIs, and HTML nodes accessible to JavaScript.",
+   "summary": "The window object provides a global perspective of the JavaScript environment, exposing all variables, browser APIs, and inbuilt functionalities accessible in the web ecosystem.",
    "keywords": [
     "window object",
-    "web ecosystem",
+    "JavaScript environment",
     "browser APIs",
-    "variables",
-    "HTML nodes"
+    "variables"
    ],
    "questions": [
-    "What does the window object expose to JavaScript?",
-    "How does the window object serve as an interface to the web ecosystem?",
-    "What types of data can be accessed through the window object?"
+    "What does the window object represent in JavaScript?",
+    "How can you see all global variables and browser APIs?"
    ]
   },
   "custom-library-5-0-8": {
@@ -3919,18 +3756,15 @@
   },
   "custom-library-5-0-9": {
    "text_sha": "1ffee3717db73f2e",
-   "summary": "Attaching a custom library to the window object allows global access and avoids prototype pollution, a common maintenance issue in JavaScript library design.",
+   "summary": "Attaching a library to the window object allows integration with JavaScript without prototype pollution or maintenance issues, serving as a global namespace for libraries.",
    "keywords": [
     "window object",
-    "custom library",
-    "global access",
-    "prototype pollution",
-    "JavaScript library"
+    "library integration",
+    "prototype pollution"
    ],
    "questions": [
     "Why attach a library to the window object?",
-    "What is prototype pollution and how does using window help avoid it?",
-    "How can libraries be globally accessible in JavaScript?"
+    "How does attaching to window avoid prototype pollution?"
    ]
   },
   "custom-library-5-1-0": {
@@ -3999,18 +3833,18 @@
   },
   "custom-library-5-1-12": {
    "text_sha": "373fa3e96717abe3",
-   "summary": "Explains how adding a toTitleCase method to String.prototype allows calling it directly on strings with zero learning curve, illustrating the prototype method for library usage.",
+   "summary": "Demonstrate using a custom string method added to String.prototype to convert text to title case, showing how proto method usage requires extending built-in prototypes.",
    "keywords": [
-    "toTitleCase",
     "String.prototype",
-    "prototype method",
-    "JavaScript string methods",
-    "library usage"
+    "title case",
+    "custom string method",
+    "proto method",
+    "extend prototype"
    ],
    "questions": [
-    "How does adding a method to String.prototype affect its usage?",
-    "What is the advantage of the prototype method for library functions?",
-    "How do you call a custom toTitleCase method on a string?"
+    "How do I add a custom method to String.prototype?",
+    "What does the title case method do in this library?",
+    "Why is the proto method popular for extending built-in functions?"
    ]
   },
   "custom-library-5-1-13": {
@@ -4066,19 +3900,18 @@
   },
   "custom-library-5-1-3": {
    "text_sha": "7150d0227bc137f6",
-   "summary": "Assign your library object to a property on window, using a simple identifier name similar to how Axios or React attach themselves.",
+   "summary": "Assign a library object to a property on the window object to make it globally accessible, similar to how axios and React register themselves.",
    "keywords": [
-    "window.library",
-    "assign library",
-    "global identifier",
-    "Axios",
-    "React",
-    "library naming"
+    "window object",
+    "global library",
+    "library registration",
+    "axios",
+    "React"
    ],
    "questions": [
-    "How do libraries like Axios or React register themselves on window?",
-    "What naming conventions can I use when adding my library to window?",
-    "How do I assign my library object to window?"
+    "How do libraries like axios and React register themselves globally?",
+    "What is the purpose of assigning a library to window.whatever?",
+    "How can I make my custom library accessible globally in the browser?"
    ]
   },
   "custom-library-5-1-4": {
@@ -4099,18 +3932,18 @@
   },
   "custom-library-5-1-5": {
    "text_sha": "614bf5377c6c8022",
-   "summary": "Use var to declare the library on window to ensure proper interaction, then load the library.js script in index.html to register it globally.",
+   "summary": "Use var to declare the library object and include it via a script tag so it runs and registers the library on the window object for use in the webpage.",
    "keywords": [
     "var declaration",
-    "window library",
-    "script source",
-    "index.html",
-    "global registration"
+    "window object",
+    "script tag",
+    "library.js",
+    "register library"
    ],
    "questions": [
-    "Why should I use var instead of let when adding a library to window?",
-    "How do I load my library.js file in an HTML page?",
-    "What happens when the library.js script runs?"
+    "Why should I use var instead of let to declare a global library?",
+    "How do I load my library.js file to register the library on the window object?",
+    "What happens when I include my library script in the HTML?"
    ]
   },
   "custom-library-5-1-6": {
@@ -4227,34 +4060,39 @@
   },
   "custom-library-5-2-3": {
    "text_sha": "71dd672041b2c1b6",
-   "summary": "Many libraries, including Lodash, wrap their entire code inside an IIFE to maintain internal scope and prevent external manipulation.",
+   "summary": "Library code is wrapped inside an IIFE to create a private scope, preventing external manipulation and maintaining internal code isolation.",
    "keywords": [
     "IIFE",
+    "scoping",
+    "library code",
     "Lodash",
-    "library scope",
-    "JavaScript encapsulation",
+    "internal scope",
+    "CDN",
     "production file"
    ],
    "questions": [
-    "Why do libraries like Lodash use IIFE?",
-    "How does IIFE help protect library code?",
-    "Where can you see IIFE usage in production JavaScript files?"
+    "Why is library code wrapped inside an IIFE?",
+    "How does Lodash use IIFE in its production files?",
+    "What is the purpose of scoping library code with IIFE?"
    ]
   },
   "custom-library-5-2-4": {
    "text_sha": "5388b41baec54df9",
-   "summary": "React's minified production files also use the IIFE pattern to encapsulate code and manage execution context securely.",
+   "summary": "React's minified production files also use the IIFE pattern to maintain scope isolation, sometimes using call, apply, and bind for context control.",
    "keywords": [
     "IIFE",
     "React",
     "minified file",
-    "JavaScript encapsulation",
-    "call, apply, bind"
+    "production file",
+    "call",
+    "apply",
+    "bind",
+    "scope isolation"
    ],
    "questions": [
-    "Does React use IIFE in its production files?",
-    "How does React use IIFE to manage scope?",
-    "What JavaScript methods are used with IIFE to control context?"
+    "How does React use IIFE in its production files?",
+    "What role do call, apply, and bind play in React's IIFE pattern?",
+    "Why do minified files use IIFE for scope isolation?"
    ]
   },
   "custom-library-5-2-5": {
@@ -4275,18 +4113,16 @@
   },
   "custom-library-6-0-0": {
    "text_sha": "394528048cfdaeb2",
-   "summary": "The window object exists only in browsers, so libraries attached to it won't work on backend environments like Node.js, which use a different global object.",
+   "summary": "The window object exists only in browsers, so attaching a library to window works in frontend but not in backend environments like Node.js.",
    "keywords": [
     "window object",
     "browser environment",
-    "backend JavaScript",
-    "global object",
-    "Node.js"
+    "backend environment",
+    "global object"
    ],
    "questions": [
-    "Why doesn't the window object exist in backend JavaScript?",
-    "What is the difference between browser and backend global objects?",
-    "Why can't a library attached to window work on the backend?"
+    "Why can't we use the window object in backend JavaScript?",
+    "What is the difference between frontend and backend global objects in JavaScript?"
    ]
   },
   "custom-library-6-0-1": {
@@ -4339,49 +4175,44 @@
   },
   "custom-library-6-0-4": {
    "text_sha": "ba94671c953ccddb",
-   "summary": "The global object in Node.js holds environment information and variables, but it displays compressed output in the terminal.",
+   "summary": "Running frontend code that uses window in Node.js causes a 'window is not defined' error because Node.js lacks the window object.",
    "keywords": [
-    "Node.js global object",
-    "environment variables",
-    "terminal output",
-    "backend JavaScript"
+    "window is not defined",
+    "Node.js error",
+    "frontend code in backend",
+    "terminal error"
    ],
    "questions": [
-    "What does the global object contain in Node.js?",
-    "How can I inspect the global object in Node.js?",
-    "Why does the global object output look compressed in the terminal?"
+    "What error occurs when frontend code using window runs in Node.js?",
+    "Why does Node.js throw a 'window is not defined' error?"
    ]
   },
   "custom-library-6-0-5": {
    "text_sha": "29b55dc07099fcd6",
-   "summary": "Replacing window with global in the library code allows it to run in Node.js, but you must require the library file properly to access its methods.",
+   "summary": "Replacing window with global in Node.js allows backend code to access the global object, but the library must be properly required to work.",
    "keywords": [
     "global object",
-    "Node.js compatibility",
-    "require library",
-    "window replacement",
-    "backend JavaScript"
+    "Node.js global",
+    "require library"
    ],
    "questions": [
-    "How do I modify a library to work in Node.js?",
-    "Why do I need to replace window with global in backend code?",
-    "What happens if I don't require the library before using it?"
+    "How can you access the global object in Node.js?",
+    "Why might a library not be defined even when using global in Node.js?"
    ]
   },
   "custom-library-6-0-6": {
    "text_sha": "6a4797bbfa1db174",
-   "summary": "To support both frontend and backend, libraries use conditional code to attach to window or global; underscore.js uses this pattern, which can inspire your implementation.",
+   "summary": "To support both frontend and backend, libraries use conditional code to attach to window or global; underscore.js uses this approach and can inspire custom implementations.",
    "keywords": [
-    "universal library",
-    "frontend backend compatibility",
+    "conditional global assignment",
     "window vs global",
-    "underscore.js pattern",
-    "conditional global assignment"
+    "underscore.js",
+    "cross-environment library"
    ],
    "questions": [
-    "How do libraries support both browser and Node.js environments?",
-    "What pattern does underscore.js use for global object detection?",
-    "How can I write conditional code to attach my library to window or global?"
+    "How do libraries support both frontend and backend environments?",
+    "What example library uses conditional global assignment like lodash?",
+    "Why is conditional code needed for global object assignment?"
    ]
   },
   "custom-library-6-1-0": {
@@ -4402,35 +4233,32 @@
   },
   "custom-library-6-1-1": {
    "text_sha": "27b8d039f0b7a779",
-   "summary": "The root object is established by checking the environment, such as window in browsers or global on servers, to create a universal reference point.",
+   "summary": "The root object is established by checking different global contexts like window in browsers or global in servers to create a universal reference.",
    "keywords": [
     "root object",
     "window",
     "global",
-    "environment detection",
-    "universal object"
+    "self",
+    "virtual machine"
    ],
    "questions": [
-    "What is the root object in JavaScript libraries?",
-    "How do libraries detect if they are running in a browser or server?",
-    "Why is the root object important for cross-environment compatibility?"
+    "What is the root object in JavaScript environments?",
+    "How do you identify the global object in different environments like browser or server?",
+    "What does self refer to in browser environments?"
    ]
   },
   "custom-library-6-1-2": {
    "text_sha": "7b0a80e8b5a2e0fe",
-   "summary": "The root object is assigned conditionally to either the global object or self (window) depending on the runtime environment to ensure compatibility.",
+   "summary": "The root object is assigned conditionally to either global or self depending on the runtime environment to ensure compatibility.",
    "keywords": [
     "root object",
     "global",
-    "self",
-    "window",
-    "runtime environment",
-    "conditional assignment"
+    "self"
    ],
    "questions": [
-    "How is the root object assigned based on the environment?",
-    "What does self represent in browser environments?",
-    "Why do libraries check for global or self objects?"
+    "How is the root object assigned based on the runtime environment?",
+    "What is the difference between global and self in JavaScript?",
+    "Why do we need to check the environment before assigning the root object?"
    ]
   },
   "custom-library-6-1-3": {
@@ -4450,17 +4278,18 @@
   },
   "custom-library-6-1-4": {
    "text_sha": "ae16ca3f02626d91",
-   "summary": "Detecting the environment is done by checking if 'window' is an object, which indicates a browser environment, otherwise it is assumed to be server-side.",
+   "summary": "There is no direct API to detect frontend or backend, so checking if 'window' is an object is a hack to detect browser environment.",
    "keywords": [
     "environment detection",
+    "window",
     "typeof window",
     "browser detection",
-    "server detection"
+    "frontend backend hack"
    ],
    "questions": [
-    "How can I detect if my code is running in a browser?",
-    "What does 'typeof window' return in different environments?",
-    "Why is there no built-in API to detect frontend or backend?"
+    "How can you detect if code is running in a browser environment?",
+    "Why is 'typeof window' used to differentiate frontend from backend?",
+    "Is there a built-in method to check if code runs on frontend or backend?"
    ]
   },
   "custom-library-6-1-5": {
@@ -4481,17 +4310,17 @@
   },
   "custom-library-6-1-6": {
    "text_sha": "2624db54b4dcc88a",
-   "summary": "Testing the updated library confirms it works correctly in the browser environment without breaking existing functionality.",
+   "summary": "Testing code on the browser side confirms that global variables like window are defined, while backend testing requires updating files accordingly.",
    "keywords": [
-    "library testing",
-    "browser environment",
-    "global undefined",
-    "frontend compatibility"
+    "browser testing",
+    "global variables",
+    "backend testing",
+    "node runtime"
    ],
    "questions": [
-    "How do I test if my library works in the browser?",
-    "What does 'global is undefined' mean in browser context?",
-    "How to ensure library changes don't break frontend code?"
+    "How do you verify that code works correctly in the browser environment?",
+    "What happens when you run the same code in the Node.js backend?",
+    "How do you update files for backend testing?"
    ]
   },
   "custom-library-6-1-7": {
@@ -4512,18 +4341,20 @@
   },
   "custom-library-6-1-8": {
    "text_sha": "823800d81cfe55f6",
-   "summary": "Underscore.js uses a sophisticated root object to run in various environments including browsers, servers, and virtual machines, a common practice before ES modules.",
+   "summary": "Libraries like underscore.js adapt to the environment by integrating with window or global, but the rise of Node.js and npm changed library development.",
    "keywords": [
-    "Underscore.js",
-    "root object",
-    "virtual machine",
-    "cross-environment",
-    "ES modules"
+    "underscore.js",
+    "window",
+    "global",
+    "Node.js",
+    "npm",
+    "library development",
+    "ECMAScript modules"
    ],
    "questions": [
-    "How does Underscore.js handle multiple runtime environments?",
-    "What is the role of the root object in legacy libraries?",
-    "Why were root objects important before ES modules?"
+    "How did libraries like underscore.js handle different environments before 2009?",
+    "What impact did Node.js and npm have on JavaScript library development?",
+    "Why did the introduction of ECMAScript modules change the game?"
    ]
   },
   "custom-library-6-1-9": {
@@ -4816,18 +4647,17 @@
   },
   "custom-library-7-1-11": {
    "text_sha": "1caf73ff3fd43e42",
-   "summary": "Both import and require use the file resolution algorithm to locate packages in node_modules based on package.json main entry.",
+   "summary": "Both import and require statements use the file resolution algorithm to build the correct path to a library, allowing manual or automatic path resolution.",
    "keywords": [
     "file resolution algorithm",
     "import",
     "require",
-    "node_modules",
-    "package.json main"
+    "module path"
    ],
    "questions": [
-    "Does require also use package.json main to resolve modules?",
-    "How does the file resolution algorithm work for imports and requires?",
-    "Is the resolution process the same for import and require?"
+    "Does require use the same path resolution as import?",
+    "How does the file resolution algorithm work for modules?",
+    "Can module paths be resolved automatically in JavaScript?"
    ]
   },
   "custom-library-7-1-2": {
@@ -4848,34 +4678,33 @@
   },
   "custom-library-7-1-3": {
    "text_sha": "ece6b260bf8f526f",
-   "summary": "Add type=\"module\" to script tags to tell the JavaScript engine to treat the script as an ES module instead of a plain script.",
+   "summary": "Setting \"type\": \"module\" in package.json tells the JavaScript engine to treat files as ES modules instead of CommonJS, enabling modern module syntax.",
    "keywords": [
-    "type=module",
-    "script tag",
+    "type module",
     "ES modules",
-    "JavaScript module",
-    "commonJS vs ES modules"
+    "JavaScript modules",
+    "package.json"
    ],
    "questions": [
-    "How do I tell the browser to treat a script as a module?",
+    "What does setting \"type\": \"module\" in package.json do?",
     "What is the difference between CommonJS and ES modules?",
-    "How do I fix import errors in front-end scripts?"
+    "How does the JavaScript engine treat files when \"type\": \"module\" is set?"
    ]
   },
   "custom-library-7-1-4": {
    "text_sha": "651ae987878716eb",
-   "summary": "In backend testing, remove local copies of the library and use npm link to add the library to node_modules for proper dependency management.",
+   "summary": "To test a local npm package in a backend project, use npm link to link the package instead of manually adding it or downloading it from a CDN.",
    "keywords": [
-    "backend testing",
     "npm link",
-    "node_modules",
-    "local library removal",
-    "dependency management"
+    "local package testing",
+    "node modules",
+    "library installation",
+    "backend testing"
    ],
    "questions": [
-    "How do I test my npm package in a backend project?",
-    "Why should I remove local copies of the library before testing?",
-    "How does npm link help in backend testing?"
+    "How can I test a local npm package without downloading it?",
+    "What is the purpose of npm link?",
+    "Where should libraries be installed for proper usage in a project?"
    ]
   },
   "custom-library-7-1-5": {
@@ -4943,35 +4772,33 @@
   },
   "custom-library-7-1-9": {
    "text_sha": "09d478d614ab8e27",
-   "summary": "JavaScript import resolution relies on node_modules folder and package.json to locate the library and its main entry file.",
+   "summary": "JavaScript resolves imported libraries by looking inside the node_modules folder and dynamically building the path based on the library name specified in the import statement.",
    "keywords": [
-    "import resolution",
     "node_modules",
-    "package.json",
-    "main entry file",
-    "library lookup"
+    "import statement",
+    "library resolution",
+    "JavaScript module resolution",
+    "package path"
    ],
    "questions": [
-    "How does JavaScript find the library when importing?",
-    "What role does node_modules play in import resolution?",
-    "Where is the main file of a package specified?"
+    "How does JavaScript find the location of an imported library?",
+    "Where are libraries stored for import resolution?",
+    "What role does the library name play in module resolution?"
    ]
   },
   "custom-library-8-0-0": {
    "text_sha": "9ffe4ae5fa44b9e4",
-   "summary": "The window object in browsers holds webpage info like HTML, CSS, events, and custom library code, but it's becoming outdated as better alternatives emerge.",
+   "summary": "The window object in browsers holds webpage info like HTML, CSS, and event handlers, but its use as a global namespace for libraries is becoming outdated.",
    "keywords": [
     "window object",
-    "browser environment",
-    "webpage info",
+    "browser",
     "HTML",
     "CSS",
-    "event handlers",
-    "custom library"
+    "event handlers"
    ],
    "questions": [
-    "What does the window object represent in a browser?",
-    "Why is the window object considered outdated for libraries?"
+    "What information does the window object contain?",
+    "Why was the window object originally used for libraries?"
    ]
   },
   "custom-library-8-0-1": {
@@ -4993,66 +4820,60 @@
   },
   "custom-library-8-0-2": {
    "text_sha": "43a897c95c635a91",
-   "summary": "Wrapping code in IIFEs helps prevent leaks, but if developers don't use it, pollution occurs; also, window method loads entire libraries even if only one function is needed, causing inefficiency.",
+   "summary": "Using IIFE and window for libraries can cause issues when developers don't follow patterns, leading to global leaks and unnecessary code inclusion.",
    "keywords": [
     "IIFE",
-    "code encapsulation",
-    "window pollution",
-    "library inefficiency",
-    "module pattern"
+    "window method",
+    "global leaks",
+    "library pattern",
+    "JavaScript functions"
    ],
    "questions": [
-    "How does IIFE prevent global scope pollution?",
-    "What happens if developers don't use IIFE?",
-    "Why is loading entire libraries inefficient?"
+    "What problems arise if developers don't use IIFE with window?",
+    "Why can using window for libraries cause code to leak globally?"
    ]
   },
   "custom-library-8-0-3": {
    "text_sha": "8b26e8f5f4988036",
-   "summary": "The window method lacks modularity and tree shaking, forcing developers to load entire libraries even when only a few functions are needed, leading to unnecessary code bloat.",
+   "summary": "The window method lacks modularity and tree shaking, forcing developers to load entire libraries even if they only need a few functions, causing inefficiency.",
    "keywords": [
     "window method",
     "modularity",
     "tree shaking",
-    "code bloat",
-    "library functions",
-    "performance"
+    "library functions"
    ],
    "questions": [
-    "What is tree shaking in JavaScript?",
-    "Why does the window method cause code bloat?",
-    "How does lack of modularity affect performance?"
+    "What is a drawback of using the window method for libraries?",
+    "Why does the window method cause performance issues?"
    ]
   },
   "custom-library-8-0-4": {
    "text_sha": "3c338ccaf0758740",
-   "summary": "Developers realized attaching whole libraries to window harms performance when only a few functions are needed, prompting a shift toward modular approaches that avoid unnecessary code loading.",
+   "summary": "Developers realized attaching entire libraries to window harms performance and modularity, especially when users need only a few functions.",
    "keywords": [
     "window pollution",
-    "performance issues",
-    "modular libraries",
-    "code loading",
-    "developer mindset shift"
+    "library modularity",
+    "performance",
+    "developer mindset"
    ],
    "questions": [
-    "Why is attaching entire libraries to window bad for performance?",
-    "What mindset shift did developers undergo regarding library design?"
+    "Why is attaching entire libraries to window a bad idea?",
+    "How does using window affect application performance?"
    ]
   },
   "custom-library-8-0-5": {
    "text_sha": "973cbdaa7f2e6468",
-   "summary": "Window method is suitable only for vanilla web environments without module support; otherwise, better alternatives like ES modules should be used for modularity and performance.",
+   "summary": "Window method is suitable only for vanilla web environments without modules; otherwise, better alternatives exist for library usage.",
    "keywords": [
     "window method",
     "vanilla web environment",
-    "no modules",
-    "ES modules",
-    "modularity",
-    "performance"
+    "ECMAScript modules",
+    "node modules",
+    "library alternatives"
    ],
    "questions": [
-    "When is it appropriate to use the window method?",
-    "What are better alternatives to window for modular libraries?"
+    "When is using the window method appropriate?",
+    "What alternatives exist to window for library usage?"
    ]
   },
   "custom-library-9-0-0": {
@@ -5181,33 +5002,33 @@
   },
   "custom-library-9-1-10": {
    "text_sha": "e5b9b8bddfa0e01b",
-   "summary": "Explain that importing the entire library object is necessary to access its methods and show how to import it using ES module syntax.",
+   "summary": "To use your exported library object, import it explicitly in your HTML or JS file, enabling access to all methods contained within the object.",
    "keywords": [
-    "import entire object",
+    "import",
+    "exported object",
     "library methods",
-    "ES module syntax",
-    "named import"
+    "ESM import",
+    "HTML import"
    ],
    "questions": [
-    "How do I import the entire library object in ES modules?",
-    "Why do I need to import the object to use its methods?",
-    "What is the syntax to import a named export in ES modules?"
+    "How do you import an exported library object in your code?",
+    "What does importing the library object allow you to do?",
+    "Why is importing necessary when exporting an object?"
    ]
   },
   "custom-library-9-1-11": {
    "text_sha": "d513a8d3cd871b68",
-   "summary": "Suggest exporting individual functions instead of the whole object to enable selective imports and potential tree shaking in bundlers like webpack or Node.js.",
+   "summary": "Export individual functions instead of a single object to enable selective imports and reduce bundle size, though tree shaking requires bundlers like webpack or Node.js.",
    "keywords": [
-    "export individual functions",
-    "selective import",
+    "export functions",
     "tree shaking",
     "webpack",
     "Node.js"
    ],
    "questions": [
-    "How can I export individual functions from my library?",
-    "What are the benefits of exporting functions individually?",
-    "Does vanilla JavaScript support tree shaking without bundlers?"
+    "How can you export functions to allow selective imports?",
+    "What is the benefit of exporting individual functions over a single object?",
+    "Which environments support tree shaking for modular code?"
    ]
   },
   "custom-library-9-1-2": {
@@ -5228,34 +5049,34 @@
   },
   "custom-library-9-1-3": {
    "text_sha": "78020951fc8427fa",
-   "summary": "Set the correct entry point in package.json and remove the IIFE pattern from the code since ES modules do not require it.",
+   "summary": "Remove the IIFE pattern from the code because ECMAScript modules (ESM) no longer require it when targeting environments like webpack.",
    "keywords": [
+    "IIFE",
+    "ECMAScript modules",
+    "ESM",
+    "webpack",
     "entry point",
-    "package.json",
-    "IIFE pattern",
-    "ES modules",
-    "code cleanup"
+    "live window.js"
    ],
    "questions": [
-    "What should the entry point be in package.json for an ES module library?",
-    "Is the IIFE pattern necessary in ES modules?",
-    "How do I clean up legacy code when converting to ES modules?"
+    "Why should the IIFE pattern be removed when using ECMAScript modules?",
+    "What should be checked if you want to rename the entry point?",
+    "Which module system is targeted when removing IIFE in this context?"
    ]
   },
   "custom-library-9-1-4": {
    "text_sha": "119d7b9e6907dff2",
-   "summary": "Explain that ES modules work best with bundlers like webpack and Node.js, and remove unnecessary code patterns for better modularity.",
+   "summary": "ECMAScript modules are mainly supported in bundlers like webpack and Node.js, so IIFE and comments can be removed, leaving only the library object with its methods.",
    "keywords": [
-    "ES modules",
-    "webpack",
-    "Node.js",
-    "module bundlers",
-    "code modularity"
+    "ECMAScript modules",
+    "library object",
+    "lodash",
+    "jquery"
    ],
    "questions": [
-    "Where do ES modules work best?",
-    "Why should I remove legacy code patterns when using ES modules?",
-    "Can ES modules be used directly in vanilla JavaScript environments?"
+    "Where are ECMAScript modules most commonly used?",
+    "What parts of the code can be removed when switching to ECMAScript modules?",
+    "How do libraries like lodash and jquery organize their methods?"
    ]
   },
   "custom-library-9-1-5": {
@@ -5291,18 +5112,18 @@
   },
   "custom-library-9-1-7": {
    "text_sha": "5fa243ef7f432640",
-   "summary": "Explain that npm link requires a valid package.json and demonstrate linking the library locally and then linking it into a consuming project like a blog.",
+   "summary": "Before running npm link, ensure your library folder contains a package.json file, then use npm link to simulate installing your library locally.",
    "keywords": [
     "npm link",
-    "package.json requirement",
-    "local linking",
-    "consuming project",
-    "blog"
+    "package.json",
+    "local library",
+    "npm registry",
+    "library folder"
    ],
    "questions": [
-    "Why does npm link require a package.json file?",
-    "How do I link my local library into another project?",
-    "What steps are needed to use npm link for local development?"
+    "What file must be present before running npm link?",
+    "What does npm link do for your local library?",
+    "How do you prepare your library for local linking?"
    ]
   },
   "custom-library-9-1-8": {
@@ -5323,18 +5144,16 @@
   },
   "custom-library-9-1-9": {
    "text_sha": "3342f30db7effa60",
-   "summary": "Demonstrate importing the exported library object correctly in HTML using relative paths and ES module import syntax to avoid 'library not defined' errors.",
+   "summary": "When using your linked library, ensure you import it correctly because exporting an object requires importing that object before usage to avoid 'library not defined' errors.",
    "keywords": [
-    "import statement",
-    "relative path",
-    "ES module import",
-    "HTML usage",
-    "library not defined error"
+    "export object",
+    "library not defined",
+    "relative path"
    ],
    "questions": [
-    "How do I import an ES module library in an HTML file?",
-    "Why do I get 'library not defined' errors when using the library?",
-    "What is the correct import syntax for ES modules in vanilla JS?"
+    "Why might you get a 'library not defined' error when using your library?",
+    "How should you import an exported object from your library?",
+    "What is important about the path when using npm link?"
    ]
   },
   "custom-library-9-2-0": {
@@ -5355,50 +5174,50 @@
   },
   "custom-library-9-2-1": {
    "text_sha": "76488133eddac783",
-   "summary": "Convert your backend test file from CommonJS to ES module to use import statements directly from your library.",
+   "summary": "To use ES module imports in backend tests, convert the test file from CommonJS to an ES module so the import statement is recognized.",
    "keywords": [
-    "CommonJS",
-    "ES modules",
-    "import statement",
     "backend test",
+    "ES module",
+    "import statement",
     "module conversion"
    ],
    "questions": [
-    "Why does my import statement fail in a CommonJS file?",
-    "How do I enable ES module imports in my backend test?",
-    "What file type should my backend test be to use ES module imports?"
+    "Why does the import statement cause an error in my backend test?",
+    "How do I fix import errors in a CommonJS backend test file?",
+    "What change is needed to recognize ES module imports in backend tests?"
    ]
   },
   "custom-library-9-2-2": {
    "text_sha": "e9f661f9ada9f019",
-   "summary": "Add \"type\": \"module\" in your library's package.json to enable ES module syntax and named exports.",
+   "summary": "If the library is a CommonJS module, named exports may not work with ES module import syntax unless package.json specifies \"type\": \"module\".",
    "keywords": [
+    "named export",
+    "CommonJS module",
+    "ES module",
     "package.json",
     "type module",
-    "named exports",
-    "ES modules",
-    "CommonJS compatibility"
+    "import export"
    ],
    "questions": [
-    "Why do I get 'named export not found' errors with my library?",
+    "Why do I get 'named export not found' errors when importing my library?",
     "How does package.json affect module parsing in Node.js?",
-    "What change is needed in package.json to support ES modules?"
+    "What must be added to package.json to use ES module syntax?"
    ]
   },
   "custom-library-9-2-3": {
    "text_sha": "eb13077769009b7f",
-   "summary": "Convert your library files to ES modules by setting package.json and adjust exports so functions are directly accessible.",
+   "summary": "To fully use ES modules, convert the library file itself to a module by updating its format and usage, enabling direct function access and proper imports.",
    "keywords": [
-    "ES modules",
-    "library conversion",
-    "package.json",
-    "module exports",
-    "backend library"
+    "library file",
+    "ES module",
+    "module conversion",
+    "backend application",
+    "function access"
    ],
    "questions": [
-    "Why must my library files be ES modules as well?",
-    "How do I make my library functions directly accessible after conversion?",
-    "What changes are needed to run my library as an ES module?"
+    "Why must the library file be converted to an ES module?",
+    "How do I convert my library file to an ES module?",
+    "What changes after converting the library file to a module?"
    ]
   }
  }

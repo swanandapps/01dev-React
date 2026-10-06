@@ -129,3 +129,11 @@ def test_bad_data_files_skip_only_the_bad_part(tmp_path):
     assert list(en.load_enrichment("custom-library", e)) == ["a"]
     out = en.apply_enrichment([_c(0, "hello")], e, g)           # entry missing keys: no raise
     assert out[0].embed_text and out[0].summary == ""
+
+
+def test_last_sentence_never_cuts_a_word_on_unpunctuated_text():
+    text = " ".join(f"word{i}" for i in range(60))
+    out = last_sentence(text)
+    assert out == " ".join(f"word{i}" for i in range(35, 60))      # last 25 whole words
+    assert all(w in text.split() for w in out.split())
+    assert last_sentence("short one. " + text).startswith("word35")

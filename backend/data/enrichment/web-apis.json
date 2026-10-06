@@ -37,19 +37,18 @@
   },
   "web-apis-0-0-2": {
    "text_sha": "b12f358fc4f0ebaf",
-   "summary": "Explains four methods to deliver live updates: short polling, long-polling, Server-Sent Events, and WebSockets, comparing their transport mechanisms.",
+   "summary": "This passage explains four methods to deliver live updates to browsers: short polling, long polling, Server-Sent Events, and WebSockets, highlighting their differences.",
    "keywords": [
     "short polling",
-    "long-polling",
+    "long polling",
     "Server-Sent Events",
-    "SSE",
     "WebSockets",
-    "HTTP transport",
-    "full-duplex"
+    "HTTP",
+    "full-duplex connection"
    ],
    "questions": [
-    "What are the four ways to push live updates to the browser?",
-    "How does long-polling differ from short polling?",
+    "What are the four ways to deliver live updates to a browser?",
+    "How does long polling differ from short polling?",
     "What is the difference between Server-Sent Events and WebSockets?"
    ]
   },
@@ -73,19 +72,20 @@
   },
   "web-apis-0-0-4": {
    "text_sha": "e8a5f59f476ed22d",
-   "summary": "Lists prerequisites: basic JavaScript and Node.js usage, and instructs to initialize a project folder with Express and ws packages installed.",
+   "summary": "This passage outlines prerequisites like basic JavaScript and Node.js skills, and guides setting up a project folder with Express and ws packages for building the live scoreboard.",
    "keywords": [
     "JavaScript",
     "Node.js",
-    "npm init",
+    "npm init -y",
     "Express",
     "ws package",
-    "project setup"
+    "Node script",
+    "terminal"
    ],
    "questions": [
-    "What prerequisites are needed before starting this course?",
-    "How do you set up the project environment for the live scoreboard?",
-    "Why install the ws package early in the project?"
+    "What skills do I need to follow this live scoreboard project?",
+    "How do I set up the project environment for the scoreboard?",
+    "Why is the ws package installed at the start?"
    ]
   },
   "web-apis-0-0-5": {
@@ -138,19 +138,20 @@
   },
   "web-apis-0-1-1": {
    "text_sha": "62444db07a8c8ea9",
-   "summary": "A server route returning JSON shows how the client must refresh to get updated data, illustrating HTTP's statelessness and polling need.",
+   "summary": "Demonstrates how a server route returns JSON data that updates only when the client requests it, illustrating the limitation of HTTP's request/response model with stale data.",
    "keywords": [
-    "Express.js",
     "app.get",
-    "JSON response",
-    "polling",
-    "HTTP statelessness",
-    "refresh data"
+    "res.json",
+    "HTTP request",
+    "server state",
+    "stale data",
+    "refresh",
+    "localhost"
    ],
    "questions": [
-    "How can I create a route in Express that returns JSON data?",
-    "Why does the browser show stale data until refreshed?",
-    "What does this example reveal about HTTP's limitations?"
+    "How does the server respond to a GET request at /api/score?",
+    "Why does refreshing the page show updated data but the page doesn't update automatically?",
+    "What problem does seeing stale JSON data illustrate?"
    ]
   },
   "web-apis-0-1-2": {
@@ -172,35 +173,36 @@
   },
   "web-apis-0-1-3": {
    "text_sha": "79697281a3ae5d89",
-   "summary": "HTTP is stateless, so servers don't track clients, requiring workarounds like open connections or client lists for server push.",
+   "summary": "Explains that HTTP is stateless, meaning servers don't remember clients, so pushing data to clients requires inventing mechanisms like keeping connections open or tracking listeners.",
    "keywords": [
     "HTTP stateless",
-    "server push limitation",
-    "client tracking",
-    "scalability",
-    "open connections"
+    "server scaling",
+    "client push",
+    "connections",
+    "listener list",
+    "server pool"
    ],
    "questions": [
     "What does it mean that HTTP is stateless?",
-    "Why can't HTTP servers push data to clients without a request?",
-    "How can servers keep track of clients for push notifications?"
+    "Why is there no built-in way for the server to push data to clients?",
+    "How can servers simulate pushing data to clients despite HTTP's statelessness?"
    ]
   },
   "web-apis-0-1-4": {
    "text_sha": "4f99489782889dbc",
-   "summary": "Four real-time HTTP techniques are polling, long-polling, Server-Sent Events (streaming), and WebSocket upgrades for bidirectional communication.",
+   "summary": "Lists four techniques to overcome HTTP's request/response limits: polling, long-polling, Server-Sent Events streaming, and WebSocket bidirectional upgrade.",
    "keywords": [
     "polling",
     "long-polling",
     "Server-Sent Events",
-    "SSE",
-    "WebSocket",
-    "HTTP real-time techniques"
+    "WebSocket upgrade",
+    "bidirectional communication",
+    "HTTP connection"
    ],
    "questions": [
-    "What are the main techniques to simulate server push over HTTP?",
+    "What are the four main techniques to handle server push over HTTP?",
     "How does long-polling differ from regular polling?",
-    "What is the WebSocket upgrade in HTTP?"
+    "What does the WebSocket upgrade do to the HTTP connection?"
    ]
   },
   "web-apis-0-1-5": {
@@ -255,36 +257,37 @@
   },
   "web-apis-0-2-1": {
    "text_sha": "10477da4bbcdbd5c",
-   "summary": "Short polling is simple, reliable, works through proxies/firewalls, requires no special server code, and is easy to debug via normal HTTP requests.",
+   "summary": "Short polling is a simple, reliable technique for live dashboards that uses frequent HTTP requests to fetch updates, working through proxies and easy to debug via the Network tab.",
    "keywords": [
     "short polling",
-    "proxies",
-    "firewalls",
-    "debugging",
     "HTTP requests",
-    "production dashboards"
+    "dashboard",
+    "Network tab",
+    "proxy",
+    "firewall",
+    "polling"
    ],
    "questions": [
-    "Why is short polling widely used despite its inefficiency?",
-    "What makes short polling easy to debug?",
-    "How does short polling work with proxies and firewalls?"
+    "What is short polling and why is it used for live dashboards?",
+    "How can you debug short polling updates in the browser?",
+    "Why is short polling considered simple and reliable?"
    ]
   },
   "web-apis-0-2-2": {
    "text_sha": "b1ae27caf372b911",
-   "summary": "Short polling causes many redundant requests with unchanged data, leading to wasted bandwidth and server load when many clients poll frequently.",
+   "summary": "Short polling causes many redundant HTTP requests with unchanged data, leading to high server load when many clients poll frequently despite infrequent updates.",
    "keywords": [
     "short polling",
+    "HTTP requests",
     "redundant requests",
-    "bandwidth waste",
     "server load",
-    "polling frequency",
-    "network tab"
+    "JSON response",
+    "polling frequency"
    ],
    "questions": [
-    "What is the downside of frequent short polling?",
-    "How does short polling affect server load with many clients?",
-    "Why do most short polling responses carry no new information?"
+    "Why does short polling generate many redundant requests?",
+    "How does frequent polling affect server load?",
+    "What happens when many clients poll a scoreboard that updates infrequently?"
    ]
   },
   "web-apis-0-2-3": {
@@ -306,19 +309,17 @@
   },
   "web-apis-0-2-4": {
    "text_sha": "ba46efb20ad087c6",
-   "summary": "Short polling's freshness depends on interval length; reducing delay increases request load, creating a tradeoff between update speed and server cost.",
+   "summary": "Short polling's tradeoff is between update freshness and server cost: reducing polling intervals improves latency but drastically increases request load.",
    "keywords": [
     "short polling",
     "polling interval",
-    "freshness",
-    "request load",
-    "tradeoff",
-    "latency"
+    "server load",
+    "update freshness"
    ],
    "questions": [
-    "How does polling interval affect update delay in short polling?",
-    "What happens if you reduce the polling interval to improve freshness?",
-    "What is the fundamental tradeoff in short polling?"
+    "What is the tradeoff in short polling between freshness and cost?",
+    "How does decreasing the polling interval affect server load?",
+    "Why do updates appear late in short polling?"
    ]
   },
   "web-apis-0-2-5": {
@@ -374,17 +375,18 @@
   },
   "web-apis-0-3-2": {
    "text_sha": "8650bd54a9ab6197",
-   "summary": "Release waiting long-polling requests when state changes by responding with new data and implement a timeout to end requests after 25 seconds with HTTP 204.",
+   "summary": "Implement long-polling by holding requests open, releasing them with updated state via a loop, and adding a timeout to avoid indefinite hanging using setTimeout and HTTP 204 responses.",
    "keywords": [
     "long-polling",
-    "release waiting requests",
     "setTimeout",
     "HTTP 204",
+    "waiting array",
+    "parked requests",
     "timeout",
-    "server push"
+    "res.status(204).end()"
    ],
    "questions": [
-    "How does the server release waiting long-polling requests when data updates?",
+    "How do you release parked requests in long-polling when the server state changes?",
     "Why is a timeout necessary in long-polling and how is it implemented?",
     "What does an HTTP 204 response signify in long-polling?"
    ]
@@ -408,19 +410,21 @@
   },
   "web-apis-0-3-4": {
    "text_sha": "c841d674a8d07b92",
-   "summary": "Long-polling shows a single pending request in the browser network tab that completes instantly on updates, enabling near real-time server push before WebSockets.",
+   "summary": "Long-polling keeps a single request pending up to 20 seconds, instantly completing when new data arrives, enabling near real-time updates before WebSockets existed.",
    "keywords": [
     "long-polling",
-    "network tab",
     "pending request",
+    "Network tab",
     "real-time updates",
+    "short polling",
     "WebSockets",
-    "HTTP"
+    "chat apps",
+    "notification systems"
    ],
    "questions": [
-    "What does a long-polling request look like in the browser's network tab?",
-    "How does long-polling achieve near-instant updates compared to short polling?",
-    "Why was long-polling popular before WebSockets?"
+    "What does a pending request look like in long-polling in the browser's Network tab?",
+    "How does long-polling improve update speed compared to short polling?",
+    "Why was long-polling widely used before WebSockets?"
    ]
   },
   "web-apis-0-3-5": {
@@ -510,19 +514,20 @@
   },
   "web-apis-1-0-4": {
    "text_sha": "a0d394ab565ebacb",
-   "summary": "Upgrade requests are optional asks, not commands; intermediaries like proxies can strip or reject Upgrade headers, causing WebSocket connection failures.",
+   "summary": "The HTTP Upgrade header is a client request to switch protocols, which intermediaries like proxies or load balancers can reject, causing WebSocket connection failures.",
    "keywords": [
-    "Upgrade request",
-    "HTTP intermediaries",
-    "proxies",
-    "load balancers",
-    "nginx",
-    "WebSocket failures"
+    "HTTP Upgrade header",
+    "WebSocket connection",
+    "protocol switch",
+    "load balancer",
+    "nginx config",
+    "corporate proxy",
+    "Upgrade failures"
    ],
    "questions": [
-    "Is an Upgrade request mandatory for servers to accept?",
-    "Why might WebSocket connections fail due to intermediaries?",
-    "What role do proxies and load balancers play in Upgrade header handling?"
+    "What does the HTTP Upgrade header do in a WebSocket connection?",
+    "Why might a WebSocket connection fail due to intermediaries?",
+    "How can proxies or load balancers affect WebSocket Upgrade requests?"
    ]
   },
   "web-apis-1-0-5": {
@@ -773,19 +778,20 @@
   },
   "web-apis-1-2-5": {
    "text_sha": "9693ce7b8d392d7c",
-   "summary": "A Node.js example shows manually decoding a WebSocket frame by extracting opcode, mask bit, payload length, mask key, and unmasking the payload with XOR.",
+   "summary": "This passage explains how to decode a WebSocket frame manually by extracting the opcode, mask bit, payload length, mask key, and unmasking the payload data from a buffer.",
    "keywords": [
-    "WebSocket frame decoding",
-    "Node.js",
-    "opcode extraction",
+    "WebSocket frame",
+    "opcode",
+    "mask bit",
+    "payload length",
     "mask key",
-    "payload unmasking",
-    "buffer"
+    "socket.on('data')",
+    "buf"
    ],
    "questions": [
-    "How do you extract the opcode from a WebSocket frame buffer in Node.js?",
-    "How is the mask key used to decode a masked WebSocket payload?",
-    "What are the steps to manually decode a WebSocket frame in Node.js?"
+    "How do you extract the opcode from a WebSocket frame buffer?",
+    "What is the purpose of the mask key in a WebSocket frame?",
+    "How do you unmask the payload data in a WebSocket frame?"
    ]
   },
   "web-apis-1-2-6": {
@@ -1060,34 +1066,37 @@
   },
   "web-apis-2-1-1": {
    "text_sha": "e7dc9db01669a5f0",
-   "summary": "The browser provides the EventSource class to receive SSE messages with automatic reconnection and no need for manual parsing or reconnect logic.",
+   "summary": "Use the browser's built-in EventSource class to receive server-sent events with automatic reconnection and simple JSON message handling.",
    "keywords": [
     "EventSource",
-    "SSE client",
+    "server-sent events",
     "onmessage",
-    "automatic reconnect",
-    "JSON parsing"
+    "automatic reconnection",
+    "JSON.parse",
+    "long-polling"
    ],
    "questions": [
-    "How do you receive SSE messages in the browser?",
-    "Does EventSource handle reconnection automatically?",
-    "Is manual JSON parsing or reconnect code needed with EventSource?"
+    "How do you use EventSource to receive server-sent events in the browser?",
+    "What features does EventSource provide to simplify handling server-sent events?",
+    "Why might EventSource be preferred over hand-rolled long-polling loops?"
    ]
   },
   "web-apis-2-1-2": {
    "text_sha": "8d817622d73ee6a6",
-   "summary": "On the server, SSE responses use specific headers and keep connections open by writing to the response without ending it, managing clients in a set for broadcasting.",
+   "summary": "Set up an Express server endpoint for server-sent events by sending appropriate headers, keeping connections open with res.write, and managing clients in a set.",
    "keywords": [
-    "SSE server",
-    "Content-Type text/event-stream",
-    "res.flushHeaders()",
-    "keep-alive",
-    "client management"
+    "server-sent events",
+    "res.set",
+    "Content-Type: text/event-stream",
+    "res.flushHeaders",
+    "res.write",
+    "req.on('close')",
+    "sseClients"
    ],
    "questions": [
-    "What headers are required for SSE responses?",
-    "How do you keep the SSE response open on the server?",
-    "How do you manage multiple SSE clients on the server?"
+    "How do you configure an Express route to serve server-sent events?",
+    "Why do you use res.write instead of res.end in server-sent events?",
+    "How do you manage connected clients for server-sent events on the server?"
    ]
   },
   "web-apis-2-1-3": {
@@ -1215,20 +1224,21 @@
   },
   "web-apis-2-2-3": {
    "text_sha": "b67c17d9f87d3e89",
-   "summary": "Show that short polling uses the most bandwidth due to headers, while SSE and WebSockets use minimal bandwidth with persistent connections.",
+   "summary": "Short polling uses significantly more data due to repeated headers, while SSE and WebSockets send mostly just the payload, making persistent connections more efficient for small frequent messages.",
    "keywords": [
-    "bandwidth usage",
     "short polling",
-    "long polling",
+    "long-polling",
     "SSE",
-    "WebSocket",
-    "HTTP headers",
-    "persistent connections"
+    "WebSockets",
+    "header size",
+    "persistent connections",
+    "payload",
+    "HTTP envelope"
    ],
    "questions": [
-    "Which transport uses the most bandwidth for frequent small messages?",
-    "Why do HTTP headers increase bandwidth usage in polling?",
-    "How do persistent connections reduce bandwidth compared to polling?"
+    "Which transport method uses the most data for frequent small messages?",
+    "Why do persistent connections like SSE and WebSockets use less data than short polling?",
+    "How does header size affect data usage in HTTP-based transports?"
    ]
   },
   "web-apis-2-2-4": {
@@ -1320,18 +1330,19 @@
   },
   "web-apis-3-0-2": {
    "text_sha": "4d313fb9c591c38d",
-   "summary": "Implement a connect() function that creates a new WebSocket and sets onclose to retry connection after 1 second, enabling automatic reconnection.",
+   "summary": "Shows how to implement a basic WebSocket reconnect by defining a connect() function that creates a socket and retries after 1 second on close, but warns this naive approach can cause failures.",
    "keywords": [
-    "WebSocket reconnect",
-    "connect function",
-    "onclose handler",
+    "WebSocket",
+    "connect() function",
+    "socket.onclose",
     "setTimeout",
-    "automatic retry"
+    "reconnect",
+    "naive reconnect"
    ],
    "questions": [
-    "How can you structure WebSocket code to allow reconnection?",
-    "What does setting a timeout in onclose achieve?",
-    "How do you make a page recover automatically after server restart?"
+    "How do you implement a simple WebSocket reconnect?",
+    "What happens if the server restarts with a naive reconnect approach?",
+    "Why might a naive reconnect cause failures in real systems?"
    ]
   },
   "web-apis-3-0-3": {
@@ -1352,18 +1363,18 @@
   },
   "web-apis-3-0-4": {
    "text_sha": "a397615607b3dcac",
-   "summary": "Use exponential backoff with jitter to space out retries, reducing server load and preventing synchronized reconnect attempts.",
+   "summary": "Explains the standard fix for reconnect issues using exponential backoff with doubling wait times and jitter to add randomness, reducing load and preventing synchronized retries.",
    "keywords": [
     "exponential backoff",
     "jitter",
-    "retry strategy",
-    "randomized delay",
-    "connection retry"
+    "reconnect strategy",
+    "WebSocket reconnect",
+    "load reduction"
    ],
    "questions": [
-    "What is exponential backoff in reconnection strategies?",
-    "How does jitter improve retry behavior?",
-    "Why combine backoff and jitter for reconnecting clients?"
+    "What is exponential backoff in reconnecting?",
+    "Why add jitter to retry attempts?",
+    "How does exponential backoff help during long outages?"
    ]
   },
   "web-apis-3-0-5": {
@@ -1402,17 +1413,18 @@
   },
   "web-apis-3-1-0": {
    "text_sha": "1ff2dd59a6cc21f2",
-   "summary": "TCP connections can silently die without closing, leaving the browser unaware and the connection appearing frozen.",
+   "summary": "Connections can silently die without closing, such as when Wi-Fi drops or routers lose connection mappings, causing the browser to mistakenly think the connection is still open.",
    "keywords": [
-    "TCP connection",
-    "silent disconnect",
+    "dead connections",
+    "TCP stack",
     "FIN packet",
-    "connection close",
-    "Wi-Fi dead zone"
+    "close frame",
+    "Wi-Fi drop",
+    "router connection drop"
    ],
    "questions": [
-    "What happens when a TCP connection dies without closing?",
-    "Why might a browser think a dead connection is still open?",
+    "What happens when a connection dies without sending a close signal?",
+    "Why might a browser think a connection is still open when it has actually died?",
     "What are examples of situations causing silent connection drops?"
    ]
   },
@@ -1518,18 +1530,17 @@
   },
   "web-apis-3-2-0": {
    "text_sha": "d9cf37cd0f2469f8",
-   "summary": "Backpressure occurs when a receiver is slower than the sender, causing data to accumulate in memory buffers despite a healthy connection.",
+   "summary": "Backpressure occurs when a receiver is slower than the sender, causing data to accumulate in a memory buffer despite an active connection.",
    "keywords": [
     "backpressure",
     "buffer",
-    "WebSocket",
-    "slow receiver",
-    "network buffer"
+    "send call",
+    "receiver slower than sender",
+    "network connection"
    ],
    "questions": [
-    "What causes backpressure in WebSocket connections?",
-    "Can backpressure happen if the network connection is healthy?",
-    "Where do data bytes accumulate when the receiver is slow?"
+    "What causes backpressure in a network connection?",
+    "How does a slow receiver affect data transmission?"
    ]
   },
   "web-apis-3-2-1": {
@@ -1566,34 +1577,34 @@
   },
   "web-apis-3-2-3": {
    "text_sha": "a3fd9579c4872106",
-   "summary": "Load shedding skips sending messages to slow clients when their `bufferedAmount` exceeds a threshold, valid when messages are full snapshots rather than incremental updates.",
+   "summary": "Load shedding skips sending messages when a client's bufferedAmount exceeds a threshold, useful when messages are full snapshots rather than incremental updates.",
    "keywords": [
     "load shedding",
-    "bufferedAmount threshold",
-    "WebSocket",
-    "skip messages",
-    "snapshot messages"
+    "bufferedAmount",
+    "snapshot messages",
+    "skip sending"
    ],
    "questions": [
-    "What is load shedding in WebSocket communication?",
-    "When is it safe to skip sending messages to slow clients?",
-    "How does checking `bufferedAmount` help implement load shedding?"
+    "What is load shedding in data transmission?",
+    "How can bufferedAmount be used to manage slow clients?",
+    "When is skipping messages acceptable?"
    ]
   },
   "web-apis-3-2-4": {
    "text_sha": "6c49b9d228bfebb6",
-   "summary": "For event streams where every message matters, options include slowing the producer, queuing with limits, dropping old messages, or disconnecting slow clients to protect system memory.",
+   "summary": "For event-style messages where skipping is unacceptable, options include slowing the producer, queuing with limits, dropping old messages, or disconnecting slow clients to protect system memory.",
    "keywords": [
-    "event streams",
-    "flow control",
-    "queue limits",
-    "disconnect slow clients",
-    "message dropping"
+    "event-style messages",
+    "slow producer",
+    "message queue",
+    "disconnect client",
+    "buffer limits",
+    "memory protection"
    ],
    "questions": [
-    "What strategies exist for handling backpressure with event-style messages?",
+    "What strategies exist for handling slow clients with event-style messages?",
     "Why might disconnecting a slow client be necessary?",
-    "How can you manage memory when clients consume messages too slowly?"
+    "How can message queues help manage backpressure?"
    ]
   },
   "web-apis-3-2-5": {
@@ -1614,18 +1625,19 @@
   },
   "web-apis-3-2-6": {
    "text_sha": "6298ec9fb7b536f9",
-   "summary": "Combining reconnect with backoff and jitter, heartbeats, and monitoring `bufferedAmount` ensures robust WebSocket connections suitable for real users.",
+   "summary": "Combining reconnect with backoff and jitter, heartbeats, and monitoring bufferedAmount creates a robust system that handles outages, silent failures, and slow readers effectively.",
    "keywords": [
-    "reconnect backoff jitter",
+    "reconnect backoff",
+    "jitter",
     "heartbeats",
     "bufferedAmount",
-    "WebSocket reliability",
-    "connection management"
+    "slow reader",
+    "system robustness"
    ],
    "questions": [
-    "What three techniques improve WebSocket connection reliability?",
-    "How does monitoring `bufferedAmount` contribute to system stability?",
-    "Why are backoff, heartbeats, and backpressure handling important together?"
+    "What three techniques improve connection reliability and performance?",
+    "How does monitoring bufferedAmount help system stability?",
+    "Why are heartbeats important in network connections?"
    ]
   },
   "web-apis-4-0-0": {
@@ -1646,19 +1658,20 @@
   },
   "web-apis-4-0-1": {
    "text_sha": "a4952dfa5a941f4f",
-   "summary": "Use Server-Sent Events (SSE) for live score and match clock updates because it supports one-way data flow, automatic reconnects, and catching up missed events.",
+   "summary": "Use Server-Sent Events for live score and match clock updates to enable server-to-client data flow with automatic reconnects and missed update catch-up.",
    "keywords": [
     "Server-Sent Events",
-    "SSE",
     "live score",
     "match clock",
     "Last-Event-ID",
-    "automatic reconnect"
+    "automatic reconnect",
+    "HTTP infrastructure",
+    "/events"
    ],
    "questions": [
-    "What transport is best for one-way live score updates that need to survive reconnects?",
-    "How does SSE help catch up on missed updates?",
-    "Why is SSE suitable for live match clock data?"
+    "What transport method is best for live score and match clock updates?",
+    "How can missed updates be caught up in a live data feed?",
+    "Why use Server-Sent Events instead of other transports for server-to-client updates?"
    ]
   },
   "web-apis-4-0-2": {
@@ -1697,20 +1710,19 @@
   },
   "web-apis-4-0-4": {
    "text_sha": "e498720098531c85",
-   "summary": "Use simple HTTP POST requests for rare admin score edits, and short polling as a fallback for legacy environments with periodic status refreshes.",
+   "summary": "Use a simple fetch POST request to /api/score for admin score edits, as it is easy to authenticate, retry, log, and provides clear success or error responses.",
    "keywords": [
-    "HTTP POST",
+    "fetch POST",
+    "/api/score",
     "admin console",
     "score editing",
-    "short polling",
-    "fallback",
-    "authentication",
-    "retry"
+    "retry",
+    "short polling fallback"
    ],
    "questions": [
-    "What transport is best for rare admin actions like score edits?",
-    "Why use HTTP POST instead of WebSocket for admin updates?",
-    "When is short polling still useful?"
+    "What is the recommended method for sending admin score edits?",
+    "Why is fetch POST preferred over sockets for rare admin actions?",
+    "When is short polling used as a fallback in this system?"
    ]
   },
   "web-apis-4-0-5": {
@@ -1752,34 +1764,34 @@
   },
   "web-apis-4-1-0": {
    "text_sha": "598c0a98eff3a5e3",
-   "summary": "HTTP's client-server model limits servers from initiating communication, and various techniques address this with trade-offs measured in cost and efficiency.",
+   "summary": "HTTP's client-server model limits servers from initiating communication, and various techniques address this with measurable trade-offs.",
    "keywords": [
-    "HTTP client-server",
-    "server push limitation",
-    "real-time communication",
-    "polling trade-offs"
+    "HTTP",
+    "client-server model",
+    "server cannot speak first",
+    "communication limitation"
    ],
    "questions": [
-    "What is the main limitation of HTTP in real-time communication?",
-    "Why do different techniques exist to overcome HTTP's request-response model?",
-    "How can the costs of real-time communication techniques be evaluated?"
+    "What is the main limitation of HTTP in client-server communication?",
+    "Why can't the server initiate communication in HTTP?",
+    "What was the starting point for exploring real-time communication techniques?"
    ]
   },
   "web-apis-4-1-1": {
    "text_sha": "aeffc3c640516f8e",
-   "summary": "Short polling, long polling, Server-Sent Events, and WebSockets each provide different real-time communication methods with distinct costs and capabilities.",
+   "summary": "Different real-time communication methods—short polling, long polling, Server-Sent Events, and WebSockets—each have distinct mechanisms and costs.",
    "keywords": [
     "short polling",
     "long polling",
     "Server-Sent Events",
-    "SSE",
     "WebSockets",
-    "HTTP Upgrade"
+    "Upgrade boundary",
+    "full-duplex channel"
    ],
    "questions": [
-    "What are the differences between short polling and long polling?",
-    "How do Server-Sent Events maintain a real-time connection?",
-    "What advantages do WebSockets offer over HTTP-based techniques?"
+    "How does short polling work and what is its drawback?",
+    "What are Server-Sent Events and how do they handle reconnection?",
+    "What makes WebSockets different from HTTP-based techniques?"
    ]
   },
   "web-apis-4-1-2": {
@@ -1801,19 +1813,19 @@
   },
   "web-apis-4-1-3": {
    "text_sha": "0b395ed1e6c4ba91",
-   "summary": "Resilience techniques like exponential backoff with jitter, heartbeats, and monitoring bufferedAmount help maintain stable real-time connections and prevent resource issues.",
+   "summary": "Resilience techniques like exponential backoff with jitter, heartbeats, and monitoring bufferedAmount help maintain stable real-time connections.",
    "keywords": [
+    "resilience",
     "exponential backoff",
     "jitter",
     "heartbeats",
     "bufferedAmount",
-    "connection resilience",
-    "real-time networking"
+    "connection stability"
    ],
    "questions": [
-    "Why is exponential backoff with jitter important in network reconnections?",
-    "How do heartbeats help detect dead connections?",
-    "What is bufferedAmount and why must it be monitored?"
+    "What is exponential backoff with jitter and why is it important?",
+    "How do heartbeats help in connection management?",
+    "Why monitor bufferedAmount in real-time communication?"
    ]
   },
   "web-apis-4-1-4": {
@@ -1850,17 +1862,17 @@
   },
   "web-apis-4-1-6": {
    "text_sha": "64086ab633cb0734",
-   "summary": "Start with the simplest working solution, measure its performance, and escalate complexity only when necessary, using practical experiments like adding features and testing offline recovery.",
+   "summary": "Start with the simplest working solution, measure its performance, and use those metrics to decide when to adopt more complex real-time communication methods.",
    "keywords": [
-    "minimal viable solution",
-    "performance measurement",
-    "incremental development",
+    "build smallest thing",
+    "measure performance",
+    "escalate complexity",
     "offline mode testing"
    ],
    "questions": [
     "Why should you build the smallest working real-time feature first?",
-    "How can measuring performance guide development decisions?",
-    "What is the benefit of testing real-time apps in offline mode?"
+    "How can offline mode testing help in real-time applications?",
+    "When should you escalate to more complex communication techniques?"
    ]
   }
  }

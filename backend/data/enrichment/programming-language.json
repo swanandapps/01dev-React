@@ -74,21 +74,21 @@
   },
   "programming-language-0-0-4": {
    "text_sha": "45eb199b3a53a384",
-   "summary": "The course covers language history, grammar, language parts, compilation steps, then builds Ember's grammar, tokenizer, parser, interpreter, and runs a program end to end.",
+   "summary": "This course covers programming language fundamentals, including syntax, semantics, grammar, language components, compilation steps, and building a language called Ember from grammar to interpreter.",
    "keywords": [
-    "language history",
-    "grammar",
+    "programming language",
+    "syntax",
+    "semantics",
     "BNF",
     "tokenizer",
     "parser",
     "interpreter",
-    "compilation",
-    "Ember course structure"
+    "Ember"
    ],
    "questions": [
-    "What topics does the course cover before building Ember?",
-    "What is BNF used for in the course?",
-    "What is the order of building components in Ember?"
+    "What are the main components of a programming language?",
+    "How does source code get transformed into machine code?",
+    "What steps are involved in building a programming language like Ember?"
    ]
   },
   "programming-language-0-0-5": {
@@ -126,33 +126,36 @@
   },
   "programming-language-0-1-0": {
    "text_sha": "fc6acebdff7f5587",
-   "summary": "Machine code is the processor's native language, consisting of numeric instructions that are hard to write, read, or debug directly.",
+   "summary": "Machine code is the processor's native language, consisting of numeric bit patterns that directly control hardware operations but are hard for humans to write or understand.",
    "keywords": [
     "machine code",
     "processor",
-    "binary instructions",
-    "low-level programming"
+    "bits",
+    "registers",
+    "jump",
+    "crash"
    ],
    "questions": [
-    "What is machine code?",
-    "Why is writing machine code directly difficult?",
-    "How does the processor understand instructions?"
+    "What is machine code and why is it difficult for programmers?",
+    "How did early programmers write machine code?",
+    "What are the limitations of programming directly in machine code?"
    ]
   },
   "programming-language-0-1-1": {
    "text_sha": "62f9aafd3c1e1866",
-   "summary": "Assembly language replaces numeric machine code with human-readable mnemonics and labels, translated back to machine code by an assembler but remains hardware-specific.",
+   "summary": "Assembly language replaces numeric machine code with readable mnemonics and labels, translated by an assembler, but remains hardware-specific and closely tied to processor instructions.",
    "keywords": [
     "assembly language",
     "assembler",
-    "mnemonics",
+    "ADD",
     "labels",
-    "machine-specific code"
+    "machine-specific",
+    "processor instruction"
    ],
    "questions": [
-    "What is assembly language?",
-    "How does an assembler work?",
-    "Why is assembly language still tied to specific hardware?"
+    "What is assembly language and how does it improve on machine code?",
+    "What role does an assembler play in programming?",
+    "Why is assembly language still limited to one type of processor?"
    ]
   },
   "programming-language-0-1-2": {
@@ -275,33 +278,36 @@
   },
   "programming-language-1-0-3": {
    "text_sha": "8064c76a741bc53a",
-   "summary": "Human grammar can be ambiguous with multiple parse trees possible, but programming languages require unambiguous grammar so every program has exactly one parse tree.",
+   "summary": "Human grammar can be ambiguous with multiple parse trees, but programming languages require unambiguous grammar so each valid program has exactly one parse tree, motivating operator precedence rules.",
    "keywords": [
-    "ambiguity",
-    "unambiguous grammar",
+    "human grammar",
+    "parse tree",
     "operator precedence",
-    "parse tree uniqueness"
+    "programming language grammar",
+    "unambiguous grammar"
    ],
    "questions": [
-    "Why can human grammar be ambiguous?",
     "Why must programming language grammar be unambiguous?",
-    "How does operator precedence help resolve ambiguity in code?"
+    "What causes ambiguity in human language grammar?",
+    "How does operator precedence help resolve ambiguity in programming languages?"
    ]
   },
   "programming-language-1-0-4": {
    "text_sha": "e94eea65cf63641d",
-   "summary": "Grammar ensures sentences are well-formed syntactically but does not guarantee meaning or truth, highlighting the difference between syntax and semantics.",
+   "summary": "Grammar ensures a sentence is structurally correct but does not guarantee meaning or truth, highlighting the difference between syntax (structure) and semantics (meaning).",
    "keywords": [
+    "grammar",
     "syntax",
     "semantics",
     "Noam Chomsky",
-    "grammaticality",
-    "meaning"
+    "colorless green ideas sleep furiously",
+    "sentence structure",
+    "meaning vs structure"
    ],
    "questions": [
     "What does grammar check in a sentence?",
-    "What is the difference between syntax and semantics?",
-    "Can a sentence be grammatical but meaningless?"
+    "Can a sentence be grammatical but meaningless?",
+    "What is the difference between syntax and semantics?"
    ]
   },
   "programming-language-1-0-5": {
@@ -496,14 +502,12 @@
   },
   "programming-language-2-0-3": {
    "text_sha": "350cc6fd37441da9",
-   "summary": "Expressions are code pieces producing values, can nest recursively, and evaluation reduces them to single values, like computing 2 + 3 * 4 stepwise.",
+   "summary": "Expressions are pieces of code that produce values and can nest recursively, with evaluation reducing them step-by-step to a single value.",
    "keywords": [
-    "expressions",
-    "evaluation",
-    "nesting",
-    "recursive evaluation",
-    "expression tree",
-    "Ember language"
+    "expression",
+    "evaluate",
+    "function call",
+    "expression tree"
    ],
    "questions": [
     "What is an expression in programming?",
@@ -549,19 +553,17 @@
   },
   "programming-language-2-1-0": {
    "text_sha": "21273dab0ed4a206",
-   "summary": "Variables bind names to values using `let` for declaration and `=` for assignment, allowing reuse and error checking for undeclared names.",
+   "summary": "Variables bind names to values using declarations like 'let total = 10;', allowing value reuse and separate declaration and assignment to catch errors.",
    "keywords": [
     "variable",
     "let",
-    "assignment",
-    "declaration",
-    "JavaScript",
-    "Ember"
+    "scope",
+    "JavaScript"
    ],
    "questions": [
-    "What is the difference between declaring and assigning a variable?",
-    "How does using `let` help catch typos in variable names?",
-    "How do you declare and assign a variable in Ember?"
+    "What is a variable in programming?",
+    "How do you declare and assign a variable using 'let'?",
+    "Why separate declaration and assignment in variables?"
    ]
   },
   "programming-language-2-1-1": {
@@ -692,20 +694,20 @@
   },
   "programming-language-3-0-2": {
    "text_sha": "a79158897eb0b296",
-   "summary": "Bytecode serves as an efficient, hardware-independent intermediate representation between source code and machine code, enabling faster execution than interpreting source directly.",
+   "summary": "Bytecode serves as an efficient, hardware-independent intermediate representation between human-friendly source code and native machine code or an interpreter loop.",
    "keywords": [
-    "bytecode",
     "source code",
+    "bytecode",
     "tokens",
     "syntax tree",
-    "interpreter",
-    "compiler",
-    "execution pipeline"
+    "interpreter loop",
+    "machine code",
+    "compilation pipeline"
    ],
    "questions": [
-    "Why is bytecode used as an intermediate step in language execution?",
-    "What are the typical stages from source code to machine code?",
-    "How does bytecode improve execution speed compared to interpreting source text?"
+    "Why is bytecode used as an intermediate step in language processing?",
+    "What are the stages from source code to machine code?",
+    "How does bytecode improve execution efficiency compared to source code?"
    ]
   },
   "programming-language-3-0-3": {
@@ -780,18 +782,18 @@
   },
   "programming-language-3-1-1": {
    "text_sha": "be55b9f2796c12d9",
-   "summary": "An interpreter executes a program by reading and performing actions directly from the source or its syntax tree each time the program runs, offering quick feedback but slower execution.",
+   "summary": "An interpreter executes a program by reading and performing actions directly from the source or its tree representation without producing a separate output file.",
    "keywords": [
     "interpreter",
-    "execution",
-    "syntax tree",
-    "source code",
-    "interpretation overhead"
+    "source tree",
+    "interpretation overhead",
+    "portability",
+    "quick feedback"
    ],
    "questions": [
-    "How does an interpreter run a program?",
-    "What are the advantages of using an interpreter?",
-    "Why is interpreted code generally slower than compiled code?"
+    "What does an interpreter do with the source code or syntax tree?",
+    "Why does interpretation cause slower program execution?",
+    "What are the benefits of using an interpreter?"
    ]
   },
   "programming-language-3-1-2": {
@@ -812,39 +814,37 @@
   },
   "programming-language-3-1-3": {
    "text_sha": "819a20b5deab6fd2",
-   "summary": "Compilers, interpreters, and transpilers share the same front end that tokenizes and parses code into a tree, differing only in how they process that tree to produce machine code, execute actions, or generate new source code.",
+   "summary": "Compilers, interpreters, and transpilers share the same front end that tokenizes and parses code into a tree, differing only in how they process that tree at the end.",
    "keywords": [
-    "compiler front end",
+    "compiler",
+    "interpreter",
+    "transpiler",
+    "front end",
     "tokenize",
     "parse",
-    "syntax tree",
-    "bytecode",
-    "interpretation",
-    "source code generation"
+    "syntax tree"
    ],
    "questions": [
-    "What do compilers, interpreters, and transpilers have in common?",
-    "How does each processor handle the syntax tree differently?",
-    "Why is learning the front end important for building language processors?"
+    "What is the common front end shared by compilers, interpreters, and transpilers?",
+    "How does a compiler differ from an interpreter and a transpiler in handling the syntax tree?",
+    "What does a transpiler produce from the syntax tree?"
    ]
   },
   "programming-language-3-1-4": {
    "text_sha": "cf70c8200c83865d",
-   "summary": "Real language implementations often combine compilation and interpretation stages, like Java compiling to bytecode then interpreting it, showing that languages are neither purely compiled nor interpreted.",
+   "summary": "Real language implementations often combine compilation and interpretation stages, as seen in Java, Python, and JavaScript, making the labels apply to implementations, not languages themselves.",
    "keywords": [
     "Java",
-    "bytecode",
     "JVM",
+    "bytecode",
     "Python",
-    "compilation",
-    "interpretation",
-    "V8",
-    "language implementation"
+    "JavaScript",
+    "V8"
    ],
    "questions": [
-    "How do real language implementations mix compilation and interpretation?",
-    "Is Python compiled or interpreted?",
-    "What does it mean that a language is neither compiled nor interpreted?"
+    "How does Java use both compilation and interpretation in its runtime?",
+    "Why is Python considered both compiled and interpreted?",
+    "What does the example of JavaScript in Node and V8 illustrate about language implementation?"
    ]
   },
   "programming-language-3-1-5": {
@@ -953,19 +953,19 @@
   },
   "programming-language-3-2-5": {
    "text_sha": "d247146b3024ea1e",
-   "summary": "Ember executes code by parsing once and walking the tree without AOT or JIT, focusing on simplicity for learning before adding performance optimizations.",
+   "summary": "Ember executes code by parsing once and walking the tree without AOT or JIT, similar to Python's old style, providing a clear base for learning language execution.",
    "keywords": [
     "Ember",
-    "tree walking",
+    "Python old style",
+    "parse once",
+    "execute by walking tree",
     "no AOT",
-    "no JIT",
-    "language implementation",
-    "learning"
+    "no JIT"
    ],
    "questions": [
-    "How does Ember execute code compared to V8 or Python?",
-    "Why does Ember avoid AOT and JIT compilation?",
-    "What is the next step after understanding Ember's execution model?"
+    "How does Ember execute code compared to Python?",
+    "What execution model does Ember use without AOT or JIT?",
+    "Why is Ember's execution model suitable for learning language implementation?"
    ]
   },
   "programming-language-4-0-0": {
@@ -1132,19 +1132,19 @@
   },
   "programming-language-4-1-1": {
    "text_sha": "ad4d9c584f32b96a",
-   "summary": "Encode operator precedence in grammar by stacking one rule per precedence level from loosest to tightest, each defined in terms of the next tighter level.",
+   "summary": "Grammar encodes operator precedence by defining one parsing rule per precedence level, stacked from lowest to highest precedence, so tighter operators parse deeper and evaluate first.",
    "keywords": [
     "grammar",
-    "precedence levels",
     "operator precedence",
-    "expression parsing",
-    "stacked rules",
-    "loosest to tightest"
+    "parsing rules",
+    "assignment",
+    "equality",
+    "comparison"
    ],
    "questions": [
-    "How can grammars encode operator precedence?",
-    "What is the order of precedence levels from loosest to tightest?",
-    "Why do tighter operators sit deeper in the parse tree?"
+    "How can operator precedence be encoded in a grammar?",
+    "What is the order of operator precedence from loosest to tightest?",
+    "Why do tighter operators get evaluated first in a grammar?"
    ]
   },
   "programming-language-4-1-2": {
@@ -1203,19 +1203,19 @@
   },
   "programming-language-4-1-5": {
    "text_sha": "8f13ddbeb036ab63",
-   "summary": "Logical operators 'and' and 'or' are defined as separate precedence levels with 'and' tighter than 'or', reflecting short-circuit evaluation behavior.",
+   "summary": "Logical operators are defined in separate grammar rules reflecting their precedence, with 'and' tighter than 'or', enabling short-circuit evaluation like JavaScript's && and ||.",
    "keywords": [
     "logical operators",
-    "and",
-    "or",
-    "precedence",
-    "short-circuit",
     "logicAnd",
-    "logicOr"
+    "logicOr",
+    "operator precedence",
+    "short-circuit evaluation",
+    "and operator",
+    "or operator"
    ],
    "questions": [
-    "How are logical operators 'and' and 'or' represented in the grammar?",
-    "Why is 'and' tighter than 'or' in precedence?",
+    "How are logical operators 'and' and 'or' represented in grammar rules?",
+    "Why is 'and' tighter than 'or' in operator precedence?",
     "What does short-circuit evaluation mean for logical operators?"
    ]
   },
@@ -1592,38 +1592,39 @@
   },
   "programming-language-6-0-6": {
    "text_sha": "d8232f4d0453fe1f",
-   "summary": "Create a reusable binaryLevel helper to parse different binary operator precedence levels by passing the next parser and operator list, simplifying grammar implementation.",
+   "summary": "Defines a helper function binaryLevel to parse binary expressions at different precedence levels, enabling factor, term, comparison, and equality parsing by specifying operators.",
    "keywords": [
-    "binaryLevel helper",
-    "operator precedence",
-    "parser abstraction",
-    "factor()",
-    "term()",
-    "comparison()",
-    "equality()"
+    "binaryLevel",
+    "factor",
+    "term",
+    "comparison",
+    "equality",
+    "binary expressions",
+    "operator precedence"
    ],
    "questions": [
-    "How does the binaryLevel helper function work?",
-    "How are different operator precedence levels handled in parsing?",
-    "Why use a helper function instead of repeating code?"
+    "How can binary expressions be parsed with different operator precedences?",
+    "What is the purpose of the binaryLevel helper function?",
+    "How are factor, term, comparison, and equality parsing related?"
    ]
   },
   "programming-language-6-0-7": {
    "text_sha": "1d8d893a773d9f88",
-   "summary": "Parse unary operators recursively, function calls with argument lists, logical operators with short-circuit nodes, and assignments with validation of left-hand targets.",
+   "summary": "Explains parsing of unary expressions, function calls with arguments, logical operators producing Logical nodes, and assignment expressions with validation of assignment targets.",
    "keywords": [
-    "unary()",
-    "call()",
-    "logical operators",
-    "assignment()",
-    "short-circuit",
-    "AST nodes",
-    "error handling"
+    "unary",
+    "call",
+    "primary",
+    "arguments",
+    "Logical nodes",
+    "logical or",
+    "logical and",
+    "assignment"
    ],
    "questions": [
-    "How are unary operators parsed recursively?",
+    "How are unary expressions parsed in recursive descent?",
     "How does the parser handle function calls and their arguments?",
-    "What validation occurs during assignment parsing?"
+    "What conditions must be met for a valid assignment target?"
    ]
   },
   "programming-language-6-1-0": {
@@ -1646,37 +1647,38 @@
   },
   "programming-language-6-1-1": {
    "text_sha": "eb491b509837e8de",
-   "summary": "letDeclaration() parses a let statement by consuming the let keyword, expecting an identifier, optionally parsing an initializer expression after '=', and requiring a terminating semicolon.",
+   "summary": "The letDeclaration() method parses variable declarations by advancing past 'let', expecting an identifier, optionally parsing an initializer expression, and requiring a semicolon.",
    "keywords": [
-    "letDeclaration()",
+    "letDeclaration",
     "this.advance()",
-    "this.expect()",
+    "this.expect",
+    "this.match",
     "variable declaration",
-    "initializer",
-    "semicolon"
+    "LetStatement"
    ],
    "questions": [
-    "How do you parse a let statement in the parser?",
-    "What does this.expect() do when parsing a variable name?",
-    "How is an optional initializer handled in let declarations?"
+    "How does letDeclaration() parse a variable declaration?",
+    "What does this.expect() do in parsing a let statement?",
+    "How is an initializer expression handled in letDeclaration()?"
    ]
   },
   "programming-language-6-1-2": {
    "text_sha": "c50cae12adf9190c",
-   "summary": "statement() dispatches based on keywords like if, while, return, or braces for blocks, with ifStatement() parsing conditions, consequent, and optional else branches to resolve dangling else correctly.",
+   "summary": "The statement() method dispatches parsing based on the next token, handling if, while, return, blocks, or expression statements, with ifStatement() parsing conditions, consequent, and optional else branches.",
    "keywords": [
     "statement()",
     "ifStatement()",
+    "this.expression()",
+    "this.match",
     "dangling else",
-    "else branch",
+    "IfStatement",
     "consequent",
-    "alternate",
-    "recursive descent"
+    "alternate"
    ],
    "questions": [
-    "How does the parser handle if statements and their optional else branches?",
-    "What is the dangling else problem and how is it resolved?",
-    "Which tokens lead statement() to parse blocks or expression statements?"
+    "How does statement() decide which parsing method to call?",
+    "How is an if statement parsed including its else branch?",
+    "How does the parser resolve the dangling else problem?"
    ]
   },
   "programming-language-6-1-3": {
@@ -1698,19 +1700,20 @@
   },
   "programming-language-6-1-4": {
    "text_sha": "fe97f98bb8728369",
-   "summary": "block() parses a block statement by expecting '{', collecting declarations until '}' or EOF, then returning a BlockStatement node, enabling nested scopes via declaration parsing inside blocks.",
+   "summary": "The block() method parses a block by expecting '{', collecting declarations until '}' or EOF, then returning a BlockStatement node containing those declarations.",
    "keywords": [
     "block()",
-    "BlockStatement",
+    "this.expect",
+    "this.check",
     "declaration()",
-    "nested scopes",
-    "EOF check",
-    "curly braces"
+    "BlockStatement",
+    "EOF",
+    "nested scopes"
    ],
    "questions": [
-    "How does the parser handle blocks of code?",
+    "How does block() parse a block of code?",
     "Why does block() call declaration() instead of statement()?",
-    "How does the parser avoid infinite loops on unterminated blocks?"
+    "How does the parser prevent infinite loops on unterminated blocks?"
    ]
   },
   "programming-language-6-1-5": {
@@ -1732,10 +1735,11 @@
   },
   "programming-language-6-1-6": {
    "text_sha": "f2f81c5940149041",
-   "summary": "Testing the parser with a sample program shows the AST with FunctionDeclaration, ReturnStatement, Binary expressions, LetStatement, and Call nodes, confirming the syntax parsing is complete before interpreter implementation.",
+   "summary": "Testing the parser with a sample program shows it produces a Program node containing a FunctionDeclaration with a ReturnStatement and a LetStatement with a Call and Binary expression, completing the syntax parsing phase.",
    "keywords": [
-    "parser test",
-    "AST structure",
+    "node -e",
+    "tokenize",
+    "Parser",
     "FunctionDeclaration",
     "ReturnStatement",
     "Binary expression",
@@ -1743,17 +1747,16 @@
     "Call expression"
    ],
    "questions": [
-    "What does the AST look like for a program with functions and let statements?",
-    "How can you test the parser from the command line?",
-    "What nodes appear in the AST for function calls and arithmetic?"
+    "How can you test the parser with a sample program from the terminal?",
+    "What AST nodes are produced for a function and a let statement in the sample?",
+    "What does the parsed tree represent for the language?"
    ]
   },
   "programming-language-7-0-0": {
    "text_sha": "a195ad79cbc82edf",
-   "summary": "A tree-walking evaluator recursively interprets each AST node by defining rules per node type, collapsing the nested structure back into values using an Interpreter class with a global environment.",
+   "summary": "A tree-walking evaluator recursively processes each AST node type to compute values, implemented in an Interpreter class with a globals environment for storing names.",
    "keywords": [
     "tree-walking evaluator",
-    "AST",
     "Interpreter class",
     "recursion",
     "Environment",
@@ -1784,19 +1787,21 @@
   },
   "programming-language-7-0-2": {
    "text_sha": "412de15688b03820",
-   "summary": "Unary expressions are evaluated by first recursively evaluating the operand, then applying the operator with helpers like isTruthy and checkNumber to handle boolean logic and type checking.",
+   "summary": "Unary expressions are evaluated by first recursively evaluating their operand, then applying the operator with helpers like isTruthy and checkNumber for runtime checks.",
    "keywords": [
-    "Unary node",
+    "unary expression",
+    "evaluate",
     "post-order traversal",
     "isTruthy",
     "checkNumber",
-    "recursive evaluation",
-    "operand evaluation"
+    "runtime error",
+    "operand",
+    "operator"
    ],
    "questions": [
-    "How are unary expressions evaluated in a tree-walking interpreter?",
-    "What does post-order traversal mean in AST evaluation?",
-    "What are the roles of isTruthy and checkNumber helpers?"
+    "How do you evaluate unary expressions in a tree-walking interpreter?",
+    "What is post-order traversal in AST evaluation?",
+    "What do the isTruthy and checkNumber helper functions do?"
    ]
   },
   "programming-language-7-0-3": {
@@ -1836,18 +1841,19 @@
   },
   "programming-language-7-0-5": {
    "text_sha": "b4cd18ee143006c1",
-   "summary": "Operator precedence and associativity are inherently handled by the AST structure, so the interpreter evaluates expressions correctly without explicit precedence logic.",
+   "summary": "Operator precedence and associativity are naturally handled by the AST structure, so the interpreter evaluates expressions correctly without explicit precedence logic.",
    "keywords": [
     "operator precedence",
-    "AST structure",
-    "expression evaluation",
     "associativity",
-    "parse tree"
+    "AST structure",
+    "binary expression",
+    "grammar",
+    "interpreter"
    ],
    "questions": [
-    "How does the AST structure encode operator precedence?",
+    "How does the AST structure handle operator precedence?",
     "Why doesn't the interpreter need explicit precedence rules?",
-    "How does associativity affect evaluation order?"
+    "How does the evaluation order reflect expression precedence?"
    ]
   },
   "programming-language-7-0-6": {
@@ -2151,21 +2157,21 @@
   },
   "programming-language-8-0-2": {
    "text_sha": "1370187a6d00ce0f",
-   "summary": "Write and run a fib.ember program with a recursive Fibonacci function and a loop printing the first ten Fibonacci numbers using the full Ember pipeline.",
+   "summary": "Defines a recursive Fibonacci function and a loop to print its first ten values, demonstrating the full process of tokenizing, parsing, and interpreting a program in Ember.",
    "keywords": [
-    "fib.ember",
     "recursive function",
+    "fib",
     "while loop",
     "print",
-    "Fibonacci",
     "tokenizer",
     "parser",
-    "interpreter"
+    "interpreter",
+    "node ember.js"
    ],
    "questions": [
-    "How do you write a recursive function in Ember?",
-    "How do you run an Ember program from the command line?",
-    "What output does the Fibonacci program produce?"
+    "How do you write a recursive Fibonacci function in Ember?",
+    "How can you run an Ember program using node?",
+    "What steps does an Ember program go through when executed?"
    ]
   },
   "programming-language-8-0-3": {
@@ -2187,18 +2193,17 @@
   },
   "programming-language-8-0-4": {
    "text_sha": "4eacd1e204412e54",
-   "summary": "Show string concatenation, logical operators, runtime type errors, and function hoisting in Ember, illustrating language rules and error handling.",
+   "summary": "Shows string concatenation, logical operators, runtime type errors, function hoisting, and variable declaration order rules in Ember.",
    "keywords": [
     "string concatenation",
-    "logical operators",
     "runtime error",
     "function hoisting",
-    "let variable",
-    "undefined variable error"
+    "let declaration",
+    "nil"
    ],
    "questions": [
-    "How does Ember handle string concatenation and logic operators?",
-    "What happens if you add a string and a number in Ember?",
+    "How does Ember handle string concatenation and logical operators?",
+    "What causes a runtime error with the plus operator in Ember?",
     "Does Ember support function hoisting?"
    ]
   },
@@ -2352,20 +2357,20 @@
   },
   "programming-language-8-1-5": {
    "text_sha": "99dc1fd60e510ca2",
-   "summary": "Understanding language internals empowers you to create, modify, and debug languages like Ember, enabling deeper reasoning about errors and language design choices.",
+   "summary": "Understanding a programming language as a construct you can build and modify helps you reason about components like tokenizer, parser, and evaluator behind languages like JavaScript and Python.",
    "keywords": [
-    "language internals",
+    "programming language",
     "tokenizer",
     "parser",
     "evaluator",
-    "debugging",
-    "language design",
+    "JavaScript",
+    "Python",
     "Ember"
    ],
    "questions": [
-    "How does understanding tokenizer, parser, and evaluator help in debugging languages?",
-    "What does it mean to make and shape your own programming language?",
-    "How can building a language improve your reasoning about existing languages?"
+    "How can understanding tokenizer, parser, and evaluator help with debugging programming languages?",
+    "What components make up a programming language's processing pipeline?",
+    "Why is building your own language useful for understanding existing languages?"
    ]
   }
  }

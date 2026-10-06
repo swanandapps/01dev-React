@@ -4,17 +4,18 @@
  "chunks": {
   "product-engineering-0-0-0": {
    "text_sha": "e1b7d9bd44332614",
-   "summary": "The key difference between a developer and a product engineer is understanding why code behaves as it does and how it reaches users, beyond just knowing syntax.",
+   "summary": "Understanding the difference between a developer and a product engineer lies in knowing why code behaves as it does and how it reaches users, beyond just syntax.",
    "keywords": [
-    "developer vs product engineer",
+    "developer",
+    "product engineer",
+    "syntax",
     "code behavior",
-    "software delivery",
-    "engineering mindset"
+    "code deployment"
    ],
    "questions": [
     "Why do some developers feel stuck after years of coding?",
-    "What separates a developer from a product engineer?",
-    "Is syntax knowledge enough to advance as a software engineer?"
+    "What distinguishes a product engineer from a developer?",
+    "Is syntax knowledge enough to become a product engineer?"
    ]
   },
   "product-engineering-0-0-1": {
@@ -25,13 +26,13 @@
     "Open Graph tags",
     "HTML parsing",
     "caching",
-    "error handling",
-    "web scraping"
+    "metadata extraction",
+    "error handling"
    ],
    "questions": [
     "What is the link-preview widget project about?",
-    "What engineering challenges does a link-preview widget involve?",
-    "How do you handle metadata extraction and caching in a link-preview?"
+    "What engineering challenges are involved in building a link-preview widget?",
+    "How does the widget handle fetching and caching data?"
    ]
   },
   "product-engineering-0-0-2": {
@@ -53,67 +54,67 @@
   },
   "product-engineering-0-0-3": {
    "text_sha": "cbdbc6063736ceae",
-   "summary": "To learn effectively, actively follow along with code, pause to think, and understand trade-offs in engineering decisions rather than just copying code.",
+   "summary": "To learn effectively, actively follow along with the code, pause to think about why things work, and understand that engineering decisions depend on context and trade-offs.",
    "keywords": [
-    "active learning",
-    "code reading",
-    "engineering trade-offs",
-    "problem solving",
-    "learning habits"
+    "code walkthrough",
+    "trade-offs",
+    "engineering context",
+    "habit of asking why"
    ],
    "questions": [
-    "How should I approach learning from this course?",
-    "Why is it important to ask why before how in coding?",
-    "What does it mean that engineering decisions depend on context?"
+    "How should I engage with the course material for best learning?",
+    "Why is it important to ask why before how in engineering?",
+    "What role do trade-offs play in engineering decisions?"
    ]
   },
   "product-engineering-0-1-0": {
    "text_sha": "082e97bcf7ac441b",
-   "summary": "Copying code snippets quickly helps new engineers close tasks but builds shallow knowledge without understanding underlying mechanisms.",
+   "summary": "Copying code snippets quickly solves problems but builds shallow knowledge without understanding underlying mechanics.",
    "keywords": [
-    "copy-paste coding",
-    "shallow knowledge",
-    "engineering incentives",
-    "code snippets",
-    "learning programming"
+    "copy code snippet",
+    "fetch data JavaScript",
+    "surface-level engineering",
+    "shallow knowledge"
    ],
    "questions": [
     "Why do many engineers rely on copying code snippets?",
-    "What is the downside of using code snippets without understanding them?",
-    "How do incentives affect engineers' learning depth?"
+    "What is the downside of only knowing what code to type without understanding it?",
+    "Why can shallow knowledge cause problems when code snippets fail?"
    ]
   },
   "product-engineering-0-1-1": {
    "text_sha": "fd503cfc25ffbb08",
-   "summary": "Asking deep questions about how fetch and promises work under the hood helps diagnose issues beyond surface-level syntax problems.",
+   "summary": "Asking deep questions about how JavaScript's fetch and promises work reveals underlying causes of UI hangs beyond just syntax issues.",
    "keywords": [
-    "fetch API",
-    "promises",
-    "JavaScript async",
-    "debugging",
-    "browser behavior",
-    "UI hang"
+    "fetch",
+    "await",
+    "promise",
+    "UI hang",
+    "timeout",
+    "main thread",
+    "browser"
    ],
    "questions": [
     "What questions should you ask when fetch causes UI hangs?",
-    "How does understanding promises help debug asynchronous code?",
-    "Why is it important to look beyond syntax in debugging?"
+    "Does fetch have a default timeout?",
+    "Where does a fetch request wait, in the browser or server?"
    ]
   },
   "product-engineering-0-1-2": {
    "text_sha": "3aae2967703f8e75",
-   "summary": "Going one level deeper into how functions or frameworks work each time you encounter surprises builds mental models that speed up debugging.",
+   "summary": "To build strong mental models, go one level deeper each time something surprises you by understanding what functions or frameworks are really doing.",
    "keywords": [
-    "mental models",
-    "debugging strategy",
-    "first principles",
-    "framework internals",
-    "HTML parsing"
+    "mental model",
+    "go one level down",
+    "function behavior",
+    "framework magic",
+    "HTML parsing",
+    "browser"
    ],
    "questions": [
-    "How can going one level deeper improve debugging skills?",
-    "What does it mean to ask what a function is actually made of?",
-    "Why is understanding what parsing means important before using libraries?"
+    "How can you deepen your understanding when a function behaves unexpectedly?",
+    "What does it mean to go one level down in understanding?",
+    "Why is taking short detours to understand underlying mechanics valuable?"
    ]
   },
   "product-engineering-0-1-3": {
@@ -134,12 +135,11 @@
   },
   "product-engineering-0-2-0": {
    "text_sha": "cf9ee3351f46de43",
-   "summary": "First principles thinking means breaking problems down to their fundamental truths instead of relying on analogy, enabling solutions for unique situations without tutorials.",
+   "summary": "First principles thinking means breaking down a problem to its fundamental truths and building up from there, enabling solutions beyond analogy or existing tutorials.",
    "keywords": [
     "first principles thinking",
     "reasoning by analogy",
-    "problem solving",
-    "fundamental truths"
+    "problem solving"
    ],
    "questions": [
     "What is first principles thinking?",
@@ -198,18 +198,18 @@
   },
   "product-engineering-1-0-0": {
    "text_sha": "a13deb4c374e7084",
-   "summary": "The wave model explains JavaScript evolved in layers over time, with each wave adding features while preserving previous ones, helping to understand its quirks historically.",
+   "summary": "The wave model explains JavaScript's evolution as layered waves, each adding features while preserving previous ones, helping to understand its quirks as historical artifacts.",
    "keywords": [
     "JavaScript waves",
+    "JavaScript evolution",
+    "language layers",
     "JavaScript history",
-    "JavaScript architecture",
-    "language evolution",
-    "backward compatibility"
+    "wave model"
    ],
    "questions": [
     "What is the wave model of JavaScript?",
-    "Why does JavaScript have odd or confusing behaviors?",
-    "How can understanding JavaScript's history help in coding?"
+    "Why does JavaScript have odd behaviors?",
+    "How can understanding JavaScript's history help in programming?"
    ]
   },
   "product-engineering-1-0-1": {
@@ -232,19 +232,18 @@
   },
   "product-engineering-1-0-2": {
    "text_sha": "dcdd0cdc73f4feae",
-   "summary": "JavaScript code often mixes features from different waves, like async/await from recent waves and forgiving HTML parsing from early waves, reflecting multiple eras coexisting in one file.",
+   "summary": "JavaScript code often mixes features from different waves like async/await, legacy HTML parsing, and Object.assign, so naming these eras helps predict behavior safely.",
    "keywords": [
     "async await",
     "Object.assign",
     "JavaScript waves",
-    "backward compatibility",
-    "HTML parsing",
-    "JavaScript evolution"
+    "legacy HTML parsing",
+    "ES2015 features"
    ],
    "questions": [
-    "Why might JavaScript code use features from different waves?",
-    "What is an example of mixing old and new JavaScript features?",
-    "How does understanding waves help predict code behavior?"
+    "How do different JavaScript waves coexist in one codebase?",
+    "Why is it important to know which JavaScript era a feature comes from?",
+    "What are examples of features from different JavaScript waves?"
    ]
   },
   "product-engineering-1-0-3": {
@@ -553,38 +552,35 @@
   },
   "product-engineering-2-1-2": {
    "text_sha": "f02e1e0c6b0406d3",
-   "summary": "An object's prototype chain links own properties to function prototype objects and then to Object.prototype, enabling shared methods like render, toString, and array methods.",
+   "summary": "The prototype chain links an object to its prototype objects, enabling property and method inheritance like `p.render()` found on `Preview.prototype` and `p.toString()` on `Object.prototype`.",
    "keywords": [
     "prototype chain",
-    "own properties",
+    "p.render()",
     "Preview.prototype",
     "Object.prototype",
     "Array.prototype",
-    "class keyword",
-    "JavaScript inheritance"
+    "class keyword"
    ],
    "questions": [
-    "What does an object's prototype chain look like?",
-    "Where are methods like toString and map found in the chain?",
-    "How does the class keyword relate to prototypes?"
+    "What is the prototype chain for object `p`?",
+    "Where does `p.render()` get found in the prototype chain?",
+    "How do arrays inherit methods like `map` and `filter`?"
    ]
   },
   "product-engineering-2-1-3": {
    "text_sha": "2173f1577c17b4b9",
-   "summary": "The for...in loop iterates over enumerable own and inherited properties, so use Object.hasOwn or Object.keys to avoid inherited keys in loops.",
+   "summary": "Using `for...in` loops can list inherited enumerable properties, so to avoid this, use `Object.hasOwn()` or `Object.keys()` to get only own properties of an object.",
    "keywords": [
     "for...in loop",
     "enumerable properties",
-    "Object.hasOwn",
-    "Object.keys",
-    "prototype chain",
-    "inherited properties",
-    "JavaScript debugging"
+    "Object.hasOwn()",
+    "Object.keys()",
+    "prototype chain"
    ],
    "questions": [
-    "Why does for...in loop include inherited properties?",
-    "How can you filter out inherited properties when looping?",
-    "What causes unexpected keys to appear in for...in loops?"
+    "Why does a `for...in` loop show unexpected method names?",
+    "How can you list only own properties of an object?",
+    "What causes inherited properties to appear in `for...in` loops?"
    ]
   },
   "product-engineering-2-2-0": {
@@ -656,18 +652,19 @@
   },
   "product-engineering-3-0-0": {
    "text_sha": "d34c5329367c3068",
-   "summary": "JavaScript runs on a single thread using a call stack, executing one function at a time, which blocks other actions during long-running functions.",
+   "summary": "JavaScript runs on a single thread using a call stack, executing one function at a time, so waiting for network or other delays is handled outside JavaScript to avoid freezing.",
    "keywords": [
-    "JavaScript single thread",
+    "JavaScript",
+    "single thread",
     "call stack",
-    "function execution",
-    "blocking",
-    "synchronous code"
+    "event loop",
+    "asynchronous",
+    "browser freezing"
    ],
    "questions": [
-    "How does JavaScript execute code on a single thread?",
+    "How does JavaScript execute code with only one thread?",
     "What happens when a function takes a long time to run in JavaScript?",
-    "What is the call stack in JavaScript?"
+    "Why doesn't the browser freeze when waiting for network requests in JavaScript?"
    ]
   },
   "product-engineering-3-0-1": {
@@ -706,18 +703,19 @@
   },
   "product-engineering-3-0-3": {
    "text_sha": "5f929a5c55586d07",
-   "summary": "Long synchronous tasks block the main thread, causing UI delays, so it's important to keep tasks short and break up heavy work to maintain responsiveness.",
+   "summary": "Long synchronous tasks block the main thread causing UI delays, so tasks should be short and broken up; callbacks, promises, and async/await help manage waiting without blocking.",
    "keywords": [
-    "main thread blocking",
+    "main thread",
     "synchronous loop",
-    "UI responsiveness",
-    "task length",
+    "callbacks",
+    "promises",
+    "async await",
     "event loop"
    ],
    "questions": [
-    "What happens if a synchronous loop takes a long time in JavaScript?",
-    "Why should tasks be kept short in JavaScript?",
-    "How does blocking the main thread affect user experience?"
+    "What is the main thread problem in JavaScript?",
+    "Why should long tasks be broken up in JavaScript?",
+    "How do callbacks, promises, and async/await help with asynchronous code?"
    ]
   },
   "product-engineering-3-1-0": {
@@ -739,20 +737,20 @@
   },
   "product-engineering-3-1-1": {
    "text_sha": "dc586eca27ef4cad",
-   "summary": "Promises represent future results with states pending, fulfilled, or rejected, enabling chaining with .then and .catch for clearer asynchronous control flow and centralized error handling.",
+   "summary": "A promise is an object with states pending, fulfilled, or rejected, supporting chaining via .then and .catch, and always runs handlers asynchronously for predictable behavior.",
    "keywords": [
-    "Promise",
+    "promise",
     "pending",
     "fulfilled",
     "rejected",
-    ".then",
-    ".catch",
+    "then",
+    "catch",
     "promise chaining",
-    "asynchronous control flow"
+    "asynchronous handlers"
    ],
    "questions": [
-    "What states can a JavaScript promise be in?",
-    "How do .then and .catch methods work with promises?",
+    "What are the three states of a promise?",
+    "How does .then support chaining in promises?",
     "Why do promise handlers always run asynchronously?"
    ]
   },
@@ -811,19 +809,17 @@
   },
   "product-engineering-3-2-1": {
    "text_sha": "e07e394d40b2a35a",
-   "summary": "Promise handlers run after the current script task finishes and before timers; the output of console.log('1'), setTimeout(...), Promise.resolve().then(...), console.log('4') is 1, 4, 3, 2.",
+   "summary": "This passage explains the JavaScript event loop order involving console logs, setTimeout, and Promise microtasks, showing output order: 1, 4, 3, 2.",
    "keywords": [
-    "promise handlers",
+    "console.log",
     "setTimeout",
-    "microtask queue",
-    "task queue",
-    "console.log order",
-    "JavaScript event loop"
+    "Promise.resolve",
+    "microtask queue"
    ],
    "questions": [
-    "What is the output order of console.log statements mixed with setTimeout and Promise.then?",
-    "Why do promise handlers run before setTimeout callbacks?",
-    "How does the event loop handle tasks and microtasks in a script?"
+    "What is the output order when mixing console.log, setTimeout, and Promise.resolve().then()?",
+    "How does the microtask queue affect the execution order of promises and timers?",
+    "Why does the promise handler run before the setTimeout callback even with a zero delay?"
    ]
   },
   "product-engineering-3-2-2": {
@@ -878,20 +874,19 @@
   },
   "product-engineering-4-0-1": {
    "text_sha": "70c5ef0aa7ee4f99",
-   "summary": "Separating pure functions like parseMetadata from impure ones like fetchPreview improves testability by isolating logic from side effects like network calls and DOM manipulation.",
+   "summary": "Demonstrates isolating a pure function parseMetadata(html) that extracts metadata from HTML without side effects, making it easy to test compared to impure DOM-dependent code.",
    "keywords": [
-    "parseMetadata",
     "pure function",
-    "fetchPreview",
+    "parseMetadata",
+    "testing pure functions",
     "impure function",
-    "testability",
-    "DOM manipulation",
-    "network call"
+    "document.querySelector",
+    "fetchPreview"
    ],
    "questions": [
-    "How does parseMetadata demonstrate a pure function?",
-    "Why is separating fetchPreview from parseMetadata beneficial?",
-    "What makes a function impure in this context?"
+    "What makes parseMetadata a pure function?",
+    "Why is parseMetadata easier to test than code that uses document.querySelector?",
+    "How does splitting fetchPreview and parseMetadata improve testability?"
    ]
   },
   "product-engineering-4-0-2": {
@@ -914,19 +909,20 @@
   },
   "product-engineering-4-0-3": {
    "text_sha": "e9fbcbca5fad4094",
-   "summary": "Immutability has performance costs due to copying but benefits small objects by enabling history tracking and safer code; Object.freeze can enforce immutability during development.",
+   "summary": "Explains the trade-offs of immutability, noting copying costs but highlighting benefits like tracking changes and using Object.freeze to enforce immutability during development.",
    "keywords": [
-    "immutability cost",
-    "Object.freeze",
-    "performance",
-    "persistent data structures",
+    "immutability",
+    "copying cost",
     "Immer",
-    "history tracking"
+    "persistent data structures",
+    "Object.freeze",
+    "strict mode",
+    "history of previews"
    ],
    "questions": [
-    "What are the performance trade-offs of immutability?",
-    "How does Object.freeze help enforce immutability?",
-    "Why might immutability be acceptable for small objects?"
+    "What are the performance costs associated with immutability?",
+    "How can Object.freeze help enforce immutability?",
+    "Why is immutability beneficial for tracking changes in small objects?"
    ]
   },
   "product-engineering-4-1-0": {
@@ -948,55 +944,53 @@
   },
   "product-engineering-4-1-1": {
    "text_sha": "b68ddf2b570a526e",
-   "summary": "The pipe helper composes functions left-to-right using reduce, returning a new function that passes input through each function sequentially.",
+   "summary": "Defines a synchronous function composition helper `pipe` that chains multiple functions left-to-right using `reduce` to process input through each function sequentially.",
    "keywords": [
     "pipe",
     "function composition",
     "reduce",
-    "left-to-right",
+    "synchronous pipeline",
     "compose",
-    "reduceRight",
-    "JavaScript"
+    "reduceRight"
    ],
    "questions": [
-    "How does the pipe function work in JavaScript?",
-    "What is the difference between pipe and compose?",
-    "How can you compose multiple functions into one?"
+    "How does the `pipe` function compose multiple functions?",
+    "What is the difference between `pipe` and `compose` in function composition?",
+    "How can you chain functions left-to-right in JavaScript?"
    ]
   },
   "product-engineering-4-1-2": {
    "text_sha": "a29c6ece7c83fcc6",
-   "summary": "Partial application and currying create functions with preset arguments, enabling functions like truncate(max)(text) to fit pipelines expecting single-argument functions.",
+   "summary": "Shows how currying and partial application enable configuring functions like `truncate` in advance, producing unary functions ideal for pipelines.",
    "keywords": [
-    "partial application",
     "currying",
-    "closures",
-    "truncate function",
-    "function returning function",
-    "JavaScript"
+    "partial application",
+    "truncate",
+    "closure",
+    "pipeline",
+    "function returning function"
    ],
    "questions": [
-    "How do partial application and currying help with function composition?",
-    "What is an example of a curried truncate function?",
-    "Why are closures important in currying?"
+    "How does currying help in function composition?",
+    "How can you create a configurable `truncate` function for pipelines?",
+    "What role do closures play in partial application?"
    ]
   },
   "product-engineering-4-1-3": {
    "text_sha": "a8b84837f9d8b513",
-   "summary": "pipeAsync composes asynchronous functions by chaining promises with reduce and then, allowing mixed sync and async steps in a pipeline.",
+   "summary": "Introduces `pipeAsync`, an async function composition helper using promises and `.then` to chain asynchronous and synchronous steps in order.",
    "keywords": [
     "pipeAsync",
-    "asynchronous composition",
-    "promises",
-    "reduce",
-    "then",
-    "JavaScript",
-    "tap function"
+    "async function composition",
+    "Promise",
+    ".then",
+    "asynchronous pipeline",
+    "tap"
    ],
    "questions": [
-    "How do you compose asynchronous functions in JavaScript?",
-    "What is pipeAsync and how does it work?",
-    "How can you debug a long async pipeline?"
+    "How can you compose asynchronous functions in a pipeline?",
+    "What does `pipeAsync` do differently from `pipe`?",
+    "How can you debug values inside an async pipeline without breaking the chain?"
    ]
   },
   "product-engineering-4-2-0": {
@@ -1056,20 +1050,20 @@
   },
   "product-engineering-4-2-3": {
    "text_sha": "00c61a15c8fb0226",
-   "summary": "Using var in loops causes closure bugs due to shared bindings, while let creates separate bindings per iteration; also, caches must evict entries to avoid memory leaks.",
+   "summary": "Using var in loops causes closure bugs by sharing one variable binding, while let creates separate bindings per iteration; closures also keep variables alive, potentially causing memory leaks in caches.",
    "keywords": [
     "closure bug",
     "var vs let",
-    "loop closure",
+    "for loop",
     "setTimeout",
-    "memory leak",
+    "closure memory leak",
     "cache eviction",
-    "JavaScript scoping"
+    "JavaScript closures"
    ],
    "questions": [
     "Why does using var in a loop with closures cause unexpected results?",
-    "How does let fix the closure issue in loops?",
-    "Why is it important to evict entries in a cache implemented with closures?"
+    "How does let fix the closure bug in loops?",
+    "Why can closures cause memory leaks in caches?"
    ]
   },
   "product-engineering-5-0-0": {
@@ -1127,37 +1121,37 @@
   },
   "product-engineering-5-0-3": {
    "text_sha": "b94662ed0b0ac4ee",
-   "summary": "Effective code review tone uses questions, separates must-fix from minor issues, praises good work, encourages constructive responses, and values fast turnaround.",
+   "summary": "Effective code reviews use a respectful tone by asking questions, distinguishing must-fix issues from minor ones with prefixes like 'nit', praising good code, responding graciously, and ensuring timely feedback.",
    "keywords": [
-    "code review tone",
-    "constructive feedback",
-    "nitpick",
-    "praise",
-    "review speed",
-    "author response",
-    "face-to-face discussion"
+    "code review",
+    "tone",
+    "content-type header",
+    "nit prefix",
+    "pull request",
+    "fast reviews"
    ],
    "questions": [
-    "How should reviewers phrase feedback to be constructive?",
-    "What is the purpose of separating must-fix issues from nits?",
-    "Why is fast review turnaround important?"
+    "How should tone be managed during code reviews?",
+    "What is the purpose of using a 'nit' prefix in code reviews?",
+    "Why is it important to keep code reviews fast?"
    ]
   },
   "product-engineering-5-1-0": {
    "text_sha": "a2657d00288cb2d2",
-   "summary": "Performance profiling involves measuring actual performance metrics to identify bottlenecks, rather than guessing, using tools like Chrome DevTools to quantify delays in features like link-preview rendering.",
+   "summary": "Performance profiling involves measuring actual performance metrics to identify and optimize the biggest contributors to slowness, rather than guessing.",
    "keywords": [
     "performance profiling",
+    "measure",
+    "optimize",
     "Chrome DevTools",
-    "link-preview widget",
-    "measuring performance",
-    "optimization",
-    "profiling method"
+    "network call",
+    "rendering",
+    "link-preview widget"
    ],
    "questions": [
     "What is the first rule of performance profiling?",
-    "Why should engineers measure performance instead of guessing?",
-    "How do you define and measure what 'slow' means in an application?"
+    "Why is it important to measure performance instead of guessing?",
+    "How can Chrome DevTools be used in performance profiling?"
    ]
   },
   "product-engineering-5-1-1": {
