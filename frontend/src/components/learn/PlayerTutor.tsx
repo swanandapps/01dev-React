@@ -13,6 +13,7 @@ interface Msg {
   content: string;
   streaming?: boolean;
   jump?: TutorNavigate; // set only when the player actually jumped there
+  suggest?: TutorNavigate[]; // moments offered under the answer; nothing has moved
 }
 const rid = () => Math.random().toString(36).slice(2);
 
@@ -26,6 +27,7 @@ export function PlayerTutor({
   lectureTitle,
   onOpenChange,
   onNavigate,
+  canJump,
 }: {
   course: Course;
   userId: string;
@@ -33,6 +35,8 @@ export function PlayerTutor({
   onOpenChange?: (open: boolean) => void;
   /** Jump the player to that lecture + second. Returns false if the lecture isn't in this course (or is locked). */
   onNavigate?: (nav: TutorNavigate) => boolean;
+  /** Would onNavigate land? Checked without jumping, so locked/unknown lectures get no button. */
+  canJump?: (nav: TutorNavigate) => boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
@@ -71,6 +75,11 @@ export function PlayerTutor({
         onNavigate: (nav) => {
           if (nav.course_slug && nav.course_slug !== course.course_id) return; // never another course
           if (onNavigate?.(nav)) patch((m) => ({ ...m, jump: nav }));
+        },
+        onSuggest: (s) => {
+          if (s.course_slug && s.course_slug !== course.course_id) return; // never another course
+          const moments = s.moments.map((mo) => ({ course_slug: s.course_slug, ...mo }));
+          patch((m) => ({ ...m, suggest: moments }));
         },
         onDone: () => {
           patch((m) => ({ ...m, streaming: false }));
@@ -170,6 +179,24 @@ export function PlayerTutor({
                         Jump to {m.jump.lecture_title} · {formatTimestamp(m.jump.start_time)}
                       </button>
                     )}
+                    {!m.streaming && (() => {
+                      const shown = (m.suggest ?? []).filter((n) => canJump?.(n));
+                      return shown.length > 0 && (
+                        <div className="mt-2 flex flex-col gap-1">
+                          <span className="text-[11px] text-zinc-400">Covered in:</span>
+                          {shown.map((n) => (
+                            <button
+                              key={`${n.lecture_title}@${n.start_time}`}
+                              onClick={() => onNavigate?.(n)}
+                              className="inline-flex items-center gap-1.5 text-[12px] text-indigo-300 hover:text-indigo-200 hover:underline underline-offset-2 text-left"
+                            >
+                              <CirclePlay className="w-3.5 h-3.5 flex-shrink-0" />
+                              {n.lecture_title} · {formatTimestamp(n.start_time)}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ),

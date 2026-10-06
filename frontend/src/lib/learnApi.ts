@@ -93,6 +93,12 @@ export interface TutorNavigate {
   start_time: number;
 }
 
+// Offered, never followed: sent instead of navigate when the course covers the question.
+export interface TutorSuggest {
+  course_slug: string;
+  moments: { lecture_title: string; start_time: number }[];
+}
+
 // Stream a tutor reply over SSE. Resolves when the stream ends.
 export async function streamTutor(
   body: {
@@ -106,6 +112,7 @@ export async function streamTutor(
     onDone: () => void;
     onError: (e: Error) => void;
     onNavigate?: (nav: TutorNavigate) => void;
+    onSuggest?: (s: TutorSuggest) => void;
   },
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {
@@ -137,6 +144,13 @@ export async function streamTutor(
             lecture_title: msg.lecture_title,
             start_time: Number.isFinite(Number(msg.start_time)) ? Math.max(0, Number(msg.start_time)) : 0,
           });
+        }
+        else if (msg.type === "suggest" && Array.isArray(msg.moments)) {
+          const moments = msg.moments
+            .filter((m: any) => m && typeof m.lecture_title === "string" && m.lecture_title
+              && Number.isFinite(Number(m.start_time)) && Number(m.start_time) >= 0)
+            .map((m: any) => ({ lecture_title: m.lecture_title as string, start_time: Number(m.start_time) }));
+          if (moments.length) cb.onSuggest?.({ course_slug: String(msg.course_slug ?? ""), moments });
         }
         else if (msg.type === "done") cb.onDone();
         else if (msg.type === "error") cb.onError(new Error(msg.message));

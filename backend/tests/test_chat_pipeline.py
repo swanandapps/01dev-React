@@ -324,3 +324,100 @@ async def test_ask_turn_calls_the_agent_as_before_and_never_navigates(wired, mon
     events = [e async for e in chat_pipeline.chat_turn(_req())]
     types = [e["type"] for e in events]
     assert "navigate" not in types and "error" not in types and types[-1] == "done"
+
+
+# ---- suggest event (player only, never navigates) -----------------------------
+
+def _chit(title, score, lecture_id, start, slug="custom-library", via_title=False):
+    return cl.Hit(source="transcript", course_id=2, course_slug=slug, course_title="Build a Custom Library",
+                  title=title, score=score, enrolled=True, text="x", lecture_id=lecture_id,
+                  start_time=start, url="/course/2", via_title=via_title)
+
+
+def _incourse(monkeypatch, case, *hits):
+    async def lookup(question, student_id, scope=cl.ChatScope()):
+        return cl.CourseLookup(case=case, hits=list(hits), enrolled_titles=[])
+    monkeypatch.setattr(chat_pipeline, "course_lookup", lookup)
+
+
+async def _player_events(monkeypatch, wired, agent_events, q="how does npm link work", raise_at_end=False):
+    _player_agent(monkeypatch, wired, agent_events, raise_at_end=raise_at_end)
+    return [e async for e in chat_pipeline.chat_turn(_player_req(q))]
+
+
+TOK = [{"type": "token", "value": "Answer."}]
+S1 = _chit("8.1 - The `npm link` command", 0.7, "l1", 87)
+S2 = _chit("8.2 - Testing Our NPM Package", 0.6, "l2", 40)
+S3 = _chit("11.1 - Publishing using `np`", 0.58, "l3", 200)
+
+
+async def test_match_emits_suggest_before_done_with_at_most_two_distinct_lectures(wired, monkeypatch):
+    dup = _chit("8.1 - The `npm link` command", 0.65, "l1", 300)
+    weak = _chit("9.1 - Weak", 0.45, "l9", 5)
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1, dup, weak, S2, S3)
+    events = await _player_events(monkeypatch, wired, TOK)
+    assert [e["type"] for e in events][-2:] == ["suggest", "done"]
+    sug = events[-2]
+    assert sug == {"type": "suggest", "course_slug": "custom-library", "moments": [
+        {"lecture_title": "8.1 - The `npm link` command", "start_time": 87},
+        {"lecture_title": "8.2 - Testing Our NPM Package", "start_time": 40}]}
+
+
+async def test_via_title_hit_counts_as_strong_and_weak_hits_never_suggest(wired, monkeypatch):
+    titled = _chit("8.1 - The `npm link` command", 0.2, "l1", 0, via_title=True)
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, titled, _chit("9.1 - W", 0.45, "l9", 5))
+    events = await _player_events(monkeypatch, wired, TOK)
+    assert events[-2]["moments"] == [{"lecture_title": "8.1 - The `npm link` command", "start_time": 0}]
+
+
+async def test_other_courses_hits_are_never_suggested(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("Other", 0.9, "o1", 1, slug="other-course"))
+    events = await _player_events(monkeypatch, wired, TOK)
+    assert "suggest" not in [e["type"] for e in events]
+
+
+async def test_navigate_turn_emits_no_suggest(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1)
+    events = await _player_events(monkeypatch, wired, [{"type": "moment", "moment": M2}])
+    types = [e["type"] for e in events]
+    assert "navigate" in types and "suggest" not in types
+
+
+@pytest.mark.parametrize("case", [cl.LookupCase.IN_COURSE_RELATED, cl.LookupCase.IN_COURSE_NONE])
+async def test_related_and_none_emit_no_suggest(wired, monkeypatch, case):
+    _incourse(monkeypatch, case, S1)
+    events = await _player_events(monkeypatch, wired, TOK)
+    assert "suggest" not in [e["type"] for e in events]
+
+
+async def test_ask_turn_emits_no_suggest(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1)
+    _agent(monkeypatch, wired)
+    events = [e async for e in chat_pipeline.chat_turn(_req())]
+    assert "suggest" not in [e["type"] for e in events]
+
+
+async def test_suggest_course_slug_comes_from_the_scope(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1)
+    _player_agent(monkeypatch, wired, TOK)
+    scope = cl.ChatScope(course_slug="scope-slug", in_player=True)
+    req = chat_pipeline.TurnRequest(question="q", student_id="alice", scope=scope, history=[], memory_slug="m")
+    events = [e async for e in chat_pipeline.chat_turn(req)]
+    # hits belong to custom-library, not the scope's course: nothing to suggest
+    assert "suggest" not in [e["type"] for e in events]
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, _chit("L", 0.7, "l1", 3, slug="scope-slug"))
+    events = [e async for e in chat_pipeline.chat_turn(req)]
+    assert events[-2]["course_slug"] == "scope-slug"
+
+
+async def test_no_suggest_after_an_agent_error(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1)
+    events = await _player_events(monkeypatch, wired, TOK, raise_at_end=True)
+    assert [e["type"] for e in events] == ["sources", "token", "error"]
+
+
+def test_grounding_prompt_says_matching_moments_are_linked_under_the_answer():
+    from app.grounding import loader
+    text = loader.read_grounding_prompt().lower()
+    assert "links to the matching moments are shown under the answer automatically" in text
+    assert "must not claim" in text

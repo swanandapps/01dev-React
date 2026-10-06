@@ -12,7 +12,8 @@ from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
 from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
-from app.services.course_lookup import ChatScope, CourseLookup, LookupCase, course_lookup, render_facts, to_cards
+from app.services.course_lookup import (TRANSCRIPT_THRESHOLD, ChatScope, CourseLookup, LookupCase, course_lookup,
+                                        render_facts, to_cards)
 from app.services.llm import GEN_MODEL
 
 CONTEXT_LIMIT = int(os.getenv("MODEL_CONTEXT_LIMIT", "8192"))
@@ -57,6 +58,23 @@ def _missing_pointer(lookup: CourseLookup, answer: str, scope: ChatScope) -> Opt
         return None  # watching that course's preview — don't point at the page they're on
     return (f"\n\nThis is covered in depth in {hit.course_title} → {hit.title}. "
             f"You're not enrolled in it yet; you can find it at the01.dev{hit.url}.")
+
+
+MAX_SUGGESTIONS = 2
+
+
+def _suggest_moments(lookup, scope) -> list[dict]:
+    """Up to 2 STRONG hits of the watched course, one per lecture, in rank order."""
+    out, seen = [], set()
+    for h in lookup.hits:
+        strong = h.via_title or h.score >= TRANSCRIPT_THRESHOLD
+        if h.source != "transcript" or h.course_slug != scope.course_slug or not strong or h.title in seen:
+            continue
+        seen.add(h.title)
+        out.append({"lecture_title": h.title, "start_time": int(h.start_time)})
+        if len(out) == MAX_SUGGESTIONS:
+            break
+    return out
 
 
 async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> AsyncIterator[dict]:
@@ -127,4 +145,9 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         # Spec §3.3: once per turn, before done. The course is the watched one, never the model's.
         yield {"type": "navigate", "course_slug": req.scope.course_slug,
                "lecture_title": moment["lecture_title"], "start_time": int(moment["start_time"])}
+    elif req.scope.in_player and lookup.case == LookupCase.IN_COURSE_MATCH:
+        moments = _suggest_moments(lookup, req.scope)
+        if moments:
+            # Offered, never followed: the client shows links and jumps only when the student clicks.
+            yield {"type": "suggest", "course_slug": req.scope.course_slug, "moments": moments}
     yield {"type": "done"}
