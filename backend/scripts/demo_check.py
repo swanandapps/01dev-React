@@ -54,6 +54,11 @@ QUESTIONS = [
     ("how do I bake sourdough bread", ChatScope(), X),
     ("what am I weak at?", ChatScope(), None),
     ("what does this mean?", ChatScope("react-perf", "4.1 - React.memo and useCallback"), None),
+    # probes: where do Build a Custom Library topics land for a student who is not enrolled in it?
+    ("how does npm link work", ChatScope(), None),
+    ("what is an IIFE", ChatScope(), None),
+    ("how do I hack the prototype to add a method", ChatScope(), None),
+    ("what are ES modules", ChatScope(), None),
 ]
 
 
