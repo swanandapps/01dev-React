@@ -49,11 +49,6 @@ async def _enrolled_ids(student_id: str) -> set:
         return set()
 
 
-def _enrollment_label(course_slug: str, enrolled_ids: set) -> str:
-    course = catalog_service.by_slug(course_slug)
-    return "ENROLLED" if course and course["id"] in enrolled_ids else "NOT ENROLLED"
-
-
 @tool("search_course_content", description=D.SEARCH_COURSE_CONTENT, response_format="content_and_artifact")
 async def search_course_content(
     query: Annotated[str, "What to look up — the student's follow-up question or the concept."],
@@ -65,15 +60,22 @@ async def search_course_content(
         pairs = await cl.search_in_course(query, in_course, top_k=5)
         results = [SearchResult(chunk=c, score=s) for c, s in pairs
                    if c.course_id == in_course and s >= TRANSCRIPT_THRESHOLD]
+        cards = [c.model_dump() for c in grounding.build_sources(results)]
     else:
-        results = [r for r in await grounding.retrieve(query, top_k=5) if r.score >= TRANSCRIPT_THRESHOLD]
+        # Ask: same policy as the lookup (course_lookup.ask_citable) — only launched AND enrolled
+        # courses, with the exact-lecture deep link. Over-fetch: unowned courses can crowd the top 5.
+        enrolled_ids = await _enrolled_ids(runtime.context.student_id)
+        found = [r for r in await grounding.retrieve(query, top_k=15) if r.score >= TRANSCRIPT_THRESHOLD]
+        keep = [(r, h) for r in found if cl.ask_citable(h := cl.transcript_hit(r.chunk, r.score, enrolled_ids))][:5]
+        results = [r for r, _ in keep]
+        cards = cl.to_cards(cl.CourseLookup(case=cl.LookupCase.ENROLLED_MATCH, hits=[h for _, h in keep],
+                                            enrolled_titles=[]))
     if not results:
         return "No matching course content.", []
-    enrolled_ids = set() if in_course else await _enrolled_ids(runtime.context.student_id)
-    cards = [c.model_dump() for c in grounding.build_sources(results)]
     text = "\n".join(
-        f"[{'THIS COURSE' if in_course else _enrollment_label(r.chunk.course_id, enrolled_ids)}] "
+        f"{'[THIS COURSE] ' if in_course else ''}"
         f"{r.chunk.course_title} → {r.chunk.lecture_title} @ {c['timestamp']}: {r.chunk.text}"
+        + (f" — link: the01.dev{c['url']}" if not in_course and c.get("url") else "")
         for r, c in zip(results, cards)
     )
     return text, cards

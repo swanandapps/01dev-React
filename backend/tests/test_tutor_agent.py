@@ -36,8 +36,8 @@ async def test_tool_uses_context_student_not_model_supplied_id(monkeypatch):
 
 async def test_follow_up_search_yields_cards(monkeypatch):
     from app.models import SearchResult, TranscriptChunk
-    chunk = TranscriptChunk(chunk_id="c", course_id="react-perf", course_title="React Performance Patterns",
-                            lecture_id="l", lecture_title="4.1 - React.memo and useCallback", text="memo",
+    chunk = TranscriptChunk(chunk_id="c", course_id="custom-library", course_title="Build a Custom Library",
+                            lecture_id="custom-library-3-1", lecture_title="4.1 - React.memo and useCallback", text="memo",
                             start_time=30, end_time=60)
 
     async def fake_retrieve(q, top_k=5):
@@ -46,10 +46,10 @@ async def test_follow_up_search_yields_cards(monkeypatch):
     monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
     from app.services import enrollment_service
 
-    async def no_enrollments(uid):
-        return []
+    async def enrolled_2(uid):
+        return [{"id": 2, "title": "Build a Custom Library"}]  # F1: Ask cites only launched+enrolled
 
-    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", no_enrollments)  # else a real DB read
+    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", enrolled_2)
     model = FakeToolModel(messages=iter([
         AIMessage("", tool_calls=[{"name": "search_course_content", "args": {"query": "memo"}, "id": "c1"}]),
         AIMessage("Memo skips re-renders."),
@@ -74,57 +74,79 @@ def test_record_skill_observation_schema_constrains_confidence_and_describes_arg
     assert props["note"].get("description")
 
 
-async def test_follow_up_search_labels_each_excerpt_by_enrollment(monkeypatch):
-    from types import SimpleNamespace
-
-    from app.models import SearchResult, TranscriptChunk
-    from app.services import catalog_service, enrollment_service
-
-    def chunk(slug, title):
-        return TranscriptChunk(chunk_id=slug, course_id=slug, course_title=title, lecture_id="l",
-                               lecture_title="1.1 - Intro", text="body", start_time=0, end_time=30)
-
-    async def fake_retrieve(q, top_k=5):
-        return [SearchResult(chunk=chunk("react-perf", "React Performance Patterns"), score=0.8),
-                SearchResult(chunk=chunk("js-engine", "JavaScript Engine Internals"), score=0.6)]
-
-    async def fake_enrolled(student_id):
-        assert student_id == "alice"
-        return [{"id": 3, "title": "React Performance Patterns"}]
-
-    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
-    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
-    monkeypatch.setattr(catalog_service, "by_slug", lambda s: {"react-perf": {"id": 3}, "js-engine": {"id": 7}}.get(s))
-
-    content, cards = await tutor_agent.search_course_content.coroutine(
-        query="memo", runtime=SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice")))
-    lines = content.splitlines()
-    assert lines[0].startswith("[ENROLLED] React Performance Patterns")
-    assert lines[1].startswith("[NOT ENROLLED] JavaScript Engine Internals")
-    assert [c["course_id"] for c in cards] == ["react-perf", "js-engine"]
-    assert "student_id" not in _schema("search_course_content")
-
-
-async def test_follow_up_search_enrollment_failure_labels_all_not_enrolled(monkeypatch):
+def _ask_tool_setup(monkeypatch, enrolled_ids, rows):
+    """rows: [(slug, course_title, lecture_id, lecture_title, score)] returned by grounding.retrieve."""
     from types import SimpleNamespace
 
     from app.models import SearchResult, TranscriptChunk
     from app.services import enrollment_service
 
-    c = TranscriptChunk(chunk_id="c", course_id="react-perf", course_title="React Performance Patterns",
-                        lecture_id="l", lecture_title="1.1 - Intro", text="body", start_time=0, end_time=30)
-
     async def fake_retrieve(q, top_k=5):
-        return [SearchResult(chunk=c, score=0.8)]
+        return [SearchResult(chunk=TranscriptChunk(chunk_id=f"{s}-{i}", course_id=s, course_title=t, lecture_id=lid,
+                                                   lecture_title=lt, text="body", start_time=87, end_time=117),
+                             score=sc) for i, (s, t, lid, lt, sc) in enumerate(rows)]
+
+    async def fake_enrolled(student_id):
+        assert student_id == "alice"
+        return [{"id": i, "title": f"course {i}"} for i in enrolled_ids]
+
+    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
+    monkeypatch.setattr(enrollment_service, "get_enrolled_courses", fake_enrolled)
+    return SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice"))
+
+
+ROWS = [("custom-library", "Build a Custom Library", "custom-library-7-0", "8.1 - The npm link command", 0.8),
+        ("react-perf", "React Performance Patterns", "react-perf-1-0", "2.1 - memo", 0.7),
+        ("js-engine", "JavaScript Engine Internals", "js-engine-0-0", "1.1 - Intro", 0.6)]
+
+
+async def test_ask_tool_for_an_unlaunched_only_student_returns_nothing(monkeypatch):
+    # F1: enrolled in 9 and 11 (neither launched) -> no result text and no card, whatever retrieve finds.
+    rt = _ask_tool_setup(monkeypatch, [9, 11], ROWS)
+    content, cards = await tutor_agent.search_course_content.coroutine(query="memo", runtime=rt)
+    assert content == "No matching course content." and cards == []
+
+
+async def test_ask_tool_keeps_only_launched_owned_courses_with_deep_links(monkeypatch):
+    rt = _ask_tool_setup(monkeypatch, [2, 11], ROWS)   # 2 launched+owned; 11 owned but unlaunched; js-engine unowned
+    content, cards = await tutor_agent.search_course_content.coroutine(query="npm", runtime=rt)
+    assert [c["course_id"] for c in cards] == ["custom-library"]
+    assert cards[0]["url"] == "/course/2?chapter=7&sub=0&t=87" and (cards[0]["chapter"], cards[0]["sub"]) == (7, 0)
+    assert "the01.dev/course/2?chapter=7&sub=0&t=87" in content
+    assert "React Performance" not in content and "JavaScript Engine" not in content
+    assert "ENROLLED" not in content
+
+
+async def test_ask_tool_enrollment_failure_cites_nothing(monkeypatch):
+    from app.services import enrollment_service
+
+    rt = _ask_tool_setup(monkeypatch, [2], ROWS)
 
     async def broken(student_id):
         raise RuntimeError("db down")
 
-    monkeypatch.setattr(grounding, "retrieve", fake_retrieve)
     monkeypatch.setattr(enrollment_service, "get_enrolled_courses", broken)
-    content, _ = await tutor_agent.search_course_content.coroutine(
-        query="memo", runtime=SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice")))
-    assert content.startswith("[NOT ENROLLED] ")
+    assert await tutor_agent.search_course_content.coroutine(query="npm", runtime=rt) == ("No matching course content.", [])
+
+
+async def test_player_tool_path_is_unchanged_by_the_ask_policy(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.models import TranscriptChunk
+    from app.services import course_lookup as cl
+
+    chunk = TranscriptChunk(chunk_id="c", course_id="react-perf", course_title="React Performance Patterns",
+                            lecture_id="react-perf-1-0", lecture_title="2.1 - memo", text="body",
+                            start_time=87, end_time=117)
+
+    async def fake_in_course(q, slug, top_k=5):
+        return [(chunk, 0.8)]
+
+    monkeypatch.setattr(cl, "search_in_course", fake_in_course)
+    rt = SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice", in_course="react-perf"))
+    content, cards = await tutor_agent.search_course_content.coroutine(query="memo", runtime=rt)  # unlaunched, unowned: still answers
+    assert content.startswith("[THIS COURSE] React Performance Patterns → 2.1 - memo @ 01:27")
+    assert [c["course_id"] for c in cards] == ["react-perf"]
 
 
 async def test_write_tool_uses_context_student_not_model_supplied_id(monkeypatch):
@@ -170,7 +192,7 @@ async def test_follow_up_search_drops_results_below_the_transcript_threshold(mon
     from app.services import course_lookup, enrollment_service
 
     def chunk(cid, lecture):
-        return TranscriptChunk(chunk_id=cid, course_id="react-perf", course_title="React Performance Patterns",
+        return TranscriptChunk(chunk_id=cid, course_id="custom-library", course_title="Build a Custom Library",
                                lecture_id=cid, lecture_title=lecture, text="body", start_time=0, end_time=30)
 
     async def fake_retrieve(q, top_k=5):
@@ -178,7 +200,7 @@ async def test_follow_up_search_drops_results_below_the_transcript_threshold(mon
                 SearchResult(chunk=chunk("good", "4.1 - React.memo"), score=0.70)]
 
     async def no_enrollments(student_id):
-        return []
+        return [{"id": 2, "title": "Build a Custom Library"}]
 
     assert 0.30 < course_lookup.TRANSCRIPT_THRESHOLD <= 0.70
     monkeypatch.setattr(grounding, "retrieve", fake_retrieve)

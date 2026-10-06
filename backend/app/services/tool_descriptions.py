@@ -6,8 +6,9 @@ sentences removed (the web tools don't take a student_id)."""
 SEARCH_COURSE_CONTENT = (
     "Search the01.dev lecture transcripts. Use only for a follow-up question the COURSE FACTS "
     "don't already cover. Returns excerpts with course, lecture and timestamp so you can cite them. "
-    "Each excerpt is labelled [ENROLLED] or [NOT ENROLLED] for this student — apply the "
-    "not-enrolled rule to [NOT ENROLLED] excerpts."
+    "On the Ask page only the student's own launched courses are searched, so every excerpt is "
+    "citable: cite it with its lecture, time and the link given. No result means none of the "
+    "student's courses covers it — say so; never name another course."
 )
 GET_ENROLLED_COURSES = (
     "Which courses this student actually has access to (purchased/enrolled). Use for 'what courses "
