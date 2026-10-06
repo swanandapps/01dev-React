@@ -28,12 +28,25 @@ def text_sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+_BOUNDARY = re.compile(r"\\b|\(\?<[=!]|\(\?[=!]")
+
+
 def load_glossary(slug: str, glossary_dir: Path = GLOSSARY_DIR) -> list[tuple[re.Pattern, str]]:
+    """Entries: {"term", "replacement"} (literal, whole-word) or {"pattern", "replace"} (regex that must
+    carry a word boundary or lookaround, so "np" can never rewrite "npm")."""
     p = Path(glossary_dir) / f"{slug}.json"
     if not p.exists():
         return []
-    return [(re.compile(r["pattern"], re.IGNORECASE), r["replace"])
-            for r in json.loads(p.read_text()).get("replacements", [])]
+    out = []
+    for r in json.loads(p.read_text()).get("replacements", []):
+        if "term" in r:
+            pat = r"(?<!\w)" + r"\s+".join(re.escape(w) for w in r["term"].split()) + r"(?!\w)"
+            out.append((re.compile(pat, re.IGNORECASE), r["replacement"]))
+        else:
+            if not _BOUNDARY.search(r["pattern"]):
+                raise ValueError(f"glossary {slug}: regex {r['pattern']!r} needs a word boundary or lookaround")
+            out.append((re.compile(r["pattern"], re.IGNORECASE), r["replace"]))
+    return out
 
 
 def clean_text(text: str, glossary: list[tuple[re.Pattern, str]]) -> str:
@@ -92,8 +105,7 @@ def apply_enrichment(chunks: list[TranscriptChunk], enrich_dir: Path = ENRICH_DI
                      glossary_dir: Path = GLOSSARY_DIR) -> list[TranscriptChunk]:
     glossaries: dict[str, list] = {}
     entries: dict[str, dict] = {}
-    prev_clean: dict[str, str] = {}   # lecture_id -> previous chunk's text_clean (seed order = time order)
-    out = []
+    enriched = []
     for c in chunks:
         slug = c.course_id
         if slug not in glossaries:
@@ -101,16 +113,21 @@ def apply_enrichment(chunks: list[TranscriptChunk], enrich_dir: Path = ENRICH_DI
             entries[slug] = load_enrichment(slug, enrich_dir)
         e = entries[slug].get(c.chunk_id)
         fresh = bool(e) and e.get("text_sha") == text_sha(c.text)
-        new = c.model_copy(update={
+        enriched.append(c.model_copy(update={
             "chapter": chapter_for(c.lecture_id, slug),
             "text_clean": clean_text(c.text, glossaries[slug]),
             "summary": (e or {}).get("summary", "") if fresh else "",
             "keywords": list((e or {}).get("keywords", [])) if fresh else [],
             "questions": list((e or {}).get("questions", [])) if fresh else [],
-        })
-        new.embed_text = build_embed_text(new, prev_clean.get(c.lecture_id))
-        new.embed_model = EMBED_MODEL
-        new.content_hash = content_hash(new.embed_text, EMBED_MODEL)
-        prev_clean[c.lecture_id] = new.text_clean
-        out.append(new)
-    return out
+        }))
+    by_lecture: dict[str, list[TranscriptChunk]] = {}
+    for c in enriched:
+        by_lecture.setdefault(c.lecture_id, []).append(c)
+    for group in by_lecture.values():   # overlap follows time order, whatever the input order
+        prev = None
+        for c in sorted(group, key=lambda x: x.start_time):
+            c.embed_text = build_embed_text(c, prev)
+            c.embed_model = EMBED_MODEL
+            c.content_hash = content_hash(c.embed_text, EMBED_MODEL)
+            prev = c.text_clean
+    return enriched

@@ -92,3 +92,26 @@ def test_save_then_load_round_trip_is_sorted_and_atomic(tmp_path):
     assert en.load_enrichment("x", tmp_path) == entries
     assert en.load_enrichment("missing", tmp_path) == {}
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_glossary_term_is_whole_word_and_regex_needs_boundary(tmp_path):
+    import pytest
+    e, g = _dirs(tmp_path, glossary=[{"term": "tree shucking", "replacement": "tree shaking"},
+                                     {"pattern": r"\bnp\b", "replace": "npm"}])
+    out = en.apply_enrichment([_c(0, "Tree  Shucking and np and npm and np-x")], e, g)[0]
+    assert out.text_clean.lower() == "tree shaking and npm and npm and npm-x"
+    (g / "custom-library.json").write_text(json.dumps({"replacements": [{"term": "np", "replacement": "npm"}]}))
+    assert en.apply_enrichment([_c(0, "npm np")], e, g)[0].text_clean == "npm npm"
+    (g / "custom-library.json").write_text(json.dumps({"replacements": [{"pattern": "np", "replace": "npm"}]}))
+    with pytest.raises(ValueError):
+        en.load_glossary("custom-library", g)
+
+
+def test_overlap_resets_per_lecture_and_follows_time_order(tmp_path):
+    e, g = _dirs(tmp_path)
+    a = _c(0, "Lecture A ends here.", lecture="custom-library-5-1")
+    b0, b1 = _c(0, "B opens.", lecture="custom-library-5-2"), _c(1, "B continues.", lecture="custom-library-5-2")
+    out = en.apply_enrichment([a, b1, b0], e, g)           # b1 listed before b0
+    assert [c.chunk_id for c in out] == [a.chunk_id, b1.chunk_id, b0.chunk_id]
+    assert "Previously:" not in out[2].embed_text and "Previously: B opens." in out[1].embed_text
+    assert "Previously:" not in out[0].embed_text
