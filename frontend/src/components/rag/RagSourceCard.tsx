@@ -17,9 +17,15 @@ export function RagSourceCard({ source }: Props) {
   const navigate = useNavigate();
 
   const handleClick = () => {
+    if (source.url) {
+      navigate(source.url);
+      return;
+    }
     const courseNumId = RAG_COURSE_MAP[source.course_id];
     if (courseNumId) {
-      navigate(`/course/${courseNumId}?t=${source.start_time}`);
+      // chapter/sub pick the exact lecture; without them the player opens lecture 1 at ?t=.
+      const pos = source.chapter != null && source.sub != null ? `chapter=${source.chapter}&sub=${source.sub}&` : "";
+      navigate(`/course/${courseNumId}?${pos}t=${source.start_time}`);
     }
   };
 

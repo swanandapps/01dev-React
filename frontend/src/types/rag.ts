@@ -8,6 +8,9 @@ export interface RagSourceCard {
   end_time: number;
   snippet: string;
   score: number;
+  url?: string | null;      // deep link path: /course/<id>?chapter=&sub=&t=
+  chapter?: number | null;  // 0-indexed, from the lecture_id position
+  sub?: number | null;
 }
 
 export interface AskResponse {
