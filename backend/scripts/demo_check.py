@@ -89,8 +89,12 @@ async def player_checks(uid: str) -> int:
         return r
     tutor_agent._locate_moment = spy
     failures = 0
+    only = (_arg("--case") or "").split(",") if _arg("--case") else None
+    runs = int(_arg("--runs") or 2)
     for cid, q, lecture, jump_to in PLAYER_QUESTIONS:
-        for run in (1, 2):
+        if only and cid not in only:
+            continue
+        for run in range(1, runs + 1):
             student = f"{uid}-p{cid}-r{run}"
             scope = ChatScope(course_slug=PLAYER_COURSE, lecture_title=lecture, in_player=True)
             lk = await course_lookup(q, student, scope)

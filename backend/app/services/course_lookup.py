@@ -39,7 +39,7 @@ MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter tha
 # (27 phrasings, Build a Custom Library): 26/27 correct vs 21/27 for "title >= 0.60 wins outright"
 # (generic "npm" pulled 8.1/8.2 titles over 11.1's stronger chunks); demo margin >= 0.042.
 TITLE_OFFSET = 0.10
-MOMENT_LECTURE_FLOOR = 0.30  # within a title-matched lecture, chunks below this -> start at 0
+MOMENT_LECTURE_FLOOR = 0.30  # if the winning lecture's best chunk is below this, jump to its start (0) instead
 IN_COURSE_K = 3
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
 TITLE_COOLDOWN = 300.0      # after a failure, use word overlap for this long before retrying
@@ -108,9 +108,9 @@ async def _transcript_hits(question: str, top_k: int = 8):
     return [(r.chunk, r.score) for r in vector_store.search(emb, top_k=top_k, threshold=0.0, query_text=question)]
 
 
-async def search_in_course(query: str, course_slug: str, top_k: int = 8) -> list[tuple[TranscriptChunk, float]]:
+async def search_in_course(query: str, course_slug: str, top_k: Optional[int] = 8) -> list[tuple[TranscriptChunk, float]]:
     """Best-first transcript chunks of ONE course. Ranks the whole store, then filters,
-    so another course's chunk can never stand in for this course's."""
+    so another course's chunk can never stand in for this course's. top_k=None means every chunk."""
     if not vector_store.chunks:
         await vector_store.initialize()
     emb = await embedding_service.embed(query)
@@ -202,7 +202,7 @@ async def search_in_lecture(query: str, course_slug: str, lecture_title: str) ->
         return []
     if not (embedding_service.use_openai and len(vector_store._embeddings) == len(vector_store.chunks)):
         # keyword/hash dev fallback has no comparable per-chunk vectors: use the normal search
-        return [(c, s) for c, s in await search_in_course(query, course_slug, top_k=1000)
+        return [(c, s) for c, s in await search_in_course(query, course_slug, top_k=None)
                 if _norm(c.lecture_title) == here]
     emb = await embedding_service.embed(query)
     out = [(vector_store.chunks[i], vector_store._cosine_sim(emb, vector_store._embeddings[i])) for i in idx]
@@ -293,7 +293,7 @@ async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[i
                    lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
                    url=course["url"] if course else None, via_title=via_title)
 
-    scored = [(c, s) for c, s in await search_in_course(question, slug, top_k=1000) if c.course_id == slug]
+    scored = [(c, s) for c, s in await search_in_course(question, slug, top_k=None) if c.course_id == slug]
     best = _best_per_lecture(scored)
     titled = {_norm(t) for t, sc in (await _title_scores(question, slug)).items() if sc >= TITLE_THRESHOLD}
 

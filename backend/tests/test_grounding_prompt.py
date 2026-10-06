@@ -63,3 +63,12 @@ def test_prompt_lists_find_moment():
 def test_prompt_vague_lecture_request_is_never_only_a_question():
     text = " ".join(loader.read_grounding_prompt().split())
     assert "is never answered with only a question back" in text
+
+
+def test_find_moment_is_restricted_to_explicit_navigation_requests():
+    from app.services import tool_descriptions as D
+    text = " ".join(loader.read_grounding_prompt().split())
+    for t in (text, " ".join(D.FIND_MOMENT.split())):
+        assert "ONLY when the student explicitly asks" in t
+        assert "search_course_content" in t
+        assert "never call it to look something up" in t.lower()

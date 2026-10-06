@@ -140,7 +140,7 @@ async def _locate_moment(what: str, slug: str):
     """(chunk, chunk_score) of a real chunk of the course, or None. Lectures are ranked by
     max(best chunk, title - TITLE_OFFSET); the winner counts as found when its title clears
     TITLE_THRESHOLD or its best chunk clears MOMENT_THRESHOLD."""
-    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=1000) if c.course_id == slug]
+    rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=None) if c.course_id == slug]
     titles = {cl._norm(t): sc for t, sc in (await cl._title_scores(what, slug)).items()}
     best: dict = {}
     for c, s in rows:
@@ -154,7 +154,9 @@ async def _locate_moment(what: str, slug: str):
     if titles.get(key, 0.0) < cl.TITLE_THRESHOLD and score < cl.MOMENT_THRESHOLD:
         return None
     if score < cl.MOMENT_LECTURE_FLOOR:
-        chunk = chunk.model_copy(update={"start_time": 0})
+        # No chunk of this lecture matches well: open it from the start, with a range that ends where its first chunk ends.
+        opening = min((c for c, _ in rows if cl._norm(c.lecture_title) == key), key=lambda c: c.start_time)
+        chunk = chunk.model_copy(update={"start_time": 0, "end_time": opening.end_time})
     return chunk, score
 
 
@@ -164,7 +166,9 @@ async def find_moment(
                          "function or term (e.g. 'npm publish command', 'npm link', 'IIFE syntax'), no request filler."],
     runtime: ToolRuntime[ChatContext],
 ) -> tuple[str, Optional[dict]]:
-    """Only ever returns a real chunk of the watched course — the model cannot invent a time."""
+    """Navigation only: call when the student explicitly asks to be taken/jumped/shown to a place in the
+    video, never to look something up (use search_course_content for that). Only ever returns a real
+    chunk of the watched course — the model cannot invent a time."""
     slug = runtime.context.in_course
     if not slug:
         return _NOT_FOUND, None

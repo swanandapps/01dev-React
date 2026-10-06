@@ -270,7 +270,7 @@ def _player_runtime(slug="custom-library"):
     return SimpleNamespace(context=tutor_agent.ChatContext(student_id="alice", in_course=slug))
 
 
-def _stub(monkeypatch, *, titles=None, course=None, lecture=None):
+def _stub(monkeypatch, *, titles=None, course=None):
     from app.services import course_lookup
 
     async def fake_titles(q, slug):
@@ -279,12 +279,8 @@ def _stub(monkeypatch, *, titles=None, course=None, lecture=None):
     async def fake_course(q, slug, top_k=8):
         return course or []
 
-    async def fake_lecture(q, slug, title):
-        return lecture or []
-
     monkeypatch.setattr(course_lookup, "_title_scores", fake_titles)
     monkeypatch.setattr(course_lookup, "search_in_course", fake_course)
-    monkeypatch.setattr(course_lookup, "search_in_lecture", fake_lecture)
 
 
 def test_find_moment_is_bound_only_in_the_player():
@@ -327,6 +323,8 @@ async def test_find_moment_title_only_lecture_starts_at_zero(monkeypatch):
     content, artifact = await tutor_agent.find_moment.coroutine(what="np", runtime=_player_runtime())
     assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 0}
     assert json.loads(content)["score"] == 0.2  # chunk score, not the title's
+    # the jump starts at 0, so the range ends where the lecture's opening chunk ends (15 + 55), not the matched chunk's
+    assert json.loads(content)["start_time"] == 0 and json.loads(content)["end_time"] == 70
 
 
 async def test_find_moment_weak_title_and_weak_chunk_is_not_found(monkeypatch):

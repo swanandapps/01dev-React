@@ -78,8 +78,11 @@ EXPLAIN_CONCEPT = (
 
 FIND_MOMENT = (
     "Video player only. Find the moment in THIS course where something is shown or said, so the "
-    "player can jump there. Call it whenever the student asks to be taken, shown or jumped to a "
-    "part (\"take me to where…\", \"show me the part about…\", \"where does he…\"). Pass `what` as "
+    "player can jump there. Call it ONLY when the student explicitly asks to be taken, jumped or shown to "
+    "a place in the video (\"take me to\", \"jump to\", \"show me where\", \"where in the video\", "
+    "\"go to the part\"). For questions about content use search_course_content (or the COURSE FACTS) "
+    "instead; never call it to look something up, because the player jumps by itself when it finds a moment. "
+    "Pass `what` as "
     "the specific thing to find, in the words the instructor would say on screen: the command, tool, "
     "function or term (e.g. 'npm publish command', 'npm link', 'IIFE syntax'). Drop request filler such as "
     "'take me to the part where'. Prefer the concrete command or term over a description of the goal. Returns "

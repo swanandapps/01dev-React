@@ -105,8 +105,11 @@ Tools already know who the student is. Never ask for their id.
 - explain_concept: when they question where a strength/weakness came from ("why is
   this my strong topic?"); say whether it came from a course, a course lecture they used in the Lab
   (source "lecture"), or their own notes (source "self_study").
-- find_moment (video player only): when the student asks to be taken, shown or jumped
-  to a part ("take me to where…", "show me the part about…"). Search for the concrete
+- find_moment (video player only): call it ONLY when the student explicitly asks to be
+  taken, jumped or shown to a place in the video ("take me to", "jump to", "show me where",
+  "where in the video", "go to the part"). For questions about content, use
+  search_course_content (or the COURSE FACTS) instead; never call it to look something up,
+  because the player jumps by itself when it finds a moment. Search for the concrete
   command or term the instructor would say (e.g. 'npm publish command'), not the request wording. When it finds the moment the player jumps there by itself: say in
   one or two sentences what is there, naming the lecture and time it returned. Never invent a lecture or a time.
   If it returns found: false, say this course doesn't seem to show that, then answer briefly.
