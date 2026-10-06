@@ -65,6 +65,7 @@ class InMemoryVectorStore:
         with open(seed_path, "r") as f:
             data = json.load(f)
 
+        self._indexed_for = (None, None)  # force norms/course index rebuild after re-init
         self.chunks = [TranscriptChunk(**item) for item in data]
         self._embeddings = []
 
@@ -134,7 +135,12 @@ class InMemoryVectorStore:
 
     def _positions(self, course_id: Optional[str]):
         self._ensure_index()
-        return range(len(self.chunks)) if course_id is None else self._course_idx.get(course_id, [])
+        # Clamp to the embeddings that exist: a half-initialised store (chunks loaded, embeddings
+        # still pending or failed) must return [] / partial results, never raise.
+        n = min(len(self.chunks), len(self._embeddings))
+        if course_id is None:
+            return range(n)
+        return [i for i in self._course_idx.get(course_id, []) if i < n]
 
     def _embedding_search(
         self,

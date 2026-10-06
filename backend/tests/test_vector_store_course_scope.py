@@ -97,3 +97,14 @@ def test_search_in_course_never_touches_other_courses_chunks(monkeypatch):
     assert seen and all(st.chunks[i].course_id == "js-engine" for i in seen)
     # threshold 0.0 drops negative cosines, same as before; every scored chunk is accounted for
     assert len(out) == len(st.search(q, top_k=90, threshold=0.0, course_id="js-engine"))
+
+
+def test_partially_initialised_store_returns_empty_not_indexerror(monkeypatch):
+    monkeypatch.setattr(embedding_service, "use_openai", True)
+    st = _store(9)
+    st._embeddings = []
+    q = [1.0] * DIM
+    assert st.search(q, top_k=5, threshold=0.0) == []
+    assert st.search(q, top_k=5, threshold=0.0, course_id="js-engine") == []
+    st._embeddings = _store(9)._embeddings[:4]  # shorter than chunks: partial results only
+    assert all(st.chunks.index(r.chunk) < 4 for r in st.search(q, top_k=9, threshold=-1.0))
