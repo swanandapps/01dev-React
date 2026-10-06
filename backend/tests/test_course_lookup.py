@@ -376,9 +376,9 @@ async def test_search_in_course_keeps_only_that_course_best_first(monkeypatch):
         chunks = [r.chunk for r in results]
         calls: list = []
 
-        def search(self, emb, top_k=5, threshold=0.25, query_text=""):
-            self.calls.append((top_k, threshold, query_text))
-            return results[:top_k]
+        def search(self, emb, top_k=5, threshold=0.25, query_text="", course_id=None):
+            self.calls.append((top_k, threshold, query_text, course_id))
+            return [r for r in results if course_id in (None, r.chunk.course_id)][:top_k]
 
     async def fake_embed(text):
         return [1.0, 0.0]
@@ -389,7 +389,7 @@ async def test_search_in_course_keeps_only_that_course_best_first(monkeypatch):
     assert await cl.search_in_course("publish", "custom-library", top_k=1) == [(PUBLISH_CHUNK, 0.6)]
     assert await cl.search_in_course("publish", "custom-library") == [(PUBLISH_CHUNK, 0.6), (NPM_CHUNK, 0.5)]
     assert await cl.search_in_course("publish", "nope") == []
-    assert fake.calls[0] == (3, 0.0, "publish")  # whole store ranked, then filtered
+    assert fake.calls[0] == (3, 0.0, "publish", "custom-library")  # the store scopes to the course itself
 
 
 def test_player_facts_name_only_this_course():

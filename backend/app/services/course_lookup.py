@@ -109,13 +109,14 @@ async def _transcript_hits(question: str, top_k: int = 8):
 
 
 async def search_in_course(query: str, course_slug: str, top_k: Optional[int] = 8) -> list[tuple[TranscriptChunk, float]]:
-    """Best-first transcript chunks of ONE course. Ranks the whole store, then filters,
+    """Best-first transcript chunks of ONE course. Scores only this course's chunks,
     so another course's chunk can never stand in for this course's. top_k=None means every chunk."""
     if not vector_store.chunks:
         await vector_store.initialize()
     emb = await embedding_service.embed(query)
-    results = vector_store.search(emb, top_k=len(vector_store.chunks), threshold=0.0, query_text=query)
-    return [(r.chunk, r.score) for r in results if r.chunk.course_id == course_slug][:top_k]
+    results = vector_store.search(emb, top_k=len(vector_store.chunks), threshold=0.0, query_text=query,
+                                  course_id=course_slug)
+    return [(r.chunk, r.score) for r in results][:top_k]
 
 
 _TITLE_STOPWORDS = {"the", "and", "for", "with", "what", "are", "how", "does", "why", "our", "your", "that",

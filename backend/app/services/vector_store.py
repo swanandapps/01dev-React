@@ -43,6 +43,22 @@ class InMemoryVectorStore:
     def __init__(self):
         self.chunks: List[TranscriptChunk] = []
         self._embeddings: List[List[float]] = []
+        self._norms: List[float] = []
+        self._course_idx: dict = {}
+        self._indexed_for: tuple = (None, None)
+
+    def _ensure_index(self):
+        """Per-embedding norms and per-course chunk positions, rebuilt only when the
+        chunk/embedding lists are replaced (initialize() or a test swapping them)."""
+        key = (id(self.chunks), id(self._embeddings), len(self.chunks), len(self._embeddings))
+        if self._indexed_for == key:
+            return
+        self._norms = [math.sqrt(sum(x * x for x in e)) for e in self._embeddings]
+        idx: dict = {}
+        for i, c in enumerate(self.chunks):
+            idx.setdefault(c.course_id, []).append(i)
+        self._course_idx = idx
+        self._indexed_for = key
 
     async def initialize(self):
         seed_path = os.path.join(os.path.dirname(__file__), "../data/seed_transcripts.json")
@@ -109,20 +125,31 @@ class InMemoryVectorStore:
         top_k: int = 5,
         threshold: float = 0.25,
         query_text: str = "",
+        course_id: Optional[str] = None,
     ) -> List[SearchResult]:
+        """course_id, when given, scores only that course's chunks (never the rest)."""
         if not embedding_service.use_openai and query_text:
-            return self._keyword_search(query_text, top_k, threshold)
-        return self._embedding_search(query_embedding, top_k, threshold)
+            return self._keyword_search(query_text, top_k, threshold, course_id)
+        return self._embedding_search(query_embedding, top_k, threshold, course_id)
+
+    def _positions(self, course_id: Optional[str]):
+        self._ensure_index()
+        return range(len(self.chunks)) if course_id is None else self._course_idx.get(course_id, [])
 
     def _embedding_search(
         self,
         query_embedding: List[float],
         top_k: int,
         threshold: float,
+        course_id: Optional[str] = None,
     ) -> List[SearchResult]:
+        qn = math.sqrt(sum(x * x for x in query_embedding))
+        pos = self._positions(course_id)  # also (re)builds the norms
+        embs, norms = self._embeddings, self._norms
         scores = [
-            (i, self._cosine_sim(query_embedding, emb))
-            for i, emb in enumerate(self._embeddings)
+            (i, (sum(x * y for x, y in zip(query_embedding, embs[i])) / (qn * norms[i]))
+             if qn and norms[i] else 0.0)
+            for i in pos
         ]
         scores.sort(key=lambda x: x[1], reverse=True)
 
@@ -139,6 +166,7 @@ class InMemoryVectorStore:
         query_text: str,
         top_k: int,
         threshold: float,
+        course_id: Optional[str] = None,
     ) -> List[SearchResult]:
         """BM25-inspired keyword overlap for local (no-API) mode."""
         query_words = {
@@ -151,7 +179,8 @@ class InMemoryVectorStore:
             return []
 
         scored = []
-        for i, chunk in enumerate(self.chunks):
+        for i in self._positions(course_id):
+            chunk = self.chunks[i]
             chunk_tokens = {
                 w.lower().strip(".,?!")
                 for w in chunk.text.split()
