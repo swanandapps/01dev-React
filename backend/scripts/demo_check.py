@@ -44,7 +44,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from app.services import catalog_service, chat_pipeline, enrollment_service  # noqa: E402
-from app.services.course_lookup import ChatScope, LookupCase, course_lookup  # noqa: E402
+from app.services.course_lookup import ChatScope, LookupCase, course_lookup, render_facts  # noqa: E402
 from app.services.store import InMemoryStore, store  # noqa: E402
 
 DEMO_UID = "x94FcfXU7KRrobyOA4UHDukbRoC2"
@@ -225,25 +225,42 @@ async def main() -> None:
             t0, first, text = time.perf_counter(), None, []
             req = chat_pipeline.TurnRequest(question=q, student_id=student, scope=scope, history=[],
                                             memory_slug=scope.course_slug or "all-courses")
+            cards: list[dict] = []
             async for e in chat_pipeline.chat_turn(req):
                 if e["type"] == "token":
                     first = first or time.perf_counter() - t0
                     text.append(e["value"])
+                elif e["type"] == "sources":
+                    cards = e["sources"]  # the client replaces its list per sources event: last one wins
                 elif e["type"] == "error":
                     text.append(f"[error: {e.get('message')}]")
                     failures += 1
             answer = " ".join("".join(text).split())
             # F1/F2: never name a course the student can't be pointed at; owned answers carry the deep link.
             citable = {catalog_service.get(c)["title"] for c in ids if catalog_service.get(c)["launched"]}
-            named = [c["title"] for c in catalog_service.all_courses()
-                     if c["title"] not in citable and c["title"].lower() in answer.lower()]
+            if scope.course_slug and catalog_service.by_slug(scope.course_slug):  # MODE line names the lecture's own course
+                citable.add(catalog_service.by_slug(scope.course_slug)["title"])
+            owns_question = re.search(r"enrolled|my courses|do i have|good at|weak", q, re.I)  # tool answers may name owned courses
+            named = [] if owns_question else [
+                c["title"] for c in catalog_service.all_courses()
+                if c["title"] not in citable and c["title"].lower() in answer.lower()]
             if named:
                 print(f"      X names a course it must not cite: {named}")
                 failures += 1
-            if re.search(r"the01\.dev/course/(?!2\?chapter=\d+&sub=\d+&t=\d+)\S*", answer) or (
-                    re.search(r"the01\.dev/course/\d", answer) and 2 not in ids):
-                print("      X malformed or unowned course link")
-                failures += 1
+            # Every sources card must be launched AND enrolled, with its exact-lecture link.
+            for c in cards:
+                course = catalog_service.by_slug(c.get("course_id", ""))
+                okc = bool(course and course["launched"] and course["id"] in ids)
+                print(f"      card: {c.get('course_id')} · {c.get('lecture_title')} · {c.get('url')}"
+                      f"{'' if okc else '   X LEAK (not launched+enrolled)'}")
+                failures += not okc
+            allowed = render_facts(lk, scope) + " " + " ".join(f"the01.dev{c.get('url') or ''}" for c in cards)
+            for link in re.findall(r"the01\.dev/course/\d+(?:\?chapter=\d+&sub=\d+&t=\d+)?", answer):
+                bad = (not any(link == m for m in re.findall(r"the01\.dev/course/\d+(?:\?chapter=\d+&sub=\d+&t=\d+)?", allowed))
+                       or int(re.search(r"course/(\d+)", link).group(1)) not in ids)
+                if bad:
+                    print(f"      X link not from the facts/cards or not owned: {link}")
+                    failures += 1
             if len(answer) > 600 and "--whole" not in sys.argv:
                 answer = f"{answer[:330]} … {answer[-250:]}"  # keep the end: pointer / citation live there
             print(f"      first token {first or 0:.2f}s · {answer}\n")
