@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, X, Send, Loader2, GraduationCap, User, Minus } from "lucide-react";
+import { Sparkles, X, Send, Loader2, GraduationCap, User, Minus, CirclePlay } from "lucide-react";
 import { streamTutor } from "../../lib/learnApi";
+import type { TutorNavigate } from "../../lib/learnApi";
+import { formatTimestamp } from "../../lib/lectureMatch";
 import { useUserSessionStore } from "../../store/userSession";
 import type { Course } from "../../types/learn";
 
@@ -10,6 +12,7 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   streaming?: boolean;
+  jump?: TutorNavigate; // set only when the player actually jumped there
 }
 const rid = () => Math.random().toString(36).slice(2);
 
@@ -22,11 +25,14 @@ export function PlayerTutor({
   userId,
   lectureTitle,
   onOpenChange,
+  onNavigate,
 }: {
   course: Course;
   userId: string;
   lectureTitle: string;
   onOpenChange?: (open: boolean) => void;
+  /** Jump the player to that lecture + second. Returns false if the lecture isn't in this course (or is locked). */
+  onNavigate?: (nav: TutorNavigate) => boolean;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
@@ -62,6 +68,10 @@ export function PlayerTutor({
       { user_id: userId, course_id: course.course_id, lecture: lectureTitle, messages: history },
       {
         onToken: (t) => patch((m) => ({ ...m, content: m.content + t })),
+        onNavigate: (nav) => {
+          if (nav.course_slug && nav.course_slug !== course.course_id) return; // never another course
+          if (onNavigate?.(nav)) patch((m) => ({ ...m, jump: nav }));
+        },
         onDone: () => {
           patch((m) => ({ ...m, streaming: false }));
           setBusy(false);
@@ -150,6 +160,15 @@ export function PlayerTutor({
                       </p>
                     ) : (
                       <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />
+                    )}
+                    {m.jump && (
+                      <button
+                        onClick={() => m.jump && onNavigate?.(m.jump)}
+                        className="mt-2 inline-flex items-center gap-1.5 text-[12px] text-indigo-300 hover:text-indigo-200 hover:underline underline-offset-2 text-left"
+                      >
+                        <CirclePlay className="w-3.5 h-3.5 flex-shrink-0" />
+                        Jump to {m.jump.lecture_title} · {formatTimestamp(m.jump.start_time)}
+                      </button>
                     )}
                   </div>
                 </div>

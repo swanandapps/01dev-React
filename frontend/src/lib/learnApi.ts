@@ -86,6 +86,13 @@ export function recordLectureView(lectureTitle: string): void {
   }
 }
 
+// The player tutor's "take me to …" (find_moment): sent once, right before "done".
+export interface TutorNavigate {
+  course_slug: string;
+  lecture_title: string;
+  start_time: number;
+}
+
 // Stream a tutor reply over SSE. Resolves when the stream ends.
 export async function streamTutor(
   body: {
@@ -94,7 +101,12 @@ export async function streamTutor(
     messages: { role: string; content: string }[];
     lecture?: string;
   },
-  cb: { onToken: (t: string) => void; onDone: () => void; onError: (e: Error) => void },
+  cb: {
+    onToken: (t: string) => void;
+    onDone: () => void;
+    onError: (e: Error) => void;
+    onNavigate?: (nav: TutorNavigate) => void;
+  },
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/ai/tutor/stream`, {
     method: "POST",
@@ -119,6 +131,13 @@ export async function streamTutor(
         if (!line.startsWith("data:")) continue;
         const msg = JSON.parse(line.slice(5).trim());
         if (msg.type === "token") cb.onToken(msg.value);
+        else if (msg.type === "navigate" && typeof msg.lecture_title === "string") {
+          cb.onNavigate?.({
+            course_slug: String(msg.course_slug ?? ""),
+            lecture_title: msg.lecture_title,
+            start_time: Math.max(0, Number(msg.start_time) || 0),
+          });
+        }
         else if (msg.type === "done") cb.onDone();
         else if (msg.type === "error") cb.onError(new Error(msg.message));
       }

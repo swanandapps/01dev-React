@@ -8,6 +8,8 @@ import { recordLectureView, getCourses } from "../lib/learnApi";
 import { FlaskConical } from "lucide-react";
 import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
+import { resolveJump } from "../lib/lectureMatch";
+import type { TutorNavigate } from "../lib/learnApi";
 import type { Course } from "../types/learn";
 
 export default function CoursePlayerPage() {
@@ -111,6 +113,26 @@ export default function CoursePlayerPage() {
     }
   };
 
+  // The tutor's "take me to …" (spec §3.3): switch to the lecture, seek, play.
+  // Returns false (no jump, no link) for an unknown or locked lecture.
+  const jumpTo = (nav: TutorNavigate): boolean => {
+    const pos = resolveJump(track.courseContent, nav.lecture_title, isLocked);
+    if (!pos) return false;
+    setExpandedChapter(pos.chapter);
+    const v = videoRef.current;
+    if (pos.chapter === activeChapter && pos.sub === activeSub && v) {
+      if (v.readyState >= 1) v.currentTime = nav.start_time; // metadata loaded: seek now
+      else seekTarget.current = nav.start_time;              // else handleCanPlay seeks
+      v.play().catch(() => {});
+    } else {
+      // The [activeChapter, activeSub] effect reloads + plays; handleCanPlay applies the seek.
+      seekTarget.current = nav.start_time;
+      setActiveChapter(pos.chapter);
+      setActiveSub(pos.sub);
+    }
+    return true;
+  };
+
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
       <Header />
@@ -200,7 +222,8 @@ export default function CoursePlayerPage() {
       </div>
 
       {aiCourse && (
-        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title} onOpenChange={setTutorOpen} />
+        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
+                     onOpenChange={setTutorOpen} onNavigate={jumpTo} />
       )}
 
       {aiCourse && isUserLoggedIn && !tutorOpen && (
