@@ -139,7 +139,8 @@ _NOT_FOUND = '{"found": false}'
 async def _locate_moment(what: str, slug: str):
     """(chunk, chunk_score) of a real chunk of the course, or None. Lectures are ranked by
     max(best chunk, title - TITLE_OFFSET); the winner counts as found when its title clears
-    TITLE_THRESHOLD or its best chunk clears MOMENT_THRESHOLD."""
+    TITLE_THRESHOLD or its best chunk clears MOMENT_THRESHOLD, or both clear the lower agreement floors
+    (AGREE_TITLE and AGREE_CHUNK, the same lecture — see course_lookup for the calibration)."""
     rows = [(c, s) for c, s in await cl.search_in_course(what, slug, top_k=None) if c.course_id == slug]
     titles = {cl._norm(t): sc for t, sc in (await cl._title_scores(what, slug)).items()}
     best: dict = {}
@@ -151,7 +152,9 @@ async def _locate_moment(what: str, slug: str):
         return None
     key = max(best, key=lambda k: max(best[k][1], titles.get(k, 0.0) - cl.TITLE_OFFSET))
     chunk, score = best[key]
-    if titles.get(key, 0.0) < cl.TITLE_THRESHOLD and score < cl.MOMENT_THRESHOLD:
+    title = titles.get(key, 0.0)
+    agree = title >= cl.AGREE_TITLE and score >= cl.AGREE_CHUNK
+    if title < cl.TITLE_THRESHOLD and score < cl.MOMENT_THRESHOLD and not agree:
         return None
     if score < cl.MOMENT_LECTURE_FLOOR:
         # No chunk of this lecture matches well: open it from the start, with a range that ends where its first chunk ends.

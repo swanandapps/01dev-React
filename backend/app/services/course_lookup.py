@@ -9,7 +9,7 @@ import asyncio
 import math
 import time
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
@@ -39,8 +39,35 @@ MOMENT_THRESHOLD = 0.46   # find_moment auto-jumps only above this (stricter tha
 # (27 phrasings, Build a Custom Library): 26/27 correct vs 21/27 for "title >= 0.60 wins outright"
 # (generic "npm" pulled 8.1/8.2 titles over 11.1's stronger chunks); demo margin >= 0.042.
 TITLE_OFFSET = 0.10
+# Agreement rule (F4). find_moment only runs on an explicit "take me to ..." request, so a lecture
+# whose title AND best chunk both lean toward the phrase is a safe jump even when neither signal
+# clears its own cutoff ("virtualize the table" -> 5.1: chunk 0.41-0.43 < 0.46). Found when the
+# SAME lecture has title >= AGREE_TITLE and chunk >= AGREE_CHUNK. Measured 2026-10-06 with real
+# embeddings (scripts: scratch qa/f4/cal.py; winner lecture, chunk / title):
+#   positives                                              chunk  title  found by
+#   react-perf   "virtualize the table"          5.1       0.412  0.755  title (>= 0.60), agreement
+#   react-perf   "virtualizing the 5000 row table" 5.1     0.473  0.895  title, chunk
+#   state-mgmt   "undo and redo"                 7.2       0.607  0.753  title, chunk
+#   custom-lib   "npm publish command"           11.1      0.653  0.467  chunk
+#   custom-lib   "commands for publishing the npm library" 11.1  0.689  0.439  chunk
+#   custom-lib   "ES modules"                    10.1      0.474  0.735  title, chunk
+#   prog-lang    "tokenizer loop"                8.3/6.2   0.508/0.452  0.506/0.540  chunk; 6.2 agrees (0.45, 0.54)
+#   negatives (lecture ranked first; none may be found)    chunk  title
+#   custom-lib "event loop" 6.1 0.369/0.218 | "React reconciliation" 6.5 0.436/0.212 |
+#              "SQL join" 6.2 0.190/0.138   | "Kubernetes pods" 12.1 0.285/0.168
+#   react-perf "event loop" 6.1 0.322/0.162 | "SQL join" 2.2 0.222/0.094 | "Kubernetes pods" 5.1 0.248/0.190
+#   (react-perf "React reconciliation" is found at 0.500 by the existing chunk rule: that course is
+#    about re-rendering, so it is not a false positive and not caused by this rule.)
+# Every positive title is >= 0.54 where chunk < 0.46; every negative title is <= 0.22 (worst
+# off-topic title seen anywhere: 0.34, CSS box model). So the title floor sits in the wide gap
+# (0.34..0.54) at 0.50 and the chunk floor at RELATED_THRESHOLD's 0.40.
+AGREE_TITLE = 0.50
+AGREE_CHUNK = 0.40
 MOMENT_LECTURE_FLOOR = 0.30  # if the winning lecture's best chunk is below this, jump to its start (0) instead
 IN_COURSE_K = 3
+CURRENT_PASSAGES = 3         # player: passages of the watched lecture given as context
+CURRENT_CONTEXT_CHARS = 1500  # ... capped in total
+DESCRIPTION_CHARS = 400
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
 TITLE_COOLDOWN = 300.0      # after a failure, use word overlap for this long before retrying
 
@@ -88,6 +115,8 @@ class CourseLookup:
     enrolled_titles: list[str]
     # player only: best chunk of the lecture being watched, as context for "this"/"here"
     current_excerpt: Optional[Hit] = None
+    # player only: the best CURRENT_PASSAGES chunks of that lecture for the question, in time order
+    current_passages: list[Hit] = field(default_factory=list)
 
 
 def _norm(s: str) -> str:
@@ -327,14 +356,16 @@ async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[i
     picked.sort(key=lambda t: t[1], reverse=True)
     hits = [to_hit(c, s, v) for c, s, v in picked[:IN_COURSE_K]]
 
-    current = None
+    current, passages = None, []
     if scope.lecture_title:
-        here = _norm(scope.lecture_title)
         ctx = await search_in_lecture(f"{scope.lecture_title} {question}", slug, scope.lecture_title)
         if ctx:
             c, s = max(ctx, key=lambda t: t[1])
             current = to_hit(c, s)
-    return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles, current_excerpt=current)
+            top = sorted(ctx, key=lambda t: t[1], reverse=True)[:CURRENT_PASSAGES]
+            passages = [to_hit(c, s) for c, s in sorted(top, key=lambda t: t[0].start_time)]
+    return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles, current_excerpt=current,
+                        current_passages=passages)
 
 
 def _has_lecture_excerpt(lookup: CourseLookup, scope: ChatScope) -> bool:
@@ -366,6 +397,10 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
             f"COURSE: {name}. Answer from this course or general knowledge; "
             "never name, recommend or link another course.",
         ]
+        desc = " ".join((watched or {}).get("description", "").split())
+        if desc:  # names the course's running project (Ember, the trading dashboard ...)
+            lines.append("COURSE DESCRIPTION (the course's running project): "
+                         + (desc if len(desc) <= DESCRIPTION_CHARS else desc[:DESCRIPTION_CHARS].rstrip() + "…"))
     else:
         lines = [
             "COURSE FACTS (looked up in the01.dev's course library for this question):",
@@ -377,10 +412,13 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
         lines.append(f'MODE: in-lecture — the student is watching "{scope.lecture_title}"{where} right now.')
-        if scope.in_player and lookup.current_excerpt:
-            c = lookup.current_excerpt
-            lines.append('CURRENT LECTURE excerpt (context for "this"/"here" questions — not evidence that '
-                         f'this lecture answers the question): "{c.text[:600]}" @ {_mmss(c.start_time)}')
+        if scope.in_player and (lookup.current_passages or lookup.current_excerpt):
+            passages = lookup.current_passages or [lookup.current_excerpt]
+            each = CURRENT_CONTEXT_CHARS // len(passages) - 12  # room for the ' "" @ mm:ss ' markers
+            body = " … ".join(f'"{p.text[:each]}" @ {_mmss(p.start_time)}' for p in passages)
+            lines.append('CURRENT LECTURE excerpt (context for "this"/"here" questions and for building '
+                         'examples — not evidence that this lecture answers the question; passages in the '
+                         f'order they are taught): {body}')
         elif course and (scope.in_player or not _has_lecture_excerpt(lookup, scope)):
             lines.extend(_course_outline(course, scope.lecture_title))
     if weak_concepts:

@@ -328,7 +328,29 @@ async def test_find_moment_title_only_lecture_starts_at_zero(monkeypatch):
 
 
 async def test_find_moment_weak_title_and_weak_chunk_is_not_found(monkeypatch):
-    _stub(monkeypatch, titles={LECTURE: 0.55}, course=[(_moment_chunk(), 0.44)])
+    _stub(monkeypatch, titles={LECTURE: 0.45}, course=[(_moment_chunk(), 0.44)])
+    assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
+
+
+async def test_find_moment_title_and_chunk_agreeing_narrowly_is_found(monkeypatch):
+    # "take me to where we virtualize the table": title 0.55 and chunk 0.42 each miss their own
+    # cutoff (0.60 / 0.46) but the SAME lecture clears both agreement floors.
+    _stub(monkeypatch, titles={LECTURE: 0.55}, course=[(_moment_chunk(start=90), 0.42)])
+    content, artifact = await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime())
+    assert artifact == {"course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 90}
+
+
+async def test_find_moment_agreement_needs_both_signals(monkeypatch):
+    for title, chunk in ((0.55, 0.39), (0.49, 0.44)):
+        _stub(monkeypatch, titles={LECTURE: title}, course=[(_moment_chunk(), chunk)])
+        assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
+
+
+async def test_find_moment_agreement_does_not_borrow_across_lectures(monkeypatch):
+    other = "8.1 - The `npm link` command"
+    # title agrees for LECTURE only, chunk agrees for `other` only; other wins on chunk but its title is 0.2
+    _stub(monkeypatch, titles={LECTURE: 0.6 - 0.01, other: 0.2},
+          course=[(_moment_chunk(start=10), 0.30), (_moment_chunk(lecture=other, start=20), 0.43)])
     assert await tutor_agent.find_moment.coroutine(what="x", runtime=_player_runtime()) == ('{"found": false}', None)
 
 

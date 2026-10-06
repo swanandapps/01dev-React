@@ -521,3 +521,46 @@ def test_no_launched_enrolled_course_means_no_enrolled_line_in_the_facts():
     lookup = cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=[])
     facts = cl.render_facts(lookup, cl.ChatScope())
     assert "Student is enrolled in" not in facts and "no courses yet" not in facts
+
+
+# ---- F5: richer CURRENT LECTURE context ---------------------------------------------
+
+async def test_current_lecture_context_holds_top_three_passages_in_time_order(patch_in_course):
+    L = "5.1 - Virtualizing the 5,000-Row Table"
+    rows = [(_chunk("react-perf", "React Performance Patterns", L, f"passage at {t}", start=t), sc)
+            for t, sc in ((300, 0.30), (60, 0.55), (180, 0.50), (120, 0.45), (240, 0.20))]
+    patch_in_course(results=rows)
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title=L, in_player=True)
+    out = await cl.course_lookup("give me an example", "s", scope)
+    assert [h.start_time for h in out.current_passages] == [60, 120, 180]  # top 3 by score, shown in time order
+    assert out.current_excerpt.start_time == 60                            # best one stays the excerpt
+    facts = cl.render_facts(out, scope)
+    line = next(l for l in facts.splitlines() if l.startswith("CURRENT LECTURE"))
+    assert line.index("passage at 60") < line.index("passage at 120") < line.index("passage at 180")
+    assert "passage at 240" not in line and "passage at 300" not in line
+    assert "@ 01:00" in line and "@ 03:00" in line
+
+
+async def test_current_lecture_context_is_capped(patch_in_course):
+    L = "5.1 - Virtualizing the 5,000-Row Table"
+    rows = [(_chunk("react-perf", "React Performance Patterns", L, "x" * 2000, start=t * 60), 0.5 - t / 100)
+            for t in range(3)]
+    patch_in_course(results=rows)
+    scope = cl.ChatScope(course_slug="react-perf", lecture_title=L, in_player=True)
+    out = await cl.course_lookup("explain this", "s", scope)
+    line = next(l for l in cl.render_facts(out, scope).splitlines() if l.startswith("CURRENT LECTURE"))
+    assert line.count("x") <= 1500 and line.count("x") > 900
+
+
+def test_player_facts_carry_the_course_description_line():
+    scope = cl.ChatScope(course_slug="programming-language", lecture_title="6.2 - Writing the Tokenizer Loop",
+                         in_player=True)
+    facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
+    desc = next(l for l in facts.splitlines() if l.startswith("COURSE DESCRIPTION"))
+    assert "Ember" in desc and len(desc) <= 500
+
+
+def test_ask_facts_have_no_course_description_line():
+    scope = cl.ChatScope(course_slug="programming-language")
+    facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=[]), scope)
+    assert "COURSE DESCRIPTION" not in facts

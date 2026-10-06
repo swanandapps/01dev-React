@@ -87,3 +87,9 @@ def test_prompt_enrolled_case_asks_for_the_deep_link_and_no_match_names_no_cours
     assert "the01.dev/course/2?chapter=7&sub=0&t=87" in text
     assert "Name no course, lecture, link or time" in text
     assert "You're not enrolled in it yet" not in text
+
+
+def test_prompt_builds_examples_from_the_lecture_and_the_running_project():
+    text = " ".join(loader.read_grounding_prompt().split())
+    assert "running project" in text and "COURSE DESCRIPTION" in text
+    assert "don't invent a different example domain" in text.lower()
