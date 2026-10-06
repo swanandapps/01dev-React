@@ -46,3 +46,10 @@ def test_prompt_has_the_in_course_cases_and_tone_matching():
     assert "match the student's tone, vocabulary and level from their messages and STUDENT MEMORY" in text
     assert "never name, recommend or link another course" in text.lower()
     assert "is about the current lecture whatever the in_course case" in " ".join(text.lower().split())
+
+
+def test_prompt_in_course_citation_and_length_rules():
+    text = " ".join(loader.read_grounding_prompt().lower().split())
+    assert "never cite a lecture or time that is not listed under matches" in text
+    assert "weak matches are only the closest moments" in text
+    assert "a question that isn't about the current lecture gets a full answer" in text

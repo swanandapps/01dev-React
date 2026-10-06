@@ -1,5 +1,6 @@
-"""Measure in-course (player) transcript scores on labelled questions for Build a Custom
-Library and suggest course_lookup.RELATED_THRESHOLD (spec §3.2). Needs the real
+"""Measure in-course (player) scores on labelled questions for Build a Custom Library:
+bare-question chunk score, the same question prefixed with the lecture being watched (shows the
+inflation), and the lecture-title score. Check RELATED / TRANSCRIPT / TITLE thresholds. Needs the real
 transcripts in seed_transcripts.json.
 
 Run from backend/ (blanks DATABASE_URL itself — in-memory store, never production):
@@ -24,8 +25,9 @@ if not os.getenv("OPENAI_API_KEY"):
 from app.services import course_lookup as cl  # noqa: E402
 
 SLUG = "custom-library"
-# (question, label): "match" = a lecture of this course answers it; "related" = a lecture
-# touches on it; "none" = nothing in this course is about it.
+WATCHING = "8.1 - The `npm link` command"
+# (question, label): "match" = a lecture of this course answers it; "none" = nothing in this
+# course is about it. (closure / semver / symlink were dropped: no transcript mentions them.)
 LABELLED = [
     ("how do I publish my package with np", "match"),
     ("what does npm link do", "match"),
@@ -33,44 +35,46 @@ LABELLED = [
     ("how do I attach my library to the window object", "match"),
     ("what are ES modules", "match"),
     ("how do regular expressions help build the library methods", "match"),
-    ("what is a closure in javascript", "related"),
-    ("how does semantic versioning decide the next version number", "related"),
-    ("what is a symlink", "related"),
-    ("how do I write unit tests with jest", "related"),
     ("how do I bake sourdough bread", "none"),
     ("how does React reconciliation work", "none"),
     ("what is a SQL join", "none"),
     ("how does kubernetes schedule pods", "none"),
     ("what is the CSS box model", "none"),
+    ("how does the event loop work", "none"),
 ]
-UNLABELLED = ["how does the event loop work", "give me an example", "take me to where you publish the npm package"]
+UNLABELLED = ["give me an example", "take me to ES modules", "take me to where you publish the npm package"]
 
 
-async def best(q: str):
+async def bare(q: str):
     rows = await cl.search_in_course(q, SLUG, top_k=1)
-    return (rows[0][1], rows[0][0].lecture_title, rows[0][0].start_time) if rows else (0.0, "-", 0)
+    return (rows[0][1], rows[0][0].lecture_title) if rows else (0.0, "-")
+
+
+async def prefixed(q: str, lecture: str):
+    rows = await cl.search_in_course(f"{lecture} {q}", SLUG, top_k=1)
+    return (rows[0][1], rows[0][0].lecture_title) if rows else (0.0, "-")
+
+
+async def title(q: str):
+    sc = await cl._title_scores(q, SLUG)
+    t = max(sc, key=sc.get)
+    return sc[t], t
 
 
 async def main() -> None:
-    scored = []
+    bare_by = {"match": [], "none": []}
+    title_by = {"match": [], "none": []}
+    print(f"{'label':8} {'bare':>5} {'pref@8.1':>8} {'title':>5}  best bare lecture | best title lecture | question")
     for q, label in LABELLED + [(q, "?") for q in UNLABELLED]:
-        s, title, t = await best(q)
+        (b, bt), (p, pt), (t, tt) = await bare(q), await prefixed(q, WATCHING), await title(q)
         if label != "?":
-            scored.append((label, s))
-        print(f"{label:8} {s:.3f}  {title[:44]:44} {t // 60:02d}:{t % 60:02d}  {q}")
-    none_max = max(s for l, s in scored if l == "none")
-    related_min = min(s for l, s in scored if l == "related")
-    match_min = min(s for l, s in scored if l == "match")
-    print(f"\nnone max {none_max:.3f} | related min {related_min:.3f} | match min {match_min:.3f} "
-          f"| TRANSCRIPT_THRESHOLD {cl.TRANSCRIPT_THRESHOLD} | current RELATED_THRESHOLD {cl.RELATED_THRESHOLD}")
-    cap = round(cl.TRANSCRIPT_THRESHOLD - 0.02, 2)
-    if related_min > none_max:
-        pick = round((none_max + related_min) / 2, 2)
-        how = "midpoint of none-max and related-min"
-    else:
-        pick = round(none_max + 0.01, 2)
-        how = "no clean split — just above the best 'none'"
-    print(f"suggested RELATED_THRESHOLD = {min(pick, cap):.2f} ({how}; capped at {cap})")
+            bare_by[label].append(b)
+            title_by[label].append(t)
+        print(f"{label:8} {b:5.3f} {p:8.3f} {t:5.3f}  {bt[:30]:30} | {tt[:30]:30} | {q}")
+    print(f"\nbare: none max {max(bare_by['none']):.3f} | match min {min(bare_by['match']):.3f}"
+          f" | TRANSCRIPT_THRESHOLD {cl.TRANSCRIPT_THRESHOLD} | RELATED_THRESHOLD {cl.RELATED_THRESHOLD}")
+    print(f"title: none max {max(title_by['none']):.3f} | match min {min(title_by['match']):.3f}"
+          f" | TITLE_THRESHOLD {cl.TITLE_THRESHOLD}")
 
 
 asyncio.run(main())

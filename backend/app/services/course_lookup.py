@@ -5,6 +5,8 @@ skipped a search.
 Searches lecture transcripts and the catalog index, labels each hit enrolled /
 not enrolled, and decides one of three cases the grounding prompt has a rule for.
 """
+import math
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -21,12 +23,16 @@ from app.services.vector_store import vector_store
 TRANSCRIPT_THRESHOLD = 0.54
 CATALOG_THRESHOLD = 0.34
 MAX_HITS = 5
-# Player only (spec §3.2): below TRANSCRIPT_THRESHOLD but at least this → "this course
-# touches on it". calibrated 2026-10-06 on 15 labelled custom-library questions
-# (scripts/calibrate_in_course.py): none max 0.45, related min 0.39 (no clean split) →
-# 0.46, just above the best "none": a missed "related" falls back to a plain general answer,
-# a false one would cite an unrelated lecture.
-RELATED_THRESHOLD = 0.46
+# Player only (spec §3.2 as amended by amendment-relevance.md). Relevance is scored on the
+# BARE question (a lecture-title prefix makes the title dominate and inflates every score).
+# STRONG = bare chunk score >= TRANSCRIPT_THRESHOLD, or the lecture's title matches the
+# question (>= TITLE_THRESHOLD). WEAK = RELATED_THRESHOLD <= score < TRANSCRIPT_THRESHOLD.
+# Measured 2026-10-06 on the 340 custom-library chunks (scripts/calibrate_in_course.py):
+# real matches as low as 0.42 (ES modules), off-topic up to 0.45 (React reconciliation), so no
+# single cutoff separates them; the title signal separates them (true >= 0.64, off-topic <= 0.34).
+RELATED_THRESHOLD = 0.40
+TITLE_THRESHOLD = 0.60
+IN_COURSE_K = 3
 
 
 class LookupCase(str, Enum):
@@ -62,6 +68,7 @@ class Hit:
     start_time: int = 0
     end_time: int = 0
     url: Optional[str] = None
+    via_title: bool = False        # player: surfaced because the lecture title matched the question
 
 
 @dataclass
@@ -69,6 +76,8 @@ class CourseLookup:
     case: LookupCase
     hits: list[Hit]
     enrolled_titles: list[str]
+    # player only: best chunk of the lecture being watched, as context for "this"/"here"
+    current_excerpt: Optional[Hit] = None
 
 
 def _norm(s: str) -> str:
@@ -97,6 +106,70 @@ async def search_in_course(query: str, course_slug: str, top_k: int = 8) -> list
     emb = await embedding_service.embed(query)
     results = vector_store.search(emb, top_k=len(vector_store.chunks), threshold=0.0, query_text=query)
     return [(r.chunk, r.score) for r in results if r.chunk.course_id == course_slug][:top_k]
+
+
+_TITLE_STOPWORDS = {"the", "and", "for", "with", "what", "are", "how", "does", "why", "our", "your", "that",
+                    "this", "from", "into", "using", "use", "can", "you", "its", "was", "were", "who", "when"}
+_title_cache: dict[str, tuple[list[str], list[list[float]]]] = {}
+
+
+def _bare_title(title: str) -> str:
+    """"8.1 - The `npm link` command" -> "The npm link command"."""
+    return re.sub(r"^\s*\d+(\.\d+)*\s*-\s*", "", title).replace("`", "").strip()
+
+
+def _lecture_titles(slug: str) -> list[str]:
+    course = catalog_service.by_slug(slug)
+    return [t for ch in (course or {}).get("chapters", []) for t in ch.get("subchapters", [])]
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
+    return sum(x * y for x, y in zip(a, b)) / (na * nb) if na and nb else 0.0
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z0-9]+", text.casefold()) if len(w) > 2 and w not in _TITLE_STOPWORDS}
+
+
+def _overlap_title_scores(question: str, titles: list[str]) -> dict[str, float]:
+    """No-embedding fallback: 1.0 when at least half of a title's content words are in the
+    question, else 0.0 (so the TITLE_THRESHOLD test still reads the same)."""
+    q = _words(question)
+    out = {}
+    for t in titles:
+        w = _words(_bare_title(t))
+        out[t] = 1.0 if w and len(w & q) / len(w) >= 0.5 else 0.0
+    return out
+
+
+async def _embed_titles(slug: str, titles: list[str]) -> list[list[float]]:
+    """One batched embed call per course, cached for the process."""
+    cached = _title_cache.get(slug)
+    if cached and cached[0] == titles:
+        return cached[1]
+    texts = [_bare_title(t) for t in titles]
+    resp = await embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts)
+    vecs = [d.embedding for d in resp.data]
+    _title_cache[slug] = (titles, vecs)
+    return vecs
+
+
+async def _title_scores(question: str, slug: str) -> dict[str, float]:
+    """Bare question vs each of the course's lecture titles (numbering and backticks stripped).
+    Keys are the titles exactly as the course lists them. Falls back to word overlap when
+    embeddings are unavailable. Reused by Task D's find_moment."""
+    titles = _lecture_titles(slug)
+    if not titles:
+        return {}
+    if embedding_service.use_openai and embedding_service.client:
+        try:
+            vecs = await _embed_titles(slug, titles)
+            q = await embedding_service.embed(question)
+            return {t: _cosine(q, v) for t, v in zip(titles, vecs)}
+        except Exception as e:  # noqa: BLE001 — title signal is best-effort
+            print(f"[course_lookup] title embedding failed, using word overlap: {e!r}")
+    return _overlap_title_scores(question, titles)
 
 
 async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
@@ -160,31 +233,55 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles)
 
 
+def _best_per_lecture(scored) -> dict[str, tuple[TranscriptChunk, float]]:
+    best: dict[str, tuple[TranscriptChunk, float]] = {}
+    for c, sc in scored:
+        k = _norm(c.lecture_title)
+        if k not in best or sc > best[k][1]:
+            best[k] = (c, sc)
+    return best
+
+
 async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int],
                             enrolled_titles: list[str]) -> CourseLookup:
-    """Player tutor (spec §3.2): this course's transcripts only — no catalog search, no
-    other course. The case comes from the best in-course score."""
+    """Player tutor (spec §3.2 + amendment-relevance.md): this course's transcripts only.
+    Relevance comes from the BARE question; the lecture being watched is context, not evidence."""
     slug = scope.course_slug or ""
     course = catalog_service.by_slug(slug)
     cid = course["id"] if course else None
-    # The lecture title still steers the transcript search (4b02cc1).
-    transcript_q = f"{scope.lecture_title} {question}" if scope.lecture_title else question
-    scored = [(c, s) for c, s in await search_in_course(transcript_q, slug) if c.course_id == slug]
-    best = max((s for _, s in scored), default=0.0)
-    if best >= TRANSCRIPT_THRESHOLD:
-        case, floor = LookupCase.IN_COURSE_MATCH, TRANSCRIPT_THRESHOLD
-    elif best >= RELATED_THRESHOLD:
-        case, floor = LookupCase.IN_COURSE_RELATED, RELATED_THRESHOLD
+
+    def to_hit(c: TranscriptChunk, s: float, via_title: bool = False) -> Hit:
+        return Hit(source="transcript", course_id=cid, course_slug=slug, course_title=c.course_title,
+                   title=c.lecture_title, score=s, enrolled=cid in enrolled_ids, text=c.text,
+                   lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
+                   url=course["url"] if course else None, via_title=via_title)
+
+    scored = [(c, s) for c, s in await search_in_course(question, slug, top_k=1000) if c.course_id == slug]
+    best = _best_per_lecture(scored)
+    titled = {_norm(t) for t, sc in (await _title_scores(question, slug)).items() if sc >= TITLE_THRESHOLD}
+
+    strong = [(c, s, k in titled and s < TRANSCRIPT_THRESHOLD) for k, (c, s) in best.items()
+              if s >= TRANSCRIPT_THRESHOLD or k in titled]
+    weak = [(c, s, False) for k, (c, s) in best.items()
+            if RELATED_THRESHOLD <= s < TRANSCRIPT_THRESHOLD and k not in titled]
+    if strong:
+        case, picked = LookupCase.IN_COURSE_MATCH, strong
+    elif weak:
+        case, picked = LookupCase.IN_COURSE_RELATED, weak
     else:
-        return CourseLookup(case=LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=enrolled_titles)
-    hits = [Hit(source="transcript", course_id=cid, course_slug=slug, course_title=c.course_title,
-                title=c.lecture_title, score=s, enrolled=cid in enrolled_ids, text=c.text,
-                lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
-                url=course["url"] if course else None)
-            for c, s in scored if s >= floor]
-    here = _norm(scope.lecture_title or "")
-    hits.sort(key=lambda h: (bool(here) and _norm(h.title) == here, h.score), reverse=True)
-    return CourseLookup(case=case, hits=hits[:MAX_HITS], enrolled_titles=enrolled_titles)
+        case, picked = LookupCase.IN_COURSE_NONE, []
+    picked.sort(key=lambda t: t[1], reverse=True)
+    hits = [to_hit(c, s, v) for c, s, v in picked[:IN_COURSE_K]]
+
+    current = None
+    if scope.lecture_title:
+        here = _norm(scope.lecture_title)
+        ctx = [(c, s) for c, s in await search_in_course(f"{scope.lecture_title} {question}", slug, top_k=1000)
+               if c.course_id == slug and _norm(c.lecture_title) == here]
+        if ctx:
+            c, s = max(ctx, key=lambda t: t[1])
+            current = to_hit(c, s)
+    return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles, current_excerpt=current)
 
 
 def _has_lecture_excerpt(lookup: CourseLookup, scope: ChatScope) -> bool:
@@ -226,7 +323,11 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
         lines.append(f'MODE: in-lecture — the student is watching "{scope.lecture_title}"{where} right now.')
-        if course and not _has_lecture_excerpt(lookup, scope):
+        if scope.in_player and lookup.current_excerpt:
+            c = lookup.current_excerpt
+            lines.append('CURRENT LECTURE excerpt (context for "this"/"here" questions — not evidence that '
+                         f'this lecture answers the question): "{c.text[:600]}" @ {_mmss(c.start_time)}')
+        elif course and (scope.in_player or not _has_lecture_excerpt(lookup, scope)):
             lines.extend(_course_outline(course, scope.lecture_title))
     if weak_concepts:
         lines.append("Weak concepts in this course: " + ", ".join(weak_concepts))
@@ -234,7 +335,10 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         lines.append("Matches:")
         for i, h in enumerate(lookup.hits, 1):
             if scope.in_player:
-                lines.append(f"{i}. [THIS COURSE] {h.title} @ {_mmss(h.start_time)} (score {h.score:.2f})")
+                band = "STRONG" if h.via_title or h.score >= TRANSCRIPT_THRESHOLD else "WEAK"
+                tag = ", title match" if h.via_title else ""
+                lines.append(f"{i}. [THIS COURSE · {band}] {h.title} @ {_mmss(h.start_time)} "
+                             f"(score {h.score:.2f}{tag})")
             else:
                 label = "ENROLLED" if h.enrolled else "NOT ENROLLED"
                 where = f"{h.title} @ {_mmss(h.start_time)}" if h.source == "transcript" else h.title

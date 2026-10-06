@@ -209,14 +209,22 @@ def test_chat_scope_in_player_defaults_off_and_positional_args_still_work():
 def patch_in_course(monkeypatch, patch_sources):
     monkeypatch.setattr(cl, "TRANSCRIPT_THRESHOLD", 0.54)
     monkeypatch.setattr(cl, "RELATED_THRESHOLD", 0.40)
-    seen = {}
+    seen = {"queries": []}
 
-    def apply(results=(), enrolled_ids=()):
+    def apply(results=(), enrolled_ids=(), titles=None):
         patch_sources(enrolled_ids=enrolled_ids)
 
         async def fake_search(query, course_slug, top_k=8):
-            seen["query"], seen["slug"] = query, course_slug
+            seen["queries"].append(query)
+            seen["slug"] = course_slug
+            if callable(results):
+                return list(results(query))
             return list(results)
+
+        async def fake_titles(question, slug):
+            return dict(titles or {})
+
+        monkeypatch.setattr(cl, "_title_scores", fake_titles)
 
         async def no_catalog(query, top_k=5):
             raise AssertionError("the player tutor must not search the catalog")
@@ -234,7 +242,9 @@ def patch_in_course(monkeypatch, patch_sources):
 async def test_player_searches_only_this_course_with_the_lecture_title_and_skips_the_catalog(patch_in_course):
     seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.61)])
     out = await cl.course_lookup("how do I publish", "s", PLAYER)
-    assert seen == {"query": "8.1 - The `npm link` command how do I publish", "slug": "custom-library"}
+    # relevance sees the bare question; the current-lecture context sees the prefixed one
+    assert seen["queries"] == ["how do I publish", "8.1 - The `npm link` command how do I publish"]
+    assert seen["slug"] == "custom-library"
     assert out.case == cl.LookupCase.IN_COURSE_MATCH
     assert [h.course_slug for h in out.hits] == ["custom-library"]
     assert out.hits[0].title == "11.1 - Publishing using `np`" and out.hits[0].start_time == 200
@@ -273,12 +283,60 @@ async def test_player_drops_any_other_course_chunk_even_if_search_returns_one(pa
     assert out.case == cl.LookupCase.IN_COURSE_RELATED
 
 
-async def test_player_ranks_the_current_lecture_first_among_matches(patch_in_course):
+async def test_player_does_not_sort_the_current_lecture_first(patch_in_course):
     here = _chunk("custom-library", "Build a Custom Library", "8.1 - The npm link command", "npm link", start=30)
     patch_in_course(results=[(PUBLISH_CHUNK, 0.70), (here, 0.58)])
     out = await cl.course_lookup("what does this mean", "s", PLAYER)
-    assert out.hits[0].title == "8.1 - The npm link command"
+    assert [h.title for h in out.hits] == ["11.1 - Publishing using `np`", "8.1 - The npm link command"]
     assert out.case == cl.LookupCase.IN_COURSE_MATCH
+
+
+async def test_title_match_lifts_a_weak_chunk_to_match_citing_that_lecture(patch_in_course):
+    es = _chunk("custom-library", "Build a Custom Library", "10.1 - What Are ES Modules", "ECMAScript modules", start=251)
+    patch_in_course(results=[(es, 0.42)], titles={"10.1 - What Are ES Modules": 0.95, "8.1 - x": 0.2})
+    out = await cl.course_lookup("what are ES modules", "s", PLAYER)
+    assert out.case == cl.LookupCase.IN_COURSE_MATCH
+    assert [(h.title, h.via_title) for h in out.hits] == [("10.1 - What Are ES Modules", True)]
+    facts = cl.render_facts(out, PLAYER)
+    assert "[THIS COURSE · STRONG] 10.1 - What Are ES Modules @ 04:11 (score 0.42, title match)" in facts
+
+
+async def test_off_topic_is_none_even_when_the_prefixed_search_scores_high(patch_in_course):
+    here = _chunk("custom-library", "Build a Custom Library", "8.1 - The `npm link` command", "npm link", start=30)
+    # the title prefix inflates the score (0.61); the bare question does not (0.20)
+    patch_in_course(results=lambda q: [(here, 0.61 if q.startswith("8.1") else 0.20)])
+    out = await cl.course_lookup("how does the event loop work", "s", PLAYER)
+    assert out.case == cl.LookupCase.IN_COURSE_NONE and out.hits == []
+    assert out.current_excerpt is not None and out.current_excerpt.title == "8.1 - The `npm link` command"
+    facts = cl.render_facts(out, PLAYER)
+    assert 'CURRENT LECTURE excerpt (context for "this"/"here" questions' in facts and "npm link" in facts
+    assert "Matches:" not in facts
+
+
+async def test_weak_band_is_related_with_a_weak_label(patch_in_course):
+    patch_in_course(results=[(PUBLISH_CHUNK, 0.45)])
+    out = await cl.course_lookup("q", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
+    assert out.case == cl.LookupCase.IN_COURSE_RELATED
+    assert "[THIS COURSE · WEAK] 11.1 - Publishing using `np` @ 03:20 (score 0.45)" in cl.render_facts(
+        out, cl.ChatScope(course_slug="custom-library", in_player=True))
+
+
+async def test_one_best_chunk_per_lecture_and_at_most_three(patch_in_course):
+    rows = [(_chunk("custom-library", "B", f"{i}.1 - L{i}", "t", start=i), 0.6 - i * 0.01) for i in range(5)]
+    rows.append((_chunk("custom-library", "B", "0.1 - L0", "dup", start=999), 0.5))
+    patch_in_course(results=rows)
+    out = await cl.course_lookup("q", "s", cl.ChatScope(course_slug="custom-library", in_player=True))
+    assert [h.title for h in out.hits] == ["0.1 - L0", "1.1 - L1", "2.1 - L2"] and out.hits[0].start_time == 0
+
+
+async def test_title_scores_fall_back_to_word_overlap_without_embeddings(monkeypatch):
+    monkeypatch.setattr(cl.embedding_service, "use_openai", False)
+    monkeypatch.setattr(cl.catalog_service, "by_slug", lambda slug: {"chapters": [
+        {"name": "c", "subchapters": ["10.1 - What Are ES Modules", "8.1 - The `npm link` command"]}]})
+    scores = await cl._title_scores("what are ES modules", "custom-library")
+    assert scores["10.1 - What Are ES Modules"] >= cl.TITLE_THRESHOLD
+    assert scores["8.1 - The `npm link` command"] < cl.TITLE_THRESHOLD
+    assert (await cl._title_scores("how does the event loop work", "custom-library"))["10.1 - What Are ES Modules"] == 0.0
 
 
 async def test_player_with_no_lecture_selected_searches_the_bare_question_in_this_course(patch_in_course):
@@ -287,7 +345,7 @@ async def test_player_with_no_lecture_selected_searches_the_bare_question_in_thi
     seen = patch_in_course(results=[(PUBLISH_CHUNK, 0.47)])
     scope = cl.ChatScope(course_slug="custom-library", in_player=True)
     out = await cl.course_lookup("how do I publish", "s", scope)
-    assert seen == {"query": "how do I publish", "slug": "custom-library"}
+    assert seen["queries"] == ["how do I publish"] and seen["slug"] == "custom-library"
     assert out.case == cl.LookupCase.IN_COURSE_RELATED
     assert "MODE: in-lecture" not in cl.render_facts(out, scope)
 
@@ -335,7 +393,7 @@ def test_player_facts_name_only_this_course():
                              enrolled_titles=["JavaScript Deep Dive", "React Performance Patterns"])
     facts = cl.render_facts(lookup, PLAYER)
     assert "CASE: IN_COURSE_RELATED" in facts
-    assert "[THIS COURSE] 11.1 - Publishing using `np` @ 03:20" in facts
+    assert "[THIS COURSE · WEAK] 11.1 - Publishing using `np` @ 03:20" in facts
     assert "JavaScript Deep Dive" not in facts and "React Performance Patterns" not in facts
     assert "NOT ENROLLED" not in facts and "enrolled in" not in facts.lower()
     assert "never name, recommend or link another course" in facts
