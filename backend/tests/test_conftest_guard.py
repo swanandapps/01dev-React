@@ -21,3 +21,13 @@ async def test_guard_blocks_direct_chat_completions_create(_no_real_db_or_embedd
     leaks = _no_real_db_or_embeddings
     assert len(leaks) == 1
     leaks.clear()
+
+
+def test_guard_blocks_sync_chat_completions_create(_no_real_db_or_embeddings):
+    from openai import OpenAI
+    client = OpenAI(api_key="sk-test")
+    with pytest.raises(AssertionError, match="chat completions \\(sync\\)"):
+        client.chat.completions.create(model="gpt-4.1-mini", messages=[{"role": "user", "content": "x"}])
+    leaks = _no_real_db_or_embeddings
+    assert len(leaks) == 1
+    leaks.clear()

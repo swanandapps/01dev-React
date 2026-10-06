@@ -30,8 +30,14 @@ def _no_real_db_or_embeddings(monkeypatch):
         leaks.append("openai AsyncCompletions.create (real OpenAI chat completions, e.g. rerank/understand)")
         raise AssertionError("test reached the real OpenAI chat completions: stub the module's _complete")
 
+    def _blocked_sync_chat_completions(self, *a, **k):
+        leaks.append("openai Completions.create (sync client, e.g. lab generators/llm)")
+        raise AssertionError("test reached the real OpenAI chat completions (sync): stub the module's LLM call")
+
     monkeypatch.setattr("openai.resources.chat.completions.completions.AsyncCompletions.create",
                         _blocked_chat_completions)
+    monkeypatch.setattr("openai.resources.chat.completions.completions.Completions.create",
+                        _blocked_sync_chat_completions)
     monkeypatch.setattr(db, "get_pool", _blocked_pool)
     monkeypatch.setattr("openai.resources.embeddings.AsyncEmbeddings.create", _blocked_embeddings_create)
     monkeypatch.setattr(type(embeddings.embedding_service), "_openai_embed", _blocked_openai)

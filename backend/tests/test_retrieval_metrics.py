@@ -79,3 +79,21 @@ def test_markdown_and_compare():
                                                                         "recall@1": 1.0}, "per_course": {}}}}
     diff = m.compare(run, better)
     assert "| recall@1 | 0.500 | 1.000 | +0.500 |" in diff
+
+
+def test_compare_per_course_union_and_one_sided_modes():
+    def run(label, courses, modes=("player",), r1=0.5):
+        ov = {**m.summarize(_rows(), _preds()), "recall@1": r1}
+        return {"label": label, "system": "s", "created": "c", "predictions": [],
+                "modes": {md: {"overall": ov, "per_course": {c: {"recall@1": r1, "latency_p95_ms": 500.0}
+                                                              for c in courses}} for md in modes}}
+    base = run("A", ["only-base", "both"], modes=("player", "ask"))
+    new = run("B", ["only-new", "both"], r1=1.0)
+    d = m.compare(base, new)
+    assert "only one run" in d and "ask" in d
+    assert "### player / only-base" in d and "### player / only-new" in d
+    assert "| recall@1 | 0.500 | — | — |" in d      # course missing on the new side
+    assert "| recall@1 | — | 1.000 | — |" in d      # course missing on the base side
+    assert "| recall@1 | 0.500 | 1.000 | +0.500 |" in d
+    assert "| latency_p95_ms | 500 | 500 | +0 |" in d
+    assert d.endswith("\n")

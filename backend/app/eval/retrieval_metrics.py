@@ -3,7 +3,8 @@
 A Row is one labelled question; a Prediction is what a system did with it in one mode
 ("player" = scope is the row's course, "ask" = scope is every course). Navigate rows are scored
 only by navigate accuracy; explain rows by recall/MRR (positives), coverage accuracy (all) and
-false-cite rate (negatives). A PARTIAL outcome names a lecture, so on a negative it is a false cite.
+false-cite rate (negatives). Coverage accuracy treats PARTIAL as not-covered; false-cite
+counts PARTIAL as a cite. A PARTIAL outcome names a lecture, so on a negative it is a false cite.
 """
 import math
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from typing import Iterable, Optional
 COVERED, PARTIAL, NOT_COVERED = "covered", "partial", "not_covered"
 METRIC_KEYS = ["recall@1", "recall@5", "mrr", "coverage_accuracy", "cite_accuracy", "partial_rate_pos",
                "false_cite_rate", "navigate_accuracy", "fallback_rate", "latency_p50_ms", "latency_p95_ms"]
+PER_COURSE_KEYS = ["recall@1", "recall@5", "mrr", "coverage_accuracy", "false_cite_rate", "navigate_accuracy"]
 
 
 @dataclass
@@ -98,8 +100,16 @@ def per_course(rows: dict[str, Row], preds: list[Prediction]) -> dict[str, dict]
     return {slug: summarize(rows, ps) for slug, ps in sorted(groups.items())}
 
 
-def _fmt(v) -> str:
-    return "—" if v is None else (f"{v:.0f}" if isinstance(v, float) and v > 1.0 else f"{v:.3f}")
+def _fmt(v, key: str = "") -> str:
+    if v is None:
+        return "—"
+    return f"{v:.0f}" if key.endswith("_ms") else f"{v:.3f}"
+
+
+def _delta(bv, nv, key: str = "") -> str:
+    if bv is None or nv is None:
+        return "—"
+    return f"{nv - bv:+.0f}" if key.endswith("_ms") else f"{nv - bv:+.3f}"
 
 
 def render_markdown(run: dict) -> str:
@@ -108,27 +118,36 @@ def render_markdown(run: dict) -> str:
     for mode, data in run["modes"].items():
         o = data["overall"]
         out += [f"## Mode: {mode}", "", f"Counts: {o['counts']}", "", "| metric | value |", "|---|---|"]
-        out += [f"| {k} | {_fmt(o.get(k))} |" for k in METRIC_KEYS]
+        out += [f"| {k} | {_fmt(o.get(k), k)} |" for k in METRIC_KEYS]
         if data.get("per_course"):
-            keys = ["recall@1", "recall@5", "mrr", "coverage_accuracy", "false_cite_rate", "navigate_accuracy"]
+            keys = PER_COURSE_KEYS
             out += ["", "| course | " + " | ".join(keys) + " |", "|---" * (len(keys) + 1) + "|"]
             for slug, s in data["per_course"].items():
-                out.append(f"| {slug} | " + " | ".join(_fmt(s.get(k)) for k in keys) + " |")
+                out.append(f"| {slug} | " + " | ".join(_fmt(s.get(k), k) for k in keys) + " |")
         out.append("")
     return "\n".join(out)
 
 
 def compare(base: dict, new: dict) -> str:
     out = [f"# Delta: {base['label']} → {new['label']}", ""]
+    only = sorted(set(base["modes"]) ^ set(new["modes"]))
+    if only:
+        out += [f"Note: mode(s) present in only one run, not compared: {', '.join(only)}", ""]
+    hdr = f"| metric | {base['label']} | {new['label']} | delta |"
     for mode in new["modes"]:
         if mode not in base["modes"]:
             continue
         b, n = base["modes"][mode]["overall"], new["modes"][mode]["overall"]
-        out += [f"## Mode: {mode}", "", f"| metric | {base['label']} | {new['label']} | delta |", "|---|---|---|---|"]
+        out += [f"## Mode: {mode}", "", hdr, "|---|---|---|---|"]
         for k in METRIC_KEYS:
             bv, nv = b.get(k), n.get(k)
-            delta = "—" if bv is None or nv is None else f"{nv - bv:+.3f}"
-            fmt = (lambda v: "—" if v is None else f"{v:.3f}")
-            out.append(f"| {k} | {fmt(bv)} | {fmt(nv)} | {delta} |")
+            out.append(f"| {k} | {_fmt(bv, k)} | {_fmt(nv, k)} | {_delta(bv, nv, k)} |")
         out.append("")
-    return "\n".join(out)
+        bpc, npc = base["modes"][mode].get("per_course") or {}, new["modes"][mode].get("per_course") or {}
+        for slug in sorted(set(bpc) | set(npc)):
+            out += [f"### {mode} / {slug}", "", hdr, "|---|---|---|---|"]
+            for k in PER_COURSE_KEYS:
+                bv, nv = bpc.get(slug, {}).get(k), npc.get(slug, {}).get(k)
+                out.append(f"| {k} | {_fmt(bv, k)} | {_fmt(nv, k)} | {_delta(bv, nv, k)} |")
+            out.append("")
+    return "\n".join(out) + "\n"
