@@ -229,6 +229,14 @@ def probe_duration(path: Path) -> float:
     return float(out.stdout.strip())
 
 
+def check_audio_complete(audio: Path, source_duration: float, tolerance_s: float = 5.0) -> None:
+    """ffmpeg can exit 0 after a dropped connection; a short mp3 must never be cached."""
+    got = probe_duration(audio)
+    if abs(got - source_duration) > tolerance_s:
+        audio.unlink(missing_ok=True)
+        raise RuntimeError(f"truncated audio: {got:.0f}s of {source_duration:.0f}s")
+
+
 def whisper_segments(client, audio_path: Path) -> list[dict]:
     with open(audio_path, "rb") as f:
         resp = client.audio.transcriptions.create(
@@ -253,7 +261,9 @@ def transcribe_lecture(client, lecture: Lecture, cache: Path,
     audio = cache / f"{lecture.lecture_id}.mp3"
     if not audio.exists():
         tmp = cache / f"{lecture.lecture_id}.partial.mp3"
-        extract_audio(decode_video_url(lecture.src), tmp)
+        src_url = decode_video_url(lecture.src)
+        extract_audio(src_url, tmp)
+        check_audio_complete(tmp, probe_duration(src_url))
         tmp.rename(audio)
     size = audio.stat().st_size
     parts = plan_audio_parts(size, probe_duration(audio) if size >= max_upload_bytes else 0.0,

@@ -298,3 +298,25 @@ def test_max_upload_bytes_flag_reaches_transcribe_lecture(tmp_path, monkeypatch)
                         lambda client, lec, cache, limit: seen.append(limit) or [{"start": 0.0, "end": 3.0, "text": "hi"}])
     tc.main(["custom-library", "--only", "custom-library-10-0", "--max-upload-bytes", "900000"])
     assert seen == [900000]
+
+
+def test_truncated_download_is_deleted_and_fails_the_lecture(tmp_path, monkeypatch):
+    lec = tc.Lecture("c", 0, 0, "ch", "n", tc.base64.b64encode(bytes(
+        b ^ tc.SECRET_KEY[i % len(tc.SECRET_KEY)] for i, b in enumerate(b"http://v"))).decode())
+    monkeypatch.setattr(tc, "extract_audio", lambda src, out, *a, **k: out.write_bytes(b"x"))
+    durations = {"http://v": 573.0}
+    monkeypatch.setattr(tc, "probe_duration", lambda p: durations.get(str(p), 329.0))
+    monkeypatch.setattr(tc, "whisper_segments", lambda c, a: [{"start": 0.0, "end": 1.0, "text": "hi"}])
+    with pytest.raises(RuntimeError, match="truncated"):
+        tc.transcribe_lecture(object(), lec, tmp_path)
+    assert not list(tmp_path.glob("*.mp3"))
+
+
+def test_complete_download_within_tolerance_is_kept(tmp_path, monkeypatch):
+    lec = tc.Lecture("c", 0, 0, "ch", "n", tc.base64.b64encode(bytes(
+        b ^ tc.SECRET_KEY[i % len(tc.SECRET_KEY)] for i, b in enumerate(b"http://v"))).decode())
+    monkeypatch.setattr(tc, "extract_audio", lambda src, out, *a, **k: out.write_bytes(b"x"))
+    monkeypatch.setattr(tc, "probe_duration", lambda p: 573.0 if str(p) == "http://v" else 570.0)
+    monkeypatch.setattr(tc, "whisper_segments", lambda c, a: [{"start": 0.0, "end": 1.0, "text": "hi"}])
+    assert tc.transcribe_lecture(object(), lec, tmp_path)
+    assert (tmp_path / "c-0-0.mp3").exists()
