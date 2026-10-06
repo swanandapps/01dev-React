@@ -320,3 +320,18 @@ def test_complete_download_within_tolerance_is_kept(tmp_path, monkeypatch):
     monkeypatch.setattr(tc, "whisper_segments", lambda c, a: [{"start": 0.0, "end": 1.0, "text": "hi"}])
     assert tc.transcribe_lecture(object(), lec, tmp_path)
     assert (tmp_path / "c-0-0.mp3").exists()
+
+
+def test_group_segments_maps_replacement_char_in_apostrophe_position_to_apostrophe():
+    segs = [{"start": 0, "end": 50, "text": " let�s go, don�t stop"}]
+    assert tc.group_segments(segs)[0]["text"] == "let's go, don't stop"
+
+
+def test_clean_text_warns_on_other_replacement_chars(capsys):
+    assert "�" in tc.clean_text("caf� ")
+    assert "U+FFFD" in capsys.readouterr().err
+
+
+def test_no_seed_chunk_contains_the_replacement_char():
+    seed = json.loads(tc.SEED_PATH.read_text(encoding="utf-8"))
+    assert [c["chunk_id"] for c in seed if "�" in c["text"]] == []

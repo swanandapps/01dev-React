@@ -109,6 +109,18 @@ def find_course(catalog: list[dict], course_slug: str) -> tuple[int, str]:
     raise ValueError(f"course slug {course_slug!r} not in catalog.json")
 
 
+_BAD_APOSTROPHE = re.compile(r"(?<=\w)\ufffd(?=\w)")
+
+
+def clean_text(text: str) -> str:
+    """Whisper sometimes emits U+FFFD for an apostrophe ("let\ufffds"). Map it back to "'" between
+    letters; any other U+FFFD is left in place and reported, since its true character is unknown."""
+    text = _BAD_APOSTROPHE.sub("'", text)
+    if "\ufffd" in text:
+        print(f"WARNING: unresolved U+FFFD in transcript text: {text[:80]!r}", file=sys.stderr)
+    return text
+
+
 def group_segments(segments: list[dict], min_s: float = 45, max_s: float = 75) -> list[dict]:
     """Group Whisper segments into ~min_s–max_s passages, breaking only between segments.
 
@@ -125,7 +137,7 @@ def group_segments(segments: list[dict], min_s: float = 45, max_s: float = 75) -
             passages.append({
                 "start": int(math.floor(cur[0]["start"])),
                 "end": int(math.ceil(cur[-1]["end"])),
-                "text": " ".join(s["text"].strip() for s in cur),
+                "text": clean_text(" ".join(s["text"].strip() for s in cur)),
                 "_t0": cur[0]["start"],
             })
             cur.clear()
@@ -144,7 +156,7 @@ def group_segments(segments: list[dict], min_s: float = 45, max_s: float = 75) -
         if passages and tail_end - passages[-1]["_t0"] <= max_s:
             last = passages[-1]
             last["end"] = int(math.ceil(tail_end))
-            last["text"] = last["text"] + " " + " ".join(s["text"].strip() for s in cur)
+            last["text"] = clean_text(last["text"] + " " + " ".join(s["text"].strip() for s in cur))
             cur.clear()
         else:
             flush()

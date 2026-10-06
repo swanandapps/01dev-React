@@ -3327,7 +3327,7 @@
     "course_title": "Build a Custom Library",
     "lecture_id": "custom-library-10-1",
     "lecture_title": "11.2 - More methods and Testing Library on Frontend Application",
-    "text": "what is the content, what is the ending you want to have, how many characters you want so let\ufffds say 13 and there you go it has added 13 or 2 less let\ufffds make it 100. One challenge I want to give you is try to see this readme that you are seeing how can you convert into like a bold CSS styling which is what you will see on the articles and news website see how you can do that one hint I can give you is I mean this is vue js so whatever you are using react and all that stuff try to see how can conditionally render a proper",
+    "text": "what is the content, what is the ending you want to have, how many characters you want so let's say 13 and there you go it has added 13 or 2 less let's make it 100. One challenge I want to give you is try to see this readme that you are seeing how can you convert into like a bold CSS styling which is what you will see on the articles and news website see how you can do that one hint I can give you is I mean this is vue js so whatever you are using react and all that stuff try to see how can conditionally render a proper",
     "start_time": 379,
     "end_time": 427,
     "embedding": []
@@ -3338,7 +3338,7 @@
     "course_title": "Build a Custom Library",
     "lecture_id": "custom-library-10-1",
     "lecture_title": "11.2 - More methods and Testing Library on Frontend Application",
-    "text": "html syntax not just the text content and like plain strings more like it adds CSS to that as well. The next page that we have is this blog article and here I want to moderate and highlight the words that I want to readme control for that I need to use two functions moderate is the one another one is the highlight that we recently added to our library and we need to use it for them to be useful and not throw any errors. What we can do is let\ufffds say here we are trying to moderate this is the paragraph right",
+    "text": "html syntax not just the text content and like plain strings more like it adds CSS to that as well. The next page that we have is this blog article and here I want to moderate and highlight the words that I want to readme control for that I need to use two functions moderate is the one another one is the highlight that we recently added to our library and we need to use it for them to be useful and not throw any errors. What we can do is let's say here we are trying to moderate this is the paragraph right",
     "start_time": 426,
     "end_time": 474,
     "embedding": []
@@ -3349,7 +3349,7 @@
     "course_title": "Build a Custom Library",
     "lecture_id": "custom-library-10-1",
     "lecture_title": "11.2 - More methods and Testing Library on Frontend Application",
-    "text": "so function moderate what is the thing you want to moderate this paragraph and inside this what is the word I don\ufffdt want to moderate let\ufffds say AI save this kind of uncomment highlight for now not use it and you can see AI has been clearly masked clearly moderated second function that we have is the highlight now highlight works a little different I will show that to you where is our highlight definition yes here so highlight usually runs on whatever tag that you provide so is it paragraph is it heading and then it is more like you click",
+    "text": "so function moderate what is the thing you want to moderate this paragraph and inside this what is the word I don't want to moderate let's say AI save this kind of uncomment highlight for now not use it and you can see AI has been clearly masked clearly moderated second function that we have is the highlight now highlight works a little different I will show that to you where is our highlight definition yes here so highlight usually runs on whatever tag that you provide so is it paragraph is it heading and then it is more like you click",
     "start_time": 473,
     "end_time": 521,
     "embedding": []
@@ -3360,7 +3360,7 @@
     "course_title": "Build a Custom Library",
     "lecture_id": "custom-library-10-1",
     "lecture_title": "11.2 - More methods and Testing Library on Frontend Application",
-    "text": "on a button highlight and there this code is run I mean that\ufffds the better choice for it instead of running it inside here where you have the html down and you are just trying to run your logic in here so one change that I\ufffdm going to do I\ufffdm going to run it as soon as my application is mounted my application is alive I need to pass highlight highlight what things you can actually do that on a button click on any particular event I\ufffdm just going to do it on as soon as that my app is mounted what is the thing that you want to highlight let\ufffds say the word is which one risk risk is the word we want to",
+    "text": "on a button highlight and there this code is run I mean that's the better choice for it instead of running it inside here where you have the html down and you are just trying to run your logic in here so one change that I'm going to do I'm going to run it as soon as my application is mounted my application is alive I need to pass highlight highlight what things you can actually do that on a button click on any particular event I'm just going to do it on as soon as that my app is mounted what is the thing that you want to highlight let's say the word is which one risk risk is the word we want to",
     "start_time": 520,
     "end_time": 567,
     "embedding": []
