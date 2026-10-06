@@ -65,6 +65,15 @@ export default function CoursePlayerPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekTarget = useRef<number | null>(null);
+  // Live mirrors for the tutor jump: its callback outlives the render that created it.
+  const activeRef = useRef({ chapter: initialChapter, sub: initialSub });
+  activeRef.current = { chapter: activeChapter, sub: activeSub };
+  const pendingMeta = useRef<(() => void) | null>(null);
+  const jumpToRef = useRef<(nav: TutorNavigate) => boolean>(() => false);
+  const clearPendingMeta = () => {
+    if (pendingMeta.current) videoRef.current?.removeEventListener("loadedmetadata", pendingMeta.current);
+    pendingMeta.current = null;
+  };
 
   const FREE_CHAPTERS = 0;
   const seekSeconds = parseInt(searchParams.get("t") || "0");
@@ -93,6 +102,7 @@ export default function CoursePlayerPage() {
   };
 
   useEffect(() => {
+    clearPendingMeta(); // a same-lecture seek waiting on metadata belongs to the old video
     if (videoRef.current) {
       videoRef.current.load();
       videoRef.current.play().catch(() => {});
@@ -120,9 +130,17 @@ export default function CoursePlayerPage() {
     if (!pos) return false;
     setExpandedChapter(pos.chapter);
     const v = videoRef.current;
-    if (pos.chapter === activeChapter && pos.sub === activeSub && v) {
+    clearPendingMeta();
+    const live = activeRef.current; // the lecture on screen NOW, not at send time
+    if (pos.chapter === live.chapter && pos.sub === live.sub && v) {
+      seekTarget.current = null; // nothing for a later canplay to yank
       if (v.readyState >= 1) v.currentTime = nav.start_time; // metadata loaded: seek now
-      else seekTarget.current = nav.start_time;              // else handleCanPlay seeks
+      else {
+        // Seek directly once metadata arrives (handleCanPlay ignores a 0 target).
+        const apply = () => { v.currentTime = nav.start_time; pendingMeta.current = null; };
+        pendingMeta.current = apply;
+        v.addEventListener("loadedmetadata", apply, { once: true });
+      }
       v.play().catch(() => {});
     } else {
       // The [activeChapter, activeSub] effect reloads + plays; handleCanPlay applies the seek.
@@ -132,6 +150,7 @@ export default function CoursePlayerPage() {
     }
     return true;
   };
+  jumpToRef.current = jumpTo;
 
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
@@ -223,7 +242,7 @@ export default function CoursePlayerPage() {
 
       {aiCourse && (
         <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
-                     onOpenChange={setTutorOpen} onNavigate={jumpTo} />
+                     onOpenChange={setTutorOpen} onNavigate={(n) => jumpToRef.current(n)} />
       )}
 
       {aiCourse && isUserLoggedIn && !tutorOpen && (

@@ -135,7 +135,7 @@ export async function streamTutor(
           cb.onNavigate?.({
             course_slug: String(msg.course_slug ?? ""),
             lecture_title: msg.lecture_title,
-            start_time: Math.max(0, Number(msg.start_time) || 0),
+            start_time: Number.isFinite(Number(msg.start_time)) ? Math.max(0, Number(msg.start_time)) : 0,
           });
         }
         else if (msg.type === "done") cb.onDone();
