@@ -259,16 +259,32 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
         in_lecture = in_course and bool(scope.lecture_title) and _norm(h.title) == _norm(scope.lecture_title)
         return (in_lecture, in_course, h.enrolled, h.score)
 
+    # Ask citation policy (user decision 2026-10-06): cite only courses that are launched AND
+    # the student owns. Never point at an unowned or unreleased course, so NOT_ENROLLED_MATCH
+    # is not produced here (the enum member stays for the in-player path / prompt history).
+    hits = [h for h in hits if h.enrolled and _is_launched(h.course_id)]
     hits.sort(key=rank, reverse=True)
     hits = hits[:MAX_HITS]
+    owned_titles = [c["title"] for i in sorted(enrolled_ids) if (c := catalog_service.get(i)) and c.get("launched")]
+    return CourseLookup(case=LookupCase.ENROLLED_MATCH if hits else LookupCase.NO_MATCH,
+                        hits=hits, enrolled_titles=owned_titles)
 
-    if not hits:
-        case = LookupCase.NO_MATCH
-    elif hits[0].enrolled:  # the best-ranked hit decides (spec §4.3)
-        case = LookupCase.ENROLLED_MATCH
-    else:
-        case = LookupCase.NOT_ENROLLED_MATCH
-    return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles)
+
+def _is_launched(course_id: Optional[int]) -> bool:
+    course = catalog_service.get(course_id) if course_id is not None else None
+    return bool(course and course.get("launched"))
+
+
+def deep_link(h: Hit) -> Optional[str]:
+    """Path that opens the player at this hit's lecture and second: /course/<id>?chapter=&sub=&t=.
+    chapter/sub are the 0-indexed positions encoded in a position-based lecture_id "<slug>-<c>-<s>"
+    (CoursePlayerPage reads them 0-indexed). Catalog hits have no lecture: the plain course page."""
+    if not h.url:
+        return None
+    m = re.search(r"-(\d+)-(\d+)$", h.lecture_id or "") if h.source == "transcript" else None
+    if not m:
+        return h.url
+    return f"{h.url}?chapter={m.group(1)}&sub={m.group(2)}&t={int(h.start_time)}"
 
 
 def _best_per_lecture(scored) -> dict[str, tuple[TranscriptChunk, float]]:
@@ -354,8 +370,9 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         lines = [
             "COURSE FACTS (looked up in the01.dev's course library for this question):",
             f"CASE: {lookup.case.name}",
-            "Student is enrolled in: " + (", ".join(lookup.enrolled_titles) or "no courses yet"),
         ]
+        if lookup.enrolled_titles:  # launched + owned only; when empty say nothing ("no courses yet" invited a sales line)
+            lines.append("Student is enrolled in: " + ", ".join(lookup.enrolled_titles))
     if scope.lecture_title:
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
@@ -379,7 +396,8 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
             else:
                 label = "ENROLLED" if h.enrolled else "NOT ENROLLED"
                 where = f"{h.title} @ {_mmss(h.start_time)}" if h.source == "transcript" else h.title
-                page = f" — course page: the01.dev{h.url}" if h.url else ""
+                link = deep_link(h)
+                page = f" — link: the01.dev{link}" if link else ""
                 lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}, score {h.score:.2f}){page}")
             lines.append(f'   "{h.text[:600]}"')
     return "\n".join(lines)
@@ -389,7 +407,11 @@ def to_cards(lookup: CourseLookup) -> list[dict]:
     """SourceCard-shaped dicts for the frontend (RagSourceCard deep-links via course_id slug)."""
     cards = []
     for h in lookup.hits:
+        m = re.search(r"-(\d+)-(\d+)$", h.lecture_id or "") if h.source == "transcript" else None
         cards.append({
+            "url": deep_link(h),
+            "chapter": int(m.group(1)) if m else None,
+            "sub": int(m.group(2)) if m else None,
             "course_id": h.course_slug or "",
             "course_title": h.course_title,
             "lecture_id": h.lecture_id or f"catalog-{h.course_id}",

@@ -72,3 +72,18 @@ def test_find_moment_is_restricted_to_explicit_navigation_requests():
         assert "ONLY when the student explicitly asks" in t
         assert "search_course_content" in t
         assert "never call it to look something up" in t.lower()
+
+
+def test_prompt_has_the_all_cases_citation_rule():
+    text = " ".join(loader.read_grounding_prompt().split())
+    head, _, _ = text.partition("## Every IN_COURSE case")
+    assert "## Every case" in head
+    assert "Never name or cite a course, lecture, time or link that is not listed under Matches" in head
+    assert "Never combine or blend two course names" in head
+
+
+def test_prompt_enrolled_case_asks_for_the_deep_link_and_no_match_names_no_course():
+    text = " ".join(loader.read_grounding_prompt().split())
+    assert "the01.dev/course/2?chapter=7&sub=0&t=87" in text
+    assert "Name no course, lecture, link or time" in text
+    assert "You're not enrolled in it yet" not in text
