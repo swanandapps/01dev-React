@@ -73,3 +73,16 @@ def test_course_title_fallback_is_not_treated_as_a_lecture(client, monkeypatch):
     client.post("/api/ai/tutor/stream", json=body)
     assert seen["req"].scope.course_slug == "custom-library"
     assert seen["req"].scope.lecture_title is None
+
+
+def test_player_route_marks_the_scope_in_player(client, monkeypatch):
+    seen = {}
+
+    async def fake_turn(req, model=None):
+        seen["req"] = req
+        yield {"type": "done"}
+
+    monkeypatch.setattr(chat_pipeline, "chat_turn", fake_turn)
+    client.post("/api/ai/tutor/stream", json=_body(course_id="custom-library"))
+    assert seen["req"].scope.in_player is True
+    assert seen["req"].scope.course_slug == "custom-library"

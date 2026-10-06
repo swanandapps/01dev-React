@@ -43,6 +43,8 @@ def _card_key(card: dict) -> tuple:
 
 def _missing_pointer(lookup: CourseLookup, answer: str, scope: ChatScope) -> Optional[str]:
     """The not-enrolled course pointer, if the model left it out (prompt alone isn't reliable)."""
+    if scope.in_player:
+        return None  # the player tutor never points at another course (spec §3.2)
     if lookup.case != LookupCase.NOT_ENROLLED_MATCH:
         return None
     if "not enrolled" in answer.lower() and "the01.dev/course/" in answer:

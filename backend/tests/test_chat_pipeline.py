@@ -247,3 +247,25 @@ async def test_memory_block_lists_topics_without_a_greeting_instruction(monkeypa
     block = await ms.memory_context("alice", "all-courses")
     assert "4 prior exchange(s)" in block and "- npm link" in block and "- react memo" in block
     assert "greet" not in block.lower()
+
+
+async def test_no_pointer_in_the_player_even_for_a_not_enrolled_lookup(wired, monkeypatch):
+    # The player tutor never mentions another course (spec §3.2): _missing_pointer is off.
+    # wired lookup is NOT_ENROLLED_MATCH → custom-library with a url; the answer has no url.
+    async def fake_stream(*, system_prompt, history, question, student_id, model=None, **player_kw):
+        yield {"type": "token", "value": "Short answer."}  # **player_kw: Task D adds in_course for the player
+    monkeypatch.setattr(tutor_agent, "stream_answer", fake_stream)
+    req = chat_pipeline.TurnRequest(question="what is npm link", student_id="alice",
+                                    scope=cl.ChatScope(course_slug="react-perf", lecture_title="4.1 - x",
+                                                       in_player=True),
+                                    history=[], memory_slug="react-perf")
+    events = [e async for e in chat_pipeline.chat_turn(req)]
+    assert [e["value"] for e in events if e["type"] == "token"] == ["Short answer."]
+
+
+def test_missing_pointer_is_none_for_any_player_scope():
+    hit = cl.Hit(source="catalog", course_id=1, course_slug="programming-language", course_title="Build a PL",
+                 title="Lexers", score=0.6, enrolled=False, url="/course/1")
+    lookup = cl.CourseLookup(case=cl.LookupCase.NOT_ENROLLED_MATCH, hits=[hit], enrolled_titles=[])
+    assert chat_pipeline._missing_pointer(lookup, "answer", cl.ChatScope(course_slug="x", in_player=True)) is None
+    assert chat_pipeline._missing_pointer(lookup, "answer", cl.ChatScope()) is not None

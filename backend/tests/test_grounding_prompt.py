@@ -37,3 +37,12 @@ def test_falls_back_with_a_warning_when_file_empty(monkeypatch, tmp_path, capsys
 def test_no_warning_when_the_prompt_file_is_read(capsys):
     loader.read_grounding_prompt()
     assert capsys.readouterr().out == ""
+
+
+def test_prompt_has_the_in_course_cases_and_tone_matching():
+    text = loader.read_grounding_prompt()
+    for marker in ("CASE: IN_COURSE_MATCH", "CASE: IN_COURSE_RELATED", "CASE: IN_COURSE_NONE"):
+        assert marker in text
+    assert "match the student's tone, vocabulary and level from their messages and STUDENT MEMORY" in text
+    assert "never name, recommend or link another course" in text.lower()
+    assert "is about the current lecture whatever the in_course case" in " ".join(text.lower().split())

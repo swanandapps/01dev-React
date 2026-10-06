@@ -76,3 +76,16 @@ def test_no_token_is_401():
     app.dependency_overrides.clear()
     r = TestClient(app).post("/api/hermes/chat", json={"question": "hi", "user_id": "x"})
     assert r.status_code == 401
+
+
+def test_ask_route_never_sets_in_player_even_with_a_course_filter(client, monkeypatch):
+    seen = {}
+
+    async def fake_turn(req, model=None):
+        seen["req"] = req
+        yield {"type": "done"}
+
+    monkeypatch.setattr(chat_pipeline, "chat_turn", fake_turn)
+    client.post("/api/hermes/chat", json={"question": "what is npm link", "course_slug": "custom-library"})
+    assert seen["req"].scope.course_slug == "custom-library"
+    assert seen["req"].scope.in_player is False

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from app.models import TranscriptChunk
 from app.services import catalog_index, catalog_service, enrollment_service
 from app.services.embeddings import embedding_service
 from app.services.vector_store import vector_store
@@ -20,18 +21,31 @@ from app.services.vector_store import vector_store
 TRANSCRIPT_THRESHOLD = 0.54
 CATALOG_THRESHOLD = 0.34
 MAX_HITS = 5
+# Player only (spec §3.2): below TRANSCRIPT_THRESHOLD but at least this → "this course
+# touches on it". calibrated 2026-10-06 on 15 labelled custom-library questions
+# (scripts/calibrate_in_course.py): none max 0.45, related min 0.39 (no clean split) →
+# 0.46, just above the best "none": a missed "related" falls back to a plain general answer,
+# a false one would cite an unrelated lecture.
+RELATED_THRESHOLD = 0.46
 
 
 class LookupCase(str, Enum):
     ENROLLED_MATCH = "enrolled_match"
     NOT_ENROLLED_MATCH = "not_enrolled_match"
     NO_MATCH = "no_match"
+    # Player tutor only (ChatScope.in_player) — this course's transcripts, nothing else.
+    IN_COURSE_MATCH = "in_course_match"
+    IN_COURSE_RELATED = "in_course_related"
+    IN_COURSE_NONE = "in_course_none"
 
 
 @dataclass(frozen=True)
 class ChatScope:
     course_slug: Optional[str] = None    # None = all courses (Ask page)
     lecture_title: Optional[str] = None  # set by the video player
+    # True only on the player route (/api/ai/tutor/stream). The Ask page's course filter
+    # also sets course_slug, so a course being set is NOT the trigger.
+    in_player: bool = False
 
 
 @dataclass
@@ -75,6 +89,16 @@ async def _transcript_hits(question: str, top_k: int = 8):
     return [(r.chunk, r.score) for r in vector_store.search(emb, top_k=top_k, threshold=0.0, query_text=question)]
 
 
+async def search_in_course(query: str, course_slug: str, top_k: int = 8) -> list[tuple[TranscriptChunk, float]]:
+    """Best-first transcript chunks of ONE course. Ranks the whole store, then filters,
+    so another course's chunk can never stand in for this course's."""
+    if not vector_store.chunks:
+        await vector_store.initialize()
+    emb = await embedding_service.embed(query)
+    results = vector_store.search(emb, top_k=len(vector_store.chunks), threshold=0.0, query_text=query)
+    return [(r.chunk, r.score) for r in results if r.chunk.course_id == course_slug][:top_k]
+
+
 async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
     try:
         courses = await enrollment_service.get_enrolled_courses(student_id)
@@ -86,6 +110,8 @@ async def _enrollments(student_id: str) -> tuple[set[int], list[str]]:
 
 async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatScope()) -> CourseLookup:
     enrolled_ids, enrolled_titles = await _enrollments(student_id)
+    if scope.in_player:
+        return await _in_course_lookup(question, scope, enrolled_ids, enrolled_titles)
     hits: list[Hit] = []
 
     # In the player, vague questions ("Give me an example") only find the right
@@ -134,6 +160,33 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     return CourseLookup(case=case, hits=hits, enrolled_titles=enrolled_titles)
 
 
+async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int],
+                            enrolled_titles: list[str]) -> CourseLookup:
+    """Player tutor (spec §3.2): this course's transcripts only — no catalog search, no
+    other course. The case comes from the best in-course score."""
+    slug = scope.course_slug or ""
+    course = catalog_service.by_slug(slug)
+    cid = course["id"] if course else None
+    # The lecture title still steers the transcript search (4b02cc1).
+    transcript_q = f"{scope.lecture_title} {question}" if scope.lecture_title else question
+    scored = [(c, s) for c, s in await search_in_course(transcript_q, slug) if c.course_id == slug]
+    best = max((s for _, s in scored), default=0.0)
+    if best >= TRANSCRIPT_THRESHOLD:
+        case, floor = LookupCase.IN_COURSE_MATCH, TRANSCRIPT_THRESHOLD
+    elif best >= RELATED_THRESHOLD:
+        case, floor = LookupCase.IN_COURSE_RELATED, RELATED_THRESHOLD
+    else:
+        return CourseLookup(case=LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=enrolled_titles)
+    hits = [Hit(source="transcript", course_id=cid, course_slug=slug, course_title=c.course_title,
+                title=c.lecture_title, score=s, enrolled=cid in enrolled_ids, text=c.text,
+                lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
+                url=course["url"] if course else None)
+            for c, s in scored if s >= floor]
+    here = _norm(scope.lecture_title or "")
+    hits.sort(key=lambda h: (bool(here) and _norm(h.title) == here, h.score), reverse=True)
+    return CourseLookup(case=case, hits=hits[:MAX_HITS], enrolled_titles=enrolled_titles)
+
+
 def _has_lecture_excerpt(lookup: CourseLookup, scope: ChatScope) -> bool:
     return any(h.source == "transcript" and h.course_slug == scope.course_slug
                and _norm(h.title) == _norm(scope.lecture_title or "") for h in lookup.hits)
@@ -154,11 +207,21 @@ def _course_outline(course: dict, lecture_title: str) -> list[str]:
 
 
 def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional[list[str]] = None) -> str:
-    lines = [
-        "COURSE FACTS (looked up in the01.dev's course library for this question):",
-        f"CASE: {lookup.case.name}",
-        "Student is enrolled in: " + (", ".join(lookup.enrolled_titles) or "no courses yet"),
-    ]
+    if scope.in_player:
+        watched = catalog_service.by_slug(scope.course_slug or "")
+        name = watched["title"] if watched else "this course"
+        lines = [
+            f"COURSE FACTS (looked up in {name} only — the course the student is watching):",
+            f"CASE: {lookup.case.name}",
+            f"COURSE: {name}. Answer from this course or general knowledge; "
+            "never name, recommend or link another course.",
+        ]
+    else:
+        lines = [
+            "COURSE FACTS (looked up in the01.dev's course library for this question):",
+            f"CASE: {lookup.case.name}",
+            "Student is enrolled in: " + (", ".join(lookup.enrolled_titles) or "no courses yet"),
+        ]
     if scope.lecture_title:
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
@@ -170,10 +233,13 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
     if lookup.hits:
         lines.append("Matches:")
         for i, h in enumerate(lookup.hits, 1):
-            label = "ENROLLED" if h.enrolled else "NOT ENROLLED"
-            where = f"{h.title} @ {_mmss(h.start_time)}" if h.source == "transcript" else h.title
-            page = f" — course page: the01.dev{h.url}" if h.url else ""
-            lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}, score {h.score:.2f}){page}")
+            if scope.in_player:
+                lines.append(f"{i}. [THIS COURSE] {h.title} @ {_mmss(h.start_time)} (score {h.score:.2f})")
+            else:
+                label = "ENROLLED" if h.enrolled else "NOT ENROLLED"
+                where = f"{h.title} @ {_mmss(h.start_time)}" if h.source == "transcript" else h.title
+                page = f" — course page: the01.dev{h.url}" if h.url else ""
+                lines.append(f"{i}. [{label}] {h.course_title} → {where} ({h.source}, score {h.score:.2f}){page}")
             lines.append(f'   "{h.text[:600]}"')
     return "\n".join(lines)
 
