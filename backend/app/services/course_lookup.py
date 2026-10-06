@@ -67,9 +67,10 @@ MOMENT_LECTURE_FLOOR = 0.30  # if the winning lecture's best chunk is below this
 IN_COURSE_K = 3
 CURRENT_PASSAGES = 3         # player: passages of the watched lecture given as context
 CURRENT_CONTEXT_CHARS = 1500  # ... capped in total
-DESCRIPTION_CHARS = 400
+DESCRIPTION_CHARS = 600  # longest catalog description is 546; product-engineering's project sits near char 430
 TITLE_EMBED_TIMEOUT = 5.0   # seconds for the batched title-embedding call
-TITLE_COOLDOWN = 300.0      # after a failure, use word overlap for this long before retrying
+TITLE_PREWARM_TIMEOUT = 30.0  # startup batch for every course
+TITLE_COOLDOWN = 60.0       # after a failure, use word overlap for this long before retrying
 
 
 class LookupCase(str, Enum):
@@ -200,6 +201,32 @@ async def _embed_titles(slug: str, titles: list[str]) -> list[list[float]]:
     return vecs
 
 
+async def prewarm_titles() -> tuple[int, int]:
+    """Embed every launched-or-not catalog course's lecture titles in ONE batched call and fill
+    _title_cache, so the first player turn never pays (or fails) the build. Returns (titles, courses).
+    Raises on failure; deliberately never touches _title_failed_until (the lazy path stays a backup)."""
+    if not (embedding_service.use_openai and embedding_service.client):
+        raise RuntimeError("OpenAI embeddings unavailable")
+    per_course = {}
+    for course in catalog_service.all_courses():
+        slug = course.get("slug")
+        titles = _lecture_titles(slug) if slug else []
+        if titles:
+            per_course[slug] = titles
+    texts = [_bare_title(t) for ts in per_course.values() for t in ts]
+    if not texts:
+        return 0, 0
+    resp = await asyncio.wait_for(
+        embedding_service.client.embeddings.create(model="text-embedding-3-small", input=texts),
+        timeout=TITLE_PREWARM_TIMEOUT)
+    vecs = [d.embedding for d in resp.data]
+    i = 0
+    for slug, ts in per_course.items():
+        _title_cache[slug] = (ts, vecs[i:i + len(ts)])
+        i += len(ts)
+    return len(texts), len(per_course)
+
+
 async def _title_scores(question: str, slug: str) -> dict[str, float]:
     """Bare question vs each of the course's lecture titles (numbering and backticks stripped).
     Keys are the titles exactly as the course lists them. Falls back to word overlap when
@@ -212,11 +239,18 @@ async def _title_scores(question: str, slug: str) -> dict[str, float]:
             and time.monotonic() >= _title_failed_until.get(slug, 0.0)):
         try:
             vecs = await _embed_titles(slug, titles)
-            q = await embedding_service.embed(question)
-            return {t: _cosine(q, v) for t, v in zip(titles, vecs)}
         except Exception as e:  # noqa: BLE001 — title signal is best-effort
             _title_failed_until[slug] = time.monotonic() + TITLE_COOLDOWN
             print(f"[course_lookup] title embedding failed, word overlap for {TITLE_COOLDOWN:.0f}s: {e!r}")
+        else:
+            # The question embed is outside the cooldown: a transient failure here must not
+            # disable titles for the slug (it just fails this turn's lookup like any other embed).
+            try:
+                q = await embedding_service.embed(question)
+            except Exception as e:  # noqa: BLE001
+                print(f"[course_lookup] question embed failed, word overlap this turn: {e!r}")
+            else:
+                return {t: _cosine(q, v) for t, v in zip(titles, vecs)}
     return _overlap_title_scores(question, titles)
 
 
@@ -262,14 +296,7 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     for chunk, score in await _transcript_hits(transcript_q):
         if score < TRANSCRIPT_THRESHOLD:
             continue
-        course = catalog_service.by_slug(chunk.course_id)
-        cid = course["id"] if course else None
-        hits.append(Hit(
-            source="transcript", course_id=cid, course_slug=chunk.course_id, course_title=chunk.course_title,
-            title=chunk.lecture_title, score=score, enrolled=cid in enrolled_ids, text=chunk.text,
-            lecture_id=chunk.lecture_id, start_time=chunk.start_time, end_time=chunk.end_time,
-            url=course["url"] if course else None,
-        ))
+        hits.append(transcript_hit(chunk, score, enrolled_ids))
 
     covered = {h.course_id for h in hits}
     for entry, score in await catalog_index.search(question, top_k=5):
@@ -291,12 +318,29 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
     # Ask citation policy (user decision 2026-10-06): cite only courses that are launched AND
     # the student owns. Never point at an unowned or unreleased course, so NOT_ENROLLED_MATCH
     # is not produced here (the enum member stays for the in-player path / prompt history).
-    hits = [h for h in hits if h.enrolled and _is_launched(h.course_id)]
+    hits = [h for h in hits if ask_citable(h)]
     hits.sort(key=rank, reverse=True)
     hits = hits[:MAX_HITS]
     owned_titles = [c["title"] for i in sorted(enrolled_ids) if (c := catalog_service.get(i)) and c.get("launched")]
     return CourseLookup(case=LookupCase.ENROLLED_MATCH if hits else LookupCase.NO_MATCH,
                         hits=hits, enrolled_titles=owned_titles)
+
+
+def transcript_hit(chunk: TranscriptChunk, score: float, enrolled_ids: set[int]) -> Hit:
+    course = catalog_service.by_slug(chunk.course_id)
+    cid = course["id"] if course else None
+    return Hit(
+        source="transcript", course_id=cid, course_slug=chunk.course_id, course_title=chunk.course_title,
+        title=chunk.lecture_title, score=score, enrolled=cid in enrolled_ids, text=chunk.text,
+        lecture_id=chunk.lecture_id, start_time=chunk.start_time, end_time=chunk.end_time,
+        url=course["url"] if course else None,
+    )
+
+
+def ask_citable(h: Hit) -> bool:
+    """The Ask citation policy, in one place: only launched AND enrolled courses may be cited
+    (course_lookup's hits and the agent's search_course_content tool both use it)."""
+    return h.enrolled and _is_launched(h.course_id)
 
 
 def _is_launched(course_id: Optional[int]) -> bool:
@@ -373,12 +417,13 @@ def _has_lecture_excerpt(lookup: CourseLookup, scope: ChatScope) -> bool:
                and _norm(h.title) == _norm(scope.lecture_title or "") for h in lookup.hits)
 
 
-def _course_outline(course: dict, lecture_title: str) -> list[str]:
+def _course_outline(course: dict, lecture_title: str, with_description: bool = True) -> list[str]:
     """What the course page says, for a lecture we hold no transcript of — so a vague
     in-lecture question ("Give me an example") is answered on the course's topic
     instead of with "what kind of example do you mean?"."""
     lines = ["No transcript excerpt for this lecture. What the course page says about it:",
-             f"  Course: {course['title']} — {course.get('description', '').strip()}"]
+             f"  Course: {course['title']}"
+             + (f" — {course.get('description', '').strip()}" if with_description else "")]
     for chapter in course.get("chapters", []):
         subs = chapter.get("subchapters", [])
         if any(_norm(t) == _norm(lecture_title) for t in subs):
@@ -420,7 +465,7 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
                          'examples — not evidence that this lecture answers the question; passages in the '
                          f'order they are taught): {body}')
         elif course and (scope.in_player or not _has_lecture_excerpt(lookup, scope)):
-            lines.extend(_course_outline(course, scope.lecture_title))
+            lines.extend(_course_outline(course, scope.lecture_title, with_description=not scope.in_player))
     if weak_concepts:
         lines.append("Weak concepts in this course: " + ", ".join(weak_concepts))
     if lookup.hits:

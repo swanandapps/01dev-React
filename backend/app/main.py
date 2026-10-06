@@ -29,6 +29,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
+from app.services import course_lookup
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
 from app.routing.intent import Intent, classify
@@ -58,6 +59,11 @@ async def lifespan(app: FastAPI):
         await catalog_index.ensure_built()
     except Exception as e:  # noqa: BLE001 — built lazily on first lookup instead
         print(f"[startup] catalog index build failed, will retry on first lookup: {e}")
+    try:  # lecture-title vectors for every course, so no player turn pays (or fails) the build
+        n_titles, n_courses = await course_lookup.prewarm_titles()
+        print(f"[startup] title embeddings prewarmed: {n_titles} titles / {n_courses} courses")
+    except Exception as e:  # noqa: BLE001 — non-fatal; titles are built lazily per course instead
+        print(f"[startup] title embeddings prewarm failed: {e!r}")
     yield
 
 

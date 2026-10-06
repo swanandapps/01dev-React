@@ -557,10 +557,90 @@ def test_player_facts_carry_the_course_description_line():
                          in_player=True)
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
     desc = next(l for l in facts.splitlines() if l.startswith("COURSE DESCRIPTION"))
-    assert "Ember" in desc and len(desc) <= 500
+    assert "Ember" in desc and len(desc) <= cl.DESCRIPTION_CHARS + 80
 
 
 def test_ask_facts_have_no_course_description_line():
     scope = cl.ChatScope(course_slug="programming-language")
     facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.NO_MATCH, hits=[], enrolled_titles=[]), scope)
     assert "COURSE DESCRIPTION" not in facts
+
+
+# ---- title-embedding prewarm (I1) ----
+def _fake_embeddings_client(monkeypatch, behaviour):
+    """Stub OpenAI client: behaviour(texts) -> vectors or raises. Returns the list of input batches."""
+    from types import SimpleNamespace
+
+    batches = []
+
+    async def create(model, input):
+        batches.append(list(input))
+        return SimpleNamespace(data=[SimpleNamespace(embedding=v) for v in behaviour(input)])
+
+    monkeypatch.setattr(cl.embedding_service, "use_openai", True)
+    monkeypatch.setattr(cl.embedding_service, "client", SimpleNamespace(embeddings=SimpleNamespace(create=create)))
+    monkeypatch.setattr(cl, "_title_cache", {})
+    monkeypatch.setattr(cl, "_title_failed_until", {})
+    return batches
+
+
+async def test_prewarm_titles_embeds_every_course_in_one_call_and_fills_the_cache(monkeypatch):
+    batches = _fake_embeddings_client(monkeypatch, lambda texts: [[1.0, float(i)] for i, _ in enumerate(texts)])
+    n_titles, n_courses = await cl.prewarm_titles()
+    expected = {c["slug"]: cl._lecture_titles(c["slug"]) for c in cl.catalog_service.all_courses()}
+    expected = {k: v for k, v in expected.items() if v}
+    assert len(batches) == 1 and n_courses == len(expected) and n_titles == sum(map(len, expected.values()))
+    assert set(cl._title_cache) == set(expected)
+    for slug, titles in expected.items():
+        assert cl._title_cache[slug][0] == titles and len(cl._title_cache[slug][1]) == len(titles)
+
+
+async def test_prewarm_failure_raises_but_sets_no_cooldown(monkeypatch):
+    def boom(texts):
+        raise RuntimeError("openai down")
+
+    _fake_embeddings_client(monkeypatch, boom)
+    with pytest.raises(RuntimeError):
+        await cl.prewarm_titles()
+    assert cl._title_failed_until == {} and cl._title_cache == {}
+
+
+async def test_question_embed_failure_does_not_trigger_the_title_cooldown(monkeypatch):
+    _fake_embeddings_client(monkeypatch, lambda texts: [[1.0, 0.0] for _ in texts])
+    await cl.prewarm_titles()
+
+    async def flaky(text):
+        raise RuntimeError("transient")
+
+    monkeypatch.setattr(cl.embedding_service, "embed", flaky)
+    scores = await cl._title_scores("npm link", "custom-library")  # falls back for this turn only
+    assert scores and cl._title_failed_until == {}
+
+    async def ok(text):
+        return [1.0, 0.0]
+
+    monkeypatch.setattr(cl.embedding_service, "embed", ok)
+    assert set((await cl._title_scores("npm link", "custom-library")).values()) == {1.0}  # real cosines again
+
+
+async def test_title_build_failure_still_sets_a_short_cooldown(monkeypatch):
+    def boom(texts):
+        raise RuntimeError("down")
+
+    _fake_embeddings_client(monkeypatch, boom)
+    await cl._title_scores("npm link", "custom-library")
+    assert 0 < cl._title_failed_until["custom-library"] - cl.time.monotonic() <= 60.0
+
+
+def test_description_cap_keeps_product_engineerings_project():
+    course = cl.catalog_service.by_slug("product-engineering")
+    desc = " ".join(course["description"].split())
+    assert len(desc) <= cl.DESCRIPTION_CHARS
+
+
+def test_player_outline_does_not_repeat_the_description():
+    course = cl.catalog_service.by_slug("custom-library")
+    scope = cl.ChatScope(course_slug="custom-library", lecture_title="1.1 - Introduction", in_player=True)
+    facts = cl.render_facts(cl.CourseLookup(case=cl.LookupCase.IN_COURSE_NONE, hits=[], enrolled_titles=[]), scope)
+    snippet = " ".join(course["description"].split())[:60]
+    assert facts.count(snippet) == 1
