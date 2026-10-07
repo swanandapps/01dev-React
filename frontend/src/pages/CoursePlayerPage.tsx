@@ -5,7 +5,7 @@ import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
 import { recordLectureView, getCourses } from "../lib/learnApi";
-import { FlaskConical } from "lucide-react";
+import { FlaskConical, ListVideo, Sparkles } from "lucide-react";
 import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
 import { resolveJump } from "../lib/lectureMatch";
@@ -17,8 +17,9 @@ export default function CoursePlayerPage() {
   const [searchParams] = useSearchParams();
   const { isCourseBought, currentuser, isUserLoggedIn } = useUserSessionStore();
   const userId = (currentuser?.uid as string) || "anonymous";
-  const [labOpen, setLabOpen] = useState(false);
-  const [tutorOpen, setTutorOpen] = useState(false);
+  // Right rail (layout B): Chapters | AI Tutor | Lab. The tutor can pop out into a floating window.
+  const [railTab, setRailTab] = useState<"chapters" | "tutor" | "lab">("chapters");
+  const [tutorFloating, setTutorFloating] = useState(false);
 
   const track = tracks.find((t) => t.id === Number(courseid));
 
@@ -196,76 +197,109 @@ export default function CoursePlayerPage() {
           </div>
         </div>
 
-        <div className="w-full lg:w-80 bg-zinc-900 border-l border-zinc-800 overflow-y-auto">
-          <div className="p-4 border-b border-zinc-800">
-            <h3 className="text-white font-semibold text-sm">{track.title}</h3>
+        <aside className="w-full lg:w-[400px] flex-shrink-0 bg-zinc-900 border-l border-zinc-800 flex flex-col min-h-[70vh] lg:min-h-0">
+          <div role="tablist" aria-label="Course panel" className="flex items-center gap-1 px-3 py-2.5 border-b border-zinc-800 flex-shrink-0">
+            {([
+              ["chapters", "Chapters", ListVideo],
+              ...(aiCourse ? [["tutor", "AI Tutor", Sparkles], ["lab", "Lab", FlaskConical]] as const : []),
+            ] as const).map(([id, label, Icon]) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={railTab === id}
+                onClick={() => setRailTab(id)}
+                className={`flex items-center gap-1.5 text-sm rounded-lg px-3 py-2 transition-colors ${
+                  railTab === id
+                    ? id === "lab"
+                      ? "bg-teal-600/15 border border-teal-500/40 text-teal-100 font-semibold"
+                      : "bg-indigo-600/15 border border-indigo-500/40 text-indigo-100 font-semibold"
+                    : "border border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                }`}
+              >
+                <Icon className="w-4 h-4" /> {label}
+              </button>
+            ))}
           </div>
 
-          {track.courseContent.map((chapter, ci) => (
-            <div key={ci} className="border-b border-zinc-800">
-              <button
-                onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800 transition-colors"
-              >
-                <span className={`text-sm font-medium ${isLocked(ci) ? "text-zinc-600" : "text-zinc-300"}`}>
-                  {chapter.name}
-                </span>
-                <span className="text-zinc-600 text-xs ml-2">
-                  {isLocked(ci) ? "🔒" : expandedChapter === ci ? "▲" : "▼"}
-                </span>
-              </button>
-
-              {expandedChapter === ci && (
-                <div>
-                  {chapter.subchapters.map((sub, si) => (
-                    <button
-                      key={si}
-                      onClick={() => handleSelectSub(ci, si)}
-                      disabled={isLocked(ci)}
-                      className={`w-full px-6 py-2 text-left text-xs transition-colors ${
-                        activeChapter === ci && activeSub === si
-                          ? `${track.theme} font-semibold bg-zinc-800`
-                          : isLocked(ci)
-                          ? "text-zinc-700 cursor-not-allowed"
-                          : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                      }`}
-                    >
-                      {sub.name}
-                    </button>
-                  ))}
+          <div className="flex-1 min-h-0 flex flex-col">
+            {railTab === "chapters" && (
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="p-4 border-b border-zinc-800">
+                  <h3 className="text-white font-semibold text-sm">{track.title}</h3>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                {track.courseContent.map((chapter, ci) => (
+                  <div key={ci} className="border-b border-zinc-800">
+                    <button
+                      onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800 transition-colors"
+                    >
+                      <span className={`text-sm font-medium ${isLocked(ci) ? "text-zinc-600" : "text-zinc-300"}`}>
+                        {chapter.name}
+                      </span>
+                      <span className="text-zinc-600 text-xs ml-2">
+                        {isLocked(ci) ? "🔒" : expandedChapter === ci ? "▲" : "▼"}
+                      </span>
+                    </button>
+
+                    {expandedChapter === ci && (
+                      <div>
+                        {chapter.subchapters.map((sub, si) => (
+                          <button
+                            key={si}
+                            onClick={() => handleSelectSub(ci, si)}
+                            disabled={isLocked(ci)}
+                            className={`w-full px-6 py-2 text-left text-xs transition-colors ${
+                              activeChapter === ci && activeSub === si
+                                ? `${track.theme} font-semibold bg-zinc-800`
+                                : isLocked(ci)
+                                ? "text-zinc-700 cursor-not-allowed"
+                                : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                            }`}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {railTab === "tutor" && tutorFloating && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                <p className="text-sm text-zinc-400">The tutor is floating over the page.</p>
+                <button onClick={() => setTutorFloating(false)}
+                        className="text-sm text-indigo-200 border border-indigo-500/40 rounded-lg px-4 py-2 hover:bg-indigo-600/15">
+                  Dock it here
+                </button>
+              </div>
+            )}
+
+            {railTab === "lab" && aiCourse && (
+              <div className="flex-1 min-h-0 overflow-y-auto p-4">
+                {isUserLoggedIn ? (
+                  <LabStudio studentId={userId} courseId={aiCourse.course_id} onClose={() => setRailTab("chapters")} />
+                ) : (
+                  <p className="text-sm text-zinc-400 text-center mt-10">Sign in to quiz yourself on this course.</p>
+                )}
+              </div>
+            )}
+
+            {aiCourse && (
+              <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
+                           floating={tutorFloating} visible={railTab === "tutor" && !tutorFloating}
+                           onPopOut={() => { setTutorFloating(true); setRailTab("chapters"); }}
+                           onDock={() => { setTutorFloating(false); setRailTab("tutor"); }}
+                           onNavigate={(n) => jumpToRef.current(n)}
+                           canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null}
+                           getPosition={() => (videoRef.current && !Number.isNaN(videoRef.current.currentTime)
+                             ? videoRef.current.currentTime : undefined)} />
+            )}
+          </div>
+        </aside>
       </div>
 
-      {aiCourse && (
-        <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
-                     onOpenChange={setTutorOpen} onNavigate={(n) => jumpToRef.current(n)}
-                     canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null}
-                     getPosition={() => (videoRef.current && !Number.isNaN(videoRef.current.currentTime)
-                       ? videoRef.current.currentTime : undefined)} />
-      )}
-
-      {aiCourse && isUserLoggedIn && !tutorOpen && (
-        <button
-          onClick={() => setLabOpen(true)}
-          className="fixed bottom-24 right-6 z-40 flex items-center gap-2 bg-teal-600/20 hover:bg-teal-600/30 border border-teal-500/30 text-teal-200 text-sm font-medium rounded-full pl-4 pr-5 py-2.5 shadow-lg shadow-black/40 transition-colors"
-        >
-          <FlaskConical className="w-4 h-4" /> Lab
-        </button>
-      )}
-
-      {labOpen && aiCourse && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-             onClick={() => setLabOpen(false)}>
-          <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6"
-               onClick={(e) => e.stopPropagation()}>
-            <LabStudio studentId={userId} courseId={aiCourse.course_id} onClose={() => setLabOpen(false)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
