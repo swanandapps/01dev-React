@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
+from app.retrieval.understand import is_explicit_navigation
 from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
 from app.services.course_lookup import (_norm, ChatScope, CourseLookup, LookupCase, course_lookup, render_facts,
                                         to_cards)
@@ -141,8 +142,10 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer))
     except Exception as e:  # noqa: BLE001 — never fail the answer over memory persistence
         print(f"[chat_turn] record_turn failed: {e!r}")
-    if moment and req.scope.in_player:
+    if moment and req.scope.in_player and is_explicit_navigation(question):
         # Spec §3.3: once per turn, before done. The course is the watched one, never the model's.
+        # Code gate (user policy): only an explicit "take me to ..." jumps; a find_moment call on any other
+        # question falls through to the suggest rules below (links only).
         yield {"type": "navigate", "course_slug": req.scope.course_slug,
                "lecture_title": moment["lecture_title"], "start_time": int(moment["start_time"])}
     elif req.scope.in_player and lookup.case == LookupCase.IN_COURSE_MATCH:

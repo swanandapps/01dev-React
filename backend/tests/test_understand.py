@@ -133,6 +133,7 @@ def test_parse_intents_and_missing_key(raw, intent, query):
 
 @pytest.mark.parametrize("q", ["what am I weak at?", "what courses do I own?", "which courses did I buy?",
                                "how am I doing?", "what are my weak concepts", "have I finished the react course?",
+                               "what courses do I have?", "take me to the part about closures",
                                "take me to closures", "skip to the closures part",
                                "where in the video does he explain closures", "my progress"])
 def test_account_and_navigation_messages_always_reach_the_model(q):
@@ -152,12 +153,31 @@ def test_first_person_debugging_questions_stay_self_contained(q):
 
 
 async def test_malformed_history_item_falls_back(monkeypatch):
+    called = []
+
     async def never(system, user):
-        raise AssertionError("prompt build fails first")
+        called.append(1)
 
     monkeypatch.setattr(un, "_complete", never)
     u = await un.understand("what does this mean?", ["not a dict"], None)
     assert u.fallback and u.search_query == "what does this mean?"
+    assert called == []                      # the prompt build failed before the model was reached
+
+
+@pytest.mark.parametrize("q", ["take me to ES modules", "bring me back to the intro", "jump to closures",
+                               "skip to the npm publish part", "go to the part about IIFE", "rewind to the section on np",
+                               "where in the video does he explain closures", "at what time does he show npm link",
+                               "show me where npm link is used", "can you go to the closures part",
+                               "could you jump to npm publish"])
+def test_explicit_navigation_requests(q):
+    assert un.is_explicit_navigation(q)
+
+
+@pytest.mark.parametrize("q", ["what are ES modules?", "how do I go to the next element in a linked list",
+                               "explain closures", "how to skip to the next iteration in a loop", "", "goto statement in C",
+                               "where is npm link used in this course?"])
+def test_non_navigation_questions(q):
+    assert not un.is_explicit_navigation(q)
 
 
 def test_non_string_search_query_is_treated_as_missing():

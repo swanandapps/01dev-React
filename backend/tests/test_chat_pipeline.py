@@ -387,9 +387,23 @@ async def test_other_courses_hits_are_never_suggested(wired, monkeypatch):
 
 async def test_navigate_turn_emits_no_suggest(wired, monkeypatch):
     _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S1)
-    events = await _player_events(monkeypatch, wired, [{"type": "moment", "moment": M2}])
+    events = await _player_events(monkeypatch, wired, [{"type": "moment", "moment": M2}], q="take me to np publish")
     types = [e["type"] for e in events]
     assert "navigate" in types and "suggest" not in types
+
+
+async def test_find_moment_on_a_non_explicit_question_never_navigates(wired, monkeypatch):
+    """Code gate: the model alone cannot jump the player; the found moment may still become a suggest link."""
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S3)
+    events = await _player_events(monkeypatch, wired, [{"type": "moment", "moment": M2}], q="what are ES modules?")
+    types = [e["type"] for e in events]
+    assert "navigate" not in types and types[-2:] == ["suggest", "done"]
+
+
+async def test_find_moment_on_an_explicit_request_navigates(wired, monkeypatch):
+    _incourse(monkeypatch, cl.LookupCase.IN_COURSE_MATCH, S3)
+    events = await _player_events(monkeypatch, wired, [{"type": "moment", "moment": M2}], q="take me to ES modules")
+    assert [e["type"] for e in events][-2:] == ["navigate", "done"]
 
 
 @pytest.mark.parametrize("case", [cl.LookupCase.IN_COURSE_RELATED, cl.LookupCase.IN_COURSE_NONE])

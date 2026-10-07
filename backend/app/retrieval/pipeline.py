@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
 from app.retrieval import factory, titles
+from app.retrieval import understand as qu
 from app.retrieval.base import Candidate, rrf_fuse
 from app.retrieval.rerank import CITED, MAX_CANDIDATES, Graded, Outcome, decide, rerank
 from app.retrieval.text import norm_title, tokenize
@@ -66,6 +67,21 @@ async def _vector(r, embedding, scope, lecture_id):
     return _cap(await r.vector_search(embedding, scope, VEC_K * LEX_OVERFETCH, lecture_id), VEC_K, cap)
 
 
+async def _gather(queries: Sequence[str], scope: tuple[str, ...], lecture_id: Optional[str],
+                  terms: Sequence[str] = (), *, vector: bool = True) -> tuple[list[list[float]], list, list]:
+    """(embeddings, vector lists, lexical lists): one embedding + vector list per query (none when vector=False)
+    and one lexical list per query; `terms` (keywords) join the lexical queries only."""
+    r = factory.get_retriever()
+    joined = " ".join(terms)
+    embeddings = list(await asyncio.gather(*(embedding_service.embed(q) for q in queries))) if vector else []
+    lists = await asyncio.gather(
+        *(_vector(r, e, scope, lecture_id) for e in embeddings),
+        *(_lexical(r, tokenize(f"{q} {joined}"), scope, lecture_id) for q in queries))
+    for q, e in zip(queries, embeddings):
+        _remember(q, e)
+    return embeddings, list(lists[:len(embeddings)]), list(lists[len(embeddings):])
+
+
 async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[str] = None, limit: int = LIMIT,
                  per_lecture: Optional[int] = PER_LECTURE, extra_queries: Sequence[str] = (),
                  extra_terms: Sequence[str] = ()) -> list[Candidate]:
@@ -76,15 +92,8 @@ async def search(question: str, scope: Sequence[str], *, lecture_id: Optional[st
     if not scope or not queries:
         return []
     await _ensure_loaded()
-    r = factory.get_retriever()
-    embeddings = await asyncio.gather(*(embedding_service.embed(q) for q in queries))
-    terms = " ".join(extra_terms)
-    lists = await asyncio.gather(
-        *(_vector(r, e, scope, lecture_id) for e in embeddings),
-        *(_lexical(r, tokenize(f"{q} {terms}"), scope, lecture_id) for q in queries))
-    _remember(queries[0], embeddings[0])
-    out = rrf_fuse(lists[:len(queries)], lists[len(queries):], limit=limit,
-                   per_lecture=None if lecture_id else per_lecture)
+    embeddings, vec, lex = await _gather(queries, scope, lecture_id, extra_terms)
+    out = rrf_fuse(vec, lex, limit=limit, per_lecture=None if lecture_id else per_lecture)
     _fill_cosines(out, embeddings[0])
     return out
 
@@ -215,22 +224,56 @@ async def _title_candidates(question: str, scope: Sequence[str], cands: list[Can
         return cands[:MAX_CANDIDATES], []
 
 
+def _same(a: str, b: str) -> bool:
+    return " ".join(a.lower().split()) == " ".join(b.lower().split())
+
+
 async def graded_search(question: str, scope: Sequence[str], *, intent: str = "explain",
                         lecture_id: Optional[str] = None, history: Sequence[dict] = (),
                         lecture_title: Optional[str] = None) -> RetrievalResult:
-    """Scope (given, computed by the caller in code) -> hybrid retrieval -> rerank pool (fused list plus
-    title-matched lectures, at most MAX_CANDIDATES) -> rerank -> coverage decision.
-    history / lecture_title are accepted for query understanding (Task 18); unused for now."""
+    """understand || raw retrieval -> (+ the rewrite's retrieval) -> RRF over every list -> rerank pool (fused
+    list plus title-matched lectures, at most MAX_CANDIDATES) -> rerank the standalone query -> decision.
+    account / off_topic questions return NOT_COVERED without a rerank call (the caller's navigate wins)."""
     t0 = time.perf_counter()
     scope = tuple(dict.fromkeys(s for s in scope if s))
     if not scope:
         return RetrievalResult(Outcome.NOT_COVERED, [], intent=intent, search_query=question)
-    cands = await search(question, scope, lecture_id=lecture_id)
-    kept, extra = (cands[:MAX_CANDIDATES], []) if lecture_id else await _title_candidates(question, scope, cands)
+    await _ensure_loaded()
+    timings: dict = {}
+    raw_queries = [question] if question and question.strip() else []
+    per = None if lecture_id else PER_LECTURE
+    if qu.needs_rewrite(question, history, lecture_title):
+        raw = asyncio.create_task(_gather(raw_queries, scope, lecture_id))   # starts now, runs alongside
+        try:
+            u = await qu.understand(question, history, lecture_title)
+        except BaseException:
+            raw.cancel()
+            raise
+        timings["understand"] = _ms(t0)
+        if u.intent == "account" or (u.intent == "off_topic" and intent != "navigate"):
+            raw.cancel()
+            await asyncio.gather(raw, return_exceptions=True)
+            timings["total"] = _ms(t0)
+            return RetrievalResult(Outcome.NOT_COVERED, [], intent=u.intent, search_query=u.search_query,
+                                   timings_ms=timings)
+        embeddings, vec, lex = await raw
+        rewritten = not _same(u.search_query, question)
+        if rewritten or u.keywords:
+            _, v2, l2 = await _gather([u.search_query], scope, lecture_id, u.keywords, vector=rewritten)
+            vec, lex = vec + v2, lex + l2
+    else:
+        u = qu.Understanding(question, [], "explain", skipped=True)
+        embeddings, vec, lex = await _gather(raw_queries, scope, lecture_id)
+    cands = rrf_fuse(vec, lex, limit=LIMIT, per_lecture=per)
+    if embeddings:
+        _fill_cosines(cands, embeddings[0])
+    effective = intent if intent != "explain" else u.intent
+    kept, extra = (cands[:MAX_CANDIDATES], []) if lecture_id else await _title_candidates(u.search_query, scope, cands)
     pool = kept + extra
-    t_retrieve = _ms(t0)
+    timings["retrieve"] = _ms(t0)   # wall time from the start (understanding runs inside it)
     t1 = time.perf_counter()
-    rr = await rerank(question, pool, intent=intent)
+    rr = await rerank(u.search_query, pool, intent=effective)
     outcome, ordered = decide(rr.graded)
-    return RetrievalResult(outcome, ordered, intent=intent, search_query=question, fallback=rr.fallback,
-                           question_embedding=_recent.get(question), rerank_error=rr.error, timings_ms={"retrieve": t_retrieve, "rerank": _ms(t1), "total": _ms(t0)})
+    timings["rerank"], timings["total"] = _ms(t1), _ms(t0)
+    return RetrievalResult(outcome, ordered, intent=effective, search_query=u.search_query, fallback=rr.fallback,
+                           question_embedding=_recent.get(question), rerank_error=rr.error, timings_ms=timings)

@@ -175,6 +175,22 @@ def grader(monkeypatch):
     return set_reply
 
 
+def fixed_retrieval(monkeypatch, cands):
+    """Replace the retrieval step (embedding + vector/lexical lists) with a fixed, already ranked candidate list."""
+    async def fake_gather(queries, scope, lecture_id, terms=(), *, vector=True):
+        embs = [await embedding_service.embed(q) for q in queries] if vector else []
+        for q, e in zip(queries, embs):
+            pipeline._remember(q, e)
+        return embs, [[(c.chunk, 0.9) for c in cands]] * len(embs), [[]] * len(queries)
+    monkeypatch.setattr(pipeline, "_gather", fake_gather)
+
+
+def _lectures(n, prefix="L"):
+    """n candidates, each from its own lecture (RRF caps three per lecture)."""
+    return [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"{prefix}{i}", "lecture_id": f"{prefix}{i}"}))
+            for i in range(n)]
+
+
 async def test_graded_search_decides_from_grades(mem, grader):
     grader({"c1": "a"}, {"c1": "defines IIFE"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
@@ -214,11 +230,8 @@ async def test_graded_search_adds_title_matched_lectures_to_the_pool(mem, grader
     async def titled(*a, **kw):
         return {("custom-library", "11.1 - Publishing using `np`"): 0.9}   # lecture cl-10-0, absent from the fused list
 
-    async def fake_search(question, scope, **kw):
-        return [Candidate(chunk=CORPUS[0][0], vec_rank=1, lex_rank=1, cosine=0.9)]
-
     monkeypatch.setattr(titles, "title_scores", titled)
-    monkeypatch.setattr(pipeline, "search", fake_search)
+    fixed_retrieval(monkeypatch, [Candidate(chunk=CORPUS[0][0])])
     grader({"c2": "a"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
     assert "[c2] custom-library" in grader.calls[0] and "Publishing using np" in grader.calls[0]
@@ -226,14 +239,11 @@ async def test_graded_search_adds_title_matched_lectures_to_the_pool(mem, grader
 
 
 async def test_graded_search_pool_is_at_most_12(mem, grader, monkeypatch):
-    async def many(question, scope, **kw):
-        return [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}"})) for i in range(12)]
-
     async def titled(*a, **kw):
         return {("custom-library", "11.1 - Publishing using `np`"): 0.9}
 
     monkeypatch.setattr(titles, "title_scores", titled)
-    monkeypatch.setattr(pipeline, "search", many)
+    fixed_retrieval(monkeypatch, _lectures(12))
     grader({"c1": "n"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
     assert len(res.graded) == 12 and any(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded)
@@ -252,10 +262,7 @@ async def _enable_titles(monkeypatch):
 
 
 def _fused_only_first(monkeypatch):
-    async def fake_search(question, scope, **kw):
-        pipeline._remember(question, await embedding_service.embed(question))   # search's own (single) embedding
-        return [Candidate(chunk=CORPUS[0][0], vec_rank=1, lex_rank=1, cosine=0.9)]
-    monkeypatch.setattr(pipeline, "search", fake_search)
+    fixed_retrieval(monkeypatch, [Candidate(chunk=CORPUS[0][0])])
 
 
 async def test_title_signal_embeds_the_question_once_across_slugs(mem, monkeypatch):
@@ -314,12 +321,8 @@ async def test_pool_edge_counts_only_the_kept_slice(mem, grader, monkeypatch):
     async def titled(*a, **kw):
         return {("custom-library", "11.1 - Publishing using `np`"): 0.9}
 
-    async def fake_search(question, scope, **kw):
-        out = [Candidate(chunk=CORPUS[0][0].model_copy(update={"chunk_id": f"x{i}"})) for i in range(11)]
-        return out + [Candidate(chunk=CORPUS[1][0])]            # cl-10-0 as the 12th fused candidate
-
     monkeypatch.setattr(titles, "title_scores", titled)
-    monkeypatch.setattr(pipeline, "search", fake_search)
+    fixed_retrieval(monkeypatch, _lectures(11, "x") + [Candidate(chunk=CORPUS[1][0])])   # cl-10-0 is the 12th fused candidate
     grader({"c1": "n"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
     assert len(res.graded) == 12 and sum(g.candidate.chunk.lecture_id == "cl-10-0" for g in res.graded) == 1
@@ -346,3 +349,90 @@ async def test_title_additions_backfill_past_lectures_the_kept_slice_already_hol
     kept, extra = await pipeline._title_candidates("q", ["custom-library"], cands)
     assert {c.chunk.lecture_id for c in extra} == {"L20", "L21", "L22"}     # L0 held already: three others backfill
     assert len(kept) + len(extra) == 12
+
+
+# ---- query understanding inside graded_search (Task 18) ------------------------
+import asyncio
+
+from app.retrieval import understand as un
+
+HIST = [{"role": "user", "content": "what is the np package?"}]
+
+
+def _understood(query, intent="explain", keywords=()):
+    async def fake(system, user):
+        return {"search_query": query, "keywords": list(keywords), "intent": intent}
+    return fake
+
+
+async def test_rewrite_is_fused_with_the_raw_retrieval_and_judged(mem, grader, monkeypatch):
+    monkeypatch.setattr(un, "_complete", _understood("publish with np", keywords=["np"]))
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("how do I use it?", ["custom-library"], history=HIST)
+    assert mem == ["how do I use it?", "publish with np"]          # raw first, then the rewrite
+    assert grader.calls[0].startswith("Question: publish with np")
+    assert res.search_query == "publish with np" and res.best().candidate.chunk.lecture_id == "cl-10-0"
+    assert "understand" in res.timings_ms
+    assert res.question_embedding == pipeline._recent["how do I use it?"]   # the RAW question's embedding
+
+
+async def test_raw_retrieval_starts_while_understanding_runs(mem, grader, monkeypatch):
+    saw_raw = []
+
+    async def waits_for_raw(system, user):
+        for _ in range(200):
+            if "what does this mean?" in mem:
+                break
+            await asyncio.sleep(0.001)
+        saw_raw.append("what does this mean?" in mem)
+        return {"search_query": "what does this mean?", "keywords": [], "intent": "explain"}
+
+    monkeypatch.setattr(un, "_complete", waits_for_raw)
+    grader({"c1": "p"})
+    await pipeline.graded_search("what does this mean?", ["custom-library"], lecture_title="6.5 - IIFE, To The Rescue")
+    assert saw_raw == [True]
+    assert mem == ["what does this mean?"]                         # unchanged rewrite: no second embedding
+
+
+@pytest.mark.parametrize("intent", ["account", "off_topic"])
+async def test_account_and_off_topic_bypass_rerank(mem, grader, monkeypatch, intent):
+    monkeypatch.setattr(un, "_complete", _understood("what courses do I own", intent=intent))
+    res = await pipeline.graded_search("what courses do I own?", ["custom-library"], history=HIST)
+    assert (res.outcome, res.intent, res.graded) == (pipeline.Outcome.NOT_COVERED, intent, [])
+    assert grader.calls == []
+
+
+async def test_forced_navigate_beats_an_off_topic_guess(mem, grader, monkeypatch):
+    monkeypatch.setattr(un, "_complete", _understood("IIFE", intent="off_topic"))
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("take me to it", ["custom-library"], intent="navigate", history=HIST)
+    assert res.intent == "navigate" and res.outcome == pipeline.Outcome.COVERED
+    assert "Intent: navigate" in grader.calls[0]
+
+
+async def test_models_navigate_intent_reaches_the_reranker(mem, grader, monkeypatch):
+    monkeypatch.setattr(un, "_complete", _understood("IIFE", intent="navigate"))
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("take me to it", ["custom-library"], history=HIST)
+    assert res.intent == "navigate" and "Intent: navigate" in grader.calls[0]
+
+
+async def test_self_contained_question_without_context_skips_understanding(mem, grader, monkeypatch):
+    async def boom(system, user):
+        raise AssertionError("no understanding call expected")
+
+    monkeypatch.setattr(un, "_complete", boom)
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"])
+    assert res.outcome == pipeline.Outcome.COVERED and "understand" not in res.timings_ms
+
+
+async def test_understanding_failure_falls_back_to_the_raw_question(mem, grader, monkeypatch):
+    async def down(system, user):
+        raise RuntimeError("openai down")
+
+    monkeypatch.setattr(un, "_complete", down)
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST)
+    assert res.search_query == "what is an IIFE?" and res.outcome == pipeline.Outcome.COVERED
+    assert mem == ["what is an IIFE?"]
