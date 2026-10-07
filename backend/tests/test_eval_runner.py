@@ -121,7 +121,8 @@ def test_watched_lecture_is_deterministic_non_gold_and_respects_explicit_title(m
     monkeypatch.setattr(vector_store, "chunks", chunks)
     row = _row("a", gold_lecture_ids=["custom-library-5-2", "custom-library-1-0"])
     first = rs.watched_lecture(row)
-    assert first == rs.watched_lecture(row) and first not in ("T custom-library-1-0",)
+    assert first == rs.watched_lecture(row) and first not in ("T custom-library-1-0", "T custom-library-5-2")
+    assert first.startswith("T custom-library-")
     assert rs.watched_lecture(_row("a", lecture_title="Given")) == "Given"
     assert rs.watched_lecture(_row("z", scope_course="nope")) is None
 
@@ -226,3 +227,28 @@ async def test_v2_ask_scope_is_launched_and_owned_and_hides_the_lecture_title(mo
     await rs.own_every_course()
     p = await rs.V2System().predict(_row("a", lecture_title="L"), "ask")
     assert seen == {"scope": ["custom-library"], "title": None} and p.lookup_case == "not_covered"
+
+
+async def test_v2_simulated_lecture_is_a_non_gold_lecture_only_when_asked(monkeypatch):
+    from app.retrieval import pipeline
+    from app.retrieval.rerank import Outcome
+    from app.services.vector_store import vector_store
+    seen = []
+
+    async def fake_graded(question, scope, **kw):
+        seen.append(kw["lecture_title"])
+        return pipeline.RetrievalResult(Outcome.NOT_COVERED, [])
+
+    monkeypatch.setattr(pipeline, "graded_search", fake_graded)
+    monkeypatch.setattr(vector_store, "chunks", [_chunk(f"custom-library-{i}-0") for i in range(4)] + [_chunk("custom-library-5-2")])
+    await rs.V2System(simulate_lecture=True).predict(_row("a"), "player", rank=False)
+    await rs.V2System().predict(_row("a"), "player", rank=False)
+    assert seen[0] and seen[0] != "T custom-library-5-2" and seen[1] is None
+
+
+def test_make_system_passes_the_simulate_flag():
+    import importlib.util, pathlib
+    spec = importlib.util.spec_from_file_location("er", pathlib.Path(__file__).resolve().parents[1] / "scripts" / "eval_retrieval.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.make_system("v2", True).simulate_lecture is True and mod.make_system("v2").simulate_lecture is False

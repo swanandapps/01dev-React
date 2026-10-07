@@ -72,8 +72,13 @@ def _ms(t0: float) -> float:
 
 
 class V2System:
-    """Phase 4+: graded_search (hybrid -> rerank -> decision); navigation through find_moment's locator."""
+    """Phase 4+: graded_search (understand || hybrid -> rerank -> decision); navigation through find_moment's locator.
+    simulate_lecture: in player mode the row is asked while watching `watched_lecture(row)` (an explicit title, else a
+    deterministic NON-gold lecture), so query understanding runs as it does in the real player."""
     name = "v2"
+
+    def __init__(self, simulate_lecture: bool = False):
+        self.simulate_lecture = simulate_lecture
 
     async def predict(self, row: Row, mode: str, rank: bool = True) -> Prediction:
         from app.retrieval import pipeline
@@ -90,7 +95,8 @@ class V2System:
             enrolled, _ = await cl._enrollments(EVAL_STUDENT)
             scope = list(pipeline.ask_scope(enrolled))
         res = await pipeline.graded_search(row.question, scope, history=list(row.history),
-                                           lecture_title=row.lecture_title if mode == "player" else None)
+                                           lecture_title=(watched_lecture(row) if self.simulate_lecture else row.lecture_title)
+                                           if mode == "player" else None)
         ms = _ms(t0)
         best = res.best()
         case = (f"fallback:{res.rerank_error}" if res.fallback

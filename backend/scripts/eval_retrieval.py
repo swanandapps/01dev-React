@@ -160,9 +160,9 @@ def write_report(run: dict, out_dir: Path = REPORTS, compare_to: Optional[str] =
     return j, md
 
 
-def make_system(name: str):
+def make_system(name: str, simulate_lecture: bool = False):
     from app.eval import retrieval_systems as rs
-    return {"v2": rs.V2System}[name]()
+    return {"v2": rs.V2System}[name](simulate_lecture=simulate_lecture)
 
 
 def _memoize_question_embeddings():
@@ -221,7 +221,7 @@ async def _main(a) -> int:
         from app.services import catalog_index
         await catalog_index.ensure_built()  # built once per process; keep that one-off cost out of the latencies
     rows = load_rows(limit=a.limit, only=a.only)
-    system = make_system(a.system)
+    system = make_system(a.system, a.simulate_lecture)
     preds, latency, todo_by_mode = {}, {}, {}
     for mode in modes:
         todo_by_mode[mode] = rows_for_mode(list(rows.values()), mode)
@@ -240,7 +240,7 @@ async def _main(a) -> int:
         with (rs.all_courses_launched() if mode == "ask_all" else contextlib.nullcontext()):
             latency[mode] = await run_latency_sample(system, todo, mode, a.latency_sample)
     config = {"modes": modes, "concurrency": a.concurrency, "limit": a.limit, "only": a.only,
-              "latency_sample": a.latency_sample, "git_sha": _git_sha(), "chunk_count": len(vector_store.chunks),
+              "latency_sample": a.latency_sample, "simulate_lecture": a.simulate_lecture, "git_sha": _git_sha(), "chunk_count": len(vector_store.chunks),
               "launched": {m: rs.launched_slugs("ask" if m == "ask" else "all") for m in modes if m.startswith("ask")}}
     run = build_run(a.label, system.name, rows, preds, config=config, latency_by_mode=latency)
     j, md = write_report(run, compare_to=a.compare)
@@ -255,6 +255,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--system", default="v2", choices=["v2"])
     ap.add_argument("--label", required=True)
+    ap.add_argument("--simulate-lecture", action="store_true",
+                    help="player mode: ask each row while watching a deterministic non-gold lecture")
     ap.add_argument("--modes", default="player,ask")
     ap.add_argument("--all-launched", action="store_true", help="also run mode ask_all (every course treated as launched)")
     ap.add_argument("--limit", type=int)

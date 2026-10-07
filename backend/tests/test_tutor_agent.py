@@ -302,7 +302,9 @@ def _player_runtime(slug="custom-library"):
 def test_find_moment_is_bound_only_in_the_player():
     assert tutor_agent.find_moment not in tutor_agent.TOOLS
     assert tutor_agent.tools_for(None) == tutor_agent.TOOLS
-    assert tutor_agent.tools_for("custom-library") == tutor_agent.TOOLS + [tutor_agent.find_moment]
+    assert tutor_agent.tools_for("custom-library") == tutor_agent.TOOLS                  # not gated open: no find_moment
+    assert tutor_agent.tools_for("custom-library", allow_moment=True) == tutor_agent.TOOLS + [tutor_agent.find_moment]
+    assert tutor_agent.tools_for(None, allow_moment=True) == tutor_agent.TOOLS
 
 
 def test_find_moment_schema_takes_only_what():
@@ -400,7 +402,7 @@ async def test_player_stream_yields_a_moment_event_from_find_moment(monkeypatch)
     ]))
     events = await _collect(tutor_agent.stream_answer(
         system_prompt="sys", history=[], question="take me to where you publish", student_id="alice",
-        model=model, in_course="custom-library"))
+        model=model, in_course="custom-library", allow_moment=True))
     assert [e for e in events if e["type"] == "moment"] == [{"type": "moment", "moment": {
         "course_slug": "custom-library", "lecture_title": LECTURE, "start_time": 200}}]
     assert not [e for e in events if e["type"] == "cards"]

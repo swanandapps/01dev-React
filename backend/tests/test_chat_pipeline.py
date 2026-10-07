@@ -279,8 +279,8 @@ M2 = {"course_slug": "custom-library", "lecture_title": "11.1 - Publishing using
 
 
 def _player_agent(monkeypatch, calls, events, raise_at_end=False):
-    async def fake_stream(*, system_prompt, history, question, student_id, model=None, in_course=None):
-        calls["in_course"] = in_course
+    async def fake_stream(*, system_prompt, history, question, student_id, model=None, in_course=None, allow_moment=False):
+        calls["in_course"], calls["allow_moment"] = in_course, allow_moment
         for e in events:
             yield e
         if raise_at_end:
@@ -444,3 +444,10 @@ def test_grounding_prompt_says_matching_moments_are_linked_under_the_answer():
     text = loader.read_grounding_prompt().lower()
     assert "links to the matching moments may be shown under the answer" in text
     assert "must not claim" in text
+
+
+async def test_find_moment_tool_is_offered_only_for_an_explicit_request(wired, monkeypatch):
+    await _player_events(monkeypatch, wired, TOK, q="what are ES modules?")
+    assert wired["in_course"] == "custom-library" and wired["allow_moment"] is False
+    await _player_events(monkeypatch, wired, TOK, q="take me to ES modules")
+    assert wired["allow_moment"] is True

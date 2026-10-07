@@ -16,16 +16,21 @@ MAX_QUERY_CHARS = 300
 
 _DEICTIC = re.compile(r"\b(this|that|these|those|it|its|they|them|he|she|his|her|here|there|above|earlier|"
                       r"previous)\b", re.IGNORECASE)
-# An explicit request to be taken somewhere in the video. Also the gate for the `navigate` event (chat_pipeline):
-# only an explicit request jumps; anything else may only offer links.
+# The gate for the `navigate` event / find_moment tool (chat_pipeline): ONLY an explicit request to be taken to a
+# place in the video. Tighter than _ROUTED on purpose: debugging questions ("how do I jump to the end of a file in
+# vim") must never auto-jump the player. A jump/skip/go verb needs a navigation object (the part/section/...,
+# "<topic> part|section", "where we/you/he ...").
+_LEAD = r"^\s*(?:(?:please|ok|okay|now|so|hey)[\s,]+|(?:can|could|would)\s+you\s+(?:please\s+)?)*"
+_OBJ = (r"(?:the\s+)?(?:(?:part|section|bit|moment|point|lecture|video)\b|[\w`'.-]+(?:\s+[\w`'.-]+){0,3}\s+(?:part|section)\b"
+        r"|where\s+(?:we|you|he|she)\b)")
 _NAVIGATE = re.compile(
-    r"\b(?:take|bring)\s+me\s+(?:to|back)\b"
-    r"|\b(?:jump|skip|seek|rewind|go)\s+(?:back\s+)?to\s+(?:the\s+)?(?:part|section|moment|point|bit|place|minute|timestamp|start|beginning|end|where|when)\b"
-    r"|^\s*(?:jump|skip)\s+to\b"
+    r"\b(?:take|bring)\s+me\s+(?:to|back\s+to)\b"
+    r"|" + _LEAD + r"(?:jump|skip|go|rewind|seek)\s+(?:back\s+)?to\s+" + _OBJ +
+    r"|" + _LEAD + r"(?:jump|skip|rewind|seek)\s+to\s+[\w`'.-]+(?:\s+[\w`'.-]+){0,3}\s*$"
+    r"|\bwhere\s*(?:'s|\s+is)\s+the\s+(?:part|section|bit|moment)\b"
     r"|\bwhere\s+in\s+the\s+(?:video|lecture|course)\b"
-    r"|\bat\s+what\s+(?:time|minute|timestamp)\b"
-    r"|\bshow\s+me\s+where\b"
-    r"|\b(?:can|could)\s+you\s+(?:go|jump|skip)\s+to\b|^\s*(?:go|jump|skip)\s+to\b", re.IGNORECASE)
+    r"|\b(?:i\s+want\s+to\s+see|show\s+me)\s+the\s+(?:(?:part|section|bit|moment)\b|[\w`'.-]+(?:\s+[\w`'.-]+){0,3}\s+(?:part|section)\b)",
+    re.IGNORECASE)
 
 
 def is_explicit_navigation(text: str) -> bool:
@@ -41,6 +46,12 @@ _ROUTED = re.compile(
     r"|\b(?:what|which|how\s+many)\s+(?:courses?|lessons?|lectures?|quiz(?:zes)?)\s+(?:do|did|have|am)\s+i\b"
     r"|\b(?:have|did)\s+i\s+(?:finish|complete|watch|pass|fail|buy|bought|enrol|score)"
     r"|\bwhat\s+(?:did|do)\s+i\s+(?:score|get)\b"
+    r"|\b(?:take|bring)\s+me\s+(?:to|back)\b"
+    r"|\b(?:jump|skip|seek|rewind|go)\s+(?:back\s+)?to\s+(?:the\s+)?(?:part|section|moment|point|bit|place|minute|timestamp|start|beginning|end|where|when)\b"
+    r"|^\s*(?:jump|skip)\s+to\b"
+    r"|\bwhere\s+in\s+the\s+(?:video|lecture|course)\b"
+    r"|\bat\s+what\s+(?:time|minute|timestamp)\b"
+    r"|\b(?:i\s+want\s+to\s+see|show\s+me)\s+the\s+(?:part|section|bit|moment)\b"
     r"|" + _NAVIGATE.pattern, re.IGNORECASE)
 _FOLLOW_UP = re.compile(r"^\s*(and|also|so|but|then|ok|okay|what about|how about)\b", re.IGNORECASE)
 

@@ -164,20 +164,30 @@ async def test_malformed_history_item_falls_back(monkeypatch):
     assert called == []                      # the prompt build failed before the model was reached
 
 
-@pytest.mark.parametrize("q", ["take me to ES modules", "bring me back to the intro", "jump to closures",
-                               "skip to the npm publish part", "go to the part about IIFE", "rewind to the section on np",
-                               "where in the video does he explain closures", "at what time does he show npm link",
-                               "show me where npm link is used", "can you go to the closures part",
-                               "could you jump to npm publish"])
+@pytest.mark.parametrize("q", [
+    "take me to ES modules", "take me to the part where you write the commands for publishing the npm library",
+    "please jump to closures", "ok jump to the closures section", "now skip to the part about np",
+    "where's the part about closures?", "where in the video does he explain closures",
+    "I want to see the closures part", "show me the part where we publish",
+    "bring me back to the start of this lecture", "can you jump to the ES modules section"])
 def test_explicit_navigation_requests(q):
     assert un.is_explicit_navigation(q)
 
 
-@pytest.mark.parametrize("q", ["what are ES modules?", "how do I go to the next element in a linked list",
-                               "explain closures", "how to skip to the next iteration in a loop", "", "goto statement in C",
-                               "where is npm link used in this course?"])
+@pytest.mark.parametrize("q", [
+    "jump to conclusions about closures?", "go to statement vs break?", "go to definition in vscode isn't working",
+    "how do I jump to the end of a file in vim", "does it jump to the end of the loop?",
+    "skip to the next item in for loop?", "can you skip to the next line in python with continue",
+    "show me where the bug is in my code", "at what time complexity does quicksort run",
+    "how do I go to the next element in a linked list", "how to skip to the next iteration in a loop",
+    "goto statement in C", "what are ES modules?", ""])
 def test_non_navigation_questions(q):
     assert not un.is_explicit_navigation(q)
+
+
+@pytest.mark.parametrize("q", ["go to statement vs break?", "show me where the bug is in my code"])
+def test_debugging_questions_are_not_routed_by_the_loose_nav_phrases(q):
+    assert un.self_contained(q)
 
 
 def test_non_string_search_query_is_treated_as_missing():

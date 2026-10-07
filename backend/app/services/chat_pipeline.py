@@ -110,7 +110,9 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
     answer: list[str] = []
     moment: Optional[dict] = None
     # Only the player gets find_moment; Ask turns call the agent exactly as before.
-    player_kw = {"in_course": req.scope.course_slug} if req.scope.in_player else {}
+    # find_moment is offered only when the raw question is an explicit "take me to ..." request (code gate).
+    player_kw = ({"in_course": req.scope.course_slug, "allow_moment": is_explicit_navigation(question)}
+                 if req.scope.in_player else {})
     try:
         async with contextlib.aclosing(tutor_agent.stream_answer(
                 system_prompt=system, history=history, question=question,

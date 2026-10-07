@@ -2,6 +2,7 @@
 → [query understanding, Task 18]. Every consumer (Ask lookup, player lookup, find_moment,
 search_course_content) goes through here."""
 import asyncio
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
@@ -9,7 +10,7 @@ from typing import Optional, Sequence
 from app.retrieval import factory, titles
 from app.retrieval import understand as qu
 from app.retrieval.base import Candidate, rrf_fuse
-from app.retrieval.rerank import CITED, MAX_CANDIDATES, Graded, Outcome, decide, rerank
+from app.retrieval.rerank import CITED, FALLBACK_MIN_COSINE, MAX_CANDIDATES, Graded, Outcome, decide, rerank
 from app.retrieval.text import norm_title, tokenize
 from app.services import catalog_service
 from app.services.embeddings import embedding_service
@@ -225,7 +226,17 @@ async def _title_candidates(question: str, scope: Sequence[str], cands: list[Can
 
 
 def _same(a: str, b: str) -> bool:
-    return " ".join(a.lower().split()) == " ".join(b.lower().split())
+    """Equal ignoring case, whitespace and punctuation: a dropped "?" or a recapitalisation is not a rewrite."""
+    def norm(x: str) -> str:
+        return " ".join(re.sub(r"[^\w\s]", " ", x.lower()).split())
+    return norm(a) == norm(b)
+
+
+def _discard(task: "asyncio.Task") -> None:
+    """Cancel a background task nobody will await, and retrieve its outcome so asyncio never logs
+    'Task exception was never retrieved'."""
+    task.add_done_callback(lambda t: t.cancelled() or t.exception())
+    task.cancel()
 
 
 async def graded_search(question: str, scope: Sequence[str], *, intent: str = "explain",
@@ -233,7 +244,8 @@ async def graded_search(question: str, scope: Sequence[str], *, intent: str = "e
                         lecture_title: Optional[str] = None) -> RetrievalResult:
     """understand || raw retrieval -> (+ the rewrite's retrieval) -> RRF over every list -> rerank pool (fused
     list plus title-matched lectures, at most MAX_CANDIDATES) -> rerank the standalone query -> decision.
-    account / off_topic questions return NOT_COVERED without a rerank call (the caller's navigate wins)."""
+    account questions, and off_topic ones whose best raw hit is weak, return NOT_COVERED without a rerank call;
+    the caller's navigate always wins."""
     t0 = time.perf_counter()
     scope = tuple(dict.fromkeys(s for s in scope if s))
     if not scope:
@@ -247,20 +259,41 @@ async def graded_search(question: str, scope: Sequence[str], *, intent: str = "e
         try:
             u = await qu.understand(question, history, lecture_title)
         except BaseException:
-            raw.cancel()
+            _discard(raw)
             raise
         timings["understand"] = _ms(t0)
-        if u.intent == "account" or (u.intent == "off_topic" and intent != "navigate"):
-            raw.cancel()
-            await asyncio.gather(raw, return_exceptions=True)
+        rewritten = not _same(u.search_query, question)
+        sq = u.search_query if rewritten else question      # a case/punctuation-only change reuses the raw embedding
+        second = None
+        if intent != "navigate" and u.intent == "account":
+            _discard(raw)
             timings["total"] = _ms(t0)
             return RetrievalResult(Outcome.NOT_COVERED, [], intent=u.intent, search_query=u.search_query,
                                    timings_ms=timings)
-        embeddings, vec, lex = await raw
-        rewritten = not _same(u.search_query, question)
-        if rewritten or u.keywords:
-            _, v2, l2 = await _gather([u.search_query], scope, lecture_id, u.keywords, vector=rewritten)
-            vec, lex = vec + v2, lex + l2
+        if intent != "navigate" and u.intent == "off_topic":
+            pass
+        elif rewritten or u.keywords:
+            second = asyncio.create_task(_gather([sq], scope, lecture_id, u.keywords, vector=rewritten))
+        try:
+            embeddings, vec, lex = await raw
+        except BaseException:
+            if second:
+                _discard(second)
+            raise
+        if intent != "navigate" and u.intent == "off_topic":
+            weak = not vec or not vec[0] or vec[0][0][1] < FALLBACK_MIN_COSINE
+            if weak:
+                timings["total"] = _ms(t0)
+                return RetrievalResult(Outcome.NOT_COVERED, [], intent=u.intent, search_query=u.search_query,
+                                       timings_ms=timings)
+            u.intent = "explain"       # an off-topic guess with a strong raw hit: let the reranker judge
+        if second:
+            try:
+                _, v2, l2 = await second
+                vec, lex = vec + v2, lex + l2
+            except Exception as e:  # noqa: BLE001 — the rewrite is an optimisation: keep the raw lists
+                print(f"[pipeline] rewrite retrieval failed, using the raw lists only: {e!r}")
+        u = qu.Understanding(sq, u.keywords, u.intent, fallback=u.fallback)
     else:
         u = qu.Understanding(question, [], "explain", skipped=True)
         embeddings, vec, lex = await _gather(raw_queries, scope, lecture_id)
