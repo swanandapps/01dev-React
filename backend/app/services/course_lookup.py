@@ -16,7 +16,9 @@ from app.models import TranscriptChunk
 from app.retrieval import pipeline
 from app.retrieval.rerank import Graded, Outcome, decide
 from app.retrieval.text import norm_title
+from app.retrieval.understand import about_the_screen
 from app.services import catalog_index, catalog_service, enrollment_service
+from app.services import lecture_context
 from app.services.vector_store import vector_store
 
 CATALOG_THRESHOLD = 0.34  # catalog entries of in-scope courses with NO transcripts only (see _catalog_hits)
@@ -25,6 +27,8 @@ IN_COURSE_K = 3
 CURRENT_PASSAGES = 3         # player: passages of the watched lecture given as context
 CURRENT_CONTEXT_CHARS = 1500  # ... capped in total
 DESCRIPTION_CHARS = 600  # longest catalog description is 546; product-engineering's project sits near char 430
+SCREEN_CHARS = 700    # player IN_LECTURE: per on-screen passage (passages run ~60 s / ~140 words)
+EARLIER_CHARS = 500   # ... per earlier-lecture passage
 
 
 class LookupCase(str, Enum):
@@ -36,6 +40,8 @@ class LookupCase(str, Enum):
     IN_COURSE_MATCH = "in_course_match"
     IN_COURSE_RELATED = "in_course_related"
     IN_COURSE_NONE = "in_course_none"
+    # Player: a "this" question — answered from what is on screen, the lecture so far and earlier work.
+    IN_LECTURE = "in_lecture"
 
 
 @dataclass(frozen=True)
@@ -45,6 +51,7 @@ class ChatScope:
     # True only on the player route (/api/ai/tutor/stream). The Ask page's course filter
     # also sets course_slug, so a course being set is NOT the trigger.
     in_player: bool = False
+    position: Optional[float] = None    # player: video position in seconds when the student asked
 
 
 @dataclass
@@ -74,6 +81,11 @@ class CourseLookup:
     current_excerpt: Optional[Hit] = None
     # player only: the best CURRENT_PASSAGES chunks of that lecture for the question, in time order
     current_passages: list[Hit] = field(default_factory=list)
+    # player IN_LECTURE only: what is on screen, the lecture's earlier passages, earlier lectures' work
+    on_screen: list[Hit] = field(default_factory=list)
+    on_screen_now: int = 0              # index in on_screen of the passage playing when the student asked
+    lecture_so_far: list[Hit] = field(default_factory=list)
+    earlier: list[Hit] = field(default_factory=list)
 
 
 _norm = norm_title
@@ -111,6 +123,10 @@ async def course_lookup(question: str, student_id: str, scope: ChatScope = ChatS
                         history: Sequence[dict] = ()) -> CourseLookup:
     enrolled_ids, enrolled_titles = await _enrollments(student_id)
     if scope.in_player:
+        if scope.lecture_title and about_the_screen(question):
+            screen = await _screen_lookup(scope, enrolled_ids, enrolled_titles)
+            if screen:
+                return screen
         return await _in_course_lookup(question, scope, enrolled_ids, enrolled_titles, history)
     scope_slugs = pipeline.ask_scope(enrolled_ids)
     if not scope_slugs:  # F1: nothing launched AND owned -> nothing to search, rerank or cite
@@ -205,6 +221,31 @@ def deep_link(h: Hit) -> Optional[str]:
     return f"{h.url}?chapter={m.group(1)}&sub={m.group(2)}&t={int(h.start_time)}"
 
 
+async def _screen_lookup(scope: ChatScope, enrolled_ids: set[int], enrolled_titles: list[str]) -> Optional[CourseLookup]:
+    """A "this" question in the player: the student is already where the answer is, so no course-wide search,
+    no reranker, no cards. None when the lecture has no transcript (the normal player lookup takes over)."""
+    slug = scope.course_slug or ""
+    chunks = await lecture_context.lecture_chunks(slug, scope.lecture_title or "")
+    if not chunks:
+        return None
+    course = catalog_service.by_slug(slug)
+    cid = course["id"] if course else None
+
+    def hit(c: TranscriptChunk) -> Hit:
+        return Hit(source="transcript", course_id=cid, course_slug=slug, course_title=c.course_title,
+                   title=c.lecture_title, score=0.0, enrolled=cid in enrolled_ids, text=c.text_clean or c.text,
+                   lecture_id=c.lecture_id, start_time=c.start_time, end_time=c.end_time,
+                   url=course["url"] if course else None, reason=c.summary)
+
+    screen, now = lecture_context.on_screen(chunks, scope.position or 0)
+    terms = [k for k in screen[now].keywords] + [k for c in screen for k in c.keywords] or [scope.lecture_title or ""]
+    earlier = await lecture_context.earlier_passages(slug, chunks[0].lecture_id, terms)
+    return CourseLookup(case=LookupCase.IN_LECTURE, hits=[], enrolled_titles=enrolled_titles,
+                        on_screen=[hit(c) for c in screen], on_screen_now=now,
+                        lecture_so_far=[hit(c) for c in lecture_context.so_far(chunks, screen[0].start_time)],
+                        earlier=[hit(c) for c in earlier])
+
+
 async def _in_course_lookup(question: str, scope: ChatScope, enrolled_ids: set[int], enrolled_titles: list[str],
                             history: Sequence[dict] = ()) -> CourseLookup:
     """Player tutor (spec §3.2): this course's transcripts only. The reranker judges the BARE question;
@@ -296,7 +337,9 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
         course = catalog_service.by_slug(scope.course_slug or "")
         where = f" in {course['title']}" if course else ""
         lines.append(f'MODE: in-lecture — the student is watching "{scope.lecture_title}"{where} right now.')
-        if scope.in_player and (lookup.current_passages or lookup.current_excerpt):
+        if lookup.case == LookupCase.IN_LECTURE:
+            lines.extend(_screen_facts(lookup))
+        elif scope.in_player and (lookup.current_passages or lookup.current_excerpt):
             passages = lookup.current_passages or [lookup.current_excerpt]
             each = CURRENT_CONTEXT_CHARS // len(passages) - 12  # room for the ' "" @ mm:ss ' markers
             body = " … ".join(f'"{p.text[:each]}" @ {_mmss(p.start_time)}' for p in passages)
@@ -323,6 +366,22 @@ def render_facts(lookup: CourseLookup, scope: ChatScope, weak_concepts: Optional
                 lines.append(f"   why: {h.reason}")
             lines.append(f'   "{h.text[:600]}"')
     return "\n".join(lines)
+
+
+def _screen_facts(lookup: CourseLookup) -> list[str]:
+    now = lookup.on_screen_now
+    lines = ['ON SCREEN NOW ("this"/"here" means the PLAYING passage; the others are only its surroundings):']
+    for i, h in enumerate(lookup.on_screen):
+        tag = "PLAYING" if i == now else ("just before" if i < now else "just after")
+        lines.append(f'  [{tag}] @ {_mmss(h.start_time)} "{h.text[:SCREEN_CHARS]}"')
+    if lookup.lecture_so_far:
+        lines.append("THIS LECTURE SO FAR (the thread the screen is part of):")
+        lines += [f"  {_mmss(h.start_time)} {h.reason or h.text[:140]}" for h in lookup.lecture_so_far]
+    if lookup.earlier:
+        lines.append("EARLIER IN THE COURSE (what the student already built — reuse it for examples; refer to it as "
+                     "'<lecture> at mm:ss'):")
+        lines += [f'  {h.title} @ {_mmss(h.start_time)}: "{h.text[:EARLIER_CHARS]}"' for h in lookup.earlier]
+    return lines
 
 
 def to_cards(lookup: CourseLookup) -> list[dict]:

@@ -186,7 +186,8 @@ async def tutor_stream_endpoint(req: TutorRequest, student_id: str = Depends(cur
         lecture = ""
     turn = chat_pipeline.TurnRequest(
         question=msgs[-1]["content"], student_id=student_id,
-        scope=ChatScope(course_slug=req.course_id, lecture_title=lecture or None, in_player=True),
+        scope=ChatScope(course_slug=req.course_id, lecture_title=lecture or None, in_player=True,
+                        position=req.position if req.position is not None and req.position >= 0 else None),
         history=msgs[:-1][-12:], memory_slug=req.course_id,
     )
     tracer = get_tracer()

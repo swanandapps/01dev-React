@@ -279,8 +279,9 @@ M2 = {"course_slug": "custom-library", "lecture_title": "11.1 - Publishing using
 
 
 def _player_agent(monkeypatch, calls, events, raise_at_end=False):
-    async def fake_stream(*, system_prompt, history, question, student_id, model=None, in_course=None, allow_moment=False):
-        calls["in_course"], calls["allow_moment"] = in_course, allow_moment
+    async def fake_stream(*, system_prompt, history, question, student_id, model=None, in_course=None, allow_moment=False,
+                          allow_search=True):
+        calls["in_course"], calls["allow_moment"], calls["allow_search"] = in_course, allow_moment, allow_search
         for e in events:
             yield e
         if raise_at_end:
@@ -451,3 +452,14 @@ async def test_find_moment_tool_is_offered_only_for_an_explicit_request(wired, m
     assert wired["in_course"] == "custom-library" and wired["allow_moment"] is False
     await _player_events(monkeypatch, wired, TOK, q="take me to ES modules")
     assert wired["allow_moment"] is True
+
+
+async def test_a_screen_question_withholds_the_search_tool_and_shows_no_cards(wired, monkeypatch):
+    async def screen_lookup(question, student_id, scope, history=()):
+        return cl.CourseLookup(case=cl.LookupCase.IN_LECTURE, hits=[], enrolled_titles=[])
+
+    monkeypatch.setattr(chat_pipeline, "course_lookup", screen_lookup)
+    _player_agent(monkeypatch, wired, [{"type": "token", "value": "Here's one."}])
+    events = [e async for e in chat_pipeline.chat_turn(_player_req("give an example for this"))]
+    assert wired["allow_search"] is False and wired["allow_moment"] is False
+    assert [e["type"] for e in events] == ["sources", "token", "done"] and events[0]["sources"] == []

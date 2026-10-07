@@ -86,3 +86,19 @@ def test_player_route_marks_the_scope_in_player(client, monkeypatch):
     client.post("/api/ai/tutor/stream", json=_body(course_id="custom-library"))
     assert seen["req"].scope.in_player is True
     assert seen["req"].scope.course_slug == "custom-library"
+
+
+@pytest.mark.parametrize("position, want", [(162.4, 162.4), (None, None), (-3, None)])
+def test_player_turn_carries_the_video_position(client, monkeypatch, position, want):
+    seen = {}
+
+    async def fake_turn(req, model=None):
+        seen["req"] = req
+        yield {"type": "done"}
+
+    monkeypatch.setattr(chat_pipeline, "chat_turn", fake_turn)
+    body = _body()
+    if position is not None:
+        body["position"] = position
+    client.post("/api/ai/tutor/stream", json=body)
+    assert seen["req"].scope.position == want

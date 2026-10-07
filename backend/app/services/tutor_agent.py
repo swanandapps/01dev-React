@@ -201,10 +201,12 @@ TOOLS = [search_course_content, get_enrolled_courses, get_learning_strengths, ge
          get_concept_confidence, search_history, record_skill_observation, explain_concept]
 
 
-def tools_for(in_course: Optional[str], allow_moment: bool = False) -> list:
+def tools_for(in_course: Optional[str], allow_moment: bool = False, allow_search: bool = True) -> list:
     """The tool list is chosen per turn: find_moment exists only inside the player AND only when the caller's code
-    gate found an explicit "take me to ..." request (the model alone never decides to jump the player)."""
-    return TOOLS + [find_moment] if in_course and allow_moment else TOOLS
+    gate found an explicit "take me to ..." request (the model alone never decides to jump the player).
+    allow_search=False (a player "this" question) withholds search_course_content: the answer is on screen."""
+    tools = TOOLS if allow_search else [t for t in TOOLS if t is not search_course_content]
+    return tools + [find_moment] if in_course and allow_moment else tools
 
 
 @lru_cache(maxsize=1)
@@ -214,8 +216,9 @@ def _default_model() -> ChatOpenAI:
 
 async def stream_answer(*, system_prompt: str, history: list[dict], question: str, student_id: str,
                         model: Optional[object] = None, in_course: Optional[str] = None,
-                        allow_moment: bool = False) -> AsyncIterator[dict]:
-    agent = create_agent(model or _default_model(), tools=tools_for(in_course, allow_moment), system_prompt=system_prompt,
+                        allow_moment: bool = False, allow_search: bool = True) -> AsyncIterator[dict]:
+    agent = create_agent(model or _default_model(), tools=tools_for(in_course, allow_moment, allow_search),
+                         system_prompt=system_prompt,
                          context_schema=ChatContext)
     messages = [HumanMessage(t["content"]) if t["role"] == "user" else AIMessage(t["content"])
                 for t in history if t.get("role") in ("user", "assistant")]

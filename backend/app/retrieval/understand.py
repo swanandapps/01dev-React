@@ -106,6 +106,19 @@ def is_topic_less(question: str) -> bool:
     return not (set(tokenize(question)) - _GENERIC)
 
 
+# Pointers at what the student is watching ("this", "here", "what he just said").
+_SCREEN = re.compile(r"\b(this|that|these|those|here|now|part|bit|thing|stuff|talking|saying|said|mean|means|"
+                     r"he|she|they|it|about|don'?t|dont|get|lost|confused|for|do|does|did|with|on|in|why)\b", re.IGNORECASE)
+
+
+def about_the_screen(question: str) -> bool:
+    """In the player: a question about what is on screen right now — no topic of its own once the pointers
+    ("this", "here", "what he's saying") are removed. Account and navigation requests are never this."""
+    if not question.strip() or _ROUTED.search(question):
+        return False
+    return is_topic_less(_SCREEN.sub(" ", question))
+
+
 def needs_rewrite(question: str, history: Sequence[dict], lecture_title: Optional[str]) -> bool:
     """Call the model only when the message can't be searched as typed. A question with its own topic skips it even
     in the player: the Phase 5 eval measured ~1 s p95 added for no gain when every lecture-scoped question went through

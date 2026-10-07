@@ -115,3 +115,8 @@ def test_prompt_has_the_enrolled_related_case_and_why_lines():
 def test_enrolled_match_says_partial_only_touches_on_it():
     text = " ".join(loader.read_grounding_prompt().split())
     assert "A match marked PARTIAL only touches on it: if you mention it, say the course touches on it there, never that it covers it." in text
+
+
+def test_prompt_has_the_in_lecture_case():
+    text = loader.read_grounding_prompt()
+    assert "## CASE: IN_LECTURE" in text and "ON SCREEN NOW" in text and "EARLIER IN THE COURSE" in text

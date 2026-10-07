@@ -256,9 +256,13 @@ def patch_in_course(monkeypatch, patch_sources):
         async def no_catalog(query, top_k=5):
             raise AssertionError("the player tutor must not search the catalog")
 
+        async def no_screen_transcript(slug, title):  # keep these tests on the graded player path
+            return []                                  # (the "this"-question path: tests/test_lecture_context.py)
+
         monkeypatch.setattr(pipeline, "graded_search", fake_graded)
         monkeypatch.setattr(cl, "search_in_lecture", fake_lecture)
         monkeypatch.setattr(cl.catalog_index, "search", no_catalog)
+        monkeypatch.setattr(cl.lecture_context, "lecture_chunks", no_screen_transcript)
         return seen
     return apply
 

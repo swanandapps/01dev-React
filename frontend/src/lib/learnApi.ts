@@ -106,6 +106,8 @@ export async function streamTutor(
     course_id: string;
     messages: { role: string; content: string }[];
     lecture?: string;
+    /** Video position in seconds when the student asked, so "this" means what is on screen. */
+    position?: number;
   },
   cb: {
     onToken: (t: string) => void;

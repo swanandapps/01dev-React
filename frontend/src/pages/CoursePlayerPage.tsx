@@ -243,7 +243,9 @@ export default function CoursePlayerPage() {
       {aiCourse && (
         <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
                      onOpenChange={setTutorOpen} onNavigate={(n) => jumpToRef.current(n)}
-                     canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null} />
+                     canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null}
+                     getPosition={() => (videoRef.current && !Number.isNaN(videoRef.current.currentTime)
+                       ? videoRef.current.currentTime : undefined)} />
       )}
 
       {aiCourse && isUserLoggedIn && !tutorOpen && (

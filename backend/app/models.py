@@ -182,6 +182,7 @@ class TutorRequest(BaseModel):
     course_id: str
     messages: List[TutorTurn]
     lecture: str = ""  # the lecture the student is currently watching, if any
+    position: Optional[float] = None  # video position (seconds) when the student asked, if the player has a video
 
 
 # ---- Enrollment (Postgres system of record; Firebase stays auth + storage only) ----

@@ -28,6 +28,7 @@ export function PlayerTutor({
   onOpenChange,
   onNavigate,
   canJump,
+  getPosition,
 }: {
   course: Course;
   userId: string;
@@ -37,6 +38,8 @@ export function PlayerTutor({
   onNavigate?: (nav: TutorNavigate) => boolean;
   /** Would onNavigate land? Checked without jumping, so locked/unknown lectures get no button. */
   canJump?: (nav: TutorNavigate) => boolean;
+  /** Current video position in seconds, if the lecture has a video. */
+  getPosition?: () => number | undefined;
 }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
@@ -69,7 +72,8 @@ export function PlayerTutor({
       setMessages((prev) => prev.map((m) => (m.id === aId ? fn(m) : m)));
 
     streamTutor(
-      { user_id: userId, course_id: course.course_id, lecture: lectureTitle, messages: history },
+      { user_id: userId, course_id: course.course_id, lecture: lectureTitle, messages: history,
+        position: getPosition?.() },
       {
         onToken: (t) => patch((m) => ({ ...m, content: m.content + t })),
         onNavigate: (nav) => {
