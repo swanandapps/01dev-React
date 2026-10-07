@@ -200,6 +200,21 @@ export async function startTopicQuiz(courseSlug: string, chapter: number): Promi
   return res.json();
 }
 
+// Ask page chips: what the student might ask next (best-effort; [] on any problem).
+export async function getFollowups(question: string, answer: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/ai/followups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ question, answer }),
+    });
+    if (!res.ok) return [];
+    return (await res.json()).suggestions ?? [];
+  } catch {
+    return [];
+  }
+}
+
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".
 export interface TutorNavigate {
   course_slug: string;

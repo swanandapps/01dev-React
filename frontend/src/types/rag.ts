@@ -28,6 +28,7 @@ export interface ChatMessage {
   insufficient_context?: boolean;
   offer_general?: boolean;   // out of scope — show "answer from general knowledge" button
   general_prompt?: string;   // the question to re-ask with consent
+  followups?: string[];      // Ask page chips: what to ask next (not persisted)
   streaming?: boolean;
   timestamp: Date;
 }

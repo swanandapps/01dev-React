@@ -31,7 +31,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services import course_lookup, lab_topics, lecture_context, quick_quiz_service
+from app.services import course_lookup, followups, lab_topics, lecture_context, quick_quiz_service
 from app.retrieval import titles as title_index
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
@@ -263,6 +263,17 @@ async def lab_topic_quiz(req: TopicQuizRequest, student_id: str = Depends(curren
     if quiz is None:
         raise HTTPException(status_code=404, detail="No lectures to practise in this topic")
     return quiz
+
+
+class FollowupsRequest(BaseModel):
+    question: str
+    answer: str
+
+
+@app.post("/api/ai/followups")
+async def ask_followups(req: FollowupsRequest, student_id: str = Depends(current_student)):
+    """Ask page: up to 3 follow-up questions for the chips under an answer (best-effort, empty on any problem)."""
+    return {"suggestions": await followups.suggest(req.question, req.answer)}
 
 
 @app.post("/api/ai/tutor/stream")
