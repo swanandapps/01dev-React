@@ -30,7 +30,11 @@ GET_LEARNING_METRICS = (
     "practice time. Use for 'what's my streak', 'how many quizzes have I taken', 'how am I doing "
     "overall' — anything asking for the numbers themselves rather than which concepts are "
     "strong/weak (use get_learning_strengths for that). streak counts consecutive days including "
-    "today/yesterday; 0 quizzes/0 streak means no graded activity yet — say so plainly, don't guess."
+    "today/yesterday; 0 quizzes/0 streak means no graded activity yet — say so plainly, don't guess. "
+    "In the video player, set this_course_only=true when they ask about 'this course'. The result's "
+    "'scope' says what the numbers cover — always say it ('in Build a Custom Library' or 'across all your "
+    "courses'). 'recent_quizzes' lists the last quizzes with scores and dates: use it for 'what did I score "
+    "last time'."
 )
 GET_CONCEPT_CONFIDENCE = (
     "Check how confident this student is on a concept AND on everything that concept depends on, in "

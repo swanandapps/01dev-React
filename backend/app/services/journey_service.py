@@ -142,6 +142,29 @@ def _compute_metrics(sessions: list[dict], perf: list[dict]):
     return metrics, dts, day_set, practiced
 
 
+RECENT_QUIZZES = 3
+
+
+async def get_progress(user_id: str, course_slug: str | None = None) -> dict:
+    """The tutor's progress answer: the same numbers as the dashboard, across all courses or (in the player) for
+    one course only, labelled with that scope, plus the last few quizzes with their scores."""
+    sessions = await store.query("quiz_sessions", "user_id", user_id)
+    perf = await store.query("concept_performance", "user_id", user_id)
+    scope = "all your courses"
+    if course_slug:
+        from app.services import catalog_service
+        sessions = [x for x in sessions if x.get("course_id") == course_slug]
+        perf = [x for x in perf if x.get("course_id") == course_slug]
+        course = catalog_service.by_slug(course_slug)
+        scope = f"{course['title'] if course else course_slug} only"
+    metrics, _, _, _ = _compute_metrics(sessions, perf)
+    recent = sorted(sessions, key=lambda x: x.get("completed_at", ""), reverse=True)[:RECENT_QUIZZES]
+    return {"scope": scope, "metrics": metrics,
+            "recent_quizzes": [{"course": x.get("course_title") or x.get("course_id") or "Your own material",
+                                "score": x.get("score", 0), "total": x.get("total", 0),
+                                "date": str(x.get("completed_at", ""))[:10]} for x in recent]}
+
+
 async def get_metrics(user_id: str) -> dict:
     """Raw dashboard metrics (quizzes, streak, avg score, active days,
     practice time) — no LLM narrative, no heatmap. This is the tool-call-

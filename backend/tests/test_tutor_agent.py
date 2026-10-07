@@ -19,11 +19,11 @@ async def _collect(gen):
 async def test_tool_uses_context_student_not_model_supplied_id(monkeypatch):
     seen = []
 
-    async def fake_metrics(user_id):
+    async def fake_progress(user_id, course_slug=None):
         seen.append(user_id)
-        return {"quizzes": 3}
+        return {"scope": "all your courses", "metrics": {"quizzes": 3}, "recent_quizzes": []}
 
-    monkeypatch.setattr(journey_service, "get_metrics", fake_metrics)
+    monkeypatch.setattr(journey_service, "get_progress", fake_progress)
     model = FakeToolModel(messages=iter([
         AIMessage("", tool_calls=[{"name": "get_learning_metrics", "args": {"student_id": "victim"}, "id": "c1"}]),
         AIMessage("You have taken 3 quizzes."),

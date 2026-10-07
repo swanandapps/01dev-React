@@ -99,8 +99,11 @@ async def get_learning_strengths(runtime: ToolRuntime[ChatContext]) -> str:
 
 
 @tool("get_learning_metrics", description=D.GET_LEARNING_METRICS)
-async def get_learning_metrics(runtime: ToolRuntime[ChatContext]) -> str:
-    return _dump(await journey_service.get_metrics(runtime.context.student_id))
+async def get_learning_metrics(runtime: ToolRuntime[ChatContext],
+                               this_course_only: Annotated[bool, "True when the student asks about THIS course (the "
+                                                                 "one being watched); false for overall progress."] = False) -> str:
+    course = runtime.context.in_course if this_course_only else None
+    return _dump(await journey_service.get_progress(runtime.context.student_id, course))
 
 
 @tool("get_concept_confidence", description=D.GET_CONCEPT_CONFIDENCE)
