@@ -21,6 +21,7 @@ from app.models import (
     EnrolledCourse, EnrollRequest,
 )
 from app.services.vector_store import vector_store
+from app.services.store import store
 from app.services import (
     study_guide_service, question_service, adaptive_service,
     course_insight_service,
@@ -136,6 +137,32 @@ async def adaptive_answer(req: AdaptiveAnswerRequest):
     return await adaptive_service.answer(
         req.session_id, req.question_id, req.correct, req.concept, req.time_taken_ms
     )
+
+
+LAB_RECENT = 5
+LAB_WEAK = 3
+
+
+def _session_title(s: dict) -> str:
+    if s.get("source") == "player_quick_quiz":
+        lecture = next((a.get("lecture") for a in s.get("answers", []) if a.get("lecture")), "")
+        return lecture or s.get("course_title", "")
+    title = s.get("doc_title") or s.get("course_title") or "Practice"
+    return title.removeprefix("Lecture: ")
+
+
+@app.get("/api/ai/lab/overview")
+async def lab_overview(student_id: str = Depends(current_student)):
+    """Lab's side panel: recent quiz sessions (newest first) and the concepts worth revisiting, read straight
+    from quiz_sessions + concept_performance (no model call). The logged-in student's own data only."""
+    sessions = await store.query("quiz_sessions", "user_id", student_id)
+    sessions.sort(key=lambda s: s.get("completed_at", ""), reverse=True)
+    kinds = {"player_quick_quiz": "Quick check", "lecture": "Lab quiz", "self_study": "Lab quiz"}
+    recent = [{"title": _session_title(s), "kind": kinds.get(s.get("source", ""), "Course quiz"),
+               "score": s.get("score", 0), "total": s.get("total", 0), "completed_at": s.get("completed_at", "")}
+              for s in sessions[:LAB_RECENT]]
+    weak = (await journey_service.get_strengths_weaknesses(student_id))["weaknesses"][:LAB_WEAK]
+    return {"recent": recent, "weak": weak}
 
 
 @app.get("/api/ai/journey")

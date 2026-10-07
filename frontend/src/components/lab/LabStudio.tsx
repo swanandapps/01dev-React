@@ -7,10 +7,11 @@ import {
 import * as quizApi from "../../lib/notesQuizApiLang";
 import { generateOutputs, getLectures, uploadLecture, OUTPUT_LABELS } from "../../lib/labApi";
 import type { LabArtifacts, Lecture, OutputType } from "../../lib/labApi";
+import type { Course } from "../../types/learn";
 import { ArtifactView } from "./ArtifactView";
 import { NotesQuizModal } from "../learn/NotesQuizModal";
 
-type InputMode = "text" | "pdf" | "lecture";
+type InputMode = "lecture" | "topic" | "notes" | "pdf";
 type Step = "input" | "generating" | "results";
 
 const ALL_OUTPUTS: OutputType[] = ["quiz", "flashcards", "summary", "study_plan"];
@@ -51,6 +52,30 @@ function StudioHeader({
   );
 }
 
+const SOURCES: { mode: InputMode; label: string; hint: string; icon: typeof Upload }[] = [
+  { mode: "lecture", label: "A lecture", hint: "From your courses", icon: Video },
+  { mode: "topic", label: "A topic", hint: "“React hooks”, “BST”…", icon: Sparkles },
+  { mode: "notes", label: "Your notes", hint: "Paste or type", icon: NotebookPen },
+  { mode: "pdf", label: "A PDF", hint: "Upload a file", icon: Upload },
+];
+
+const MAKE_LABEL: Record<OutputType, string> = {
+  quiz: "Make my quiz", flashcards: "Make my flashcards", summary: "Make my revision notes", study_plan: "Make my study plan",
+};
+
+/** A small picture of each output, so the choice reads at a glance (decorative). */
+function OutputPreview({ kind, on }: { kind: OutputType; on: boolean }) {
+  const bar = on ? "bg-teal-300/30" : "bg-zinc-700";
+  return (
+    <span aria-hidden="true" className={`h-14 rounded-lg border flex flex-col justify-center gap-1.5 px-2.5 ${on ? "border-teal-500/30 bg-teal-950/40" : "border-zinc-800 bg-zinc-950"}`}>
+      {kind === "quiz" && (<><span className={`h-1.5 w-3/4 rounded ${bar}`} /><span className={`h-1.5 rounded ${on ? "bg-teal-400" : "bg-zinc-600"} w-1/2`} /><span className={`h-1.5 w-2/3 rounded ${bar}`} /></>)}
+      {kind === "flashcards" && (<span className={`mx-auto h-9 w-16 rounded-md border ${on ? "border-teal-400/60" : "border-zinc-600"} flex items-center justify-center text-[10px] ${on ? "text-teal-200" : "text-zinc-500"}`}>flip</span>)}
+      {kind === "summary" && (<><span className={`h-1.5 w-full rounded ${bar}`} /><span className={`h-1.5 w-5/6 rounded ${bar}`} /><span className={`h-1.5 w-2/3 rounded ${bar}`} /></>)}
+      {kind === "study_plan" && (<><span className={`h-1.5 w-1/2 rounded ${bar}`} /><span className={`h-1.5 w-2/3 rounded ml-2 ${bar}`} /><span className={`h-1.5 w-1/2 rounded ml-4 ${bar}`} /></>)}
+    </span>
+  );
+}
+
 export function LabStudio({
   studentId,
   onClose,
@@ -58,6 +83,9 @@ export function LabStudio({
   initialLectureTitle,
   initialOutputs,
   autoStart = false,
+  courses,
+  chrome = true,
+  prefill,
 }: {
   studentId: string;
   onClose: () => void;
@@ -67,8 +95,16 @@ export function LabStudio({
   initialOutputs?: OutputType[];
   /** Generate straight away once the lecture is known (the player's "Quiz me" / "Flashcards"). */
   autoStart?: boolean;
+  /** Lab page: the student's courses that have lectures to practise from (adds "A lecture" with a course picker). */
+  courses?: Course[];
+  /** false on the Lab page, which has its own heading: no studio header while picking material. */
+  chrome?: boolean;
+  /** "Practise this" from the Lab page: start a quiz on this topic (n changes to re-apply). */
+  prefill?: { topic: string; n: number };
 }) {
-  const [mode, setMode] = useState<InputMode>(courseId ? "lecture" : "text");
+  const [mode, setMode] = useState<InputMode>(courseId || courses?.length ? "lecture" : "topic");
+  const [pickedCourse, setPickedCourse] = useState(courses?.[0]?.course_id ?? "");
+  const lectureCourse = courseId || pickedCourse;
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
   const [lectures, setLectures] = useState<Lecture[]>([]);
@@ -101,10 +137,26 @@ export function LabStudio({
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  // In a course, ask the backend which lectures have transcripts.
+  // Courses can arrive after the first render on the Lab page.
   useEffect(() => {
-    if (!courseId) return;
-    getLectures(courseId)
+    if (!courseId && courses?.length && !pickedCourse) {
+      setPickedCourse(courses[0].course_id);
+      setMode((m) => (m === "topic" && !topic && !notes ? "lecture" : m));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses]);
+
+  useEffect(() => {
+    if (!prefill?.topic) return;
+    setMode("topic");
+    setTopic(prefill.topic);
+    setSelected(["quiz"]);
+  }, [prefill]);
+
+  // Ask the backend which lectures of the chosen course have transcripts.
+  useEffect(() => {
+    if (!lectureCourse) return;
+    getLectures(lectureCourse)
       .then((ls) => {
         setLecturesError(false);
         setLectures(ls);
@@ -117,7 +169,8 @@ export function LabStudio({
         setLectureId("");
         setLecturesError(true);
       });
-  }, [courseId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectureCourse]);
 
   // The player's "Quiz me" / "Flashcards": go straight to generating once the lecture is picked.
   useEffect(() => {
@@ -136,7 +189,9 @@ export function LabStudio({
       ? !!pdfFile
       : mode === "lecture"
       ? !!lectureId
-      : !!(notes.trim() || topic.trim()));
+      : mode === "topic"
+      ? !!topic.trim()
+      : !!notes.trim());
 
   async function handleGenerate() {
     setError("");
@@ -150,9 +205,9 @@ export function LabStudio({
         if (!lectureId) throw new Error("Please pick a lecture.");
         docId = (await uploadLecture(lectureId)).docId;
       } else {
-        const text = notes.trim() || topic.trim();
-        if (!text) throw new Error("Please enter some notes or a topic.");
-        docId = (await quizApi.uploadText(text, topic.trim() || undefined)).docId;
+        const text = mode === "topic" ? topic.trim() : notes.trim();
+        if (!text) throw new Error(mode === "topic" ? "Please enter a topic." : "Please paste some notes.");
+        docId = (await quizApi.uploadText(text, mode === "topic" ? text : undefined)).docId;
       }
       const res = await generateOutputs(docId, selected);
       setArtifacts(res.artifacts ?? {});
@@ -216,7 +271,7 @@ export function LabStudio({
 
   return (
     <div className="flex flex-col gap-5">
-      <StudioHeader subtitle={subtitle} onClose={onClose} />
+      {(chrome || step !== "input") && <StudioHeader subtitle={subtitle} onClose={onClose} />}
 
       {error && (
         <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-xl px-4 py-3">
@@ -226,152 +281,96 @@ export function LabStudio({
 
       {step === "input" && (
         <>
-          <div className="flex bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-1 gap-1">
-              {(["text", "pdf", ...(courseId ? (["lecture"] as const) : [])] as InputMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    mode === m
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/40"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  }`}
-                >
-                  {m === "pdf" ? (
-                    <Upload className="w-3.5 h-3.5" />
-                  ) : m === "lecture" ? (
-                    <Video className="w-3.5 h-3.5" />
-                  ) : (
-                    <NotebookPen className="w-3.5 h-3.5" />
-                  )}
-                  {m === "pdf" ? "Upload PDF" : m === "lecture" ? "This course" : "Type notes / topic"}
-                </button>
-              ))}
-          </div>
-
-          {mode === "text" && (
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wide">
-                  Topic
-                </label>
-                <input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. React hooks, OS scheduling, Binary Search Trees…"
-                  className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-indigo-500/60 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wide">
-                  Notes <span className="normal-case text-zinc-600 font-normal">(optional)</span>
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={6}
-                  placeholder="Paste your notes here…"
-                  className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-indigo-500/60 transition-colors resize-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {mode === "pdf" && (
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-zinc-700 hover:border-indigo-500/50 rounded-xl p-10 text-center cursor-pointer transition-colors"
-            >
-              <Upload className="w-5 h-5 text-indigo-400 mx-auto mb-3" />
-              {fileName ? (
-                <p className="text-sm text-indigo-300 font-medium">{fileName}</p>
-              ) : (
-                <p className="text-sm font-medium text-zinc-300">Click to choose a PDF</p>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setPdfFile(f); setFileName(f.name); }
-                }}
-              />
-            </div>
-          )}
-
-          {mode === "lecture" && (
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">
-                Pick a lecture
-              </label>
-              {lecturesError ? (
-                <p className="text-sm text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-xl px-4 py-3">
-                  Couldn't load lectures — check your connection and reopen Lab.
-                </p>
-              ) : lectures.length === 0 ? (
-                <p className="text-sm text-zinc-500 bg-zinc-800/40 border border-zinc-700/50 rounded-xl px-4 py-3">
-                  No transcripts are available for this course yet — paste notes or upload a PDF instead.
-                </p>
-              ) : (
-                <select
-                  value={lectureId}
-                  onChange={(e) => setLectureId(e.target.value)}
-                  className="w-full bg-zinc-800/60 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 outline-none focus:border-indigo-500/60"
-                >
-                  {lectures.map((l) => (
-                    <option key={l.lecture_id} value={l.lecture_id}>{l.lecture_title}</option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-zinc-600">Made from what the instructor says in this lecture.</p>
-            </div>
-          )}
-
-          <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wide">
-              What should we make from it?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ALL_OUTPUTS.map((t) => {
-                const on = selected.includes(t);
-                const { label, blurb } = OUTPUT_LABELS[t];
+          <section className="flex flex-col gap-3">
+            <h3 className="text-[13px] font-bold text-zinc-400"><span className="text-violet-400">1</span> · Start from</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {SOURCES.filter((src) => src.mode !== "lecture" || courseId || courses?.length).map((src) => {
+                const on = mode === src.mode;
                 return (
-                  <button
-                    key={t}
-                    onClick={() => toggle(t)}
-                    aria-pressed={on}
-                    className={`text-left rounded-xl border px-4 py-3 transition-colors ${
-                      on
-                        ? "border-indigo-500/60 bg-indigo-600/10"
-                        : "border-zinc-700/60 bg-zinc-800/40 hover:border-zinc-600"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${
-                          on ? "bg-indigo-600" : "border border-zinc-600"
-                        }`}
-                      >
-                        {on && <Check className="w-3 h-3 text-white" />}
-                      </span>
-                      <span className="text-sm font-semibold text-zinc-100">{label}</span>
-                    </div>
-                    <p className="text-xs text-zinc-500 mt-1 ml-6">{blurb}</p>
+                  <button key={src.mode} type="button" aria-pressed={on} onClick={() => setMode(src.mode)}
+                          className={`text-left rounded-2xl px-4 py-3.5 border transition-colors flex flex-col gap-1 ${
+                            on ? "border-violet-500 bg-violet-500/10" : "border-zinc-800 bg-zinc-900 hover:border-zinc-600"}`}>
+                    <src.icon className={`w-4 h-4 mb-1 ${on ? "text-violet-300" : "text-zinc-400"}`} />
+                    <span className="text-sm font-bold text-zinc-100">{src.label}</span>
+                    <span className={`text-xs ${on ? "text-violet-200/80" : "text-zinc-500"}`}>{src.hint}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={!canSubmit}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-sm font-semibold rounded-xl py-3.5 transition-colors shadow-lg shadow-indigo-900/30"
-          >
+            {mode === "lecture" && (
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {!courseId && courses && courses.length > 0 && (
+                  <select aria-label="Course" value={pickedCourse} onChange={(e) => setPickedCourse(e.target.value)}
+                          className="sm:flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-3 text-sm text-zinc-100 outline-none focus:border-violet-500/60">
+                    {courses.map((c) => <option key={c.course_id} value={c.course_id}>{c.title}</option>)}
+                  </select>
+                )}
+                {lecturesError ? (
+                  <p className="sm:flex-[2] text-sm text-rose-300 bg-rose-950/40 border border-rose-800/50 rounded-xl px-4 py-3">
+                    Couldn't load lectures. Check your connection and try again.
+                  </p>
+                ) : lectures.length === 0 ? (
+                  <p className="sm:flex-[2] text-sm text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+                    No lectures to practise from in this course yet. Try a topic or your notes.
+                  </p>
+                ) : (
+                  <select aria-label="Lecture" value={lectureId} onChange={(e) => setLectureId(e.target.value)}
+                          className="sm:flex-[2] bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-3 text-sm text-zinc-100 outline-none focus:border-violet-500/60">
+                    {lectures.map((l) => <option key={l.lecture_id} value={l.lecture_id}>{l.lecture_title}</option>)}
+                  </select>
+                )}
+              </div>
+            )}
+            {mode === "topic" && (
+              <input aria-label="Topic" value={topic} onChange={(e) => setTopic(e.target.value)}
+                     placeholder="e.g. React hooks, OS scheduling, binary search trees…"
+                     className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500/60" />
+            )}
+            {mode === "notes" && (
+              <textarea aria-label="Your notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={6}
+                        placeholder="Paste your notes here…"
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder-zinc-600 outline-none focus:border-violet-500/60 resize-none" />
+            )}
+            {mode === "pdf" && (
+              <button type="button" onClick={() => fileRef.current?.click()}
+                      className="border-2 border-dashed border-zinc-700 hover:border-violet-500/50 rounded-xl p-8 text-center transition-colors">
+                <Upload className="w-5 h-5 text-violet-300 mx-auto mb-2" />
+                <span className={`text-sm font-medium ${fileName ? "text-violet-200" : "text-zinc-300"}`}>{fileName || "Choose a PDF"}</span>
+                <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+                       onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPdfFile(f); setFileName(f.name); } }} />
+              </button>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h3 className="text-[13px] font-bold text-zinc-400"><span className="text-violet-400">2</span> · Make</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {ALL_OUTPUTS.map((t) => {
+                const on = selected.includes(t);
+                const { label, blurb } = OUTPUT_LABELS[t];
+                return (
+                  <button key={t} type="button" onClick={() => toggle(t)} aria-pressed={on}
+                          className={`text-left rounded-2xl border p-3.5 transition-colors flex flex-col gap-2.5 ${
+                            on ? "border-teal-400 bg-teal-500/10" : "border-zinc-800 bg-zinc-900 hover:border-zinc-600"}`}>
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-zinc-100">{label}</span>
+                      <span className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${on ? "bg-teal-500" : "border border-zinc-600"}`}>
+                        {on && <Check className="w-3 h-3 text-teal-950" />}
+                      </span>
+                    </span>
+                    <OutputPreview kind={t} on={on} />
+                    <span className="text-xs text-zinc-500 leading-snug">{blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <button onClick={handleGenerate} disabled={!canSubmit}
+                  className="self-start flex items-center gap-2 bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white text-sm font-bold rounded-xl px-6 py-3.5 transition-colors">
             <Sparkles className="w-4 h-4" />
-            Generate {selected.length > 1 ? `${selected.length} things` : "it"}
+            {selected.length === 1 ? MAKE_LABEL[selected[0]] : `Make ${selected.length} things`}
             <ChevronRight className="w-4 h-4" />
           </button>
         </>

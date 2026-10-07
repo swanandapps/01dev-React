@@ -143,6 +143,18 @@ export async function submitQuickQuiz(quizId: string, answers: number[]): Promis
   return res.json();
 }
 
+// Lab page side panel: recent quiz sessions and concepts worth revisiting (the student's own data).
+export interface LabOverview {
+  recent: { title: string; kind: string; score: number; total: number; completed_at: string }[];
+  weak: { concept: string; accuracy: number; attempts: number }[];
+}
+
+export async function getLabOverview(): Promise<LabOverview> {
+  const res = await fetch(`${API_BASE}/api/ai/lab/overview`, { headers: { ...(await authHeaders()) } });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return res.json();
+}
+
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".
 export interface TutorNavigate {
   course_slug: string;
