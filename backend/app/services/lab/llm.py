@@ -119,27 +119,46 @@ def _shuffle_options(q: dict) -> dict:
 
 
 # ── Quiz for one objective (a specialized generator) ────────────────────────
-def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
-    """n multiple-choice questions for one objective, with explanation + hint."""
-    n = max(1, min(10, int(n or 3)))
-    sys = (
-        "You are a quiz author. Write multiple-choice questions testing the given "
-        "objective, grounded in the material. Each question has exactly 4 answer options "
-        "written out IN FULL as real answers (NEVER single letters like 'a'/'b'/'c'/'d'), "
-        "with exactly one correct. Options are shuffled afterwards: never refer to an option by "
-        "letter or position in the explanation. 'correctIndex' is the 0-based position of the correct "
-        'option in the array. Return ONLY JSON: {"questions":[{"question":"<full question>",'
-        '"options":["<full answer text>","<full answer text>","<full answer text>",'
-        '"<full answer text>"],"correctIndex":<0-3>,"explanation":"<why that option is '
-        'correct>","hint":"<nudge that does NOT reveal the answer>",'
-        '"concept":"<2-4 word name of the single concept this question tests>"}]}'
-    )
+GIVEAWAY_RATIO = 1.25  # correct option longer than every other by this factor = guessable by length
+
+_QUIZ_SYSTEM = (
+    "You are a quiz author. Write multiple-choice questions testing the given "
+    "objective, grounded in the material. Each question has exactly 4 answer options "
+    "written out IN FULL as real answers (NEVER single letters like 'a'/'b'/'c'/'d'), "
+    "with exactly one correct. Options are shuffled afterwards: never refer to an option by "
+    "letter or position in the explanation. 'correctIndex' is the 0-based position of the correct "
+    "option in the array.\n"
+    "The options must not give the answer away:\n"
+    "- Every option is 5 to 12 words. Write the correct option first in your head, count its words, then "
+    "make EACH wrong option within 2 words of that count, in the same grammatical form and with the same "
+    "level of detail. The correct option is never the longest or the most specific one.\n"
+    "- Wrong options are believable mistakes a student who half-watched the material would make "
+    "(a related idea, a reversed cause, the right term in the wrong place), each stated as confidently "
+    "as the right one. No joke options and no obviously absurd claims.\n"
+    "- Do not put absolute words (always, never, guarantees, automatically, completely) only in the "
+    "wrong options.\n"
+    'Return ONLY JSON: {"questions":[{"question":"<full question>",'
+    '"options":["<full answer text>","<full answer text>","<full answer text>",'
+    '"<full answer text>"],"correctIndex":<0-3>,"explanation":"<why that option is '
+    'correct>","hint":"<nudge that does NOT reveal the answer>",'
+    '"concept":"<2-4 word name of the single concept this question tests>"}]}'
+)
+
+
+def _is_giveaway(q: dict) -> bool:
+    """The correct option is clearly longer than every wrong one (students learn to pick the longest)."""
+    opts = q["options"]
+    others = [len(o) for i, o in enumerate(opts) if i != q["correctIndex"]]
+    return bool(others) and len(opts[q["correctIndex"]]) > GIVEAWAY_RATIO * max(others)
+
+
+def _quiz_batch(document: str, objective: dict, n: int, note: str = "") -> list[dict]:
     user = (
         f"OBJECTIVE: {objective.get('title')} ({objective.get('difficulty')})\n"
         f"FOCUS: {objective.get('focus')}\n"
-        f"NUMBER OF QUESTIONS: {n}\n\nMATERIAL:\n{document[:4000]}"
+        f"NUMBER OF QUESTIONS: {n}\n{note}\nMATERIAL:\n{document[:4000]}"
     )
-    data = _chat_json(sys, user, max_tokens=1200)
+    data = _chat_json(_QUIZ_SYSTEM, user, max_tokens=1200)
     raw = data.get("questions") if isinstance(data, dict) else None
     out: list[dict] = []
     for q in raw or []:
@@ -150,13 +169,33 @@ def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
         if all(o.strip().lower() in ("a", "b", "c", "d") for o in vq["options"]):
             continue  # model echoed placeholder letters, not real answers
         out.append(vq)
+    return out
+
+
+def gen_quiz(document: str, objective: dict, n: int) -> list[dict]:
+    """n multiple-choice questions for one objective, with explanation + hint. A batch where a correct option
+    is clearly the longest is regenerated once and the batch with fewer such questions is kept whole (mixing
+    batches would repeat topics: each one covers the material on its own)."""
+    n = max(1, min(10, int(n or 3)))
+
+    def worse(batch: list[dict]) -> tuple[int, int]:
+        return (max(0, n - len(batch)), sum(_is_giveaway(q) for q in batch[:n]))
+
+    pool = _quiz_batch(document, objective, n)
+    if worse(pool) != (0, 0):
+        second = _quiz_batch(document, objective, n, note=(
+            "IMPORTANT: in your options the correct answer must be the same length as the wrong ones — "
+            "make the wrong options as long and as specific as the right one.\n"))
+        if worse(second) < worse(pool):
+            pool = second
+    out = pool[:n]
     if not out:
         out = [Question(
             question=f"Which best describes: {objective.get('title')}?",
             options=["See the material", "Unrelated", "None", "All"],
             correctIndex=0, explanation="Refer to the material for this objective.",
             hint="Focus on the objective's key idea.").model_dump()]
-    return [_shuffle_options(q) for q in out[:n]]
+    return [_shuffle_options(q) for q in out]
 
 
 # ── Final summary ───────────────────────────────────────────────────────────
