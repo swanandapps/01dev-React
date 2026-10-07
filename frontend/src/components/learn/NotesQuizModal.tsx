@@ -24,19 +24,13 @@ const diffBadge: Record<Difficulty, string> = {
   advanced: "text-rose-400 bg-rose-500/10 border-rose-500/30",
 };
 
-const QUICK_CHECK_OBJECTIVES = 3;
-
 export function NotesQuizModal({
   api = quizApi,
   resumeLessonId,
   onRestart,
-  quickCheck = false,
 }: {
   api?: QuizApi;
   resumeLessonId?: string;
-  /** In-course "Quiz me": skip the objectives review and approve the proposed plan as a short check
-   *  (QUICK_CHECK_OBJECTIVES objectives × 1 question). Lab's own page keeps the review step. */
-  quickCheck?: boolean;
   /** When set (Lab hosts this resumed lesson), the "complete" screen's
    *  restart action defers to this instead of the internal restart() —
    *  the internal one reopens this component's own upload form, which is
@@ -57,7 +51,6 @@ export function NotesQuizModal({
   const [objectives, setObjectives] = useState<Objective[]>([]);
   const [perQuiz, setPerQuiz] = useState(3);
   const [planBusy, setPlanBusy] = useState(false);
-  const autoApproved = useRef(false);
 
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -98,17 +91,7 @@ export function NotesQuizModal({
 
   function applyLesson(view: LessonView) {
     setLesson(view);
-    if (view.status === "awaiting_approval" && view.plan && quickCheck && !autoApproved.current) {
-      autoApproved.current = true;
-      setStep("loading");
-      api.approveLesson(view.id, view.plan.objectives.slice(0, QUICK_CHECK_OBJECTIVES), 1)
-        .then(applyLesson)
-        .catch((e) => {  // fall back to the review step rather than strand the student
-          setError((e as Error).message);
-          setObjectives(view.plan?.objectives ?? []);
-          setStep("plan");
-        });
-    } else if (view.status === "awaiting_approval" && view.plan) {
+    if (view.status === "awaiting_approval" && view.plan) {
       setObjectives(view.plan.objectives);
       setStep("plan");
     } else if (view.status === "quizzing") {
