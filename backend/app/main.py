@@ -29,7 +29,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services import course_lookup
+from app.services import course_lookup, lecture_context
 from app.retrieval import titles as title_index
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
@@ -159,6 +159,20 @@ async def course_insight(req: CourseInsightRequest):
     return await course_insight_service.generate(
         req.user_id, req.course_id, req.chat_questions, req.rewatched_lectures
     )
+
+
+@app.get("/api/ai/lecture-moments")
+async def lecture_moments(course_id: str, lecture: str, student_id: str = Depends(current_student)):
+    """Key moments under the player's video: every transcript passage of the lecture at its start time, with
+    its one-line summary (written offline when the transcripts were enriched). Owners of the course only."""
+    course = catalog_service.by_slug(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Unknown course")
+    owned = {c["id"] for c in await enrollment_service.get_enrolled_courses(student_id)}
+    if course["id"] not in owned:
+        raise HTTPException(status_code=403, detail="Not enrolled in this course")
+    chunks = await lecture_context.lecture_chunks(course_id, lecture)
+    return [{"start_time": c.start_time, "summary": c.summary or (c.text_clean or c.text)[:140]} for c in chunks]
 
 
 @app.post("/api/ai/tutor/stream")

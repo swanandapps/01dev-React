@@ -86,6 +86,28 @@ export function recordLectureView(lectureTitle: string): void {
   }
 }
 
+// Lectures this browser has opened (by title), for the player's course outline progress.
+export function viewedLectures(): Set<string> {
+  try {
+    return new Set(Object.keys(JSON.parse(localStorage.getItem("lecture_views") || "{}")));
+  } catch {
+    return new Set();
+  }
+}
+
+// Key moments under the player's video: each passage of the lecture with its one-line summary.
+export interface LectureMoment {
+  start_time: number;
+  summary: string;
+}
+
+export async function getLectureMoments(courseSlug: string, lecture: string): Promise<LectureMoment[]> {
+  const qs = `course_id=${encodeURIComponent(courseSlug)}&lecture=${encodeURIComponent(lecture)}`;
+  const res = await fetch(`${API_BASE}/api/ai/lecture-moments?${qs}`, { headers: { ...(await authHeaders()) } });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return res.json();
+}
+
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".
 export interface TutorNavigate {
   course_slug: string;

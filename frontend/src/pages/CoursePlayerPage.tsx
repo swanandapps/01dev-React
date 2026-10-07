@@ -4,8 +4,10 @@ import Header from "../components/Home/Header";
 import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
-import { recordLectureView, getCourses } from "../lib/learnApi";
-import { FlaskConical, ListVideo, Sparkles } from "lucide-react";
+import { recordLectureView, getCourses, getLectureMoments, viewedLectures } from "../lib/learnApi";
+import type { LectureMoment } from "../lib/learnApi";
+import type { OutputType } from "../lib/labApi";
+import { FlaskConical, Layers, Check, ChevronLeft, ListVideo } from "lucide-react";
 import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
 import { resolveJump } from "../lib/lectureMatch";
@@ -17,9 +19,12 @@ export default function CoursePlayerPage() {
   const [searchParams] = useSearchParams();
   const { isCourseBought, currentuser, isUserLoggedIn } = useUserSessionStore();
   const userId = (currentuser?.uid as string) || "anonymous";
-  // Right rail (layout B): Chapters | AI Tutor | Lab. The tutor can pop out into a floating window.
-  const [railTab, setRailTab] = useState<"chapters" | "tutor" | "lab">("chapters");
+  // Layout E: course outline (left, collapsible) · video + key moments + practice (centre) · tutor (right, always on).
+  const [outlineOpen, setOutlineOpen] = useState(true);
   const [tutorFloating, setTutorFloating] = useState(false);
+  const [labOutputs, setLabOutputs] = useState<OutputType[] | null>(null); // open = Lab on this lecture
+  const [moments, setMoments] = useState<LectureMoment[]>([]);
+  const [nowIdx, setNowIdx] = useState(-1);
 
   const track = tracks.find((t) => t.id === Number(courseid));
 
@@ -112,6 +117,37 @@ export default function CoursePlayerPage() {
     if (currentSub?.name) recordLectureView(currentSub.name);
   }, [activeChapter, activeSub]);
 
+  // Key moments for the lecture on screen (owners only; quietly empty otherwise).
+  useEffect(() => {
+    setMoments([]);
+    setNowIdx(-1);
+    if (!aiCourse || !currentSub?.name || !bought || !isUserLoggedIn) return;
+    let cancelled = false;
+    getLectureMoments(aiCourse.course_id, currentSub.name)
+      .then((ms) => { if (!cancelled) setMoments(ms); })
+      .catch(() => { /* no moments row */ });
+    return () => { cancelled = true; };
+  }, [aiCourse, currentSub?.name, bought, isUserLoggedIn]);
+
+  const onTimeUpdate = () => {
+    const t = videoRef.current?.currentTime ?? 0;
+    let i = -1;
+    moments.forEach((m, k) => { if (m.start_time <= t) i = k; });
+    if (i !== nowIdx) setNowIdx(i);
+  };
+
+  const seekTo = (seconds: number) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = seconds;
+    v.play().catch(() => {});
+  };
+
+  const viewed = viewedLectures();
+  const allLectures = track.courseContent.flatMap((c) => c.subchapters.map((sc) => sc.name));
+  const watchedCount = allLectures.filter((n) => viewed.has(n)).length;
+  const mmss = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+
   useEffect(() => {
     if (!seekSeconds || !videoRef.current) return;
     seekTarget.current = seekSeconds;
@@ -153,12 +189,76 @@ export default function CoursePlayerPage() {
   };
   jumpToRef.current = jumpTo;
 
+  const outline = (
+    <nav aria-label="Course outline"
+         className={`order-3 lg:order-1 flex-shrink-0 border-t lg:border-t-0 lg:border-r border-zinc-800 bg-zinc-950 flex flex-col min-h-0 ${
+           outlineOpen ? "w-full lg:w-[264px]" : "w-full lg:w-12"}`}>
+      {outlineOpen ? (
+        <>
+          <div className="px-4 py-3.5 border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-bold text-white truncate">{track.title}</span>
+              <button onClick={() => setOutlineOpen(false)} aria-label="Collapse outline"
+                      className="hidden lg:flex w-7 h-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 items-center justify-center">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="h-1 bg-zinc-800 rounded"><div className="h-1 bg-violet-400 rounded" style={{ width: `${allLectures.length ? (100 * watchedCount) / allLectures.length : 0}%` }} /></div>
+            <span className="text-[11px] text-zinc-400">{watchedCount} of {allLectures.length} lectures opened</span>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto py-1.5">
+            {track.courseContent.map((chapter, ci) => {
+              const done = chapter.subchapters.length > 0 && chapter.subchapters.every((sc) => viewed.has(sc.name));
+              return (
+                <div key={ci}>
+                  <button
+                    onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
+                    aria-expanded={expandedChapter === ci}
+                    className={`w-full flex items-center gap-2 px-4 py-2 text-left text-[13px] hover:bg-zinc-900 ${
+                      activeChapter === ci ? "text-white font-semibold" : isLocked(ci) ? "text-zinc-600" : "text-zinc-300"}`}
+                  >
+                    {isLocked(ci) ? <span aria-hidden="true" className="w-3.5 text-[10px]">🔒</span>
+                      : done ? <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                      : <span className="w-3.5 flex-shrink-0" />}
+                    <span className="truncate">{chapter.name.replace(/^Chapter\s+/, "")}</span>
+                  </button>
+                  {expandedChapter === ci && chapter.subchapters.map((sub, si) => (
+                    <button
+                      key={si}
+                      onClick={() => handleSelectSub(ci, si)}
+                      disabled={isLocked(ci)}
+                      className={`w-full pl-10 pr-4 py-1.5 text-left text-xs transition-colors ${
+                        activeChapter === ci && activeSub === si
+                          ? "text-white bg-violet-500/10 border-l-2 border-violet-400"
+                          : isLocked(ci) ? "text-zinc-700 cursor-not-allowed"
+                          : viewed.has(sub.name) ? "text-zinc-500 hover:text-white hover:bg-zinc-900"
+                          : "text-zinc-400 hover:text-white hover:bg-zinc-900"}`}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <button onClick={() => setOutlineOpen(true)} aria-label="Show course outline"
+                className="m-2 w-8 h-8 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 flex items-center justify-center">
+          <ListVideo className="w-4 h-4" />
+        </button>
+      )}
+    </nav>
+  );
+
   return (
     <div className="bg-zinc-950 text-[#F0F0F0] min-h-screen">
       <Header />
-      <div className="pt-16 flex flex-col lg:flex-row h-[calc(100vh-64px)]">
-        <div className="flex-1 bg-black flex flex-col">
-          <div className="aspect-video w-full bg-black">
+      <div className="pt-16 flex flex-col lg:flex-row lg:h-screen">
+        {outline}
+
+        <main className="order-1 lg:order-2 flex-1 min-w-0 flex flex-col lg:overflow-y-auto">
+          <div className="aspect-video w-full bg-black flex-shrink-0">
             {currentSub && !isLocked(activeChapter) ? (
               <video
                 ref={videoRef}
@@ -166,6 +266,7 @@ export default function CoursePlayerPage() {
                 className="w-full h-full"
                 src={getVideoSrc(currentSub.src)}
                 onCanPlay={handleCanPlay}
+                onTimeUpdate={onTimeUpdate}
               />
             ) : isLocked(activeChapter) ? (
               <div className="w-full h-full flex items-center justify-center">
@@ -187,119 +288,78 @@ export default function CoursePlayerPage() {
             )}
           </div>
 
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-white">
-              {currentSub?.name || "Select a lecture"}
-            </h2>
-            <p className="text-zinc-500 text-sm mt-1">
-              {track.courseContent[activeChapter]?.name}
-            </p>
-          </div>
-        </div>
-
-        <aside className="w-full lg:w-[400px] flex-shrink-0 bg-zinc-900 border-l border-zinc-800 flex flex-col min-h-[70vh] lg:min-h-0">
-          <div role="tablist" aria-label="Course panel" className="flex items-center gap-1 px-3 py-2.5 border-b border-zinc-800 flex-shrink-0">
-            {([
-              ["chapters", "Chapters", ListVideo],
-              ...(aiCourse ? [["tutor", "AI Tutor", Sparkles], ["lab", "Lab", FlaskConical]] as const : []),
-            ] as const).map(([id, label, Icon]) => (
-              <button
-                key={id}
-                role="tab"
-                aria-selected={railTab === id}
-                onClick={() => setRailTab(id)}
-                className={`flex items-center gap-1.5 text-sm rounded-lg px-3 py-2 transition-colors ${
-                  railTab === id
-                    ? id === "lab"
-                      ? "bg-teal-600/15 border border-teal-500/40 text-teal-100 font-semibold"
-                      : "bg-indigo-600/15 border border-indigo-500/40 text-indigo-100 font-semibold"
-                    : "border border-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-                }`}
-              >
-                <Icon className="w-4 h-4" /> {label}
-              </button>
-            ))}
+          <div className="px-6 pt-4 pb-2">
+            <h2 className="text-lg font-semibold text-white">{currentSub?.name || "Select a lecture"}</h2>
+            <p className="text-zinc-500 text-sm mt-0.5">{track.courseContent[activeChapter]?.name}</p>
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col">
-            {railTab === "chapters" && (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="p-4 border-b border-zinc-800">
-                  <h3 className="text-white font-semibold text-sm">{track.title}</h3>
-                </div>
-                {track.courseContent.map((chapter, ci) => (
-                  <div key={ci} className="border-b border-zinc-800">
-                    <button
-                      onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800 transition-colors"
-                    >
-                      <span className={`text-sm font-medium ${isLocked(ci) ? "text-zinc-600" : "text-zinc-300"}`}>
-                        {chapter.name}
-                      </span>
-                      <span className="text-zinc-600 text-xs ml-2">
-                        {isLocked(ci) ? "🔒" : expandedChapter === ci ? "▲" : "▼"}
-                      </span>
-                    </button>
-
-                    {expandedChapter === ci && (
-                      <div>
-                        {chapter.subchapters.map((sub, si) => (
-                          <button
-                            key={si}
-                            onClick={() => handleSelectSub(ci, si)}
-                            disabled={isLocked(ci)}
-                            className={`w-full px-6 py-2 text-left text-xs transition-colors ${
-                              activeChapter === ci && activeSub === si
-                                ? `${track.theme} font-semibold bg-zinc-800`
-                                : isLocked(ci)
-                                ? "text-zinc-700 cursor-not-allowed"
-                                : "text-zinc-400 hover:text-white hover:bg-zinc-800"
-                            }`}
-                          >
-                            {sub.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+          {moments.length > 0 && (
+            <section aria-label="Key moments" className="pb-3">
+              <h3 className="px-6 pt-1 text-[11px] font-bold tracking-widest text-zinc-400">KEY MOMENTS</h3>
+              <div className="flex gap-2.5 px-6 pt-2.5 pb-1 overflow-x-auto">
+                {moments.map((m, i) => (
+                  <button
+                    key={m.start_time}
+                    onClick={() => seekTo(m.start_time)}
+                    className={`w-44 flex-shrink-0 text-left rounded-xl px-3 py-2.5 border transition-colors flex flex-col gap-1.5 ${
+                      i === nowIdx ? "bg-violet-500/10 border-violet-500" : "bg-zinc-900 border-zinc-800 hover:border-zinc-600"}`}
+                  >
+                    <span className={`font-mono text-xs ${i === nowIdx ? "text-violet-300 font-semibold" : "text-zinc-500"}`}>
+                      {mmss(m.start_time)}{i === nowIdx ? " · now" : ""}
+                    </span>
+                    <span className={`text-[13px] leading-snug line-clamp-3 ${i === nowIdx ? "text-white" : "text-zinc-300"}`}>{m.summary}</span>
+                  </button>
                 ))}
               </div>
-            )}
+            </section>
+          )}
 
-            {railTab === "tutor" && tutorFloating && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="text-sm text-zinc-400">The tutor is floating over the page.</p>
-                <button onClick={() => setTutorFloating(false)}
-                        className="text-sm text-indigo-200 border border-indigo-500/40 rounded-lg px-4 py-2 hover:bg-indigo-600/15">
-                  Dock it here
-                </button>
+          {aiCourse && isUserLoggedIn && currentSub && !isLocked(activeChapter) && (
+            <section aria-label="Practice this lecture"
+                     className="mx-6 mb-5 mt-1 px-4 py-3.5 rounded-2xl border border-teal-900 bg-teal-950/40 flex flex-wrap items-center gap-3">
+              <FlaskConical className="w-5 h-5 text-teal-300 flex-shrink-0" />
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-sm font-bold text-teal-50">Check yourself on {currentSub.name.split(" - ")[0]}</p>
+                <p className="text-xs text-teal-300/90">Questions made from this lecture's transcript</p>
               </div>
-            )}
+              <button onClick={() => setLabOutputs(["quiz"])}
+                      className="bg-teal-500 hover:bg-teal-400 text-teal-950 text-sm font-bold rounded-lg px-4 py-2">
+                Quiz me
+              </button>
+              <button onClick={() => setLabOutputs(["flashcards"])}
+                      className="flex items-center gap-1.5 border border-teal-800 text-teal-200 hover:bg-teal-900/40 text-sm rounded-lg px-3 py-2">
+                <Layers className="w-4 h-4" /> Flashcards
+              </button>
+            </section>
+          )}
+        </main>
 
-            {railTab === "lab" && aiCourse && (
-              <div className="flex-1 min-h-0 overflow-y-auto p-4">
-                {isUserLoggedIn ? (
-                  <LabStudio studentId={userId} courseId={aiCourse.course_id} onClose={() => setRailTab("chapters")} />
-                ) : (
-                  <p className="text-sm text-zinc-400 text-center mt-10">Sign in to quiz yourself on this course.</p>
-                )}
-              </div>
-            )}
-
-            {aiCourse && (
-              <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
-                           floating={tutorFloating} visible={railTab === "tutor" && !tutorFloating}
-                           onPopOut={() => { setTutorFloating(true); setRailTab("chapters"); }}
-                           onDock={() => { setTutorFloating(false); setRailTab("tutor"); }}
-                           onNavigate={(n) => jumpToRef.current(n)}
-                           canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null}
-                           getPosition={() => (videoRef.current && !Number.isNaN(videoRef.current.currentTime)
-                             ? videoRef.current.currentTime : undefined)} />
-            )}
-          </div>
-        </aside>
+        {aiCourse && (
+          <aside aria-label="AI tutor"
+                 className={tutorFloating
+                   ? "contents" /* the floating window is position:fixed; the column itself gives its space to the video */
+                   : "order-2 lg:order-3 w-full lg:w-[360px] flex-shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900 flex flex-col h-[70vh] lg:h-auto min-h-0"}>
+            <PlayerTutor course={aiCourse} userId={userId} lectureTitle={currentSub?.name || track.title}
+                         floating={tutorFloating} visible={!tutorFloating}
+                         onPopOut={() => setTutorFloating(true)}
+                         onDock={() => setTutorFloating(false)}
+                         onNavigate={(n) => jumpToRef.current(n)}
+                         canJump={(n) => resolveJump(track.courseContent, n.lecture_title, isLocked) !== null}
+                         getPosition={() => (videoRef.current && !Number.isNaN(videoRef.current.currentTime)
+                           ? videoRef.current.currentTime : undefined)} />
+          </aside>
+        )}
       </div>
 
+      {labOutputs && aiCourse && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setLabOutputs(null)}>
+          <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto p-6"
+               onClick={(e) => e.stopPropagation()}>
+            <LabStudio studentId={userId} courseId={aiCourse.course_id} onClose={() => setLabOutputs(null)}
+                       initialLectureTitle={currentSub?.name} initialOutputs={labOutputs} autoStart />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

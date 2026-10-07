@@ -55,10 +55,18 @@ export function LabStudio({
   studentId,
   onClose,
   courseId,
+  initialLectureTitle,
+  initialOutputs,
+  autoStart = false,
 }: {
   studentId: string;
   onClose: () => void;
   courseId?: string;
+  /** In a course: preselect this lecture (by title) instead of the first one. */
+  initialLectureTitle?: string;
+  initialOutputs?: OutputType[];
+  /** Generate straight away once the lecture is known (the player's "Quiz me" / "Flashcards"). */
+  autoStart?: boolean;
 }) {
   const [mode, setMode] = useState<InputMode>(courseId ? "lecture" : "text");
   const [topic, setTopic] = useState("");
@@ -70,7 +78,8 @@ export function LabStudio({
   const [fileName, setFileName] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
 
-  const [selected, setSelected] = useState<OutputType[]>(["quiz"]);
+  const [selected, setSelected] = useState<OutputType[]>(initialOutputs?.length ? initialOutputs : ["quiz"]);
+  const started = useRef(false);
   const [step, setStep] = useState<Step>("input");
   const [error, setError] = useState("");
   const [artifacts, setArtifacts] = useState<LabArtifacts>({});
@@ -99,7 +108,9 @@ export function LabStudio({
       .then((ls) => {
         setLecturesError(false);
         setLectures(ls);
-        setLectureId((cur) => (ls.some((l) => l.lecture_id === cur) ? cur : ls[0]?.lecture_id ?? ""));
+        const norm = (t: string) => t.toLowerCase().replace(/[`'"]/g, "").replace(/\s+/g, " ").trim();
+        const wanted = initialLectureTitle ? ls.find((l) => norm(l.lecture_title) === norm(initialLectureTitle)) : undefined;
+        setLectureId((cur) => wanted?.lecture_id ?? (ls.some((l) => l.lecture_id === cur) ? cur : ls[0]?.lecture_id ?? ""));
       })
       .catch(() => {
         setLectures([]);
@@ -107,6 +118,14 @@ export function LabStudio({
         setLecturesError(true);
       });
   }, [courseId]);
+
+  // The player's "Quiz me" / "Flashcards": go straight to generating once the lecture is picked.
+  useEffect(() => {
+    if (!autoStart || started.current || mode !== "lecture" || !lectureId) return;
+    started.current = true;
+    void handleGenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, lectureId, mode]);
 
   const toggle = (t: OutputType) =>
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
