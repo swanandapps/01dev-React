@@ -278,9 +278,6 @@ export default function AskPage() {
                 Clear
               </button>
             )}
-            <span className="text-xs text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/50">
-              Hermes
-            </span>
           </div>
         </div>
 
