@@ -65,7 +65,8 @@ export function LabStudio({
   /** In a course: preselect this lecture (by title) instead of the first one. */
   initialLectureTitle?: string;
   initialOutputs?: OutputType[];
-  /** Generate straight away once the lecture is known (the player's "Quiz me" / "Flashcards"). */
+  /** Generate straight away once the lecture is known (the player's "Quiz me" / "Flashcards"), and run the
+   *  quiz as a quick check with no objectives review. */
   autoStart?: boolean;
 }) {
   const [mode, setMode] = useState<InputMode>(courseId ? "lecture" : "text");
@@ -200,6 +201,7 @@ export function LabStudio({
         <NotesQuizModal
           resumeLessonId={lessonId}
           onRestart={restart}
+          quickCheck={autoStart}
         />
       </div>
     );
