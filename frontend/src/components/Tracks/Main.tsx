@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Sparkles } from "lucide-react";
+import { Check, ChevronDown, GraduationCap, ListChecks, TrendingUp } from "lucide-react";
 import { useUserSessionStore } from "../../store/userSession";
 import { getCourses, enrollCourse } from "../../lib/learnApi";
 import { CourseCompanion } from "../learn/CourseCompanion";
@@ -23,6 +23,7 @@ export default function TracksMain({ track }: Props) {
     useUserSessionStore();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openChapter, setOpenChapter] = useState(0);
 
   // Match this catalog course to a backend course (by title) that has transcripts.
   const userId = (currentuser?.uid as string) || "anonymous";
@@ -108,145 +109,173 @@ export default function TracksMain({ track }: Props) {
     }
   };
 
+  const lectureCount = track.courseContent.reduce((n, c) => n + c.subchapters.length, 0);
+  const tools = [
+    { icon: GraduationCap, tint: "bg-violet-500/15 text-violet-300", title: "A tutor in every lecture",
+      text: "Ask about what's on screen, or say “take me to” any part of the course." },
+    { icon: ListChecks, tint: "bg-teal-500/15 text-teal-300", title: "Check yourself as you go",
+      text: "Quick quizzes and flashcards made from each lecture." },
+    { icon: TrendingUp, tint: "bg-sky-500/15 text-sky-300", title: "See your weak spots",
+      text: "Progress by concept, with what to revise next." },
+  ];
+
   return (
-    <div className="min-h-screen bg-zinc-950 pt-24 pb-16 px-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Left column */}
-          <div className="lg:col-span-2">
-            <h1 className="text-4xl font-bold text-white mb-4">{track.title}</h1>
-            <p className="text-zinc-400 text-lg mb-10 leading-relaxed">{track.description}</p>
+    <div className="min-h-screen bg-zinc-950 pt-24 pb-20 px-5 sm:px-8">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-10 lg:gap-12">
+        <main className="flex flex-col gap-12 min-w-0">
+          <section className="flex flex-col gap-4">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">{track.title}</h1>
+            <p className="text-zinc-400 text-lg leading-relaxed">{track.description}</p>
+            <p className="text-sm text-zinc-300">
+              {track.courseContent.length} chapters <span className="text-zinc-600 mx-1.5">·</span> {lectureCount} lectures
+            </p>
+          </section>
 
-            {track.learnings.length > 0 && (
-              <div className="mb-10">
-                <h2 className="text-xl font-semibold text-white mb-5">What you'll learn</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {track.learnings.map((l, i) => (
-                    <div key={i} className="flex items-start gap-2.5 text-zinc-400 text-sm">
-                      <span className={`mt-0.5 font-bold ${track.theme}`}>✓</span>
-                      <span>{l}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          {track.modules.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-2xl font-bold text-white">What you'll build</h2>
+              <ol className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {track.modules.map((mod, i) => (
+                  <li key={i} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-2">
+                    <span className="font-mono text-xs text-violet-300">{String(i + 1).padStart(2, "0")}</span>
+                    <h3 className="text-[15px] font-semibold text-zinc-100">{mod.title}</h3>
+                    <p className="text-[13px] text-zinc-400 leading-relaxed">{mod.description}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-            {aiCourse && (
-              <div className="mb-10 bg-gradient-to-br from-indigo-950/40 to-zinc-900 border border-indigo-500/20 rounded-2xl px-6 py-5">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                  <h2 className="text-base font-semibold text-zinc-100">Learn this course with AI</h2>
-                </div>
-                <p className="text-sm text-zinc-500 mb-4 leading-relaxed">
-                  An AI study companion for the whole course — a structured guide, a practice quiz,
-                  and adaptive practice that adjusts to how you're doing.
-                </p>
-                <CourseCompanion course={aiCourse} userId={userId} />
-              </div>
-            )}
+          {track.learnings.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-2xl font-bold text-white">What you'll learn</h2>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                {track.learnings.map((l, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-[15px] text-zinc-300">
+                    <Check className="w-4 h-4 mt-1 flex-shrink-0 text-violet-400" />
+                    <span>{l}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-            {track.modules.length > 0 && (
-              <div className="mb-10">
-                <h2 className="text-xl font-semibold text-white mb-5">Modules</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {track.modules.map((mod, i) => (
-                    <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                      <h3 className="text-zinc-200 font-medium text-sm mb-1">{mod.title}</h3>
-                      <p className="text-zinc-500 text-xs leading-relaxed">{mod.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <section className="flex flex-col gap-4">
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="text-2xl font-bold text-white">Curriculum</h2>
+              <span className="text-sm text-zinc-400">{track.courseContent.length} chapters · {lectureCount} lectures</span>
+            </div>
+            <div className="border border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-800/80">
+              {track.courseContent.map((chapter, ci) => {
+                const open = openChapter === ci;
+                return (
+                  <div key={ci} className={open ? "bg-zinc-900" : "bg-zinc-950"}>
+                    <button
+                      onClick={() => setOpenChapter(open ? -1 : ci)}
+                      aria-expanded={open}
+                      className="w-full flex items-center gap-3.5 px-4 sm:px-5 py-3.5 text-left hover:bg-zinc-900 transition-colors"
+                    >
+                      <span className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
+                        open ? "bg-violet-600 text-white" : "bg-zinc-800 text-zinc-300"}`}>{ci + 1}</span>
+                      <span className="flex-1 min-w-0 text-[15px] font-semibold text-zinc-100">
+                        {chapter.name.replace(/^Chapter\s+\d+\s*-\s*/, "")}
+                      </span>
+                      <span className="text-[13px] text-zinc-500 flex-shrink-0">
+                        {chapter.subchapters.length} {chapter.subchapters.length === 1 ? "lecture" : "lectures"}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-zinc-500 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                    </button>
+                    {open && (
+                      <ul className="pl-[60px] pr-5 pb-4 flex flex-col gap-2.5">
+                        {chapter.subchapters.map((sc, j) => {
+                          const m = sc.name.match(/^(\d+\.\d+)\s*-\s*(.*)$/);
+                          return (
+                            <li key={j} className="flex items-baseline gap-3 text-sm text-zinc-300">
+                              <span className="font-mono text-xs text-zinc-500 w-8 flex-shrink-0">{m ? m[1] : ""}</span>
+                              <span>{m ? m[2] : sc.name}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
-            <div className="mb-10">
-              <h2 className="text-xl font-semibold text-white mb-5">Course content</h2>
-              <div className="space-y-2">
-                {track.courseContent.map((chapter, i) => (
-                  <details key={i} className="bg-zinc-900 rounded-xl border border-zinc-800">
-                    <summary className="px-4 py-3 cursor-pointer text-zinc-300 font-medium text-sm flex items-center justify-between hover:text-white select-none">
-                      {chapter.name}
-                      <span className="text-zinc-600 text-xs">{chapter.subchapters.length} lectures</span>
-                    </summary>
-                    <div className="px-4 pb-3 space-y-0.5">
-                      {chapter.subchapters.map((sc, j) => (
-                        <div key={j} className="text-zinc-500 text-sm py-1.5 pl-3 border-l border-zinc-700 flex items-center gap-2">
-                          <span className="text-zinc-700 text-xs">▶</span>
-                          {sc.name}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
+          {track.testimonials && track.testimonials.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-2xl font-bold text-white">What students say</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {track.testimonials.map((t, i) => (
+                  <figure key={i} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-3">
+                    <blockquote className="text-[15px] leading-relaxed text-zinc-200">“{t.quote}”</blockquote>
+                    <figcaption className="text-[13px] text-zinc-400">{t.name}{t.source ? ` · ${t.source}` : ""}</figcaption>
+                  </figure>
                 ))}
               </div>
-            </div>
-          </div>
+            </section>
+          )}
+        </main>
 
-          {/* Sticky sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-              {track.trailer && (
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="w-full aspect-video object-cover"
-                  src={track.trailer}
-                />
+        <aside className="lg:row-start-1 lg:col-start-2">
+          <div className="lg:sticky lg:top-24 bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+            {track.trailer && (
+              <video autoPlay muted loop playsInline className="w-full aspect-video object-cover" src={track.trailer} />
+            )}
+
+            <div className="p-6 flex flex-col gap-4">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-3xl font-extrabold text-white">{price}</span>
+                <span className="text-[13px] text-zinc-400">one-time · lifetime access</span>
+              </div>
+
+              {error && (
+                <p className="text-red-300 text-xs bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2">{error}</p>
               )}
 
-              <div className="p-6">
-                <div className="text-3xl font-bold text-white mb-1">{price}</div>
-                <p className="text-zinc-500 text-sm mb-1">One-time · Lifetime access</p>
-                <p className="text-zinc-600 text-xs mb-6">All future updates included</p>
+              {bought ? (
+                <button
+                  onClick={() => navigate(`/course/${track.id}`)}
+                  className={`w-full py-3.5 rounded-xl font-bold text-white ${track.theme2} transition-colors`}
+                >
+                  Continue learning →
+                </button>
+              ) : (
+                <button
+                  onClick={handleBuy}
+                  disabled={paying}
+                  className={`w-full py-3.5 rounded-xl font-bold text-white ${track.theme2} transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {paying ? "Opening checkout…" : "Buy this course"}
+                </button>
+              )}
+              <p className="text-xs text-zinc-500 -mt-1">All future updates included.</p>
 
-                {error && (
-                  <p className="text-red-400 text-xs mb-4 bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2">
-                    {error}
-                  </p>
-                )}
-
-                {bought ? (
-                  <button
-                    onClick={() => navigate(`/course/${track.id}`)}
-                    className={`w-full py-3 rounded-xl font-semibold text-white ${track.theme2} transition-colors`}
-                  >
-                    Continue Track →
-                  </button>
-                ) : track.launched ? (
-                  <button
-                    onClick={handleBuy}
-                    disabled={paying}
-                    className={`w-full py-3.5 rounded-xl font-semibold text-white ${track.theme2} transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {paying ? "Opening checkout…" : "Buy Track"}
-                  </button>
+              <div className="border-t border-zinc-800 pt-4 flex flex-col gap-3.5">
+                <span className="text-[11px] font-bold tracking-widest text-zinc-400">
+                  {bought ? "YOUR LEARNING TOOLS" : "LEARNING TOOLS INCLUDED"}
+                </span>
+                {bought && aiCourse ? (
+                  <CourseCompanion course={aiCourse} userId={userId} size="sm" />
                 ) : (
-                  <button
-                    onClick={handleBuy}
-                    disabled={paying}
-                    className={`w-full py-3.5 rounded-xl font-semibold text-white ${track.theme2} transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {paying ? "Opening checkout…" : "Buy Now →"}
-                  </button>
+                  tools.map((t) => (
+                    <div key={t.title} className="flex gap-3 items-start">
+                      <span className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${t.tint}`}>
+                        <t.icon className="w-4 h-4" />
+                      </span>
+                      <span className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold text-zinc-100">{t.title}</span>
+                        <span className="text-[12.5px] text-zinc-400 leading-snug">{t.text}</span>
+                      </span>
+                    </div>
+                  ))
                 )}
-
-                <div className="mt-6 space-y-2 text-xs text-zinc-600">
-                  <div className="flex items-center gap-2">
-                    <span>✓</span><span>Lifetime access to all content</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>✓</span><span>All future updates included</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>✓</span><span>AI course assistant access</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

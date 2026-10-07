@@ -30,6 +30,8 @@ export interface Track {
   courseContent: Chapter[];
   modules: Module[];
   learnings: string[];
+  /** Real student feedback for this course, shown on its page (omit when there is none). */
+  testimonials?: { quote: string; name: string; source?: string }[];
 }
 
 const tracks: Track[] = [
@@ -205,6 +207,10 @@ const tracks: Track[] = [
       "`npm link` command for local npm package development",
       "ES6 file level scoping",
       "Npm package publishing using `np` package",
+    ],
+    testimonials: [
+      { quote: "Thanks to the incredible team at the01.dev, I've crafted a powerful data visualization library for my team!",
+        name: "Palacharla Narendra", source: "on X" },
     ],
   },
   {
