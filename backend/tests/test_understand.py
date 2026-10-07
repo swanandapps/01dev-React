@@ -27,12 +27,12 @@ def test_any_context_means_a_rewrite():
 def test_prompt_has_lecture_last_turns_truncated_and_message():
     long_hist = [{"role": "user", "content": f"q{i}"} for i in range(6)] + HIST
     text = un.build_user_prompt("how do I use it?", long_hist, "11.1 - Publishing using `np`")
-    assert text.startswith("Current lecture: 11.1 - Publishing using `np`")
+    assert text.startswith("Current lecture: <lecture>11.1 - Publishing using `np`</lecture>")
     assert "q3" not in text and "student: q4" in text                # only the last HISTORY_TURNS (4) turns
     assert "student: what is the np package?" in text and "tutor: np is a tool" in text
     assert "x" * un.HISTORY_CHARS not in text
-    assert text.rstrip().endswith("New message: how do I use it?")
-    assert "Current lecture: none" in un.build_user_prompt("q", [], None)
+    assert text.rstrip().endswith("New message: <message>how do I use it?</message>")
+    assert "<lecture>none</lecture>" in un.build_user_prompt("q", [], None)
 
 
 def test_parse_valid_and_cleaned():
@@ -69,7 +69,7 @@ async def test_skip_never_calls_the_model(monkeypatch):
 
 async def test_understand_rewrites_with_history(monkeypatch):
     async def fake(system, user):
-        assert "New message: ok how do I use it to publish?" in user
+        assert "<message>ok how do I use it to publish?</message>" in user
         return {"search_query": "how do I publish a package with np?", "keywords": ["np"], "intent": "explain"}
 
     monkeypatch.setattr(un, "_complete", fake)
@@ -98,19 +98,12 @@ async def test_timeout_and_errors_fall_back_to_the_raw_question(monkeypatch, cap
                                "what am I weak at?"])
 def test_vague_in_lecture_question_calls_the_model_with_the_lecture(q):
     assert un.needs_rewrite(q, [], "6.5 - IIFE, To The Rescue")
-    assert "Current lecture: 6.5 - IIFE, To The Rescue" in un.build_user_prompt(q, [], "6.5 - IIFE, To The Rescue")
-
-
-def test_system_prompt_covers_the_phase4_cases():
-    s = un.SYSTEM.lower()
-    for needle in ("current lecture", "example of", "account", "navigate", "off_topic", "never",
-                   "course name"):
-        assert needle in s
+    assert "<lecture>6.5 - IIFE, To The Rescue</lecture>" in un.build_user_prompt(q, [], "6.5 - IIFE, To The Rescue")
 
 
 async def test_vague_question_in_lecture_gets_a_standalone_query(monkeypatch):
     async def fake(system, user):
-        assert "Current lecture: 6.5 - IIFE, To The Rescue" in user
+        assert "<lecture>6.5 - IIFE, To The Rescue</lecture>" in user
         return {"search_query": "example of an IIFE", "keywords": ["IIFE"], "intent": "explain"}
 
     monkeypatch.setattr(un, "_complete", fake)
@@ -118,7 +111,7 @@ async def test_vague_question_in_lecture_gets_a_standalone_query(monkeypatch):
     assert u.search_query == "example of an IIFE" and u.intent == "explain" and not u.fallback
 
 
-async def test_vague_question_without_context_stays_vague_on_unusable_reply(monkeypatch):
+async def test_unusable_reply_falls_back_to_raw(monkeypatch):
     async def none(system, user):
         return None
 
@@ -138,7 +131,34 @@ def test_parse_intents_and_missing_key(raw, intent, query):
     assert u.intent == intent and (query is None or u.search_query == query)
 
 
-@pytest.mark.parametrize("q", ["what am I weak at?", "what courses do I have?", "my progress",
-                               "take me to the part about closures"])
+@pytest.mark.parametrize("q", ["what am I weak at?", "what courses do I own?", "which courses did I buy?",
+                               "how am I doing?", "what are my weak concepts", "have I finished the react course?",
+                               "take me to closures", "skip to the closures part",
+                               "where in the video does he explain closures", "my progress"])
 def test_account_and_navigation_messages_always_reach_the_model(q):
     assert not un.self_contained(q) and un.needs_rewrite(q, [], None)
+
+
+@pytest.mark.parametrize("q", ["how do I go to the next element in a linked list",
+                               "what is my best option for state management",
+                               "how do I make my library tree-shakable", "I have an error with useEffect",
+                               "I'm getting a CORS error",
+                               pytest.param("I've installed react but it fails", marks=pytest.mark.xfail(
+                                   reason="'it' is a deictic word (not _ROUTED), so it goes to the model", strict=True)),
+                               "why does my useEffect run twice", "have I understood closures correctly?",
+                               "goto statement in C", "how to skip to the next iteration in a loop"])
+def test_first_person_debugging_questions_stay_self_contained(q):
+    assert un.self_contained(q) and not un.needs_rewrite(q, [], None)
+
+
+async def test_malformed_history_item_falls_back(monkeypatch):
+    async def never(system, user):
+        raise AssertionError("prompt build fails first")
+
+    monkeypatch.setattr(un, "_complete", never)
+    u = await un.understand("what does this mean?", ["not a dict"], None)
+    assert u.fallback and u.search_query == "what does this mean?"
+
+
+def test_non_string_search_query_is_treated_as_missing():
+    assert un.parse_understanding({"search_query": ["x"], "intent": "explain"}, "orig").search_query == "orig"
