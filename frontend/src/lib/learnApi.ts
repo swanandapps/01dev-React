@@ -108,6 +108,24 @@ export async function getLectureMoments(courseSlug: string, lecture: string): Pr
   return res.json();
 }
 
+// The player's "Quiz me": a few questions on what the student has watched of the lecture.
+export interface QuickQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export async function getQuickQuiz(courseSlug: string, lecture: string, position?: number): Promise<QuickQuestion[]> {
+  const res = await fetch(`${API_BASE}/api/ai/quick-quiz`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ course_id: courseSlug, lecture, position }),
+  });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return (await res.json()).questions;
+}
+
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".
 export interface TutorNavigate {
   course_slug: string;

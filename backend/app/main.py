@@ -6,7 +6,9 @@ load_dotenv(env_path)
 
 from contextlib import asynccontextmanager
 import os
+from typing import Optional
 import hashlib
+import asyncio
 
 import razorpay
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -36,6 +38,7 @@ from app.auth import current_student
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.services.lab.routes import router as lab_router
+from app.services.lab import llm as lab_llm
 # Admin/audit/compliance routes (audit log, memory transparency+erase, eval
 # RAG outputs + history, lab audit) are gated behind a shared secret — see
 # app/deps.py for require_admin_key and why it lives there, not here.
@@ -165,14 +168,46 @@ async def course_insight(req: CourseInsightRequest):
 async def lecture_moments(course_id: str, lecture: str, student_id: str = Depends(current_student)):
     """Key moments under the player's video: every transcript passage of the lecture at its start time, with
     its one-line summary (written offline when the transcripts were enriched). Owners of the course only."""
-    course = catalog_service.by_slug(course_id)
+    await _require_owner(course_id, student_id)
+    chunks = await lecture_context.lecture_chunks(course_id, lecture)
+    return [{"start_time": c.start_time, "summary": c.summary or (c.text_clean or c.text)[:140]} for c in chunks]
+
+
+async def _require_owner(course_slug: str, student_id: str) -> dict:
+    course = catalog_service.by_slug(course_slug)
     if not course:
         raise HTTPException(status_code=404, detail="Unknown course")
     owned = {c["id"] for c in await enrollment_service.get_enrolled_courses(student_id)}
     if course["id"] not in owned:
         raise HTTPException(status_code=403, detail="Not enrolled in this course")
-    chunks = await lecture_context.lecture_chunks(course_id, lecture)
-    return [{"start_time": c.start_time, "summary": c.summary or (c.text_clean or c.text)[:140]} for c in chunks]
+    return course
+
+
+QUICK_QUIZ_QUESTIONS = 3
+QUICK_QUIZ_MIN_PASSAGES = 3   # early in the video there is little watched yet: still ask about the opening
+
+
+class QuickQuizRequest(BaseModel):
+    course_id: str
+    lecture: str
+    position: Optional[float] = None
+
+
+@app.post("/api/ai/quick-quiz")
+async def quick_quiz(req: QuickQuizRequest, student_id: str = Depends(current_student)):
+    """The player's 'Quiz me': a few multiple-choice questions on what the student has watched of this lecture,
+    straight away — no Lab lesson, no objectives review (Lab's own page keeps that). Owners only."""
+    await _require_owner(req.course_id, student_id)
+    chunks = await lecture_context.lecture_chunks(req.course_id, req.lecture)
+    if not chunks:
+        raise HTTPException(status_code=404, detail="No transcript for this lecture")
+    watched = chunks if req.position is None else [c for c in chunks if c.start_time <= req.position]
+    watched = watched if len(watched) >= QUICK_QUIZ_MIN_PASSAGES else chunks[:QUICK_QUIZ_MIN_PASSAGES]
+    document = "\n\n".join(c.text_clean or c.text for c in watched)
+    objective = {"title": f"Key ideas of {req.lecture}", "difficulty": "beginner",
+                 "focus": "what the instructor explained in this part of the lecture"}
+    questions = await asyncio.to_thread(lab_llm.gen_quiz, document, objective, QUICK_QUIZ_QUESTIONS)
+    return {"questions": [{k: q[k] for k in ("question", "options", "correctIndex", "explanation")} for q in questions]}
 
 
 @app.post("/api/ai/tutor/stream")

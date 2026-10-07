@@ -10,6 +10,7 @@ import type { OutputType } from "../lib/labApi";
 import { FlaskConical, Layers, Check, ChevronLeft, ListVideo } from "lucide-react";
 import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
+import { QuickQuiz } from "../components/learn/QuickQuiz";
 import { resolveJump } from "../lib/lectureMatch";
 import type { TutorNavigate } from "../lib/learnApi";
 import type { Course } from "../types/learn";
@@ -22,7 +23,8 @@ export default function CoursePlayerPage() {
   // Layout E: course outline (left, collapsible) · video + key moments + practice (centre) · tutor (right, always on).
   const [outlineOpen, setOutlineOpen] = useState(true);
   const [tutorFloating, setTutorFloating] = useState(false);
-  const [labOutputs, setLabOutputs] = useState<OutputType[] | null>(null); // open = Lab on this lecture
+  const [labOutputs, setLabOutputs] = useState<OutputType[] | null>(null); // open = Lab on this lecture (flashcards)
+  const [quizAt, setQuizAt] = useState<number | null>(null);                // open = quick quiz, video position
   const [moments, setMoments] = useState<LectureMoment[]>([]);
   const [nowIdx, setNowIdx] = useState(-1);
 
@@ -320,9 +322,9 @@ export default function CoursePlayerPage() {
               <FlaskConical className="w-5 h-5 text-teal-300 flex-shrink-0" />
               <div className="flex-1 min-w-[180px]">
                 <p className="text-sm font-bold text-teal-50">Check yourself on {currentSub.name.split(" - ")[0]}</p>
-                <p className="text-xs text-teal-300/90">Questions made from this lecture's transcript</p>
+                <p className="text-xs text-teal-300/90">3 quick questions on what you've watched</p>
               </div>
-              <button onClick={() => setLabOutputs(["quiz"])}
+              <button onClick={() => setQuizAt(videoRef.current?.currentTime ?? 0)}
                       className="bg-teal-500 hover:bg-teal-400 text-teal-950 text-sm font-bold rounded-lg px-4 py-2">
                 Quiz me
               </button>
@@ -350,6 +352,11 @@ export default function CoursePlayerPage() {
           </aside>
         )}
       </div>
+
+      {quizAt !== null && aiCourse && currentSub && (
+        <QuickQuiz courseSlug={aiCourse.course_id} lecture={currentSub.name} position={quizAt}
+                   onClose={() => setQuizAt(null)} />
+      )}
 
       {labOutputs && aiCourse && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setLabOutputs(null)}>
