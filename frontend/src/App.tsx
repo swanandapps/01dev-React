@@ -20,6 +20,7 @@ import BlogDetailPage from "./pages/BlogDetailPage";
 import AskPage from "./pages/AskPage";
 import LearnPage from "./pages/LearnPage";
 import LabPage from "./pages/LabPage";
+import LabTopicPage from "./pages/LabTopicPage";
 
 function AppInner() {
   const {
@@ -94,6 +95,7 @@ function AppInner() {
       <Route path="/ask" element={<AskPage />} />
       <Route path="/dashboard" element={<LearnPage />} />
       <Route path="/lab" element={<LabPage />} />
+      <Route path="/lab/topic/:slug/:index" element={<LabTopicPage />} />
       {/* keep the old path working for anyone with a bookmark */}
       <Route path="/quizme" element={<Navigate to="/lab" replace />} />
     </Routes>

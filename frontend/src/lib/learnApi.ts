@@ -113,6 +113,7 @@ export async function getLectureMoments(courseSlug: string, lecture: string): Pr
 export interface QuickQuestion {
   question: string;
   options: string[];
+  lecture?: string;
 }
 
 export interface QuickQuizResult {
@@ -151,6 +152,50 @@ export interface LabOverview {
 
 export async function getLabOverview(): Promise<LabOverview> {
   const res = await fetch(`${API_BASE}/api/ai/lab/overview`, { headers: { ...(await authHeaders()) } });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return res.json();
+}
+
+// Lab topics: each chapter of the student's courses, its lectures solid / shaky / not tried from their quizzes.
+export type LectureStatus = "solid" | "shaky" | "not_tried";
+
+export interface TopicLecture {
+  title: string;
+  chapter: number;
+  sub: number;
+  status: LectureStatus;
+  right: number;
+  total: number;
+}
+
+export interface LabTopic {
+  index: number;
+  name: string;
+  lectures: TopicLecture[];
+  solid: number;
+  shaky: number;
+  untried: number;
+  last_practised: string;
+}
+
+export interface LabTopicsResponse {
+  courses: { slug: string; id: number; title: string; topics: LabTopic[] }[];
+  start_here: { slug: string; topic: number; why: string } | null;
+  keep_fresh: { slug: string; topic: number; why: string } | null;
+}
+
+export async function getLabTopics(): Promise<LabTopicsResponse> {
+  const res = await fetch(`${API_BASE}/api/ai/lab/topics`, { headers: { ...(await authHeaders()) } });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return res.json();
+}
+
+export async function startTopicQuiz(courseSlug: string, chapter: number): Promise<{ quiz_id: string; questions: QuickQuestion[] }> {
+  const res = await fetch(`${API_BASE}/api/ai/lab/topic-quiz`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ course_id: courseSlug, chapter }),
+  });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);
   return res.json();
 }

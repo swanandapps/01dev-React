@@ -31,7 +31,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services import course_lookup, lecture_context, quick_quiz_service
+from app.services import course_lookup, lab_topics, lecture_context, quick_quiz_service
 from app.retrieval import titles as title_index
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
@@ -238,6 +238,31 @@ async def quick_quiz_submit(quiz_id: str, req: QuickQuizSubmit, student_id: str 
         raise HTTPException(status_code=404, detail="Quiz not found")
     except quick_quiz_service.BadAnswers:
         raise HTTPException(status_code=400, detail="Answer every question")
+
+
+@app.get("/api/ai/lab/topics")
+async def lab_topics_view(student_id: str = Depends(current_student)):
+    """Lab home: every chapter of the student's courses as a topic, its lectures solid / shaky / not tried from
+    their quiz answers, plus the 'Start here' and 'Keep it fresh' suggestions. Rules only, no model call."""
+    return await lab_topics.topics(student_id)
+
+
+class TopicQuizRequest(BaseModel):
+    course_id: str
+    chapter: int
+
+
+@app.post("/api/ai/lab/topic-quiz")
+async def lab_topic_quiz(req: TopicQuizRequest, student_id: str = Depends(current_student)):
+    """'Practise this topic': questions from the chapter's lectures that need the most work. Submitted through the
+    same /api/ai/quick-quiz/{id}/submit, so results count toward the student's progress the same way."""
+    course = await _require_owner(req.course_id, student_id)
+    if not 0 <= req.chapter < len(course["chapters"]):
+        raise HTTPException(status_code=404, detail="No such topic")
+    quiz = await quick_quiz_service.create_for_topic(student_id, {**course, "slug": req.course_id}, req.chapter)
+    if quiz is None:
+        raise HTTPException(status_code=404, detail="No lectures to practise in this topic")
+    return quiz
 
 
 @app.post("/api/ai/tutor/stream")

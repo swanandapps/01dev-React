@@ -12,11 +12,19 @@ export function QuickQuiz({
   lecture,
   position,
   onClose,
+  start,
+  title = "Check yourself",
+  onSubmitted,
 }: {
   courseSlug: string;
   lecture: string;
   position?: number;
   onClose: () => void;
+  /** Lab topics: start a different quiz (e.g. a whole topic) instead of one lecture's. */
+  start?: () => Promise<{ quiz_id: string; questions: QuickQuestion[] }>;
+  title?: string;
+  /** Called once the answers are graded and saved (e.g. to refresh progress). */
+  onSubmitted?: () => void;
 }) {
   const [quizId, setQuizId] = useState("");
   const [questions, setQuestions] = useState<QuickQuestion[] | null>(null);
@@ -31,7 +39,7 @@ export function QuickQuiz({
     setQuestions(null);
     setResult(null);
     setError("");
-    getQuickQuiz(courseSlug, lecture, position)
+    (start ? start() : getQuickQuiz(courseSlug, lecture, position))
       .then((q) => {
         if (cancelled) return;
         setQuizId(q.quiz_id);
@@ -57,7 +65,7 @@ export function QuickQuiz({
     setSubmitting(true);
     setError("");
     submitQuickQuiz(quizId, picked as number[])
-      .then(setResult)
+      .then((r) => { setResult(r); onSubmitted?.(); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setSubmitting(false));
   };
@@ -69,7 +77,7 @@ export function QuickQuiz({
            onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
           <div className="min-w-0">
-            <p className="text-sm font-bold text-teal-100">Check yourself</p>
+            <p className="text-sm font-bold text-teal-100">{title}</p>
             <p className="text-xs text-zinc-400 truncate">{lecture}</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 flex items-center justify-center">
@@ -80,7 +88,7 @@ export function QuickQuiz({
         <div className="px-5 py-4 flex flex-col gap-6">
           {!questions && !error && (
             <div className="flex items-center gap-2 text-sm text-zinc-400 py-8 justify-center">
-              <Loader2 className="w-4 h-4 animate-spin" /> Making questions from what you've watched…
+              <Loader2 className="w-4 h-4 animate-spin" /> {start ? "Making questions from the lectures that need work…" : "Making questions from what you've watched…"}
             </div>
           )}
 
@@ -89,7 +97,10 @@ export function QuickQuiz({
             const r = result?.results[qi];
             return (
               <fieldset key={`${round}-${qi}`} className="flex flex-col gap-2">
-                <legend className="text-[15px] font-semibold text-zinc-100 mb-2">{qi + 1}. {q.question}</legend>
+                <legend className="text-[15px] font-semibold text-zinc-100 mb-2">
+                  {start && q.lecture && <span className="block text-[11px] font-mono font-normal text-teal-300/80 mb-1">From {q.lecture}</span>}
+                  {qi + 1}. {q.question}
+                </legend>
                 <div className="flex flex-col gap-1.5">
                   {q.options.map((opt, oi) => {
                     const state = !r

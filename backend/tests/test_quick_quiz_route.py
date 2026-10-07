@@ -70,7 +70,8 @@ def test_questions_come_from_what_was_watched_and_carry_no_answer_key(client):
     assert r.status_code == 200
     body = r.json()
     assert body["quiz_id"] and len(body["questions"]) == 3
-    assert set(body["questions"][0]) == {"question", "options"}          # no correctIndex, no explanation
+    assert set(body["questions"][0]) == {"question", "options", "lecture"}   # no correctIndex, no explanation
+    assert body["questions"][0]["lecture"] == L51
     assert seen["n"] == 3 and "passage 3" in seen["doc"] and "passage 4" not in seen["doc"]
 
 
