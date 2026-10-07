@@ -4,7 +4,7 @@ import Header from "../components/Home/Header";
 import tracks from "../data/tracks";
 import { useUserSessionStore } from "../store/userSession";
 import { decodeVideoUrl } from "../lib/videoDecoder";
-import { recordLectureView, getCourses, getLectureMoments, viewedLectures } from "../lib/learnApi";
+import { recordLectureView, recordLastLecture, getCourses, getLectureMoments, viewedLectures } from "../lib/learnApi";
 import type { LectureMoment } from "../lib/learnApi";
 import type { OutputType } from "../lib/labApi";
 import { FlaskConical, Layers, Check, ChevronLeft, ChevronDown, ListVideo, Play } from "lucide-react";
@@ -116,7 +116,10 @@ export default function CoursePlayerPage() {
       videoRef.current.play().catch(() => {});
     }
     // Track lecture opens so the course insight can detect rewatched lectures.
-    if (currentSub?.name) recordLectureView(currentSub.name);
+    if (currentSub?.name) {
+      recordLectureView(currentSub.name);
+      recordLastLecture({ courseId: track.id, courseTitle: track.title, chapter: activeChapter, sub: activeSub, title: currentSub.name });
+    }
   }, [activeChapter, activeSub]);
 
   // Key moments for the lecture on screen (owners only; quietly empty otherwise).

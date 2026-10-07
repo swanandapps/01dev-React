@@ -86,6 +86,17 @@ export function recordLectureView(lectureTitle: string): void {
   }
 }
 
+// The last lecture opened in the player, for the dashboard's "Pick up where you left off".
+export interface LastLecture { courseId: number; courseTitle: string; chapter: number; sub: number; title: string }
+
+export function recordLastLecture(l: LastLecture): void {
+  try { localStorage.setItem("last_lecture", JSON.stringify(l)); } catch { /* ignore */ }
+}
+
+export function lastLecture(): LastLecture | null {
+  try { return JSON.parse(localStorage.getItem("last_lecture") || "null"); } catch { return null; }
+}
+
 // Lectures this browser has opened (by title), for the player's course outline progress.
 export function viewedLectures(): Set<string> {
   try {
