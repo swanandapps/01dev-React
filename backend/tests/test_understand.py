@@ -19,9 +19,27 @@ def test_context_leaning_questions_need_a_rewrite_even_without_history(q):
     assert not un.self_contained(q) and un.needs_rewrite(q, [], None)
 
 
-def test_any_context_means_a_rewrite():
-    assert un.needs_rewrite("what is an IIFE?", HIST, None)
-    assert un.needs_rewrite("what is an IIFE?", [], "6.5 - IIFE, To The Rescue")
+@pytest.mark.parametrize("q", ["what is an IIFE?", "how do I publish with np", "what are ES modules?",
+                               "how does the module pattern compare"])
+def test_a_question_with_its_own_topic_skips_the_model_even_with_context(q):
+    # Phase 5 eval: understanding on every player question cost ~1 s p95 for no gain on these.
+    assert not un.needs_rewrite(q, HIST, None)
+    assert not un.needs_rewrite(q, [], "6.5 - IIFE, To The Rescue")
+
+
+@pytest.mark.parametrize("q", ["give me an example", "can you explain more", "one more example please", "elaborate",
+                               "explain again", "example please", "what is the difference", "tell me more"])
+def test_a_topic_less_question_uses_the_model_only_when_there_is_context(q):
+    assert un.self_contained(q) and un.is_topic_less(q)
+    assert un.needs_rewrite(q, [], "6.5 - IIFE, To The Rescue")
+    assert un.needs_rewrite(q, HIST, None)
+    assert not un.needs_rewrite(q, [], None)
+
+
+@pytest.mark.parametrize("q", ["what is an IIFE?", "how does the module pattern compare", "explain closures",
+                               "give me an example of debounce"])
+def test_a_question_naming_a_topic_is_not_topic_less(q):
+    assert not un.is_topic_less(q)
 
 
 def test_prompt_has_lecture_last_turns_truncated_and_message():

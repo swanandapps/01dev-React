@@ -95,8 +95,24 @@ def self_contained(question: str) -> bool:
         and not _FOLLOW_UP.search(question) and not _ROUTED.search(question)
 
 
+# Words that ask for more without naming a topic ("give me an example", "explain again", "tell me more").
+_GENERIC = set(tokenize("example examples explain explanation more again please elaborate difference differ "
+                        "compare comparison mean meaning detail details simpler simple simply another one give show "
+                        "tell clarify summary summarize recap understand get continue expand further bit little "
+                        "demo sample instance code"))
+
+
+def is_topic_less(question: str) -> bool:
+    return not (set(tokenize(question)) - _GENERIC)
+
+
 def needs_rewrite(question: str, history: Sequence[dict], lecture_title: Optional[str]) -> bool:
-    return bool(history) or bool(lecture_title) or not self_contained(question)
+    """Call the model only when the message can't be searched as typed. A question with its own topic skips it even
+    in the player: the Phase 5 eval measured ~1 s p95 added for no gain when every lecture-scoped question went through
+    understanding. A topic-less ask ("give me an example") needs the lecture or history to mean anything."""
+    if not self_contained(question):
+        return True
+    return bool(history or lecture_title) and is_topic_less(question)
 
 
 def build_user_prompt(question: str, history: Sequence[dict], lecture_title: Optional[str]) -> str:

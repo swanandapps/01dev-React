@@ -427,20 +427,32 @@ async def test_self_contained_question_without_context_skips_understanding(mem, 
     assert res.outcome == pipeline.Outcome.COVERED and "understand" not in res.timings_ms
 
 
+async def test_a_question_with_its_own_topic_skips_understanding_even_with_a_lecture_and_history(mem, grader, monkeypatch):
+    async def boom(system, user):
+        raise AssertionError("no understanding call expected")
+
+    monkeypatch.setattr(un, "_complete", boom)
+    grader({"c1": "a"})
+    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST,
+                                       lecture_title="6.5 - IIFE, To The Rescue")
+    assert res.outcome == pipeline.Outcome.COVERED and "understand" not in res.timings_ms
+
+
 async def test_understanding_failure_falls_back_to_the_raw_question(mem, grader, monkeypatch):
     async def down(system, user):
         raise RuntimeError("openai down")
 
     monkeypatch.setattr(un, "_complete", down)
     grader({"c1": "a"})
-    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST)
-    assert res.search_query == "what is an IIFE?" and res.outcome == pipeline.Outcome.COVERED
-    assert mem == ["what is an IIFE?"]
+    res = await pipeline.graded_search("what is it?", ["custom-library"], history=HIST)
+    assert res.search_query == "what is it?" and res.outcome == pipeline.Outcome.COVERED
+    assert mem == ["what is it?"]
 
 
 # ---- Task 18 fix round 1 -------------------------------------------------------
 async def test_off_topic_with_a_strong_raw_hit_is_still_reranked(mem, grader, monkeypatch):
     monkeypatch.setattr(un, "_complete", _understood("what is an IIFE?", intent="off_topic"))
+    monkeypatch.setattr(un, "needs_rewrite", lambda *a: True)  # this test is about the bypass guard, not gating
     grader({"c1": "a"})
     res = await pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST)
     assert res.outcome == pipeline.Outcome.COVERED and len(grader.calls) == 1 and res.intent == "explain"
@@ -448,7 +460,7 @@ async def test_off_topic_with_a_strong_raw_hit_is_still_reranked(mem, grader, mo
 
 async def test_off_topic_with_a_weak_raw_hit_bypasses_rerank(mem, grader, monkeypatch):
     monkeypatch.setattr(un, "_complete", _understood("bake bread", intent="off_topic"))
-    res = await pipeline.graded_search("how do I bake bread?", ["custom-library"], history=HIST)
+    res = await pipeline.graded_search("and how do I bake bread?", ["custom-library"], history=HIST)
     assert (res.outcome, res.intent) == (pipeline.Outcome.NOT_COVERED, "off_topic") and grader.calls == []
 
 
@@ -475,10 +487,10 @@ async def test_rewrite_retrieval_failure_keeps_the_raw_lists(mem, grader, monkey
 
 
 async def test_case_and_punctuation_only_changes_are_not_rewrites(mem, grader, monkeypatch):
-    monkeypatch.setattr(un, "_complete", _understood("what is an  iife"))
+    monkeypatch.setattr(un, "_complete", _understood("what is an  iife here"))
     grader({"c1": "a"})
-    res = await pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST)
-    assert mem == ["what is an IIFE?"] and res.search_query == "what is an IIFE?"
+    res = await pipeline.graded_search("what is an IIFE here?", ["custom-library"], history=HIST)
+    assert mem == ["what is an IIFE here?"] and res.search_query == "what is an IIFE here?"
     assert pipeline._same("Does it?", "does it") and not pipeline._same("np", "npm")
 
 
@@ -492,7 +504,7 @@ async def test_cancellation_during_understanding_leaves_no_orphaned_task(mem, gr
     monkeypatch.setattr(un, "_complete", hangs)
     errors = []
     asyncio.get_running_loop().set_exception_handler(lambda loop, ctx: errors.append(ctx))
-    task = asyncio.create_task(pipeline.graded_search("what is an IIFE?", ["custom-library"], history=HIST))
+    task = asyncio.create_task(pipeline.graded_search("what is it?", ["custom-library"], history=HIST))
     await started.wait()
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
