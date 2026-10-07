@@ -325,7 +325,7 @@ export function LabStudio({
                   ))}
                 </select>
               )}
-              <p className="text-xs text-zinc-600">Uses the lecture's transcript — nothing to upload.</p>
+              <p className="text-xs text-zinc-600">Made from what the instructor says in this lecture.</p>
             </div>
           )}
 

@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 import os
 from typing import Optional
 import hashlib
-import asyncio
 
 import razorpay
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -31,14 +30,13 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services import course_lookup, lecture_context
+from app.services import course_lookup, lecture_context, quick_quiz_service
 from app.retrieval import titles as title_index
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
 from app.routing.intent import Intent, classify
 from app.routing.quiz_handoff import build_handoff_message
 from app.services.lab.routes import router as lab_router
-from app.services.lab import llm as lab_llm
 # Admin/audit/compliance routes (audit log, memory transparency+erase, eval
 # RAG outputs + history, lab audit) are gated behind a shared secret — see
 # app/deps.py for require_admin_key and why it lives there, not here.
@@ -183,31 +181,36 @@ async def _require_owner(course_slug: str, student_id: str) -> dict:
     return course
 
 
-QUICK_QUIZ_QUESTIONS = 3
-QUICK_QUIZ_MIN_PASSAGES = 3   # early in the video there is little watched yet: still ask about the opening
-
-
 class QuickQuizRequest(BaseModel):
     course_id: str
     lecture: str
     position: Optional[float] = None
 
 
+class QuickQuizSubmit(BaseModel):
+    answers: list[int]
+
+
 @app.post("/api/ai/quick-quiz")
 async def quick_quiz(req: QuickQuizRequest, student_id: str = Depends(current_student)):
-    """The player's 'Quiz me': a few multiple-choice questions on what the student has watched of this lecture,
-    straight away — no Lab lesson, no objectives review (Lab's own page keeps that). Owners only."""
-    await _require_owner(req.course_id, student_id)
-    chunks = await lecture_context.lecture_chunks(req.course_id, req.lecture)
-    if not chunks:
+    """The player's 'Quiz me': a few questions on what the student has watched of this lecture, straight away —
+    no Lab lesson, no objectives review. The answer key stays on the server until Submit. Owners only."""
+    course = await _require_owner(req.course_id, student_id)
+    quiz = await quick_quiz_service.create(student_id, {**course, "slug": req.course_id}, req.lecture, req.position)
+    if quiz is None:
         raise HTTPException(status_code=404, detail="No transcript for this lecture")
-    watched = chunks if req.position is None else [c for c in chunks if c.start_time <= req.position]
-    watched = watched if len(watched) >= QUICK_QUIZ_MIN_PASSAGES else chunks[:QUICK_QUIZ_MIN_PASSAGES]
-    document = "\n\n".join(c.text_clean or c.text for c in watched)
-    objective = {"title": f"Key ideas of {req.lecture}", "difficulty": "beginner",
-                 "focus": "what the instructor explained in this part of the lecture"}
-    questions = await asyncio.to_thread(lab_llm.gen_quiz, document, objective, QUICK_QUIZ_QUESTIONS)
-    return {"questions": [{k: q[k] for k in ("question", "options", "correctIndex", "explanation")} for q in questions]}
+    return quiz
+
+
+@app.post("/api/ai/quick-quiz/{quiz_id}/submit")
+async def quick_quiz_submit(quiz_id: str, req: QuickQuizSubmit, student_id: str = Depends(current_student)):
+    """Grade on the server, record it like any course quiz (dashboard, weak concepts, recommendations), reveal."""
+    try:
+        return await quick_quiz_service.submit(student_id, quiz_id, req.answers)
+    except quick_quiz_service.QuizNotFound:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    except quick_quiz_service.BadAnswers:
+        raise HTTPException(status_code=400, detail="Answer every question")
 
 
 @app.post("/api/ai/tutor/stream")

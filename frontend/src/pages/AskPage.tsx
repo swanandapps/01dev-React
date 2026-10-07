@@ -66,7 +66,7 @@ function EmptyState({ onQuestion }: { onQuestion: (q: string) => void }) {
       </div>
       <h2 className="text-xl font-semibold text-zinc-100 mb-2">Ask anything about the courses</h2>
       <p className="text-sm text-zinc-500 max-w-sm leading-relaxed mb-8">
-        The assistant searches across all indexed course transcripts and answers with grounded citations.
+        Ask about anything you're learning. When one of your courses covers it, you'll get a link to the exact moment.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-xl">
         {EXAMPLE_QUESTIONS.map((q) => (
@@ -233,9 +233,9 @@ export default function AskPage() {
           <FeatureGlimpse
             icon={Sparkles}
             title="Course AI Assistant"
-            tagline="Ask anything about the course content and get instant, grounded answers with citations to the exact lecture."
+            tagline="Ask anything about your courses and jump straight to the moment it's taught."
             bullets={[
-              "Streamed answers from the indexed lectures",
+              "Answers as you type, drawn from your lectures",
               "Source cards linking to the right lecture & timestamp",
               "Your chat history saved across devices",
             ]}
@@ -264,7 +264,7 @@ export default function AskPage() {
         <div className="px-6 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
           <div>
             <h1 className="text-base font-semibold text-zinc-100">Course Assistant</h1>
-            <p className="text-xs text-zinc-500">AI tutor · grounded, cited &amp; audited</p>
+            <p className="text-xs text-zinc-500">AI tutor</p>
           </div>
           <div className="flex items-center gap-3">
             {messages.length > 0 && (

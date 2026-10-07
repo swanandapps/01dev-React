@@ -108,22 +108,39 @@ export async function getLectureMoments(courseSlug: string, lecture: string): Pr
   return res.json();
 }
 
-// The player's "Quiz me": a few questions on what the student has watched of the lecture.
+// The player's "Quiz me": a few questions on what the student has watched of the lecture. The answer key stays
+// on the server; submitting grades it and records the result like any course quiz.
 export interface QuickQuestion {
   question: string;
   options: string[];
-  correctIndex: number;
-  explanation: string;
 }
 
-export async function getQuickQuiz(courseSlug: string, lecture: string, position?: number): Promise<QuickQuestion[]> {
+export interface QuickQuizResult {
+  score: number;
+  total: number;
+  results: { correct: boolean; correctIndex: number; explanation: string }[];
+}
+
+export async function getQuickQuiz(
+  courseSlug: string, lecture: string, position?: number,
+): Promise<{ quiz_id: string; questions: QuickQuestion[] }> {
   const res = await fetch(`${API_BASE}/api/ai/quick-quiz`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ course_id: courseSlug, lecture, position }),
   });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);
-  return (await res.json()).questions;
+  return res.json();
+}
+
+export async function submitQuickQuiz(quizId: string, answers: number[]): Promise<QuickQuizResult> {
+  const res = await fetch(`${API_BASE}/api/ai/quick-quiz/${encodeURIComponent(quizId)}/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ answers }),
+  });
+  if (!res.ok) throw new Error(`Backend error ${res.status}`);
+  return res.json();
 }
 
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".

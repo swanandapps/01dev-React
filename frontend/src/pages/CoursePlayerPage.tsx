@@ -7,7 +7,7 @@ import { decodeVideoUrl } from "../lib/videoDecoder";
 import { recordLectureView, getCourses, getLectureMoments, viewedLectures } from "../lib/learnApi";
 import type { LectureMoment } from "../lib/learnApi";
 import type { OutputType } from "../lib/labApi";
-import { FlaskConical, Layers, Check, ChevronLeft, ListVideo } from "lucide-react";
+import { FlaskConical, Layers, Check, ChevronLeft, ChevronDown, ListVideo, Play } from "lucide-react";
 import { LabStudio } from "../components/lab/LabStudio";
 import { PlayerTutor } from "../components/learn/PlayerTutor";
 import { QuickQuiz } from "../components/learn/QuickQuiz";
@@ -194,7 +194,7 @@ export default function CoursePlayerPage() {
   const outline = (
     <nav aria-label="Course outline"
          className={`order-3 lg:order-1 flex-shrink-0 border-t lg:border-t-0 lg:border-r border-zinc-800 bg-zinc-950 flex flex-col min-h-0 ${
-           outlineOpen ? "w-full lg:w-[264px]" : "w-full lg:w-12"}`}>
+           outlineOpen ? "w-full lg:w-[300px]" : "w-full lg:w-12"}`}>
       {outlineOpen ? (
         <>
           <div className="px-4 py-3.5 border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
@@ -208,37 +208,62 @@ export default function CoursePlayerPage() {
             <div className="h-1 bg-zinc-800 rounded"><div className="h-1 bg-violet-400 rounded" style={{ width: `${allLectures.length ? (100 * watchedCount) / allLectures.length : 0}%` }} /></div>
             <span className="text-[11px] text-zinc-400">{watchedCount} of {allLectures.length} lectures opened</span>
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto py-1.5">
+          <div className="flex-1 min-h-0 overflow-y-auto py-2 flex flex-col gap-0.5">
             {track.courseContent.map((chapter, ci) => {
               const done = chapter.subchapters.length > 0 && chapter.subchapters.every((sc) => viewed.has(sc.name));
+              const open = expandedChapter === ci;
+              const here = activeChapter === ci;
+              const locked = isLocked(ci);
               return (
-                <div key={ci}>
+                <div key={ci} className={open ? "bg-zinc-900/70 border-y border-zinc-800/80" : ""}>
                   <button
-                    onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
-                    aria-expanded={expandedChapter === ci}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-left text-[13px] hover:bg-zinc-900 ${
-                      activeChapter === ci ? "text-white font-semibold" : isLocked(ci) ? "text-zinc-600" : "text-zinc-300"}`}
+                    onClick={() => setExpandedChapter(open ? -1 : ci)}
+                    aria-expanded={open}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-zinc-800/70 ${
+                      locked ? "text-zinc-600" : here ? "text-white" : "text-zinc-200"}`}
                   >
-                    {isLocked(ci) ? <span aria-hidden="true" className="w-3.5 text-[10px]">🔒</span>
-                      : done ? <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                      : <span className="w-3.5 flex-shrink-0" />}
-                    <span className="truncate">{chapter.name.replace(/^Chapter\s+/, "")}</span>
+                    <span className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[11px] font-bold ${
+                      done ? "bg-green-500/15 text-green-400"
+                      : here ? "bg-violet-500 text-white"
+                      : "bg-zinc-800 text-zinc-400"}`}>
+                      {locked ? <span aria-hidden="true" className="text-[10px]">🔒</span> : done ? <Check className="w-3.5 h-3.5" /> : ci + 1}
+                    </span>
+                    <span className={`flex-1 min-w-0 text-sm leading-snug ${here || open ? "font-semibold" : "font-medium"}`}>
+                      {chapter.name.replace(/^Chapter\s+\d+\s*-\s*/, "")}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 flex-shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
                   </button>
-                  {expandedChapter === ci && chapter.subchapters.map((sub, si) => (
-                    <button
-                      key={si}
-                      onClick={() => handleSelectSub(ci, si)}
-                      disabled={isLocked(ci)}
-                      className={`w-full pl-10 pr-4 py-1.5 text-left text-xs transition-colors ${
-                        activeChapter === ci && activeSub === si
-                          ? "text-white bg-violet-500/10 border-l-2 border-violet-400"
-                          : isLocked(ci) ? "text-zinc-700 cursor-not-allowed"
-                          : viewed.has(sub.name) ? "text-zinc-500 hover:text-white hover:bg-zinc-900"
-                          : "text-zinc-400 hover:text-white hover:bg-zinc-900"}`}
-                    >
-                      {sub.name}
-                    </button>
-                  ))}
+                  {open && (
+                    <ul className="ml-[26px] mr-2 mb-2 border-l border-zinc-700/70">
+                      {chapter.subchapters.map((sub, si) => {
+                        const current = here && activeSub === si;
+                        const seen = viewed.has(sub.name);
+                        const m = sub.name.match(/^(\d+\.\d+)\s*-\s*(.*)$/);
+                        return (
+                          <li key={si}>
+                            <button
+                              onClick={() => handleSelectSub(ci, si)}
+                              disabled={locked}
+                              aria-current={current ? "true" : undefined}
+                              className={`w-full flex items-start gap-2.5 pl-4 pr-3 py-2 text-left rounded-r-lg -ml-px border-l-2 transition-colors ${
+                                current ? "border-violet-400 bg-violet-500/15 text-white"
+                                : locked ? "border-transparent text-zinc-600 cursor-not-allowed"
+                                : "border-transparent text-zinc-300 hover:text-white hover:bg-zinc-800/80"}`}
+                            >
+                              <span className={`font-mono text-[11px] pt-0.5 w-7 flex-shrink-0 ${current ? "text-violet-300" : "text-zinc-500"}`}>
+                                {m ? m[1] : ""}
+                              </span>
+                              <span className={`flex-1 min-w-0 text-[13px] leading-snug ${current ? "font-semibold" : ""}`}>
+                                {m ? m[2] : sub.name}
+                              </span>
+                              {current ? <Play className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-violet-300 fill-violet-300" aria-label="Playing" />
+                                : seen ? <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-green-500" aria-label="Opened" /> : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
               );
             })}

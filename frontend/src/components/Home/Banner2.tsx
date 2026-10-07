@@ -187,7 +187,7 @@ export default function Banner2() {
             Questions while you learn?
           </h2>
           <p className="text-zinc-400 mb-8 text-lg leading-relaxed">
-            Our RAG-powered assistant searches the course transcripts and gives you grounded, cited answers — not hallucinations. Click a source to jump straight to that moment in the lecture.
+            Ask anything while you learn. The assistant answers from your course and takes you to the exact moment in the lecture where it's taught.
           </p>
           <Link
             to="/ask"
@@ -335,7 +335,7 @@ export default function Banner2() {
               {
                 label: "AI course assistant",
                 youtube: { text: "❌", bad: true },
-                us: { text: "✓ RAG-powered, source-cited", good: true },
+                us: { text: "✓ Answers from your course, with links to the moment", good: true },
               },
               {
                 label: "Shelf life of knowledge",

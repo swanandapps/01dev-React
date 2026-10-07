@@ -19,10 +19,6 @@ export default function Footer() {
             <p className="text-zinc-500 text-sm leading-relaxed mb-5">
               Engineering courses that go all the way down. Build the tools that other developers use.
             </p>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-              <span className="text-zinc-500 text-xs">Actively maintained</span>
-            </div>
           </div>
 
           {/* Tracks */}

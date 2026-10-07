@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Sparkles, FlaskConical, ShieldCheck } from "lucide-react";
+import { Sparkles, FlaskConical } from "lucide-react";
 import Header from "../components/Home/Header";
 import { LabStudio } from "../components/lab/LabStudio";
 import { useUserSessionStore } from "../store/userSession";
@@ -21,9 +21,6 @@ export default function LabPage() {
             <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 uppercase tracking-wide">
               <Sparkles className="w-3.5 h-3.5" /> AI Feature
             </div>
-            <span className="ml-auto flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-800/50">
-              <ShieldCheck className="w-3.5 h-3.5" /> Grounded &amp; audited
-            </span>
           </div>
           <h1 className="text-2xl font-bold text-zinc-100 mb-2">Lab</h1>
           <p className="text-sm text-zinc-500 leading-relaxed max-w-lg">
