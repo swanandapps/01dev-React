@@ -11,3 +11,21 @@
 | phase3-hybrid | legacy | player | 0.825 | 0.987 | 0.898 | 0.925 | 0.754 | 0.027 | 0.776 | 943 | 1152 | 909 |
 | phase3-hybrid | legacy | ask | 0.731 | 0.971 | 0.837 | 0.663 | 0.734 | 0.000 | — | 642 | 1209 | 109 |
 | phase3-hybrid | legacy | ask_all | 0.766 | 0.976 | 0.857 | 0.647 | 0.733 | 0.000 | — | 686 | 1051 | 662 |
+| phase4-rerank | v2 | player | 0.855 | 0.991 | 0.918 | 0.957 | 0.983 | 0.013 | 0.863 | 1514 | 1945 | 912 |
+| phase4-rerank | v2 | ask | 0.769 | 0.971 | 0.861 | 0.962 | 0.982 | 0.000 | — | 1681 | 2277 | 112 |
+| phase4-rerank | v2 | ask_all | 0.800 | 0.983 | 0.883 | 0.967 | 0.997 | 0.111 | — | 1899 | 2175 | 665 |
+
+## Notes — phase4-rerank (2026-10-07)
+
+- The reranker now decides coverage everywhere. Coverage accuracy went from 0.75–0.81 to 0.98–1.00. shown@3 on Ask went from 0.64 to 0.96.
+- **ask_all false_cite 0.111 = 2 rows, both label noise.** Both are off-topic negatives that were written before the real-time course transcripts existed:
+  - `neg-06` "nginx as a reverse proxy" was cited to real-time 7.3, which does set up nginx in front of Pulse;
+  - `neg-15` "Kafka consumer group" was cited to real-time 6.3, which teaches consumer groups with Redis Streams (partial at most).
+  
+  ask_all is an eval-only mode that treats every launched course as owned; real Ask scopes to owned courses, and its false_cite is 0.000. Relabel both rows in a separate, justified pass.
+- **Fallback rate:** player 5.2%, ask 0.9%, ask_all 0.0%. All 52 fallbacks were rerank `TimeoutError`s at the 3 s cap; there were no parse failures.
+- **Latency** comes from a single run (the user asked for speed; median-of-3 was skipped). p50 is 1.5–1.9 s and p95 is 1.9–2.3 s, above the 1.5 s target. The time is bound by the rerank call. Phase 5 adds a query-understanding call in parallel; Phase 6 moves search into SQL.
+- **A/B on navigate** (205 rows, 2 runs each):
+  - a stricter navigate prompt ("a ONLY for the 1–2 most direct passages") scored 0.8829 against 0.8683 for the current one, +1.5 pp, below the 2 pp bar, so it was reverted;
+  - fused order within a tier scored 0.8683, the same as (title_matched, cosine), so it was reverted.
+- **Demo checks** (real model): `--enroll 9,11` gave 11/11 no_match. `--enroll 2 --full` gave 5 enrolled_match with deep links (np 11.1, npm link 8.1, IIFE 6.5, prototype 3.6, ES modules 10.1) and 6 no_match, including the vague "what am I weak at?" and "what does this mean?" with no cards. `--player` gave 10/10 auto-ok: jumps to 11.1 @45s ×2 and to 10.1 @197s, and no jump on off-topic or vague questions.
