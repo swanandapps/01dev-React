@@ -241,7 +241,7 @@ VIEWS = [
            data->>'target' as to_concept
     from docs where collection = 'concept_relationships_preview'
     order by data->>'course', data->>'type', data->>'source'""",
-    """create or replace view full_graph_demo_student_v as
+    """create or replace view my_skill_graph_full_v as
     select c.course, c.chapter_no, c.chapter, c.concept,
            coalesce((p.data->>'correct')::int, 0) as correct, coalesce((p.data->>'attempts')::int, 0) as attempts,
            round(100 * coalesce((p.data->>'accuracy')::numeric, 0)) as score_pct,
