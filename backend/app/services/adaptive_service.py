@@ -122,19 +122,7 @@ async def _pick_next(
     if stale:
         target = sorted(stale, key=lambda c: perf[c]["last_seen"])[0]
     else:
-        # Otherwise focus the weakest not-yet-mastered concept that still has questions.
-        candidates = []
-        for c in concepts:
-            acc = perf[c]["accuracy"] if perf[c] else None
-            if acc is None or acc < MASTERY:
-                candidates.append((c, acc if acc is not None else -1.0))
-        if candidates:
-            candidates.sort(key=lambda x: x[1])
-            target = candidates[0][0]
-        else:
-            # All in-play concepts mastered — keep serving fresh material for
-            # reinforcement instead of stopping (supports continued practice).
-            target = working[0].concept
+        target = await _choose_target(user_id, course_id, working, perf)
 
     acc = perf[target]["accuracy"] if perf[target] else None
     want = _band_difficulty(acc)
@@ -152,6 +140,41 @@ async def _pick_next(
     pool = [q for q in working if q.concept == target]
     preferred = [q for q in pool if q.difficulty == want]
     return preferred[0] if preferred else (pool[0] if pool else working[0])
+
+
+PREREQ_SOLID = 0.7    # a prerequisite below this (or not tried) is practised before what builds on it
+MAX_STEP_BACK = 3     # how far down a prerequisite chain practice will go
+
+
+def _tried(p: Optional[dict]) -> bool:
+    """Answered at least once. A back-filled row with 0 attempts is "not tried", never "0%"."""
+    return bool(p) and p.get("attempts", 0) > 0
+
+
+async def _choose_target(user_id: str, course_id: str, working: List[MCQQuestion], perf: dict) -> str:
+    """The weakest concept the student has tried; if one of its prerequisites is weak or untried (and has
+    questions), that prerequisite first, down the chain. With nothing weak, the first untried concept in
+    teaching order (bank order); with everything mastered, fresh material for reinforcement."""
+    order = list(dict.fromkeys(q.concept for q in working))
+    weak = sorted((c for c in order if _tried(perf.get(c)) and perf[c]["accuracy"] < MASTERY),
+                  key=lambda c: perf[c]["accuracy"])
+    if weak:
+        target = weak[0]
+        for _ in range(MAX_STEP_BACK):
+            step = None
+            for pre in await knowledge_graph_service.get_prerequisites(course_id, target):
+                if pre not in order:
+                    continue                      # no questions for it in play
+                p = perf.get(pre)
+                if not _tried(p) or p["accuracy"] < PREREQ_SOLID:
+                    step = pre
+                    break
+            if step is None:
+                break
+            target = step
+        return target
+    untried = [c for c in order if not _tried(perf.get(c))]
+    return untried[0] if untried else working[0].concept
 
 
 async def _all_concepts_mastered(user_id: str, bank: List[MCQQuestion]) -> bool:

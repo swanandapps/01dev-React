@@ -62,11 +62,15 @@ WRITE_ORDER = [
 
 # ---------------------------------------------------------------- fixtures
 
+GRAPH = "demo"   # --graph full: the whole concept graph (app/data/full/, scripts/build_full_question_banks.py)
+
+
 def load_fixtures() -> dict:
     load = lambda name: json.loads((DEMO_DIR / name).read_text())  # noqa: E731
+    graph_dir = DEMO_DIR if GRAPH == "demo" else DEMO_DIR.parent / "full"
     return {
-        "taxonomy": load("taxonomy.json")["courses"],
-        "banks": load("question_banks.json"),
+        "taxonomy": json.loads((graph_dir / "taxonomy.json").read_text())["courses"],
+        "banks": json.loads((graph_dir / "question_banks.json").read_text()),
         "student": load("demo_student.json"),
     }
 
@@ -106,9 +110,10 @@ def build_docs(uid: str, now: datetime, fixtures: dict | None = None) -> dict:
             lecture_for.setdefault((slug, q["concept"], q["difficulty"]), q["lecture"])
         for c in course["concepts"]:
             docs["concepts"][f"{slug}::{c['name']}"] = {
-                "course_id": slug, "name": c["name"], "description": c["description"]}
+                "course_id": slug, "name": c["name"], "description": c["description"],
+                **{k: c[k] for k in ("chapter", "lectures") if c.get(k)}}     # full graph: where it's taught
         for r in course["relationships"]:
-            docs["concept_relationships"][f"{slug}::{r['source']}->{r['target']}"] = {
+            docs["concept_relationships"][f"{slug}::{r['source']}->{r['target']}::{r['type']}"] = {
                 "course_id": slug, "source": r["source"], "target": r["target"], "type": r["type"]}
 
     # sessions, chronological; answers replay adaptive's per-answer bookkeeping
@@ -536,7 +541,11 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--apply", action="store_true", help="backup, write fresh, delete stale in the real store")
     mode.add_argument("--restore", metavar="BACKUP_JSON", help="put a --apply backup back (Postgres only)")
     parser.add_argument("--yes", action="store_true", help="confirm --apply / --restore")
+    parser.add_argument("--graph", choices=("demo", "full"), default="demo",
+                        help="concept graph + banks to seed: the 4 demo courses (default) or the full graph")
     args = parser.parse_args(argv)
+    global GRAPH
+    GRAPH = args.graph
 
     if (args.apply or args.restore) and not args.yes:
         what = "--apply" if args.apply else f"--restore {args.restore}"
