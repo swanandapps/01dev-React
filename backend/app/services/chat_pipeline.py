@@ -142,7 +142,9 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         # The client replaces its card list on each sources event, so send the full deduped list.
         yield _sources(cards + extra)
     try:
-        await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer))
+        cited = (cards + extra)[0] if (cards + extra) else None
+        topic = memory_service.topic_label(question, req.scope.lecture_title, cited)
+        await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer), topic=topic)
     except Exception as e:  # noqa: BLE001 — never fail the answer over memory persistence
         print(f"[chat_turn] record_turn failed: {e!r}")
     if moment and req.scope.in_player and is_explicit_navigation(question):

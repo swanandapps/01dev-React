@@ -34,7 +34,7 @@ def client(monkeypatch):
     async def chunks(slug, title):
         return [_c(i, i * 50) for i in range(8)] if title == L51 else []
 
-    def fake_gen(document, objective, n):
+    def fake_gen(document, objective, n, concepts=None):
         seen["doc"], seen["n"] = document, n
         return [_q(i) for i in range(n)]
 

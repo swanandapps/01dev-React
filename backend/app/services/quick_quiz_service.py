@@ -44,6 +44,14 @@ async def _save(student_id: str, course: dict, lecture: str, questions: list[dic
                           for q in questions]}
 
 
+async def _course_concepts(slug: str) -> Optional[list[str]]:
+    """The course's own concept names — the ones its question bank uses, which the tutor's weak-concept list and
+    the dashboard read. None for a course without a bank."""
+    bank = await store.get("questions", slug)
+    names = sorted({q["concept"] for q in (bank or {}).get("questions", []) if q.get("concept")})
+    return names or None
+
+
 async def create_for_topic(student_id: str, course: dict, chapter: int) -> Optional[dict]:
     """Lab 'Practise this topic': PER_LECTURE questions from each of the TOPIC_LECTURES lectures of the chapter that
     need the most work (shaky, then not tried, then solid), each question tagged with its lecture."""
@@ -58,7 +66,9 @@ async def create_for_topic(student_id: str, course: dict, chapter: int) -> Optio
             break
     if not picked:
         return None
-    batches = await asyncio.gather(*(asyncio.to_thread(lab_llm.gen_quiz, doc, _objective(title), PER_LECTURE)
+    concepts = await _course_concepts(course["slug"])
+    batches = await asyncio.gather(*(asyncio.to_thread(lab_llm.gen_quiz, doc, _objective(title), PER_LECTURE,
+                                                       concepts=concepts)
                                      for title, doc in picked))
     questions = [{**q, "lecture": title} for (title, _), batch in zip(picked, batches) for q in batch]
     return await _save(student_id, course, course["chapters"][chapter]["name"], questions, "lab_topic")
@@ -73,7 +83,8 @@ async def create(student_id: str, course: dict, lecture: str, position: Optional
     watched = watched if len(watched) >= MIN_PASSAGES else chunks[:MIN_PASSAGES]
     document = "\n\n".join(c.text_clean or c.text for c in watched)
     objective = _objective(lecture)
-    questions = await asyncio.to_thread(lab_llm.gen_quiz, document, objective, QUESTIONS)
+    questions = await asyncio.to_thread(lab_llm.gen_quiz, document, objective, QUESTIONS,
+                                        concepts=await _course_concepts(course["slug"]))
     return await _save(student_id, course, lecture, questions, "player_quick_quiz")
 
 

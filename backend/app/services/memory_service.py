@@ -14,9 +14,11 @@ locally). Two collections:
 GDPR: erase() removes everything stored for a student (right-to-erasure).
 """
 import os
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.retrieval.understand import about_the_screen
 from app.services import pii
 from app.services.store import store
 
@@ -25,12 +27,34 @@ _TURNS = "student_turns"
 _MAX_TOPICS = 8
 
 
+# Replies that carry no topic of their own: "yes", "ok thanks", "got it".
+_FILLER = re.compile(r"^\W*(yes|yeah|yep|yup|no|nope|ok|okay|sure|thanks|thank you|ok thanks|cool|nice|great|"
+                     r"got it|hmm+|right|done|go on|continue|more)\W*$", re.IGNORECASE)
+
+
+def topic_label(question: str, lecture_title: Optional[str] = None, cited: Optional[dict] = None) -> Optional[str]:
+    """What the student was working on, for the memory's topic list — never their raw filler. In the player
+    it's the lecture; on Ask, the lecture the answer cited; otherwise the question if it names something.
+    None means there's nothing worth remembering."""
+    if lecture_title:
+        return lecture_title
+    if cited and cited.get("lecture_title"):
+        course = cited.get("course_title")
+        return f"{cited['lecture_title']} ({course})" if course else cited["lecture_title"]
+    q = (question or "").strip()
+    if not q or _FILLER.match(q) or about_the_screen(q):
+        return None
+    return q[:80]
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-async def record_turn(student_id: str, course_slug: str, question: str, answer: str) -> None:
-    """Persist one exchange and fold it into the student's running profile.
+async def record_turn(student_id: str, course_slug: str, question: str, answer: str,
+                      topic: Optional[str] = None) -> None:
+    """Persist one exchange and fold it into the student's running profile. `topic` is what the exchange was
+    about (see topic_label); without one it's worked out from the question, and filler adds no topic.
 
     PII is scrubbed here too — the storage choke point — so nothing personal is ever
     written to the store regardless of caller. Idempotent with the request-entry scrub.
@@ -49,7 +73,9 @@ async def record_turn(student_id: str, course_slug: str, question: str, answer: 
 
     prof = await store.get(_PROFILE, student_id) or {"first_seen": ts, "turn_count": 0, "topics": []}
     topics = list(prof.get("topics", []))
-    topics.append(question[:80])
+    label = topic or topic_label(question)
+    if label and (not topics or topics[-1] != label):
+        topics.append(label)
     await store.set(_PROFILE, student_id, {
         "student_id": student_id,
         "first_seen": prof.get("first_seen", ts),
