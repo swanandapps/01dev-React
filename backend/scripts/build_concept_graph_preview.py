@@ -229,28 +229,28 @@ async def review() -> None:
 
 
 VIEWS = [
-    """create or replace view concepts_preview_v as
+    """create or replace view full_graph_concepts_v as
     select data->>'course' as course, (data->>'chapter_index')::int + 1 as chapter_no, data->>'chapter' as chapter,
            data->>'name' as concept, data->>'description' as description,
            array_to_string(array(select jsonb_array_elements_text(data->'lectures')), ' | ') as taught_in,
            data->>'origin' as origin
     from docs where collection = 'concepts_preview'
     order by data->>'course', (data->>'chapter_index')::int, data->>'name'""",
-    """create or replace view knowledge_graph_preview_v as
+    """create or replace view full_graph_links_v as
     select data->>'course' as course, data->>'source' as from_concept, data->>'type' as relation,
            data->>'target' as to_concept
     from docs where collection = 'concept_relationships_preview'
     order by data->>'course', data->>'type', data->>'source'""",
-    """create or replace view demo_student_skill_graph_preview_v as
+    """create or replace view full_graph_demo_student_v as
     select c.course, c.chapter_no, c.chapter, c.concept,
            coalesce((p.data->>'correct')::int, 0) as correct, coalesce((p.data->>'attempts')::int, 0) as attempts,
            round(100 * coalesce((p.data->>'accuracy')::numeric, 0)) as score_pct,
            case when coalesce((p.data->>'attempts')::int, 0) = 0 then 'not tried'
                 when (p.data->>'accuracy')::numeric >= 0.8 then 'solid' else 'shaky' end as level,
            p.data->>'chat_confidence_note' as tutor_note,
-           (select string_agg(r.from_concept, ', ') from knowledge_graph_preview_v r
+           (select string_agg(r.from_concept, ', ') from full_graph_links_v r
              where r.course = c.course and r.to_concept = c.concept and r.relation = 'prerequisite_of') as prerequisites
-    from concepts_preview_v c
+    from full_graph_concepts_v c
     left join docs p on p.collection = 'concept_performance'
                     and p.doc_id = 'x94FcfXU7KRrobyOA4UHDukbRoC2__' || c.concept
     order by c.course, c.chapter_no, c.concept""",
