@@ -1,0 +1,5697 @@
+{
+ "generated_at": "2026-10-08T05:05:46.590167+00:00",
+ "courses": {
+  "programming-language": {
+   "title": "Build a Programming Language",
+   "concepts": [
+    {
+     "name": "high-level-language",
+     "description": "A programming language that abstracts away hardware details, making code easier for humans to write and understand.",
+     "lectures": [
+      "1.2 - Language History: From Machine Code to JavaScript"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "interpreter",
+     "description": "A program that walks the abstract syntax tree and executes the program's behavior.",
+     "lectures": [
+      "1.1 - What We Will Build: Ember, a Language of Our Own"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "machine-code",
+     "description": "The lowest-level language understood directly by a computer's processor, consisting of binary instructions.",
+     "lectures": [
+      "1.2 - Language History: From Machine Code to JavaScript"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "parser",
+     "description": "A program that takes tokens and builds an abstract syntax tree representing the program's structure.",
+     "lectures": [
+      "1.1 - What We Will Build: Ember, a Language of Our Own"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "tokenizer",
+     "description": "A program that converts raw source text into tokens, the smallest meaningful units of a language.",
+     "lectures": [
+      "1.1 - What We Will Build: Ember, a Language of Our Own"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "grammar",
+     "description": "A set of rules that define how words or tokens can be arranged to form valid sentences or programs.",
+     "lectures": [
+      "2.1 - What Human Languages Teach Us About Grammar"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Human Languages vs Programming Languages",
+     "origin": "generated"
+    },
+    {
+     "name": "parse-tree",
+     "description": "A tree structure representing the nested grammatical categories and words of a sentence or program.",
+     "lectures": [
+      "2.1 - What Human Languages Teach Us About Grammar"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Human Languages vs Programming Languages",
+     "origin": "generated"
+    },
+    {
+     "name": "semantics",
+     "description": "The meaning and behavior of a valid program when it runs, including runtime and static checks.",
+     "lectures": [
+      "2.2 - Syntax vs Semantics: Is a Language Just Its Syntax?"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Human Languages vs Programming Languages",
+     "origin": "generated"
+    },
+    {
+     "name": "syntax",
+     "description": "The set of rules defining valid program structure and form, determining if code is well-formed.",
+     "lectures": [
+      "2.2 - Syntax vs Semantics: Is a Language Just Its Syntax?"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Human Languages vs Programming Languages",
+     "origin": "generated"
+    },
+    {
+     "name": "datatype",
+     "description": "A classification of values that defines what operations can be performed on them.",
+     "lectures": [
+      "3.1 - Values, Datatypes and Expressions"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Language Components",
+     "origin": "generated"
+    },
+    {
+     "name": "expression",
+     "description": "Any piece of code that produces a value when evaluated.",
+     "lectures": [
+      "3.1 - Values, Datatypes and Expressions"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Language Components",
+     "origin": "generated"
+    },
+    {
+     "name": "scope",
+     "description": "The region of a program where a variable name is visible and can be accessed.",
+     "lectures": [
+      "3.2 - Variables, Scope and Control Flow"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Language Components",
+     "origin": "generated"
+    },
+    {
+     "name": "value",
+     "description": "A piece of data that a language can hold, pass around, and operate on during program execution.",
+     "lectures": [
+      "3.1 - Values, Datatypes and Expressions"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Language Components",
+     "origin": "generated"
+    },
+    {
+     "name": "variable",
+     "description": "A name bound to a value, allowing the value to be referenced and updated by name.",
+     "lectures": [
+      "3.2 - Variables, Scope and Control Flow"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Language Components",
+     "origin": "generated"
+    },
+    {
+     "name": "aot-vs-jit",
+     "description": "Two compilation timing strategies: ahead-of-time (AOT) compiles before running; just-in-time (JIT) compiles during execution.",
+     "lectures": [
+      "4.3 - AOT vs JIT: How C++, Java, Python and V8 Run Your Code"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Language Processors",
+     "origin": "generated"
+    },
+    {
+     "name": "bytecode",
+     "description": "A compact set of instructions for a virtual machine, portable and simpler to execute than source code.",
+     "lectures": [
+      "4.1 - Machine Code, Bytecode and Your Code",
+      "4.3 - AOT vs JIT: How C++, Java, Python and V8 Run Your Code"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Language Processors",
+     "origin": "generated"
+    },
+    {
+     "name": "compiler",
+     "description": "A program that translates source code into another language ahead of execution, often machine code or bytecode.",
+     "lectures": [
+      "4.2 - Compilers vs Interpreters vs Transpilers",
+      "4.3 - AOT vs JIT: How C++, Java, Python and V8 Run Your Code"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Language Processors",
+     "origin": "generated"
+    },
+    {
+     "name": "transpiler",
+     "description": "A program that translates source code from one high-level language to another at a similar level.",
+     "lectures": [
+      "4.2 - Compilers vs Interpreters vs Transpilers"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Language Processors",
+     "origin": "generated"
+    },
+    {
+     "name": "virtual-machine",
+     "description": "A program that executes bytecode instructions for an imaginary machine.",
+     "lectures": [
+      "4.1 - Machine Code, Bytecode and Your Code"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Language Processors",
+     "origin": "generated"
+    },
+    {
+     "name": "bnf-grammar",
+     "description": "A notation to define grammar rules with non-terminals, terminals, and operators like star and question mark.",
+     "lectures": [
+      "5.1 - Writing Ember's Grammar in BNF"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Designing Ember's Grammar",
+     "origin": "generated"
+    },
+    {
+     "name": "operator-associativity",
+     "description": "A grammar property that determines grouping direction of operators with the same precedence level.",
+     "lectures": [
+      "5.2 - Encoding Precedence and Associativity"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Designing Ember's Grammar",
+     "origin": "generated"
+    },
+    {
+     "name": "operator-precedence",
+     "description": "A grammar design technique that orders rules so tighter-binding operators parse deeper in the tree.",
+     "lectures": [
+      "5.2 - Encoding Precedence and Associativity"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Designing Ember's Grammar",
+     "origin": "generated"
+    },
+    {
+     "name": "recursive-grammar",
+     "description": "Grammar rules that refer to themselves or each other to allow nested or repeated structures.",
+     "lectures": [
+      "5.1 - Writing Ember's Grammar in BNF",
+      "5.2 - Encoding Precedence and Associativity"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Designing Ember's Grammar",
+     "origin": "generated"
+    },
+    {
+     "name": "lexeme",
+     "description": "A lexeme is the actual slice of text from the source code representing a meaningful unit.",
+     "lectures": [
+      "6.1 - Tokens, Lexemes and Token Types"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Lexical Analysis",
+     "origin": "generated"
+    },
+    {
+     "name": "maximal-munch",
+     "description": "A rule to always consume the longest possible lexeme matching the input to form tokens.",
+     "lectures": [
+      "6.1 - Tokens, Lexemes and Token Types",
+      "6.2 - Writing the Tokenizer Loop"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Lexical Analysis",
+     "origin": "generated"
+    },
+    {
+     "name": "token",
+     "description": "A token bundles a lexeme with its token type and line number as structured data.",
+     "lectures": [
+      "6.1 - Tokens, Lexemes and Token Types"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Lexical Analysis",
+     "origin": "generated"
+    },
+    {
+     "name": "token-type",
+     "description": "A token type categorizes a lexeme into groups like NUMBER, KEYWORD, or OPERATOR.",
+     "lectures": [
+      "6.1 - Tokens, Lexemes and Token Types"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Lexical Analysis",
+     "origin": "generated"
+    },
+    {
+     "name": "tokenizer-loop",
+     "description": "A loop that processes source text character-by-character to produce tokens sequentially.",
+     "lectures": [
+      "6.2 - Writing the Tokenizer Loop"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Lexical Analysis",
+     "origin": "generated"
+    },
+    {
+     "name": "binary-expression-parsing",
+     "description": "Parsing binary operators using loops to build left-associative binary expression nodes in the syntax tree.",
+     "lectures": [
+      "7.1 - Recursive Descent: Turning Tokens into a Tree"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Building the Abstract Syntax Tree",
+     "origin": "generated"
+    },
+    {
+     "name": "block-parsing",
+     "description": "Parsing blocks as sequences of declarations enclosed in braces, enabling nested scopes.",
+     "lectures": [
+      "7.2 - Parsing Statements, Blocks and Functions"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Building the Abstract Syntax Tree",
+     "origin": "generated"
+    },
+    {
+     "name": "function-parsing",
+     "description": "Parsing function declarations and expressions with parameters and block bodies, distinguished by token lookahead.",
+     "lectures": [
+      "7.2 - Parsing Statements, Blocks and Functions"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Building the Abstract Syntax Tree",
+     "origin": "generated"
+    },
+    {
+     "name": "recursive-descent-parser",
+     "description": "A parser built from functions mirroring grammar rules, calling each other to produce an abstract syntax tree.",
+     "lectures": [
+      "7.1 - Recursive Descent: Turning Tokens into a Tree"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Building the Abstract Syntax Tree",
+     "origin": "generated"
+    },
+    {
+     "name": "statement-parsing",
+     "description": "Parsing keyword-led statements like if, while, return, and expression statements using token lookahead.",
+     "lectures": [
+      "7.2 - Parsing Statements, Blocks and Functions"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Building the Abstract Syntax Tree",
+     "origin": "generated"
+    },
+    {
+     "name": "closure",
+     "description": "A function bundled with its defining environment, enabling lexical scope and variable capture after the function returns.",
+     "lectures": [
+      "8.2 - Environments: Scoping, Hoisting and Closures"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Interpreting the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "control-flow",
+     "description": "Execution constructs like conditionals, loops, and function calls that direct the runtime behavior of programs.",
+     "lectures": [
+      "8.3 - Running Conditionals, Loops and Function Calls"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Interpreting the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "environment",
+     "description": "A scoped table mapping variable names to values, with links to parent environments forming a scope chain.",
+     "lectures": [
+      "8.2 - Environments: Scoping, Hoisting and Closures"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Interpreting the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "hoisting",
+     "description": "A language behavior where function declarations are processed before other statements, allowing calls before definitions.",
+     "lectures": [
+      "8.2 - Environments: Scoping, Hoisting and Closures"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Interpreting the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "tree-walking-evaluator",
+     "description": "An interpreter that recursively evaluates AST nodes by traversing the tree structure and computing values.",
+     "lectures": [
+      "8.1 - Writing a Tree-Walking Evaluator"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Interpreting the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "error-handling",
+     "description": "Throwing and catching errors at detection points to provide user-friendly messages across all language stages.",
+     "lectures": [
+      "9.1 - Running a Real Program in Ember"
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "language-extension",
+     "description": "Adding new features like data structures, loops, and classes by updating grammar, parser, and interpreter.",
+     "lectures": [
+      "9.2 - Where from Here?"
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "repl",
+     "description": "A read-eval-print loop that tokenizes, parses, and runs code lines interactively with persistent state.",
+     "lectures": [
+      "9.1 - Running a Real Program in Ember"
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "runner",
+     "description": "A program component that reads source code, runs it through tokenizer, parser, and interpreter stages, and executes the program.",
+     "lectures": [
+      "9.1 - Running a Real Program in Ember"
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "machine-code",
+     "target": "high-level-language",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "high-level-language",
+     "target": "interpreter",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tokenizer",
+     "target": "parser",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "parser",
+     "target": "interpreter",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tokenizer",
+     "target": "token",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "grammar",
+     "target": "parse-tree",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "syntax",
+     "target": "semantics",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "grammar",
+     "target": "syntax",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "parse-tree",
+     "target": "semantics",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "datatype",
+     "target": "variable",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "value",
+     "target": "variable",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "datatype",
+     "target": "expression",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "expression",
+     "target": "scope",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scope",
+     "target": "closure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "compiler",
+     "target": "aot-vs-jit",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "compiler",
+     "target": "bytecode",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bytecode",
+     "target": "virtual-machine",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "compiler",
+     "target": "transpiler",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bnf-grammar",
+     "target": "operator-precedence",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bnf-grammar",
+     "target": "operator-associativity",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bnf-grammar",
+     "target": "recursive-grammar",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "lexeme",
+     "target": "token",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "lexeme",
+     "target": "maximal-munch",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "maximal-munch",
+     "target": "tokenizer-loop",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "token-type",
+     "target": "token",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "recursive-grammar",
+     "target": "recursive-descent-parser",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "recursive-descent-parser",
+     "target": "binary-expression-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "recursive-descent-parser",
+     "target": "block-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "recursive-descent-parser",
+     "target": "function-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "recursive-descent-parser",
+     "target": "statement-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scope",
+     "target": "environment",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "environment",
+     "target": "closure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scope",
+     "target": "hoisting",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tree-walking-evaluator",
+     "target": "closure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tree-walking-evaluator",
+     "target": "control-flow",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tree-walking-evaluator",
+     "target": "environment",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "error-handling",
+     "target": "runner",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "runner",
+     "target": "repl",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "grammar",
+     "target": "language-extension",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "parser",
+     "target": "language-extension",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "interpreter",
+     "target": "language-extension",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tokenizer",
+     "target": "interpreter",
+     "type": "part_of"
+    },
+    {
+     "source": "parser",
+     "target": "interpreter",
+     "type": "part_of"
+    },
+    {
+     "source": "token",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "tokenizer-loop",
+     "target": "tokenizer",
+     "type": "part_of"
+    },
+    {
+     "source": "lexeme",
+     "target": "token",
+     "type": "part_of"
+    },
+    {
+     "source": "token-type",
+     "target": "token",
+     "type": "part_of"
+    },
+    {
+     "source": "parse-tree",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "binary-expression-parsing",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "block-parsing",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "function-parsing",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "statement-parsing",
+     "target": "parser",
+     "type": "part_of"
+    },
+    {
+     "source": "tree-walking-evaluator",
+     "target": "interpreter",
+     "type": "part_of"
+    },
+    {
+     "source": "environment",
+     "target": "closure",
+     "type": "part_of"
+    },
+    {
+     "source": "runner",
+     "target": "repl",
+     "type": "part_of"
+    },
+    {
+     "source": "compiler",
+     "target": "interpreter",
+     "type": "related_to"
+    },
+    {
+     "source": "virtual-machine",
+     "target": "interpreter",
+     "type": "related_to"
+    },
+    {
+     "source": "transpiler",
+     "target": "compiler",
+     "type": "related_to"
+    },
+    {
+     "source": "operator-precedence",
+     "target": "operator-associativity",
+     "type": "related_to"
+    },
+    {
+     "source": "maximal-munch",
+     "target": "tokenizer",
+     "type": "related_to"
+    },
+    {
+     "source": "scope",
+     "target": "environment",
+     "type": "related_to"
+    },
+    {
+     "source": "hoisting",
+     "target": "closure",
+     "type": "related_to"
+    },
+    {
+     "source": "control-flow",
+     "target": "statement-parsing",
+     "type": "related_to"
+    },
+    {
+     "source": "error-handling",
+     "target": "repl",
+     "type": "related_to"
+    },
+    {
+     "source": "language-extension",
+     "target": "repl",
+     "type": "related_to"
+    }
+   ]
+  },
+  "custom-library": {
+   "title": "Build a Custom Library",
+   "concepts": [
+    {
+     "name": "expectation-versus-reality",
+     "description": "A mental model comparing what output is expected versus what actually happens to identify knowledge gaps.",
+     "lectures": [
+      "1.3 - Mental Models We Will Be Using"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "library",
+     "description": "A set of custom methods that perform operations and return values, used to build reusable functionality.",
+     "lectures": [
+      "1.2 - What will we build"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "string-manipulation",
+     "description": "Operations that format, shorten, mask, or highlight text strings to improve user experience in text-heavy applications.",
+     "lectures": [
+      "1.2 - What will we build"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "type-coercion",
+     "description": "JavaScript's automatic conversion of values between types, sometimes causing unexpected equality results.",
+     "lectures": [
+      "1.3 - Mental Models We Will Be Using"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Introduction",
+     "origin": "generated"
+    },
+    {
+     "name": "utility-library",
+     "description": "A library providing additional custom functions to extend built-in methods for enhanced features.",
+     "lectures": [
+      "2.1 - What are Libraries and their Types"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Libraries: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "wrapper-library",
+     "description": "A library that wraps existing functionality with a simpler or enhanced API for better usability.",
+     "lectures": [
+      "2.1 - What are Libraries and their Types"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Libraries: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "inheritance-in-javascript",
+     "description": "The mechanism where objects inherit properties and methods from their prototype objects, enabling code reuse.",
+     "lectures": [
+      "3.2 - Nature Inherites So Does Javascript",
+      "3.5 - Prototype Enables Inheritance",
+      "3.6 - Hacking Javascript's Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Welcome Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype",
+     "description": "An object that acts as a blueprint containing built-in methods inherited by other objects like strings and arrays.",
+     "lectures": [
+      "3.4 - What is this Prototype",
+      "3.5 - Prototype Enables Inheritance",
+      "3.6 - Hacking Javascript's Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Welcome Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "string-prototype",
+     "description": "The prototype object that holds built-in string methods like toUpperCase, inherited by string objects.",
+     "lectures": [
+      "3.4 - What is this Prototype",
+      "3.5 - Prototype Enables Inheritance",
+      "3.6 - Hacking Javascript's Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Welcome Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "temporary-wrapper-object",
+     "description": "A short-lived object created by JavaScript to enable method access on primitive values like strings.",
+     "lectures": [
+      "3.3 - Meditate on Javascript",
+      "3.4 - What is this Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Welcome Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "adding-methods-to-prototype",
+     "description": "Attaching custom methods to string.prototype to extend built-in string functionalities.",
+     "lectures": [
+      "4.1 - Creating Methods",
+      "4.3 - Methods Using Regular Expressions",
+      "4.4 - Organising The Library"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Adding Methods to Our Library",
+     "origin": "generated"
+    },
+    {
+     "name": "library-organization",
+     "description": "Structuring methods inside a single object which is then attached to string.prototype as a whole.",
+     "lectures": [
+      "4.4 - Organising The Library"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Adding Methods to Our Library",
+     "origin": "generated"
+    },
+    {
+     "name": "regular-expressions",
+     "description": "Pattern matching tool in JavaScript used for searching and replacing text based on patterns.",
+     "lectures": [
+      "4.2 - What are Regular Expressions?",
+      "4.3 - Methods Using Regular Expressions"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Adding Methods to Our Library",
+     "origin": "generated"
+    },
+    {
+     "name": "testing-library-in-application",
+     "description": "Using the custom library methods in a real web application by including the library script and manipulating DOM elements.",
+     "lectures": [
+      "4.5 - Testing The Library"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Adding Methods to Our Library",
+     "origin": "generated"
+    },
+    {
+     "name": "monkey-patching",
+     "description": "Modifying or extending built-in prototypes without careful consideration, leading to potential conflicts and maintenance issues.",
+     "lectures": [
+      "5.1 - Prototype, a Hero Turned Villain",
+      "5.3 - Summary So Far"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Goodbye Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "naming-collision",
+     "description": "When two libraries or JavaScript itself define the same method name on a prototype causing unexpected behavior and breakage.",
+     "lectures": [
+      "5.1 - Prototype, a Hero Turned Villain",
+      "5.3 - Summary So Far"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Goodbye Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-usage-guidelines",
+     "description": "Recommendations on when to use prototype extension safely, mainly for personal projects or limited scope to avoid widespread issues.",
+     "lectures": [
+      "5.2 - When to Use Prototype and When To Not"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Goodbye Prototype",
+     "origin": "generated"
+    },
+    {
+     "name": "immediately-invoked-function-expression",
+     "description": "A JavaScript pattern that creates a scoped function executed immediately to avoid polluting the global scope.",
+     "lectures": [
+      "6.5 - IIFE, To The Rescue"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Welcome Window",
+     "origin": "generated"
+    },
+    {
+     "name": "register-library-to-window",
+     "description": "Attaching a custom library object as a property of the window object to make it globally accessible.",
+     "lectures": [
+      "6.2 - Register Library to Window"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Welcome Window",
+     "origin": "generated"
+    },
+    {
+     "name": "window-object",
+     "description": "The global object in browsers that stores all webpage data, variables, functions, and browser APIs.",
+     "lectures": [
+      "6.1 - What is Window"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Welcome Window",
+     "origin": "generated"
+    },
+    {
+     "name": "environment-detection",
+     "description": "A technique to detect whether the code is running in a browser or Node.js by checking the existence and type of window object.",
+     "lectures": [
+      "7.2 - Root, To The Rescue"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Making Library Backend Compatible",
+     "origin": "generated"
+    },
+    {
+     "name": "global-object",
+     "description": "The top-level object in a JavaScript environment that stores global variables and functions, differing between browser and Node.js.",
+     "lectures": [
+      "7.1 - Registering Library to Global Object",
+      "7.2 - Root, To The Rescue"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Making Library Backend Compatible",
+     "origin": "generated"
+    },
+    {
+     "name": "register-library-to-global",
+     "description": "Attaching a library object to the global object to make it accessible in different JavaScript environments.",
+     "lectures": [
+      "7.1 - Registering Library to Global Object"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Making Library Backend Compatible",
+     "origin": "generated"
+    },
+    {
+     "name": "root-object",
+     "description": "A dynamic object that conditionally references the global object depending on the environment, either window or global.",
+     "lectures": [
+      "7.2 - Root, To The Rescue"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Making Library Backend Compatible",
+     "origin": "generated"
+    },
+    {
+     "name": "global-symlinks",
+     "description": "Running npm link inside a library registers it by creating a global symlink from the package into the global node_modules.",
+     "lectures": [
+      "8.1 - The `npm link` command"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - How to Develop NPM Package",
+     "origin": "existing"
+    },
+    {
+     "name": "local-package-testing",
+     "description": "Testing a library in a real consuming project without publishing to npm, rebuilding (or watch mode) so the consumer never imports stale output.",
+     "lectures": [
+      "8.2 - Testing Our NPM Package"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - How to Develop NPM Package",
+     "origin": "existing"
+    },
+    {
+     "name": "module-type-script",
+     "description": "Using <script type=\"module\"> to enable ES module import syntax in browser environments.",
+     "lectures": [
+      "8.2 - Testing Our NPM Package"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - How to Develop NPM Package",
+     "origin": "generated"
+    },
+    {
+     "name": "npm-link",
+     "description": "npm link is a two-step process: npm link in the library, then npm link <package-name> in the consuming project.",
+     "lectures": [
+      "8.1 - The `npm link` command"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - How to Develop NPM Package",
+     "origin": "existing"
+    },
+    {
+     "name": "library-loading-overhead",
+     "description": "Loading an entire library via window object causes unnecessary performance overhead when only a subset of functions is required.",
+     "lectures": [
+      "9.1 - Window is good but ..."
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Welcome ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "modularity-absence-in-window",
+     "description": "Window method lacks modularity and tree shaking, forcing users to load entire libraries even if only a few functions are needed.",
+     "lectures": [
+      "9.1 - Window is good but ..."
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Welcome ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "window-pollution",
+     "description": "The problem where attaching a library to the window object causes global namespace pollution and unintended method exposure.",
+     "lectures": [
+      "9.1 - Window is good but ..."
+     ],
+     "chapter_index": 8,
+     "chapter": "Chapter 9 - Welcome ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "ecmascript-modules",
+     "description": "A JavaScript file format with its own scope and parsing rules enabling modular code with import/export syntax.",
+     "lectures": [
+      "10.1 - What Are ES Modules"
+     ],
+     "chapter_index": 9,
+     "chapter": "Chapter 10 - ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "esm-library-creation",
+     "description": "Creating a library using ECMAScript modules by exporting a library object and removing IIFE patterns.",
+     "lectures": [
+      "10.2 - Creating ESM Based Library"
+     ],
+     "chapter_index": 9,
+     "chapter": "Chapter 10 - ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "esm-testing-on-backend",
+     "description": "Testing an ECMAScript module library in a backend environment requires module type configuration and import syntax.",
+     "lectures": [
+      "10.3 - Testing Library on Backend"
+     ],
+     "chapter_index": 9,
+     "chapter": "Chapter 10 - ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "npm-linking-for-esm",
+     "description": "Using npm link to locally link an ECMAScript module library for development and testing without publishing.",
+     "lectures": [
+      "10.2 - Creating ESM Based Library",
+      "10.3 - Testing Library on Backend"
+     ],
+     "chapter_index": 9,
+     "chapter": "Chapter 10 - ES Modules",
+     "origin": "generated"
+    },
+    {
+     "name": "frontend-library-testing",
+     "description": "Using the published library in a frontend framework application by installing and importing functions.",
+     "lectures": [
+      "11.2 - More methods and Testing Library on Frontend Application"
+     ],
+     "chapter_index": 10,
+     "chapter": "Chapter 11 - Publishing Our Library as NPM Package",
+     "origin": "generated"
+    },
+    {
+     "name": "library-versioning",
+     "description": "Assigning semantic version numbers to library releases to manage updates and compatibility.",
+     "lectures": [
+      "11.1 - Publishing using `np`",
+      "11.2 - More methods and Testing Library on Frontend Application"
+     ],
+     "chapter_index": 10,
+     "chapter": "Chapter 11 - Publishing Our Library as NPM Package",
+     "origin": "generated"
+    },
+    {
+     "name": "np-package",
+     "description": "A package that streamlines npm publishing with version management and test checks.",
+     "lectures": [
+      "11.1 - Publishing using `np`"
+     ],
+     "chapter_index": 10,
+     "chapter": "Chapter 11 - Publishing Our Library as NPM Package",
+     "origin": "generated"
+    },
+    {
+     "name": "npm-publish-process",
+     "description": "The process of publishing a package to npm including login, versioning, and pushing code to GitHub.",
+     "lectures": [
+      "11.1 - Publishing using `np`"
+     ],
+     "chapter_index": 10,
+     "chapter": "Chapter 11 - Publishing Our Library as NPM Package",
+     "origin": "generated"
+    },
+    {
+     "name": "library-architecture",
+     "description": "The design and structural decisions involved in creating a maintainable and scalable JavaScript library.",
+     "lectures": [
+      "12.2 - Complete Course Summary",
+      "12.3 - Where from Here?"
+     ],
+     "chapter_index": 11,
+     "chapter": "Chapter 12 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "library-environment-targeting",
+     "description": "Techniques to build libraries compatible with different environments like browser, Node.js, and ECMAScript modules.",
+     "lectures": [
+      "12.1 - How Axios Library Uses 3 Methods We Learned"
+     ],
+     "chapter_index": 11,
+     "chapter": "Chapter 12 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-chain",
+     "description": "The chain of linked prototype objects that enables inheritance and method lookup in JavaScript objects.",
+     "lectures": [
+      "12.2 - Complete Course Summary"
+     ],
+     "chapter_index": 11,
+     "chapter": "Chapter 12 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "global-symlinks",
+     "target": "npm-link",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "npm-link",
+     "target": "local-package-testing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "expectation-versus-reality",
+     "target": "library",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library",
+     "target": "string-manipulation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "type-coercion",
+     "target": "string-manipulation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library",
+     "target": "utility-library",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library",
+     "target": "wrapper-library",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype",
+     "target": "inheritance-in-javascript",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype",
+     "target": "string-prototype",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "string-prototype",
+     "target": "temporary-wrapper-object",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "string-prototype",
+     "target": "adding-methods-to-prototype",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "adding-methods-to-prototype",
+     "target": "library-organization",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "string-manipulation",
+     "target": "regular-expressions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library-organization",
+     "target": "testing-library-in-application",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "adding-methods-to-prototype",
+     "target": "monkey-patching",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "monkey-patching",
+     "target": "naming-collision",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "monkey-patching",
+     "target": "prototype-usage-guidelines",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "immediately-invoked-function-expression",
+     "target": "register-library-to-window",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "window-object",
+     "target": "register-library-to-window",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "window-object",
+     "target": "register-library-to-global",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "window-object",
+     "target": "environment-detection",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "global-object",
+     "target": "register-library-to-global",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "environment-detection",
+     "target": "root-object",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "root-object",
+     "target": "register-library-to-global",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-global",
+     "target": "global-symlinks",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-global",
+     "target": "local-package-testing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-window",
+     "target": "window-pollution",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-window",
+     "target": "modularity-absence-in-window",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-window",
+     "target": "library-loading-overhead",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "register-library-to-window",
+     "target": "module-type-script",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "module-type-script",
+     "target": "ecmascript-modules",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "ecmascript-modules",
+     "target": "esm-library-creation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "esm-library-creation",
+     "target": "esm-testing-on-backend",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "esm-library-creation",
+     "target": "npm-linking-for-esm",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "npm-linking-for-esm",
+     "target": "frontend-library-testing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "frontend-library-testing",
+     "target": "library-versioning",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library-versioning",
+     "target": "np-package",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "np-package",
+     "target": "npm-publish-process",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library",
+     "target": "library-architecture",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "library-architecture",
+     "target": "library-environment-targeting",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype",
+     "target": "prototype-chain",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "string-manipulation",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "utility-library",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "wrapper-library",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "string-prototype",
+     "target": "prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "temporary-wrapper-object",
+     "target": "string-prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "adding-methods-to-prototype",
+     "target": "string-prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "library-organization",
+     "target": "adding-methods-to-prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "regular-expressions",
+     "target": "string-manipulation",
+     "type": "part_of"
+    },
+    {
+     "source": "testing-library-in-application",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "monkey-patching",
+     "target": "adding-methods-to-prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "naming-collision",
+     "target": "monkey-patching",
+     "type": "part_of"
+    },
+    {
+     "source": "prototype-usage-guidelines",
+     "target": "monkey-patching",
+     "type": "part_of"
+    },
+    {
+     "source": "register-library-to-window",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "register-library-to-global",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "window-object",
+     "target": "global-object",
+     "type": "part_of"
+    },
+    {
+     "source": "root-object",
+     "target": "global-object",
+     "type": "part_of"
+    },
+    {
+     "source": "global-symlinks",
+     "target": "register-library-to-global",
+     "type": "part_of"
+    },
+    {
+     "source": "local-package-testing",
+     "target": "register-library-to-global",
+     "type": "part_of"
+    },
+    {
+     "source": "window-pollution",
+     "target": "register-library-to-window",
+     "type": "part_of"
+    },
+    {
+     "source": "modularity-absence-in-window",
+     "target": "register-library-to-window",
+     "type": "part_of"
+    },
+    {
+     "source": "library-loading-overhead",
+     "target": "register-library-to-window",
+     "type": "part_of"
+    },
+    {
+     "source": "module-type-script",
+     "target": "ecmascript-modules",
+     "type": "part_of"
+    },
+    {
+     "source": "esm-library-creation",
+     "target": "ecmascript-modules",
+     "type": "part_of"
+    },
+    {
+     "source": "esm-testing-on-backend",
+     "target": "esm-library-creation",
+     "type": "part_of"
+    },
+    {
+     "source": "npm-linking-for-esm",
+     "target": "esm-library-creation",
+     "type": "part_of"
+    },
+    {
+     "source": "frontend-library-testing",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "library-versioning",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "np-package",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "npm-publish-process",
+     "target": "library",
+     "type": "part_of"
+    },
+    {
+     "source": "library-environment-targeting",
+     "target": "library-architecture",
+     "type": "part_of"
+    },
+    {
+     "source": "prototype-chain",
+     "target": "prototype",
+     "type": "part_of"
+    },
+    {
+     "source": "type-coercion",
+     "target": "expectation-versus-reality",
+     "type": "related_to"
+    },
+    {
+     "source": "string-manipulation",
+     "target": "regular-expressions",
+     "type": "related_to"
+    },
+    {
+     "source": "utility-library",
+     "target": "wrapper-library",
+     "type": "related_to"
+    },
+    {
+     "source": "inheritance-in-javascript",
+     "target": "prototype-chain",
+     "type": "related_to"
+    },
+    {
+     "source": "testing-library-in-application",
+     "target": "local-package-testing",
+     "type": "related_to"
+    },
+    {
+     "source": "window-object",
+     "target": "global-object",
+     "type": "related_to"
+    },
+    {
+     "source": "window-pollution",
+     "target": "modularity-absence-in-window",
+     "type": "related_to"
+    },
+    {
+     "source": "library-architecture",
+     "target": "prototype-chain",
+     "type": "related_to"
+    },
+    {
+     "source": "library-environment-targeting",
+     "target": "register-library-to-global",
+     "type": "related_to"
+    },
+    {
+     "source": "library-versioning",
+     "target": "npm-publish-process",
+     "type": "related_to"
+    },
+    {
+     "source": "np-package",
+     "target": "npm-publish-process",
+     "type": "related_to"
+    },
+    {
+     "source": "esm-library-creation",
+     "target": "library-architecture",
+     "type": "related_to"
+    }
+   ]
+  },
+  "product-engineering": {
+   "title": "Product Engineering Essentials",
+   "concepts": [
+    {
+     "name": "engineers-mindset",
+     "description": "The approach of understanding why code behaves as it does, beyond just syntax, to build deeper knowledge.",
+     "lectures": [
+      "1.1 - Why Most Engineers Stop at the Surface",
+      "1.2 - First Principles Thinking for Engineers"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - The Engineer's Mindset",
+     "origin": "generated"
+    },
+    {
+     "name": "first-principles-thinking",
+     "description": "A method of breaking problems down to their fundamental truths and building understanding from there.",
+     "lectures": [
+      "1.2 - First Principles Thinking for Engineers",
+      "1.3 - Reading Specs and Source Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - The Engineer's Mindset",
+     "origin": "generated"
+    },
+    {
+     "name": "problem-decomposition",
+     "description": "Breaking a problem into input, output, assumptions, and smallest testable experiments for clarity and debugging.",
+     "lectures": [
+      "1.3 - Reading Specs and Source Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - The Engineer's Mindset",
+     "origin": "generated"
+    },
+    {
+     "name": "reading-specs-and-source",
+     "description": "The practice of consulting official specifications and source code to verify assumptions and understand behavior.",
+     "lectures": [
+      "1.3 - Reading Specs and Source Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - The Engineer's Mindset",
+     "origin": "generated"
+    },
+    {
+     "name": "ecmascript-standardization",
+     "description": "JavaScript's evolution is governed by ECMA International standards and the TC39 committee's careful feature approval process.",
+     "lectures": [
+      "2.3 - Why JavaScript Evolved This Way"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "js-1-0-design-constraints",
+     "description": "JavaScript 1.0 was designed with clear constraints: familiar syntax, approachable typing, first-class functions, and prototype-based objects.",
+     "lectures": [
+      "2.2 - How JS 1.0 Was Designed"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "transpilers-and-polyfills",
+     "description": "Tools like transpilers and polyfills enable using modern JavaScript features while supporting older browsers.",
+     "lectures": [
+      "2.3 - Why JavaScript Evolved This Way"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "wave-model",
+     "description": "JavaScript evolved in waves, each adding features while maintaining backward compatibility, explaining its layered behavior.",
+     "lectures": [
+      "2.1 - The Wave Model of JavaScript"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "monkey-patching",
+     "description": "Unsafe modification of built-in prototypes that can cause conflicts and bugs in shared code.",
+     "lectures": [
+      "3.3 - Hacking Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Prototypes and Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-chain",
+     "description": "A chain of linked objects followed repeatedly to find properties, ending at null if not found.",
+     "lectures": [
+      "3.2 - The Prototype Chain Visualized"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Prototypes and Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-hacking",
+     "description": "Modifying a prototype object at runtime to add or override behavior for all linked objects.",
+     "lectures": [
+      "3.3 - Hacking Prototype"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Prototypes and Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-internal-slot",
+     "description": "An internal hidden property [[Prototype]] on every object linking to another object or null for property lookup.",
+     "lectures": [
+      "3.1 - [[PROTOTYPE]] Under the Hood"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Prototypes and Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "shadowing",
+     "description": "When a property is written on an object itself, hiding the same-named property on its prototype.",
+     "lectures": [
+      "3.1 - [[PROTOTYPE]] Under the Hood"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Prototypes and Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "async-await",
+     "description": "Syntax built on promises allowing asynchronous code to be written in a synchronous style by pausing and resuming functions.",
+     "lectures": [
+      "4.2 - Callbacks, Promises, and Async/Await Internals"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Asynchronous JavaScript",
+     "origin": "generated"
+    },
+    {
+     "name": "event-loop",
+     "description": "A loop that runs tasks from the task queue when the call stack is empty, enabling asynchronous behavior in single-threaded JavaScript.",
+     "lectures": [
+      "4.1 - The Event Loop: First Principles"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Asynchronous JavaScript",
+     "origin": "generated"
+    },
+    {
+     "name": "microtask-queue",
+     "description": "A high-priority queue where promise handlers and microtasks run before the next task or browser rendering.",
+     "lectures": [
+      "4.3 - The Microtask Queue"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Asynchronous JavaScript",
+     "origin": "generated"
+    },
+    {
+     "name": "promise",
+     "description": "An object representing the eventual result of an asynchronous operation, with states pending, fulfilled, or rejected.",
+     "lectures": [
+      "4.2 - Callbacks, Promises, and Async/Await Internals"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Asynchronous JavaScript",
+     "origin": "generated"
+    },
+    {
+     "name": "task-queue",
+     "description": "A queue where callbacks like timers and network events are placed to be run by the event loop after the call stack is empty.",
+     "lectures": [
+      "4.1 - The Event Loop: First Principles",
+      "4.3 - The Microtask Queue"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Asynchronous JavaScript",
+     "origin": "generated"
+    },
+    {
+     "name": "closures-as-state",
+     "description": "Using closures to create private, persistent state without classes or globals.",
+     "lectures": [
+      "5.3 - Closures as State"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Functional Programming Patterns",
+     "origin": "generated"
+    },
+    {
+     "name": "function-composition",
+     "description": "Building complex behavior by chaining small functions where output of one is input to the next.",
+     "lectures": [
+      "5.2 - Function Composition"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Functional Programming Patterns",
+     "origin": "generated"
+    },
+    {
+     "name": "immutability",
+     "description": "Avoiding mutation by creating new objects or arrays instead of modifying existing ones.",
+     "lectures": [
+      "5.1 - Pure Functions and Immutability"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Functional Programming Patterns",
+     "origin": "generated"
+    },
+    {
+     "name": "pure-functions",
+     "description": "Functions that always return the same result for the same inputs and have no side effects.",
+     "lectures": [
+      "5.1 - Pure Functions and Immutability"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Functional Programming Patterns",
+     "origin": "generated"
+    },
+    {
+     "name": "code-review-culture",
+     "description": "Code review spreads knowledge, catches design mistakes early, and ensures multiple people understand shipped code.",
+     "lectures": [
+      "6.1 - Code Review Culture"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Production Engineering",
+     "origin": "generated"
+    },
+    {
+     "name": "continuous-integration-and-delivery",
+     "description": "Automated pipelines build, test, and deploy code to production safely and reproducibly.",
+     "lectures": [
+      "6.3 - Ship It: From PR to Production"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Production Engineering",
+     "origin": "generated"
+    },
+    {
+     "name": "deployment-strategy",
+     "description": "Deploying to staging, gradual release with feature flags, and rollback plans reduce production risk.",
+     "lectures": [
+      "6.3 - Ship It: From PR to Production"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Production Engineering",
+     "origin": "generated"
+    },
+    {
+     "name": "monitoring-and-alerting",
+     "description": "Logs, metrics, and alerts help detect and respond to production issues effectively.",
+     "lectures": [
+      "6.3 - Ship It: From PR to Production"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Production Engineering",
+     "origin": "generated"
+    },
+    {
+     "name": "performance-profiling",
+     "description": "Profiling measures real performance bottlenecks to guide targeted optimizations rather than guessing.",
+     "lectures": [
+      "6.2 - Performance Profiling"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Production Engineering",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "engineers-mindset",
+     "target": "first-principles-thinking",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "first-principles-thinking",
+     "target": "problem-decomposition",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "problem-decomposition",
+     "target": "reading-specs-and-source",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "js-1-0-design-constraints",
+     "target": "ecmascript-standardization",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "ecmascript-standardization",
+     "target": "wave-model",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "wave-model",
+     "target": "transpilers-and-polyfills",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "js-1-0-design-constraints",
+     "target": "prototype-internal-slot",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-internal-slot",
+     "target": "prototype-chain",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-chain",
+     "target": "shadowing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-chain",
+     "target": "prototype-hacking",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-hacking",
+     "target": "monkey-patching",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "promise",
+     "target": "async-await",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "promise",
+     "target": "microtask-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "task-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "task-queue",
+     "target": "microtask-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "microtask-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "microtask-queue",
+     "target": "async-await",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "pure-functions",
+     "target": "function-composition",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "pure-functions",
+     "target": "immutability",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "pure-functions",
+     "target": "closures-as-state",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "code-review-culture",
+     "target": "continuous-integration-and-delivery",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "continuous-integration-and-delivery",
+     "target": "deployment-strategy",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "deployment-strategy",
+     "target": "monitoring-and-alerting",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "monitoring-and-alerting",
+     "target": "performance-profiling",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-internal-slot",
+     "target": "prototype-chain",
+     "type": "part_of"
+    },
+    {
+     "source": "task-queue",
+     "target": "event-loop",
+     "type": "part_of"
+    },
+    {
+     "source": "microtask-queue",
+     "target": "event-loop",
+     "type": "part_of"
+    },
+    {
+     "source": "reading-specs-and-source",
+     "target": "ecmascript-standardization",
+     "type": "related_to"
+    },
+    {
+     "source": "prototype-hacking",
+     "target": "monkey-patching",
+     "type": "related_to"
+    },
+    {
+     "source": "shadowing",
+     "target": "prototype-hacking",
+     "type": "related_to"
+    },
+    {
+     "source": "promise",
+     "target": "event-loop",
+     "type": "related_to"
+    },
+    {
+     "source": "async-await",
+     "target": "event-loop",
+     "type": "related_to"
+    },
+    {
+     "source": "closures-as-state",
+     "target": "immutability",
+     "type": "related_to"
+    },
+    {
+     "source": "function-composition",
+     "target": "immutability",
+     "type": "related_to"
+    },
+    {
+     "source": "code-review-culture",
+     "target": "performance-profiling",
+     "type": "related_to"
+    },
+    {
+     "source": "continuous-integration-and-delivery",
+     "target": "monitoring-and-alerting",
+     "type": "related_to"
+    }
+   ]
+  },
+  "state-management": {
+   "title": "Build a State Management Library",
+   "concepts": [
+    {
+     "name": "change-detection",
+     "description": "Mechanism to detect when state changes so the app can update accordingly.",
+     "lectures": [
+      "1.1 - What is State and Why It's Hard"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - State: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "controlled-updates",
+     "description": "Restricting state changes to predictable, debuggable places to avoid inconsistent state.",
+     "lectures": [
+      "1.1 - What is State and Why It's Hard",
+      "1.2 - How Redux, Zustand, Pinia Work Under the Hood"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - State: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "derived-state",
+     "description": "State values computed from other state to avoid duplication and keep data consistent.",
+     "lectures": [
+      "1.1 - What is State and Why It's Hard"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - State: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "state",
+     "description": "Data your program remembers between moments in time, shared and changing across multiple parts of an app.",
+     "lectures": [
+      "1.1 - What is State and Why It's Hard"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - State: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "state-notification",
+     "description": "Informing all interested parts of the app that state has changed to keep UI in sync.",
+     "lectures": [
+      "1.1 - What is State and Why It's Hard"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - State: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "proxy",
+     "description": "A JavaScript object that wraps a target and intercepts operations via handler traps.",
+     "lectures": [
+      "2.1 - Proxy: The Intercept Layer"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Proxy",
+     "origin": "generated"
+    },
+    {
+     "name": "proxy-cache",
+     "description": "A WeakMap cache to store proxies for nested objects to maintain identity and avoid memory leaks.",
+     "lectures": [
+      "2.3 - Building a Reactive Primitive"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Proxy",
+     "origin": "generated"
+    },
+    {
+     "name": "reactive-primitive",
+     "description": "A proxy-based object that calls a callback on any property set, add, or delete, including nested objects.",
+     "lectures": [
+      "2.3 - Building a Reactive Primitive"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Proxy",
+     "origin": "generated"
+    },
+    {
+     "name": "reflect-api",
+     "description": "A built-in object with methods that perform default operations inside proxy traps correctly.",
+     "lectures": [
+      "2.2 - The Reflect API"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - JavaScript Proxy",
+     "origin": "generated"
+    },
+    {
+     "name": "get-state",
+     "description": "A method to retrieve the current state object exactly as it is without copying.",
+     "lectures": [
+      "3.1 - State Container Architecture",
+      "3.3 - getState, setState, subscribe"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - The Core Store",
+     "origin": "generated"
+    },
+    {
+     "name": "set-state",
+     "description": "A method to immutably update state by merging partial updates or using an updater function, notifying listeners after changes.",
+     "lectures": [
+      "3.3 - getState, setState, subscribe"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - The Core Store",
+     "origin": "generated"
+    },
+    {
+     "name": "store",
+     "description": "A container that holds state, provides controlled updates, and allows subscriptions to state changes.",
+     "lectures": [
+      "3.1 - State Container Architecture"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - The Core Store",
+     "origin": "generated"
+    },
+    {
+     "name": "subscribe",
+     "description": "A method to register listeners that are called with new and previous state on changes, returning an unsubscribe function.",
+     "lectures": [
+      "3.2 - Subscriptions and Listeners",
+      "3.3 - getState, setState, subscribe"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - The Core Store",
+     "origin": "generated"
+    },
+    {
+     "name": "computed",
+     "description": "A lazy memoized value that caches results and recomputes only when its tracked dependencies change and the value is accessed.",
+     "lectures": [
+      "4.3 - Lazy Memoization"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Computed Properties",
+     "origin": "generated"
+    },
+    {
+     "name": "dependency-tracking",
+     "description": "Automatically recording which state properties a function reads to know when to invalidate cached computations.",
+     "lectures": [
+      "4.2 - Dependency Tracking with WeakMap"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Computed Properties",
+     "origin": "generated"
+    },
+    {
+     "name": "dirty-flag",
+     "description": "A boolean indicating whether a cached computed value is invalid and needs recomputing when accessed.",
+     "lectures": [
+      "4.3 - Lazy Memoization"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Computed Properties",
+     "origin": "generated"
+    },
+    {
+     "name": "track",
+     "description": "A function that records the currently running effect as dependent on a specific target object's property.",
+     "lectures": [
+      "4.2 - Dependency Tracking with WeakMap"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Computed Properties",
+     "origin": "generated"
+    },
+    {
+     "name": "trigger",
+     "description": "A function that notifies all effects dependent on a changed property to re-run or mark dirty.",
+     "lectures": [
+      "4.2 - Dependency Tracking with WeakMap"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Computed Properties",
+     "origin": "generated"
+    },
+    {
+     "name": "actions",
+     "description": "Named functions that explicitly mutate state by calling set with partial updates or updaters.",
+     "lectures": [
+      "5.1 - Explicit Mutations"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Actions and Async",
+     "origin": "generated"
+    },
+    {
+     "name": "inverse-rollback",
+     "description": "Rollback strategy that undoes only the optimistic change, preserving other state changes during the request.",
+     "lectures": [
+      "5.3 - Rollback on Failure"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Actions and Async",
+     "origin": "generated"
+    },
+    {
+     "name": "optimistic-updates",
+     "description": "Updating state immediately assuming a server request will succeed, marking changes as pending.",
+     "lectures": [
+      "5.2 - Async Actions with Optimistic Updates"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Actions and Async",
+     "origin": "generated"
+    },
+    {
+     "name": "rollback",
+     "description": "Restoring state after a failed optimistic update, usually by undoing the optimistic change.",
+     "lectures": [
+      "5.3 - Rollback on Failure"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Actions and Async",
+     "origin": "generated"
+    },
+    {
+     "name": "logger-plugin",
+     "description": "A middleware plugin that logs action labels, previous and next state, and timing for each state change.",
+     "lectures": [
+      "6.2 - Building a Logger Plugin"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Middleware System",
+     "origin": "generated"
+    },
+    {
+     "name": "middleware-pattern",
+     "description": "A function wrapping setState to run code before and after state updates, allowing stacking and control over updates.",
+     "lectures": [
+      "6.1 - The Middleware Pattern"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Middleware System",
+     "origin": "generated"
+    },
+    {
+     "name": "persistence-plugin",
+     "description": "A plugin that hydrates initial state from localStorage and saves state changes back to localStorage with optional debouncing.",
+     "lectures": [
+      "6.3 - Persistence Plugin (localStorage)"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Middleware System",
+     "origin": "generated"
+    },
+    {
+     "name": "devtools-integration",
+     "description": "Connecting the store to Redux DevTools extension for visualizing and controlling state history externally.",
+     "lectures": [
+      "7.3 - How Redux DevTools Works Under the Hood"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Time-Travel Debugging",
+     "origin": "generated"
+    },
+    {
+     "name": "history-travelling-flag",
+     "description": "A boolean guard to prevent recording state changes caused by restoring snapshots during undo/redo.",
+     "lectures": [
+      "7.1 - Snapshot-Based State History",
+      "7.2 - Undo / Redo Implementation"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Time-Travel Debugging",
+     "origin": "generated"
+    },
+    {
+     "name": "snapshot-based-history",
+     "description": "Storing immutable state snapshots in arrays to enable time travel by restoring past states.",
+     "lectures": [
+      "7.1 - Snapshot-Based State History"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Time-Travel Debugging",
+     "origin": "generated"
+    },
+    {
+     "name": "undo-redo-operations",
+     "description": "Functions to move backward and forward through state history by swapping snapshots between past and future arrays.",
+     "lectures": [
+      "7.2 - Undo / Redo Implementation"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Time-Travel Debugging",
+     "origin": "generated"
+    },
+    {
+     "name": "library-comparison",
+     "description": "Comparing design choices and tradeoffs between our library and Zustand, highlighting differences and similarities.",
+     "lectures": [
+      "8.1 - Comparing Our Library to Zustand"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "npm-publishing",
+     "description": "The process and best practices for packaging and publishing a JavaScript library to the npm registry.",
+     "lectures": [
+      "8.2 - Publishing as an NPM Package"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "react-integration",
+     "description": "Connecting the store to React using hooks like useSyncExternalStore for efficient component updates.",
+     "lectures": [
+      "8.1 - Comparing Our Library to Zustand",
+      "8.3 - Where from Here?"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "store-creator-middleware",
+     "description": "Middleware that wraps the store creator function to enhance or modify store creation and initial state.",
+     "lectures": [
+      "8.1 - Comparing Our Library to Zustand"
+     ],
+     "chapter_index": 7,
+     "chapter": "Chapter 8 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "state",
+     "target": "change-detection",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "state",
+     "target": "controlled-updates",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "state",
+     "target": "derived-state",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "state",
+     "target": "state-notification",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "proxy",
+     "target": "proxy-cache",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "proxy",
+     "target": "reactive-primitive",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "reflect-api",
+     "target": "reactive-primitive",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "proxy-cache",
+     "target": "reactive-primitive",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "change-detection",
+     "target": "reactive-primitive",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "controlled-updates",
+     "target": "store",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "state-notification",
+     "target": "store",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "derived-state",
+     "target": "computed",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "reactive-primitive",
+     "target": "dependency-tracking",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "dependency-tracking",
+     "target": "track",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "dependency-tracking",
+     "target": "trigger",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "track",
+     "target": "computed",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "trigger",
+     "target": "computed",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "dirty-flag",
+     "target": "computed",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "get-state",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "set-state",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "subscribe",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "set-state",
+     "target": "actions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "set-state",
+     "target": "middleware-pattern",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "set-state",
+     "target": "persistence-plugin",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "set-state",
+     "target": "logger-plugin",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "set-state",
+     "target": "optimistic-updates",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "optimistic-updates",
+     "target": "rollback",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "optimistic-updates",
+     "target": "inverse-rollback",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "snapshot-based-history",
+     "target": "undo-redo-operations",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "undo-redo-operations",
+     "target": "history-travelling-flag",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "devtools-integration",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "store-creator-middleware",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "react-integration",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "library-comparison",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "store",
+     "target": "npm-publishing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "proxy-cache",
+     "target": "reactive-primitive",
+     "type": "part_of"
+    },
+    {
+     "source": "dirty-flag",
+     "target": "computed",
+     "type": "part_of"
+    },
+    {
+     "source": "dependency-tracking",
+     "target": "computed",
+     "type": "part_of"
+    },
+    {
+     "source": "track",
+     "target": "dependency-tracking",
+     "type": "part_of"
+    },
+    {
+     "source": "trigger",
+     "target": "dependency-tracking",
+     "type": "part_of"
+    },
+    {
+     "source": "get-state",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "set-state",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "subscribe",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "actions",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "logger-plugin",
+     "target": "middleware-pattern",
+     "type": "part_of"
+    },
+    {
+     "source": "persistence-plugin",
+     "target": "middleware-pattern",
+     "type": "part_of"
+    },
+    {
+     "source": "snapshot-based-history",
+     "target": "undo-redo-operations",
+     "type": "part_of"
+    },
+    {
+     "source": "history-travelling-flag",
+     "target": "undo-redo-operations",
+     "type": "part_of"
+    },
+    {
+     "source": "store-creator-middleware",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "devtools-integration",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "react-integration",
+     "target": "store",
+     "type": "part_of"
+    },
+    {
+     "source": "rollback",
+     "target": "inverse-rollback",
+     "type": "related_to"
+    },
+    {
+     "source": "logger-plugin",
+     "target": "persistence-plugin",
+     "type": "related_to"
+    },
+    {
+     "source": "devtools-integration",
+     "target": "snapshot-based-history",
+     "type": "related_to"
+    },
+    {
+     "source": "library-comparison",
+     "target": "npm-publishing",
+     "type": "related_to"
+    },
+    {
+     "source": "react-integration",
+     "target": "store-creator-middleware",
+     "type": "related_to"
+    }
+   ]
+  },
+  "web-framework": {
+   "title": "Build a Web Framework from Scratch",
+   "concepts": [
+    {
+     "name": "http-body",
+     "description": "The body is optional raw bytes sent with requests or responses, whose type is indicated by the Content-Type header.",
+     "lectures": [
+      "1.3 - Headers, Body, and Status Codes"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "http-headers",
+     "description": "Headers are metadata in name-value pairs that describe the message, sender, body, or state, and are case-insensitive.",
+     "lectures": [
+      "1.3 - Headers, Body, and Status Codes"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "http-protocol",
+     "description": "HTTP is a protocol for clients to request documents and servers to respond, invented to link documents across computers.",
+     "lectures": [
+      "1.1 - What is HTTP and Why It Was Invented"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "http-status-codes",
+     "description": "Status codes are three-digit numbers categorizing response results like success, redirects, client errors, and server errors.",
+     "lectures": [
+      "1.3 - Headers, Body, and Status Codes"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "http-wire-format",
+     "description": "HTTP messages consist of a start line, headers, a blank line, and an optional body, using CRLF to separate lines.",
+     "lectures": [
+      "1.2 - The HTTP Wire Format"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "http-request-parsing",
+     "description": "The process of interpreting raw TCP bytes into structured HTTP request components like method, path, headers, and body.",
+     "lectures": [
+      "2.2 - Parsing Raw HTTP Requests"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Building the HTTP Server",
+     "origin": "generated"
+    },
+    {
+     "name": "http-response-formatting",
+     "description": "Constructing raw HTTP response strings including status line, headers, blank line, and body for sending over TCP.",
+     "lectures": [
+      "2.3 - Sending Raw HTTP Responses"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Building the HTTP Server",
+     "origin": "generated"
+    },
+    {
+     "name": "tcp-socket",
+     "description": "A duplex stream allowing reading and writing raw bytes over a network connection.",
+     "lectures": [
+      "2.1 - Node.js net.createServer()"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Building the HTTP Server",
+     "origin": "generated"
+    },
+    {
+     "name": "dynamic-route-segments",
+     "description": "Route segments that can be static, parameters matching one segment, or wildcards matching all remaining path.",
+     "lectures": [
+      "3.3 - Dynamic :params and Wildcards"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Routing Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "naive-router",
+     "description": "A simple router using an array to match HTTP method and exact path strings linearly.",
+     "lectures": [
+      "3.1 - Naive String Matching"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Routing Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "parametric-routing",
+     "description": "Routing that extracts named parameters from path segments during lookup without regular expressions.",
+     "lectures": [
+      "3.1 - Naive String Matching",
+      "3.3 - Dynamic :params and Wildcards"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Routing Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "radix-tree",
+     "description": "A compressed prefix tree that stores routes by shared prefixes to allow efficient path lookups.",
+     "lectures": [
+      "3.2 - Radix Tree Architecture"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Routing Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "wildcard-routing",
+     "description": "Routing that matches a wildcard segment capturing all remaining path parts as a parameter.",
+     "lectures": [
+      "3.3 - Dynamic :params and Wildcards"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Routing Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "error-handling-middleware",
+     "description": "Middleware with four parameters that handles errors passed through next(err) or thrown asynchronously or synchronously.",
+     "lectures": [
+      "4.3 - Error-Handling Middleware"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Middleware Pipeline",
+     "origin": "generated"
+    },
+    {
+     "name": "middleware",
+     "description": "A function that processes requests and responses in sequence, optionally ending the response or passing control via next.",
+     "lectures": [
+      "4.1 - What is Middleware"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Middleware Pipeline",
+     "origin": "generated"
+    },
+    {
+     "name": "middleware-pipeline",
+     "description": "An ordered chain of middleware functions that wrap each other, processing requests inward and responses outward.",
+     "lectures": [
+      "4.1 - What is Middleware",
+      "4.2 - The next() Pattern"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Middleware Pipeline",
+     "origin": "generated"
+    },
+    {
+     "name": "next-pattern",
+     "description": "A pattern where middleware calls next() to pass control to the next middleware in the stack, enabling a pipeline flow.",
+     "lectures": [
+      "4.2 - The next() Pattern"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Middleware Pipeline",
+     "origin": "generated"
+    },
+    {
+     "name": "binary-response",
+     "description": "Sending binary data as Buffers avoids corruption by writing raw bytes directly with correct content-type.",
+     "lectures": [
+      "5.3 - JSON, HTML, and Binary Responses"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Request & Response Abstractions",
+     "origin": "generated"
+    },
+    {
+     "name": "req-object",
+     "description": "A friendly request object exposing method, path, query, params, headers, get, body, and ip for handlers.",
+     "lectures": [
+      "5.1 - The req Object"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Request & Response Abstractions",
+     "origin": "generated"
+    },
+    {
+     "name": "res-json-html-send",
+     "description": "Response methods json, html, send convert values to bytes with appropriate content-type headers and call end.",
+     "lectures": [
+      "5.3 - JSON, HTML, and Binary Responses"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Request & Response Abstractions",
+     "origin": "generated"
+    },
+    {
+     "name": "res-object",
+     "description": "A chainable response object with methods like status, set, get, redirect, and end to write HTTP responses.",
+     "lectures": [
+      "5.2 - The res Object"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Request & Response Abstractions",
+     "origin": "generated"
+    },
+    {
+     "name": "app-decorate",
+     "description": "A method to add reusable properties to the app, throwing an error if the name exists to avoid conflicts.",
+     "lectures": [
+      "6.1 - Plugin Architecture"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Plugins and Extensions",
+     "origin": "generated"
+    },
+    {
+     "name": "body-parser-plugin",
+     "description": "A plugin that parses request bodies based on content-type into usable objects, supporting JSON and form data.",
+     "lectures": [
+      "6.2 - Body Parser from Scratch"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Plugins and Extensions",
+     "origin": "generated"
+    },
+    {
+     "name": "plugin-prefixing",
+     "description": "Creating child app objects with route prefixes to scope plugins and group routes under a URL segment.",
+     "lectures": [
+      "6.1 - Plugin Architecture"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Plugins and Extensions",
+     "origin": "generated"
+    },
+    {
+     "name": "plugin-system",
+     "description": "A function taking app and options to extend the app by registering middleware, routes, or properties.",
+     "lectures": [
+      "6.1 - Plugin Architecture"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Plugins and Extensions",
+     "origin": "generated"
+    },
+    {
+     "name": "static-file-server-plugin",
+     "description": "A plugin serving files from a directory with routing, security checks, streaming, and caching support.",
+     "lectures": [
+      "6.3 - Static File Server"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Plugins and Extensions",
+     "origin": "generated"
+    },
+    {
+     "name": "framework-feature-comparison",
+     "description": "Comparing features of Tern and Express highlights trade-offs and missing production-ready capabilities.",
+     "lectures": [
+      "7.2 - Comparing Our Framework to Express"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "precomputation-in-routing",
+     "description": "Moving computation from request time to setup time improves routing performance significantly.",
+     "lectures": [
+      "7.1 - How Fastify Routes 30x Faster than Express"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "request-lifecycle",
+     "description": "The journey of an HTTP request through parsing, routing, middleware, and response sending in a framework.",
+     "lectures": [
+      "7.3 - Where from Here?"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "http-protocol",
+     "target": "http-wire-format",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-wire-format",
+     "target": "http-headers",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-wire-format",
+     "target": "http-body",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-wire-format",
+     "target": "http-status-codes",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tcp-socket",
+     "target": "http-request-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-wire-format",
+     "target": "http-request-parsing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-wire-format",
+     "target": "http-response-formatting",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-request-parsing",
+     "target": "naive-router",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "naive-router",
+     "target": "parametric-routing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "parametric-routing",
+     "target": "dynamic-route-segments",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "parametric-routing",
+     "target": "wildcard-routing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "naive-router",
+     "target": "radix-tree",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "middleware",
+     "target": "middleware-pipeline",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "middleware",
+     "target": "next-pattern",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "middleware",
+     "target": "error-handling-middleware",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "middleware-pipeline",
+     "target": "error-handling-middleware",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-request-parsing",
+     "target": "req-object",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-response-formatting",
+     "target": "res-object",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "res-object",
+     "target": "res-json-html-send",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-response-formatting",
+     "target": "binary-response",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "plugin-system",
+     "target": "body-parser-plugin",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "plugin-system",
+     "target": "static-file-server-plugin",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "plugin-system",
+     "target": "plugin-prefixing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "plugin-system",
+     "target": "app-decorate",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "radix-tree",
+     "target": "precomputation-in-routing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "middleware-pipeline",
+     "target": "request-lifecycle",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "request-lifecycle",
+     "target": "framework-feature-comparison",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "http-headers",
+     "target": "http-wire-format",
+     "type": "part_of"
+    },
+    {
+     "source": "http-body",
+     "target": "http-wire-format",
+     "type": "part_of"
+    },
+    {
+     "source": "http-status-codes",
+     "target": "http-response-formatting",
+     "type": "part_of"
+    },
+    {
+     "source": "dynamic-route-segments",
+     "target": "parametric-routing",
+     "type": "part_of"
+    },
+    {
+     "source": "wildcard-routing",
+     "target": "parametric-routing",
+     "type": "part_of"
+    },
+    {
+     "source": "middleware",
+     "target": "middleware-pipeline",
+     "type": "part_of"
+    },
+    {
+     "source": "error-handling-middleware",
+     "target": "middleware-pipeline",
+     "type": "part_of"
+    },
+    {
+     "source": "req-object",
+     "target": "request-lifecycle",
+     "type": "part_of"
+    },
+    {
+     "source": "res-object",
+     "target": "request-lifecycle",
+     "type": "part_of"
+    },
+    {
+     "source": "middleware-pipeline",
+     "target": "request-lifecycle",
+     "type": "part_of"
+    },
+    {
+     "source": "plugin-system",
+     "target": "request-lifecycle",
+     "type": "part_of"
+    },
+    {
+     "source": "res-object",
+     "target": "binary-response",
+     "type": "related_to"
+    },
+    {
+     "source": "res-object",
+     "target": "res-json-html-send",
+     "type": "related_to"
+    },
+    {
+     "source": "body-parser-plugin",
+     "target": "req-object",
+     "type": "related_to"
+    },
+    {
+     "source": "static-file-server-plugin",
+     "target": "binary-response",
+     "type": "related_to"
+    },
+    {
+     "source": "plugin-prefixing",
+     "target": "static-file-server-plugin",
+     "type": "related_to"
+    },
+    {
+     "source": "app-decorate",
+     "target": "plugin-system",
+     "type": "related_to"
+    },
+    {
+     "source": "radix-tree",
+     "target": "parametric-routing",
+     "type": "related_to"
+    },
+    {
+     "source": "middleware",
+     "target": "plugin-system",
+     "type": "related_to"
+    },
+    {
+     "source": "framework-feature-comparison",
+     "target": "precomputation-in-routing",
+     "type": "related_to"
+    }
+   ]
+  },
+  "js-engine": {
+   "title": "JavaScript Engine Internals",
+   "concepts": [
+    {
+     "name": "bytecode",
+     "description": "An intermediate low-level representation of JavaScript code executed by V8's interpreter Ignition.",
+     "lectures": [
+      "1.2 - The V8 Pipeline Overview",
+      "1.3 - Setting Up: --print-bytecode and --trace-opt"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Inside V8: The Big Picture",
+     "origin": "generated"
+    },
+    {
+     "name": "deoptimization",
+     "description": "The process where optimized machine code falls back to interpreter due to invalidated assumptions.",
+     "lectures": [
+      "1.2 - The V8 Pipeline Overview",
+      "1.3 - Setting Up: --print-bytecode and --trace-opt",
+      "4.3 - Deoptimization: When JIT Bails Out"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Inside V8: The Big Picture",
+     "origin": "generated"
+    },
+    {
+     "name": "feedback-vector",
+     "description": "A data structure Ignition maintains per function to record runtime types for optimization decisions.",
+     "lectures": [
+      "1.2 - The V8 Pipeline Overview"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Inside V8: The Big Picture",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-flags",
+     "description": "Command line options like --print-bytecode and --trace-opt used to inspect V8 internals and behavior.",
+     "lectures": [
+      "1.3 - Setting Up: --print-bytecode and --trace-opt"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Inside V8: The Big Picture",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-pipeline",
+     "description": "The sequence of steps V8 takes to convert JavaScript source code into running machine code.",
+     "lectures": [
+      "1.1 - What Happens When You Run JavaScript",
+      "1.2 - The V8 Pipeline Overview"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Inside V8: The Big Picture",
+     "origin": "generated"
+    },
+    {
+     "name": "abstract-syntax-tree",
+     "description": "A tree structure representing the syntactic structure and meaning of JavaScript code after parsing.",
+     "lectures": [
+      "2.2 - The Abstract Syntax Tree"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Parsing and the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "lazy-parsing",
+     "description": "An optimization where V8 defers full parsing and compilation of functions until they are called.",
+     "lectures": [
+      "2.3 - Lazy Parsing: V8's First Optimization"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Parsing and the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "scanner",
+     "description": "The component in V8 that tokenizes raw JavaScript source code into meaningful tokens.",
+     "lectures": [
+      "2.1 - Tokenization in V8"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Parsing and the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "scope-analysis",
+     "description": "The parser's process of determining variable lifetimes and locations during AST construction.",
+     "lectures": [
+      "2.2 - The Abstract Syntax Tree"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Parsing and the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "tokenization",
+     "description": "The process of converting a stream of characters into tokens representing language elements.",
+     "lectures": [
+      "2.1 - Tokenization in V8"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Parsing and the AST",
+     "origin": "generated"
+    },
+    {
+     "name": "accumulator",
+     "description": "A special implicit register used in Ignition to hold intermediate results and reduce instruction size.",
+     "lectures": [
+      "3.2 - Reading V8 Bytecode",
+      "3.3 - Registers and the Accumulator"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Ignition: The Bytecode Interpreter",
+     "origin": "generated"
+    },
+    {
+     "name": "ignition",
+     "description": "V8's bytecode interpreter that executes the intermediate bytecode representation of JavaScript functions.",
+     "lectures": [
+      "3.1 - What is Bytecode"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Ignition: The Bytecode Interpreter",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-bytecode-format",
+     "description": "A compact, platform-independent list of simple instructions with opcodes and operands executed by Ignition.",
+     "lectures": [
+      "3.1 - What is Bytecode",
+      "3.2 - Reading V8 Bytecode"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Ignition: The Bytecode Interpreter",
+     "origin": "generated"
+    },
+    {
+     "name": "virtual-registers",
+     "description": "Numbered slots in a function's stack frame holding local variables and temporaries, distinct from real CPU registers.",
+     "lectures": [
+      "3.3 - Registers and the Accumulator"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Ignition: The Bytecode Interpreter",
+     "origin": "generated"
+    },
+    {
+     "name": "just-in-time-compilation",
+     "description": "JIT compiles hot JavaScript functions on the fly to optimized machine code during program execution.",
+     "lectures": [
+      "4.1 - What is JIT Compilation"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - TurboFan: JIT Compilation",
+     "origin": "generated"
+    },
+    {
+     "name": "type-feedback-and-speculation",
+     "description": "TurboFan uses runtime type feedback to speculate on input types and generate fast specialized code with guards.",
+     "lectures": [
+      "4.2 - Type Feedback and Speculation"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - TurboFan: JIT Compilation",
+     "origin": "generated"
+    },
+    {
+     "name": "hidden-class",
+     "description": "A hidden description of an object's layout that maps property names to offsets for fast access.",
+     "lectures": [
+      "5.1 - How V8 Represents Objects"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Hidden Classes and Shapes",
+     "origin": "generated"
+    },
+    {
+     "name": "inline-cache",
+     "description": "A cache at each property access site that remembers hidden classes and offsets to speed up property reads.",
+     "lectures": [
+      "5.3 - Inline Caches (IC)"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Hidden Classes and Shapes",
+     "origin": "generated"
+    },
+    {
+     "name": "shape-transition",
+     "description": "The process of moving an object from one hidden class to another when a property is added.",
+     "lectures": [
+      "5.2 - Shape Transitions"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Hidden Classes and Shapes",
+     "origin": "generated"
+    },
+    {
+     "name": "mark-sweep-compact",
+     "description": "The major garbage collection algorithm that marks live objects, sweeps dead ones, and compacts memory to reduce fragmentation.",
+     "lectures": [
+      "6.3 - Major GC: Mark-Sweep-Compact"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Garbage Collection",
+     "origin": "generated"
+    },
+    {
+     "name": "scavenger",
+     "description": "The minor garbage collector that quickly cleans the young generation by copying live objects between semi-spaces.",
+     "lectures": [
+      "6.2 - Minor GC: Scavenger"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Garbage Collection",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-heap-layout",
+     "description": "V8 heap is divided into spaces like young and old generations to manage objects with different lifetimes efficiently.",
+     "lectures": [
+      "6.1 - The V8 Heap Layout"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Garbage Collection",
+     "origin": "generated"
+    },
+    {
+     "name": "write-barrier",
+     "description": "A mechanism that tracks pointers from old to young objects to ensure correct minor garbage collection.",
+     "lectures": [
+      "6.2 - Minor GC: Scavenger",
+      "6.3 - Major GC: Mark-Sweep-Compact"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Garbage Collection",
+     "origin": "generated"
+    },
+    {
+     "name": "deoptimization-triggers",
+     "description": "Common reasons optimized code falls back to interpreter, such as type changes, shape changes, and insufficient feedback.",
+     "lectures": [
+      "7.2 - What Triggers Deoptimization"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Writing V8-Friendly Code",
+     "origin": "generated"
+    },
+    {
+     "name": "monomorphic-code",
+     "description": "Code where call sites or property accesses see only one type or shape, enabling better optimization.",
+     "lectures": [
+      "7.1 - Monomorphic vs Polymorphic Code"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Writing V8-Friendly Code",
+     "origin": "generated"
+    },
+    {
+     "name": "polymorphic-code",
+     "description": "Code where call sites or property accesses see a few types or shapes, allowing some optimization but less than monomorphic.",
+     "lectures": [
+      "7.1 - Monomorphic vs Polymorphic Code"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Writing V8-Friendly Code",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-sampling-profiler",
+     "description": "A tool enabled by --prof that samples program execution to identify hot functions and performance bottlenecks.",
+     "lectures": [
+      "7.3 - Profiling with --prof"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Writing V8-Friendly Code",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "scanner",
+     "target": "tokenization",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tokenization",
+     "target": "abstract-syntax-tree",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "abstract-syntax-tree",
+     "target": "scope-analysis",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-pipeline",
+     "target": "bytecode",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bytecode",
+     "target": "ignition",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bytecode",
+     "target": "v8-bytecode-format",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bytecode",
+     "target": "accumulator",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "bytecode",
+     "target": "virtual-registers",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "feedback-vector",
+     "target": "just-in-time-compilation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "just-in-time-compilation",
+     "target": "type-feedback-and-speculation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "hidden-class",
+     "target": "inline-cache",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "hidden-class",
+     "target": "shape-transition",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "inline-cache",
+     "target": "monomorphic-code",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "inline-cache",
+     "target": "polymorphic-code",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-heap-layout",
+     "target": "scavenger",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-heap-layout",
+     "target": "mark-sweep-compact",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-heap-layout",
+     "target": "write-barrier",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scavenger",
+     "target": "write-barrier",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "mark-sweep-compact",
+     "target": "write-barrier",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "deoptimization",
+     "target": "deoptimization-triggers",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scanner",
+     "target": "tokenization",
+     "type": "part_of"
+    },
+    {
+     "source": "tokenization",
+     "target": "abstract-syntax-tree",
+     "type": "part_of"
+    },
+    {
+     "source": "scope-analysis",
+     "target": "abstract-syntax-tree",
+     "type": "part_of"
+    },
+    {
+     "source": "feedback-vector",
+     "target": "ignition",
+     "type": "part_of"
+    },
+    {
+     "source": "accumulator",
+     "target": "ignition",
+     "type": "part_of"
+    },
+    {
+     "source": "virtual-registers",
+     "target": "ignition",
+     "type": "part_of"
+    },
+    {
+     "source": "v8-bytecode-format",
+     "target": "bytecode",
+     "type": "part_of"
+    },
+    {
+     "source": "shape-transition",
+     "target": "hidden-class",
+     "type": "part_of"
+    },
+    {
+     "source": "inline-cache",
+     "target": "hidden-class",
+     "type": "part_of"
+    },
+    {
+     "source": "scavenger",
+     "target": "v8-heap-layout",
+     "type": "part_of"
+    },
+    {
+     "source": "mark-sweep-compact",
+     "target": "v8-heap-layout",
+     "type": "part_of"
+    },
+    {
+     "source": "write-barrier",
+     "target": "v8-heap-layout",
+     "type": "part_of"
+    },
+    {
+     "source": "monomorphic-code",
+     "target": "inline-cache",
+     "type": "part_of"
+    },
+    {
+     "source": "polymorphic-code",
+     "target": "inline-cache",
+     "type": "part_of"
+    },
+    {
+     "source": "v8-flags",
+     "target": "v8-pipeline",
+     "type": "related_to"
+    },
+    {
+     "source": "v8-flags",
+     "target": "v8-sampling-profiler",
+     "type": "related_to"
+    },
+    {
+     "source": "lazy-parsing",
+     "target": "abstract-syntax-tree",
+     "type": "related_to"
+    },
+    {
+     "source": "deoptimization-triggers",
+     "target": "type-feedback-and-speculation",
+     "type": "related_to"
+    },
+    {
+     "source": "deoptimization-triggers",
+     "target": "shape-transition",
+     "type": "related_to"
+    },
+    {
+     "source": "monomorphic-code",
+     "target": "polymorphic-code",
+     "type": "related_to"
+    },
+    {
+     "source": "scavenger",
+     "target": "mark-sweep-compact",
+     "type": "related_to"
+    }
+   ]
+  },
+  "real-time": {
+   "title": "Build a Real-Time System",
+   "concepts": [
+    {
+     "name": "long-polling",
+     "description": "Client sends a request that the server holds open until data is available or timeout occurs.",
+     "lectures": [
+      "1.2 - Polling vs Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Real-Time: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "polling",
+     "description": "Client repeatedly requests updates at intervals, causing latency and wasted server work.",
+     "lectures": [
+      "1.2 - Polling vs Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Real-Time: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "push-based-communication",
+     "description": "Communication where the server initiates sending data to the client without waiting for client requests.",
+     "lectures": [
+      "1.1 - What Makes a System Real-Time",
+      "1.2 - Polling vs Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Real-Time: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "real-time-system",
+     "description": "A system where the server can push updates to the client immediately without client requests.",
+     "lectures": [
+      "1.1 - What Makes a System Real-Time"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Real-Time: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "websockets",
+     "description": "A persistent, full-duplex connection upgrading HTTP to allow low-latency, low-overhead server-client messaging.",
+     "lectures": [
+      "1.2 - Polling vs Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - Real-Time: First Principles",
+     "origin": "generated"
+    },
+    {
+     "name": "tcp-stream",
+     "description": "TCP provides a reliable, ordered, bidirectional stream of bytes without message boundaries.",
+     "lectures": [
+      "2.1 - TCP: The Foundation"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - TCP and the WebSocket Handshake",
+     "origin": "generated"
+    },
+    {
+     "name": "websocket-frame-format",
+     "description": "The binary frame structure used by WebSockets to encapsulate messages with headers and payloads.",
+     "lectures": [
+      "2.3 - The WebSocket Frame Format"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - TCP and the WebSocket Handshake",
+     "origin": "generated"
+    },
+    {
+     "name": "websocket-upgrade-handshake",
+     "description": "The HTTP request and response that upgrade a TCP connection to a WebSocket connection.",
+     "lectures": [
+      "2.2 - The HTTP Upgrade Request"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - TCP and the WebSocket Handshake",
+     "origin": "generated"
+    },
+    {
+     "name": "broadcasting-messages",
+     "description": "Sending a message frame to all connected clients efficiently with backpressure and error handling.",
+     "lectures": [
+      "3.3 - Broadcasting Messages"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Building the WebSocket Server",
+     "origin": "generated"
+    },
+    {
+     "name": "client-registry",
+     "description": "A Map storing client records with id, socket, name, rooms, lastSeen, and isAlive for managing connected clients.",
+     "lectures": [
+      "3.2 - The Client Registry"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Building the WebSocket Server",
+     "origin": "generated"
+    },
+    {
+     "name": "connection-state-machine",
+     "description": "A TCP socket connection transitions through handshake and open states to handle WebSocket upgrade and frames.",
+     "lectures": [
+      "3.1 - Accepting Connections"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Building the WebSocket Server",
+     "origin": "generated"
+    },
+    {
+     "name": "message-fan-out",
+     "description": "Publishing a message to all members of a room efficiently by encoding once and writing to each client's socket.",
+     "lectures": [
+      "4.3 - Message Fan-Out"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Pub/Sub Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "rooms-and-channels",
+     "description": "Rooms are named channels where clients subscribe to receive messages, enabling scoped publish-subscribe communication.",
+     "lectures": [
+      "4.1 - Rooms and Channels"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Pub/Sub Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "subscribe-and-unsubscribe",
+     "description": "Clients join or leave rooms with idempotent operations that update membership indexes and handle edge cases.",
+     "lectures": [
+      "4.2 - Subscribe and Unsubscribe"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Pub/Sub Architecture",
+     "origin": "generated"
+    },
+    {
+     "name": "application-level-heartbeats",
+     "description": "Heartbeats sent at the application layer to detect dead peers and keep connections alive through intermediaries.",
+     "lectures": [
+      "5.1 - Detecting Disconnections",
+      "5.2 - Ping/Pong Protocol"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Presence and Heartbeats",
+     "origin": "generated"
+    },
+    {
+     "name": "idle-status-detection",
+     "description": "Determining user idle status by tracking last active time separate from last pong to avoid false activity.",
+     "lectures": [
+      "5.3 - Presence Lists"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Presence and Heartbeats",
+     "origin": "generated"
+    },
+    {
+     "name": "ping-pong-protocol",
+     "description": "WebSocket control frames ping (0x9) and pong (0xA) used to check connection liveness and echo payloads.",
+     "lectures": [
+      "5.2 - Ping/Pong Protocol"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Presence and Heartbeats",
+     "origin": "generated"
+    },
+    {
+     "name": "presence-list",
+     "description": "A computed list of users currently online in a room, grouped by user and updated with status and activity.",
+     "lectures": [
+      "5.3 - Presence Lists"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Presence and Heartbeats",
+     "origin": "generated"
+    },
+    {
+     "name": "in-memory-pub-sub-limitation",
+     "description": "In-memory pub/sub only works within a single process and cannot scale across multiple server processes.",
+     "lectures": [
+      "6.1 - Why In-Memory Pub/Sub Doesn't Scale"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Redis Integration",
+     "origin": "generated"
+    },
+    {
+     "name": "message-broker",
+     "description": "A message broker enables communication and message fan-out between multiple server processes to scale pub/sub systems.",
+     "lectures": [
+      "6.1 - Why In-Memory Pub/Sub Doesn't Scale",
+      "6.2 - Redis Pub/Sub"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Redis Integration",
+     "origin": "generated"
+    },
+    {
+     "name": "redis-pub-sub",
+     "description": "Redis pub/sub is a fire-and-forget messaging system that broadcasts messages to subscribers without persistence or replay.",
+     "lectures": [
+      "6.2 - Redis Pub/Sub"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Redis Integration",
+     "origin": "generated"
+    },
+    {
+     "name": "redis-streams",
+     "description": "Redis Streams provide a durable, ordered log of messages supporting history, replay, and reliable delivery with consumer groups.",
+     "lectures": [
+      "6.3 - Redis Streams for Persistent Events"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Redis Integration",
+     "origin": "generated"
+    },
+    {
+     "name": "load-balancing-algorithms-for-websockets",
+     "description": "Using least_conn or ip_hash algorithms in load balancers to distribute WebSocket connections effectively.",
+     "lectures": [
+      "7.3 - Load Balancing WebSocket Connections"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Scaling Horizontally",
+     "origin": "generated"
+    },
+    {
+     "name": "nginx-websocket-proxying",
+     "description": "Configuring nginx to correctly proxy WebSocket connections by forwarding Upgrade headers and using HTTP/1.1.",
+     "lectures": [
+      "7.3 - Load Balancing WebSocket Connections"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Scaling Horizontally",
+     "origin": "generated"
+    },
+    {
+     "name": "redis-presence-management",
+     "description": "Using Redis sorted sets with timestamps to track and expire user presence across multiple server processes.",
+     "lectures": [
+      "7.2 - Redis as the Message Broker"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Scaling Horizontally",
+     "origin": "generated"
+    },
+    {
+     "name": "redis-pub-sub-for-presence",
+     "description": "Servers publish presence change events on Redis channels to synchronize presence snapshots across processes.",
+     "lectures": [
+      "7.2 - Redis as the Message Broker"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Scaling Horizontally",
+     "origin": "generated"
+    },
+    {
+     "name": "sticky-sessions",
+     "description": "Sticky sessions ensure a client consistently connects to the same backend server to maintain session state.",
+     "lectures": [
+      "7.1 - The Sticky Sessions Problem"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Scaling Horizontally",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "polling",
+     "target": "long-polling",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "polling",
+     "target": "push-based-communication",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "push-based-communication",
+     "target": "real-time-system",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "real-time-system",
+     "target": "websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tcp-stream",
+     "target": "websocket-upgrade-handshake",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "websocket-frame-format",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "connection-state-machine",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "client-registry",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "connection-state-machine",
+     "target": "broadcasting-messages",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "client-registry",
+     "target": "broadcasting-messages",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "broadcasting-messages",
+     "target": "message-fan-out",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "broadcasting-messages",
+     "target": "rooms-and-channels",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "rooms-and-channels",
+     "target": "subscribe-and-unsubscribe",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-fan-out",
+     "target": "subscribe-and-unsubscribe",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "client-registry",
+     "target": "application-level-heartbeats",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "ping-pong-protocol",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "ping-pong-protocol",
+     "target": "application-level-heartbeats",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "application-level-heartbeats",
+     "target": "idle-status-detection",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "application-level-heartbeats",
+     "target": "presence-list",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "idle-status-detection",
+     "target": "presence-list",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-fan-out",
+     "target": "in-memory-pub-sub-limitation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "in-memory-pub-sub-limitation",
+     "target": "message-broker",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-broker",
+     "target": "redis-pub-sub",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-broker",
+     "target": "redis-streams",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "redis-pub-sub",
+     "target": "redis-pub-sub-for-presence",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "redis-pub-sub",
+     "target": "redis-presence-management",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "redis-streams",
+     "target": "redis-presence-management",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-broker",
+     "target": "redis-presence-management",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "message-broker",
+     "target": "redis-pub-sub-for-presence",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "redis-presence-management",
+     "target": "redis-pub-sub-for-presence",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "load-balancing-algorithms-for-websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "load-balancing-algorithms-for-websockets",
+     "target": "nginx-websocket-proxying",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "nginx-websocket-proxying",
+     "target": "sticky-sessions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "polling",
+     "target": "real-time-system",
+     "type": "part_of"
+    },
+    {
+     "source": "long-polling",
+     "target": "real-time-system",
+     "type": "part_of"
+    },
+    {
+     "source": "push-based-communication",
+     "target": "real-time-system",
+     "type": "part_of"
+    },
+    {
+     "source": "websocket-frame-format",
+     "target": "websockets",
+     "type": "part_of"
+    },
+    {
+     "source": "websocket-upgrade-handshake",
+     "target": "websockets",
+     "type": "part_of"
+    },
+    {
+     "source": "client-registry",
+     "target": "broadcasting-messages",
+     "type": "part_of"
+    },
+    {
+     "source": "connection-state-machine",
+     "target": "websockets",
+     "type": "part_of"
+    },
+    {
+     "source": "rooms-and-channels",
+     "target": "message-fan-out",
+     "type": "part_of"
+    },
+    {
+     "source": "subscribe-and-unsubscribe",
+     "target": "rooms-and-channels",
+     "type": "part_of"
+    },
+    {
+     "source": "ping-pong-protocol",
+     "target": "application-level-heartbeats",
+     "type": "part_of"
+    },
+    {
+     "source": "idle-status-detection",
+     "target": "presence-list",
+     "type": "part_of"
+    },
+    {
+     "source": "application-level-heartbeats",
+     "target": "presence-list",
+     "type": "part_of"
+    },
+    {
+     "source": "redis-pub-sub",
+     "target": "message-broker",
+     "type": "part_of"
+    },
+    {
+     "source": "redis-streams",
+     "target": "message-broker",
+     "type": "part_of"
+    },
+    {
+     "source": "redis-presence-management",
+     "target": "message-broker",
+     "type": "part_of"
+    },
+    {
+     "source": "redis-pub-sub-for-presence",
+     "target": "message-broker",
+     "type": "part_of"
+    },
+    {
+     "source": "message-fan-out",
+     "target": "broadcasting-messages",
+     "type": "related_to"
+    },
+    {
+     "source": "rooms-and-channels",
+     "target": "presence-list",
+     "type": "related_to"
+    },
+    {
+     "source": "application-level-heartbeats",
+     "target": "ping-pong-protocol",
+     "type": "related_to"
+    },
+    {
+     "source": "redis-pub-sub",
+     "target": "redis-streams",
+     "type": "related_to"
+    },
+    {
+     "source": "redis-presence-management",
+     "target": "redis-pub-sub-for-presence",
+     "type": "related_to"
+    },
+    {
+     "source": "nginx-websocket-proxying",
+     "target": "sticky-sessions",
+     "type": "related_to"
+    },
+    {
+     "source": "load-balancing-algorithms-for-websockets",
+     "target": "sticky-sessions",
+     "type": "related_to"
+    }
+   ]
+  },
+  "javascript-deep-dive": {
+   "title": "JavaScript Deep Dive",
+   "concepts": [
+    {
+     "name": "abstract-syntax-tree",
+     "description": "A tree representation of source code structure built from tokens during parsing.",
+     "lectures": [
+      "1.2 - From Source Text to Running Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How JavaScript Runs",
+     "origin": "generated"
+    },
+    {
+     "name": "bytecode",
+     "description": "A compact list of simple instructions produced by the interpreter from the AST for execution.",
+     "lectures": [
+      "1.2 - From Source Text to Running Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How JavaScript Runs",
+     "origin": "generated"
+    },
+    {
+     "name": "call-stack",
+     "description": "A last-in, first-out stack of execution contexts tracking currently running code.",
+     "lectures": [
+      "1.1 - What We Will Build: mini-runtime",
+      "1.3 - Execution Contexts and the Call Stack"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How JavaScript Runs",
+     "origin": "generated"
+    },
+    {
+     "name": "execution-context",
+     "description": "A record created when code runs, holding scope, this value, and return position information.",
+     "lectures": [
+      "1.3 - Execution Contexts and the Call Stack"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How JavaScript Runs",
+     "origin": "generated"
+    },
+    {
+     "name": "tokenizer",
+     "description": "A tool that splits source code text into meaningful tokens for parsing.",
+     "lectures": [
+      "1.2 - From Source Text to Running Code"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How JavaScript Runs",
+     "origin": "generated"
+    },
+    {
+     "name": "closure",
+     "description": "A function bundled with the scope it was created in, allowing access to that scope after the function returns.",
+     "lectures": [
+      "2.3 - Closures: Functions That Remember Their Scope"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Scope and Closures",
+     "origin": "generated"
+    },
+    {
+     "name": "hoisting",
+     "description": "Declarations are created before code runs with different initialization states, explaining variable behavior.",
+     "lectures": [
+      "2.2 - Hoisting and the Temporal Dead Zone"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Scope and Closures",
+     "origin": "generated"
+    },
+    {
+     "name": "lexical-scope",
+     "description": "Scope is determined by the physical location of code, not by where functions are called.",
+     "lectures": [
+      "2.1 - Lexical Scope and the Scope Chain"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Scope and Closures",
+     "origin": "generated"
+    },
+    {
+     "name": "scope-chain",
+     "description": "A linked chain of scopes where variable lookup searches outward from inner to outer scopes.",
+     "lectures": [
+      "2.1 - Lexical Scope and the Scope Chain"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Scope and Closures",
+     "origin": "generated"
+    },
+    {
+     "name": "temporal-dead-zone",
+     "description": "The period from scope start until let/const declarations are initialized where accessing them throws ReferenceError.",
+     "lectures": [
+      "2.2 - Hoisting and the Temporal Dead Zone"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Scope and Closures",
+     "origin": "generated"
+    },
+    {
+     "name": "arrow-function-this",
+     "description": "Arrow functions do not have their own this; they inherit it lexically from the surrounding scope.",
+     "lectures": [
+      "3.1 - How this Gets Bound: The Four Rules"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Functions, this and new",
+     "origin": "generated"
+    },
+    {
+     "name": "constructor-functions",
+     "description": "Functions called with new that create and initialize new objects following a four-step process.",
+     "lectures": [
+      "3.2 - Constructor Functions and the new Keyword"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Functions, this and new",
+     "origin": "generated"
+    },
+    {
+     "name": "new-operator-steps",
+     "description": "The four-step process new uses: create object, link prototype, call constructor with this, return object or constructor result.",
+     "lectures": [
+      "3.2 - Constructor Functions and the new Keyword"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Functions, this and new",
+     "origin": "generated"
+    },
+    {
+     "name": "this-binding-rules",
+     "description": "The four rules determining how the this keyword is bound based on call site: default, implicit, explicit, and new binding.",
+     "lectures": [
+      "3.1 - How this Gets Bound: The Four Rules"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Functions, this and new",
+     "origin": "generated"
+    },
+    {
+     "name": "class-inheritance-links",
+     "description": "The class extends syntax sets up prototype links for instances and static methods to enable inheritance.",
+     "lectures": [
+      "4.2 - Classes Are Sugar Over the Prototype Chain"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "class-syntax-sugar",
+     "description": "The `class` keyword is syntactic sugar over the same prototype chain — Dog.prototype gets Animal.prototype as its prototype.",
+     "lectures": [
+      "4.1 - Prototype Inheritance"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "existing"
+    },
+    {
+     "name": "instanceof-operator-implementation",
+     "description": "The instanceof operator checks if a constructor's prototype exists anywhere in an object's prototype chain.",
+     "lectures": [
+      "4.3 - Writing Object.create and instanceof by Hand"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "object-create-polyfill",
+     "description": "A manual implementation of Object.create using a temporary constructor function to set the prototype of a new object.",
+     "lectures": [
+      "4.3 - Writing Object.create and instanceof by Hand"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-delegation",
+     "description": "Objects delegate property lookups to their prototype rather than copying properties, enabling shared methods and memory efficiency.",
+     "lectures": [
+      "4.1 - Prototype Inheritance"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "prototype-inheritance",
+     "description": "Every object has an internal link to another object, its prototype, and property lookups walk that chain.",
+     "lectures": [
+      "4.1 - Prototype Inheritance"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "existing"
+    },
+    {
+     "name": "prototype-lookup",
+     "description": "The process of walking an object's prototype chain to find a property if not found directly on the object.",
+     "lectures": [
+      "4.1 - Prototype Inheritance"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Objects & Inheritance",
+     "origin": "generated"
+    },
+    {
+     "name": "hidden-class-transitions",
+     "description": "Adding properties in different orders creates new hidden classes, causing transitions that affect performance.",
+     "lectures": [
+      "5.1 - V8 Engine and Hidden Classes"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Inside the Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "inline-caches",
+     "description": "V8 caches property offsets at each access site keyed by hidden class to speed up repeated property access.",
+     "lectures": [
+      "5.2 - Inline Caches and Monomorphic Code"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Inside the Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "monomorphic-polymorphic-megamorphic",
+     "description": "Inline caches can be monomorphic (one shape), polymorphic (few shapes), or megamorphic (many shapes), affecting performance.",
+     "lectures": [
+      "5.2 - Inline Caches and Monomorphic Code"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Inside the Engine",
+     "origin": "generated"
+    },
+    {
+     "name": "v8-hidden-classes",
+     "description": "V8 creates an internal hidden class describing an object's shape; adding properties in a different order produces a different hidden class.",
+     "lectures": [
+      "5.1 - V8 Engine and Hidden Classes"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Inside the Engine",
+     "origin": "existing"
+    },
+    {
+     "name": "async-await-mechanism",
+     "description": "Async/await syntax is syntactic sugar for promise chains using microtasks to schedule continuations.",
+     "lectures": [
+      "6.3 - async/await Is Just .then Underneath"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Concurrency",
+     "origin": "generated"
+    },
+    {
+     "name": "event-loop",
+     "description": "A single call stack plus a macrotask queue (setTimeout, etc.) — the next macrotask runs once the stack empties.",
+     "lectures": [
+      "6.1 - The Event Loop and Microtasks"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Concurrency",
+     "origin": "existing"
+    },
+    {
+     "name": "event-loop-simulator",
+     "description": "A programmatic model of the event loop with macrotask and microtask queues and a fake clock for deterministic testing.",
+     "lectures": [
+      "6.2 - Writing an Event Loop Simulator"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Concurrency",
+     "origin": "generated"
+    },
+    {
+     "name": "macrotask-queue",
+     "description": "A queue holding callbacks from timers, I/O, and DOM events, run one at a time when the call stack is empty.",
+     "lectures": [
+      "6.1 - The Event Loop and Microtasks",
+      "6.2 - Writing an Event Loop Simulator"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Concurrency",
+     "origin": "generated"
+    },
+    {
+     "name": "microtask-queue",
+     "description": "Promises resolve into a separate, higher-priority microtask queue that fully drains before the next macrotask runs.",
+     "lectures": [
+      "6.1 - The Event Loop and Microtasks",
+      "6.2 - Writing an Event Loop Simulator",
+      "6.3 - async/await Is Just .then Underneath"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Concurrency",
+     "origin": "existing"
+    },
+    {
+     "name": "closure-scope-bug",
+     "description": "A bug caused by closures capturing a single shared variable in a loop due to var scoping, leading to unexpected values.",
+     "lectures": [
+      "7.1 - Tracing One Bug Through Every Layer"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "hidden-class-polymorphism",
+     "description": "Objects with varying property shapes cause polymorphic hidden classes, impacting performance due to shape transitions.",
+     "lectures": [
+      "7.1 - Tracing One Bug Through Every Layer"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "layered-debugging",
+     "description": "A method of debugging by analyzing program behavior through different conceptual layers to identify root causes.",
+     "lectures": [
+      "7.1 - Tracing One Bug Through Every Layer"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "run-to-completion-rule",
+     "description": "JavaScript executes each macrotask fully before processing the next, explaining timing and order of asynchronous callbacks.",
+     "lectures": [
+      "7.1 - Tracing One Bug Through Every Layer"
+     ],
+     "chapter_index": 6,
+     "chapter": "Chapter 7 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "prototype-inheritance",
+     "target": "class-syntax-sugar",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "microtask-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-hidden-classes",
+     "target": "prototype-inheritance",
+     "type": "related_to"
+    },
+    {
+     "source": "tokenizer",
+     "target": "abstract-syntax-tree",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "abstract-syntax-tree",
+     "target": "bytecode",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "execution-context",
+     "target": "call-stack",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "lexical-scope",
+     "target": "closure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "lexical-scope",
+     "target": "scope-chain",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "hoisting",
+     "target": "temporal-dead-zone",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "scope-chain",
+     "target": "closure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "constructor-functions",
+     "target": "new-operator-steps",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "constructor-functions",
+     "target": "this-binding-rules",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "lexical-scope",
+     "target": "arrow-function-this",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-inheritance",
+     "target": "prototype-delegation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-inheritance",
+     "target": "prototype-lookup",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-inheritance",
+     "target": "class-inheritance-links",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-inheritance",
+     "target": "instanceof-operator-implementation",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "prototype-inheritance",
+     "target": "object-create-polyfill",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-hidden-classes",
+     "target": "hidden-class-transitions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-hidden-classes",
+     "target": "inline-caches",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "inline-caches",
+     "target": "monomorphic-polymorphic-megamorphic",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "v8-hidden-classes",
+     "target": "hidden-class-polymorphism",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "microtask-queue",
+     "target": "async-await-mechanism",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "macrotask-queue",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "event-loop-simulator",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "event-loop",
+     "target": "run-to-completion-rule",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "closure",
+     "target": "closure-scope-bug",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "tokenizer",
+     "target": "abstract-syntax-tree",
+     "type": "part_of"
+    },
+    {
+     "source": "abstract-syntax-tree",
+     "target": "bytecode",
+     "type": "part_of"
+    },
+    {
+     "source": "execution-context",
+     "target": "call-stack",
+     "type": "part_of"
+    },
+    {
+     "source": "macrotask-queue",
+     "target": "event-loop",
+     "type": "part_of"
+    },
+    {
+     "source": "microtask-queue",
+     "target": "event-loop",
+     "type": "part_of"
+    },
+    {
+     "source": "prototype-lookup",
+     "target": "prototype-inheritance",
+     "type": "part_of"
+    },
+    {
+     "source": "prototype-delegation",
+     "target": "prototype-inheritance",
+     "type": "part_of"
+    },
+    {
+     "source": "hidden-class-transitions",
+     "target": "v8-hidden-classes",
+     "type": "part_of"
+    },
+    {
+     "source": "inline-caches",
+     "target": "v8-hidden-classes",
+     "type": "part_of"
+    },
+    {
+     "source": "monomorphic-polymorphic-megamorphic",
+     "target": "inline-caches",
+     "type": "part_of"
+    },
+    {
+     "source": "closure-scope-bug",
+     "target": "closure",
+     "type": "part_of"
+    },
+    {
+     "source": "hidden-class-polymorphism",
+     "target": "v8-hidden-classes",
+     "type": "part_of"
+    },
+    {
+     "source": "run-to-completion-rule",
+     "target": "event-loop",
+     "type": "part_of"
+    },
+    {
+     "source": "hoisting",
+     "target": "lexical-scope",
+     "type": "related_to"
+    },
+    {
+     "source": "arrow-function-this",
+     "target": "this-binding-rules",
+     "type": "related_to"
+    },
+    {
+     "source": "constructor-functions",
+     "target": "class-syntax-sugar",
+     "type": "related_to"
+    },
+    {
+     "source": "class-inheritance-links",
+     "target": "class-syntax-sugar",
+     "type": "related_to"
+    },
+    {
+     "source": "object-create-polyfill",
+     "target": "prototype-inheritance",
+     "type": "related_to"
+    },
+    {
+     "source": "event-loop-simulator",
+     "target": "event-loop",
+     "type": "related_to"
+    },
+    {
+     "source": "layered-debugging",
+     "target": "closure-scope-bug",
+     "type": "related_to"
+    },
+    {
+     "source": "layered-debugging",
+     "target": "hidden-class-polymorphism",
+     "type": "related_to"
+    }
+   ]
+  },
+  "web-apis": {
+   "title": "Web APIs and Real-Time",
+   "concepts": [
+    {
+     "name": "long-polling",
+     "description": "The client sends a request the server deliberately holds open until data is available, then immediately re-requests — a simulated push.",
+     "lectures": [
+      "1.4 - Long-Polling: Holding the Request Open",
+      "3.1 - Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP and the Push Problem",
+     "origin": "existing"
+    },
+    {
+     "name": "request-response-contract",
+     "description": "HTTP is a stateless request-response protocol where the client asks and the server replies, then the conversation ends.",
+     "lectures": [
+      "1.2 - The Request/Response Contract"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP and the Push Problem",
+     "origin": "generated"
+    },
+    {
+     "name": "short-polling",
+     "description": "The client repeatedly asks the server for updates at regular intervals, receiving full responses each time.",
+     "lectures": [
+      "1.3 - Short Polling the Scoreboard"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP and the Push Problem",
+     "origin": "generated"
+    },
+    {
+     "name": "versioning-for-updates",
+     "description": "A version number tracks state changes to help clients detect new data and avoid redundant updates.",
+     "lectures": [
+      "1.1 - What We Will Build: A Live Scoreboard",
+      "1.3 - Short Polling the Scoreboard",
+      "1.4 - Long-Polling: Holding the Request Open"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - HTTP and the Push Problem",
+     "origin": "generated"
+    },
+    {
+     "name": "http-upgrade",
+     "description": "A WebSocket starts life as an ordinary HTTP GET carrying an Upgrade: websocket header asking the server to switch protocols.",
+     "lectures": [
+      "2.2 - WebSocket Handshake"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - The WebSocket Boundary",
+     "origin": "existing"
+    },
+    {
+     "name": "upgrade-header",
+     "description": "An HTTP header that requests switching the connection protocol to a different one like WebSocket.",
+     "lectures": [
+      "2.1 - The Upgrade Header: Asking HTTP to Switch Protocols"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - The WebSocket Boundary",
+     "origin": "generated"
+    },
+    {
+     "name": "websocket-api",
+     "description": "The browser API for creating and managing WebSocket connections with events and message handling.",
+     "lectures": [
+      "2.4 - The Browser WebSocket API"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - The WebSocket Boundary",
+     "origin": "generated"
+    },
+    {
+     "name": "websocket-frames",
+     "description": "Data is sent in frames with opcodes and masking to enable efficient full-duplex communication.",
+     "lectures": [
+      "2.3 - Frames, Opcodes and Masking"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - The WebSocket Boundary",
+     "origin": "generated"
+    },
+    {
+     "name": "websocket-handshake",
+     "description": "The server answers 101 Switching Protocols with a Sec-WebSocket-Accept derived from the client's key, after which the connection is full-duplex.",
+     "lectures": [
+      "2.2 - WebSocket Handshake"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - The WebSocket Boundary",
+     "origin": "existing"
+    },
+    {
+     "name": "polling-vs-websockets",
+     "description": "Long-polling pays a full HTTP request per message with a reconnect gap; a WebSocket keeps one long-lived full-duplex connection with tiny framing overhead.",
+     "lectures": [
+      "3.1 - Long-Polling vs WebSockets"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Choosing a Transport",
+     "origin": "existing"
+    },
+    {
+     "name": "server-sent-events",
+     "description": "A one-way server-to-client push over HTTP using a persistent text stream and automatic reconnection.",
+     "lectures": [
+      "3.2 - Server-Sent Events: One-Way Push over HTTP",
+      "5.1 - Shipping the Scoreboard: One Transport per Feature",
+      "5.2 - Where from Here?"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Choosing a Transport",
+     "origin": "generated"
+    },
+    {
+     "name": "transport-measurements",
+     "description": "Measuring bytes, latency, and open connections to compare efficiency of real-time transport methods.",
+     "lectures": [
+      "3.3 - Measuring the Cost: Bytes, Latency and Open Connections"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Choosing a Transport",
+     "origin": "generated"
+    },
+    {
+     "name": "websockets",
+     "description": "A persistent, full-duplex TCP connection established via HTTP Upgrade for efficient bidirectional communication.",
+     "lectures": [
+      "3.1 - Long-Polling vs WebSockets",
+      "5.1 - Shipping the Scoreboard: One Transport per Feature",
+      "5.2 - Where from Here?"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Choosing a Transport",
+     "origin": "generated"
+    },
+    {
+     "name": "backpressure",
+     "description": "A condition where the sender produces data faster than the receiver can consume, causing buffers to fill.",
+     "lectures": [
+      "4.3 - Backpressure and bufferedAmount"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Keeping Connections Alive",
+     "origin": "generated"
+    },
+    {
+     "name": "bufferedamount",
+     "description": "A WebSocket property indicating the number of bytes queued but not yet sent over the network.",
+     "lectures": [
+      "4.3 - Backpressure and bufferedAmount",
+      "5.2 - Where from Here?"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Keeping Connections Alive",
+     "origin": "generated"
+    },
+    {
+     "name": "exponential-backoff",
+     "description": "A reconnection strategy that doubles the wait time after each failure, up to a maximum, to reduce server overload.",
+     "lectures": [
+      "4.1 - Reconnecting with Exponential Backoff",
+      "5.2 - Where from Here?"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Keeping Connections Alive",
+     "origin": "generated"
+    },
+    {
+     "name": "heartbeat",
+     "description": "Periodic small messages sent to confirm a connection is alive and detect silent failures.",
+     "lectures": [
+      "4.2 - Heartbeats and Detecting Dead Connections",
+      "5.1 - Shipping the Scoreboard: One Transport per Feature",
+      "5.2 - Where from Here?"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Keeping Connections Alive",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "http-upgrade",
+     "target": "websocket-handshake",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-handshake",
+     "target": "polling-vs-websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "long-polling",
+     "target": "polling-vs-websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "request-response-contract",
+     "target": "short-polling",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "request-response-contract",
+     "target": "long-polling",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "request-response-contract",
+     "target": "versioning-for-updates",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "short-polling",
+     "target": "long-polling",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "upgrade-header",
+     "target": "http-upgrade",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-handshake",
+     "target": "websocket-api",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-handshake",
+     "target": "websocket-frames",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-api",
+     "target": "bufferedamount",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-api",
+     "target": "heartbeat",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-api",
+     "target": "backpressure",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-api",
+     "target": "exponential-backoff",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-frames",
+     "target": "websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websocket-api",
+     "target": "websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "websockets",
+     "target": "polling-vs-websockets",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "polling-vs-websockets",
+     "target": "transport-measurements",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "server-sent-events",
+     "target": "transport-measurements",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "upgrade-header",
+     "target": "http-upgrade",
+     "type": "part_of"
+    },
+    {
+     "source": "websocket-frames",
+     "target": "websockets",
+     "type": "part_of"
+    },
+    {
+     "source": "websocket-handshake",
+     "target": "websockets",
+     "type": "part_of"
+    },
+    {
+     "source": "bufferedamount",
+     "target": "backpressure",
+     "type": "part_of"
+    },
+    {
+     "source": "short-polling",
+     "target": "versioning-for-updates",
+     "type": "related_to"
+    },
+    {
+     "source": "long-polling",
+     "target": "versioning-for-updates",
+     "type": "related_to"
+    },
+    {
+     "source": "websocket-api",
+     "target": "websocket-frames",
+     "type": "related_to"
+    },
+    {
+     "source": "websockets",
+     "target": "server-sent-events",
+     "type": "related_to"
+    },
+    {
+     "source": "heartbeat",
+     "target": "exponential-backoff",
+     "type": "related_to"
+    },
+    {
+     "source": "backpressure",
+     "target": "exponential-backoff",
+     "type": "related_to"
+    }
+   ]
+  },
+  "react-perf": {
+   "title": "React Performance Patterns",
+   "concepts": [
+    {
+     "name": "commit-phase",
+     "description": "The phase where React compares the new UI description with the old and updates the DOM accordingly.",
+     "lectures": [
+      "1.2 - Render vs Commit: What React Actually Does"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How React Renders",
+     "origin": "generated"
+    },
+    {
+     "name": "re-render-triggers",
+     "description": "The specific events that cause React to re-render a component: state changes, context changes, and parent re-renders.",
+     "lectures": [
+      "1.3 - What Triggers a Re-render"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How React Renders",
+     "origin": "generated"
+    },
+    {
+     "name": "reference-stability",
+     "description": "Keeping the same object or function references across renders to prevent unnecessary re-renders.",
+     "lectures": [
+      "1.4 - Shallow Equality: How React Compares Props and State"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How React Renders",
+     "origin": "generated"
+    },
+    {
+     "name": "render-phase",
+     "description": "The phase where React calls a component function to compute the UI description without touching the DOM.",
+     "lectures": [
+      "1.2 - Render vs Commit: What React Actually Does"
+     ],
+     "chapter_index": 0,
+     "chapter": "Chapter 1 - How React Renders",
+     "origin": "generated"
+    },
+    {
+     "name": "commit-chart",
+     "description": "A visual timeline showing React commit durations and frequency during profiling.",
+     "lectures": [
+      "2.1 - Profiling the Dashboard with React DevTools"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Measure Before You Fix",
+     "origin": "generated"
+    },
+    {
+     "name": "flame-graph",
+     "description": "A component tree visualization showing render times and reasons for each component in a commit.",
+     "lectures": [
+      "2.1 - Profiling the Dashboard with React DevTools",
+      "2.2 - Reading the Flame Graph for Wasted Renders"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Measure Before You Fix",
+     "origin": "generated"
+    },
+    {
+     "name": "react-devtools-profiler",
+     "description": "A tool to record and analyze React component renders and commits to measure performance.",
+     "lectures": [
+      "2.1 - Profiling the Dashboard with React DevTools"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Measure Before You Fix",
+     "origin": "generated"
+    },
+    {
+     "name": "render-cost-analysis",
+     "description": "Evaluating render times and frequency to prioritize performance fixes effectively.",
+     "lectures": [
+      "2.2 - Reading the Flame Graph for Wasted Renders"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Measure Before You Fix",
+     "origin": "generated"
+    },
+    {
+     "name": "wasted-render",
+     "description": "A component render where the output is identical to the previous render, causing unnecessary work.",
+     "lectures": [
+      "2.2 - Reading the Flame Graph for Wasted Renders"
+     ],
+     "chapter_index": 1,
+     "chapter": "Chapter 2 - Measure Before You Fix",
+     "origin": "generated"
+    },
+    {
+     "name": "computed-state",
+     "description": "State derived from props or other state values that can be memoized to prevent redundant recalculations.",
+     "lectures": [
+      "3.2 - Memoization and Computed State"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "generated"
+    },
+    {
+     "name": "lifting-content-up",
+     "description": "Passing expensive children as props to a stateful wrapper to keep children references stable and skip re-renders.",
+     "lectures": [
+      "3.1 - Moving State Down and Lifting Content Up"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "generated"
+    },
+    {
+     "name": "memoization",
+     "description": "Caching the result of an expensive computation to avoid recomputing when inputs haven't changed.",
+     "lectures": [
+      "3.2 - Memoization and Computed State"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "generated"
+    },
+    {
+     "name": "moving-state-down",
+     "description": "Placing state in the component that directly uses it to limit re-renders to smaller subtrees.",
+     "lectures": [
+      "3.1 - Moving State Down and Lifting Content Up"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "generated"
+    },
+    {
+     "name": "use-memo",
+     "description": "useMemo memoizes a computed value and only recomputes it when its dependencies change.",
+     "lectures": [
+      "3.2 - Memoization and Computed State"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "existing"
+    },
+    {
+     "name": "usememo-overhead",
+     "description": "The performance cost of useMemo from dependency comparisons and bookkeeping, which can outweigh benefits if misused.",
+     "lectures": [
+      "3.3 - When useMemo Costs More Than It Saves"
+     ],
+     "chapter_index": 2,
+     "chapter": "Chapter 3 - Cutting Wasted Work",
+     "origin": "generated"
+    },
+    {
+     "name": "context-re-render-storm",
+     "description": "Context updates cause all consumers to re-render regardless of React.memo, leading to re-render storms when context values change frequently.",
+     "lectures": [
+      "4.3 - Splitting Context to Stop Re-render Storms"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "generated"
+    },
+    {
+     "name": "inline-objects-and-functions",
+     "description": "Inline objects, arrays, and functions passed as props create new references each render, breaking React.memo optimizations.",
+     "lectures": [
+      "4.2 - Inline Objects and Functions That Break memo"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "generated"
+    },
+    {
+     "name": "react-memo",
+     "description": "React.memo skips a component's re-render when its props are shallowly equal to the previous render.",
+     "lectures": [
+      "4.1 - React.memo and useCallback"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "existing"
+    },
+    {
+     "name": "shallow-equality",
+     "description": "Primitives compare by value; objects, arrays, and functions compare by reference.",
+     "lectures": [
+      "4.1 - React.memo and useCallback"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "existing"
+    },
+    {
+     "name": "splitting-context",
+     "description": "Splitting context into smaller focused contexts and memoizing provider values reduces unnecessary re-renders caused by context updates.",
+     "lectures": [
+      "4.3 - Splitting Context to Stop Re-render Storms"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "generated"
+    },
+    {
+     "name": "use-callback",
+     "description": "useCallback keeps a function reference stable across renders as long as its dependencies don't change.",
+     "lectures": [
+      "4.1 - React.memo and useCallback"
+     ],
+     "chapter_index": 3,
+     "chapter": "Chapter 4 - Stable References",
+     "origin": "existing"
+    },
+    {
+     "name": "use-deferred-value",
+     "description": "A React hook to defer a value update, rendering first with the old value to keep UI responsive during expensive updates.",
+     "lectures": [
+      "5.2 - useTransition and useDeferredValue for Lag-Free Filtering"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Rendering Less",
+     "origin": "generated"
+    },
+    {
+     "name": "use-transition",
+     "description": "A React hook to mark state updates as low priority, allowing urgent updates to interrupt and keep UI responsive.",
+     "lectures": [
+      "5.2 - useTransition and useDeferredValue for Lag-Free Filtering"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Rendering Less",
+     "origin": "generated"
+    },
+    {
+     "name": "virtualization",
+     "description": "Rendering only visible rows plus a buffer to reduce DOM nodes and improve performance in large lists.",
+     "lectures": [
+      "5.1 - Virtualizing the 5,000-Row Table"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Rendering Less",
+     "origin": "generated"
+    },
+    {
+     "name": "windowing",
+     "description": "Another term for virtualization, focusing on rendering a window of visible items in a scrollable list.",
+     "lectures": [
+      "5.1 - Virtualizing the 5,000-Row Table"
+     ],
+     "chapter_index": 4,
+     "chapter": "Chapter 5 - Rendering Less",
+     "origin": "generated"
+    },
+    {
+     "name": "memo-boundary-complexity",
+     "description": "The added maintenance cost and complexity from using memoization techniques like dependency arrays and split contexts.",
+     "lectures": [
+      "6.1 - Before and After: Profiling the Fixed Dashboard"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "performance-budget",
+     "description": "A target time threshold per interaction to maintain responsive UI and monitor performance regressions.",
+     "lectures": [
+      "6.1 - Before and After: Profiling the Fixed Dashboard"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Finale",
+     "origin": "generated"
+    },
+    {
+     "name": "profiling-workflow",
+     "description": "A systematic process of measuring baseline, hypothesizing, changing one thing, and measuring again to optimize performance.",
+     "lectures": [
+      "6.2 - Where from Here?"
+     ],
+     "chapter_index": 5,
+     "chapter": "Chapter 6 - Finale",
+     "origin": "generated"
+    }
+   ],
+   "relationships": [
+    {
+     "source": "shallow-equality",
+     "target": "react-memo",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "use-callback",
+     "target": "react-memo",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "use-memo",
+     "target": "use-callback",
+     "type": "related_to"
+    },
+    {
+     "source": "render-phase",
+     "target": "commit-phase",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "commit-phase",
+     "target": "wasted-render",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "re-render-triggers",
+     "target": "wasted-render",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "render-phase",
+     "target": "reference-stability",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "reference-stability",
+     "target": "inline-objects-and-functions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "reference-stability",
+     "target": "react-memo",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-memo",
+     "target": "inline-objects-and-functions",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-memo",
+     "target": "splitting-context",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-memo",
+     "target": "context-re-render-storm",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "render-phase",
+     "target": "computed-state",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "computed-state",
+     "target": "memoization",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "memoization",
+     "target": "use-memo",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "use-memo",
+     "target": "usememo-overhead",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "memoization",
+     "target": "use-callback",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "computed-state",
+     "target": "lifting-content-up",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "computed-state",
+     "target": "moving-state-down",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-devtools-profiler",
+     "target": "commit-chart",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-devtools-profiler",
+     "target": "flame-graph",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "react-devtools-profiler",
+     "target": "render-cost-analysis",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "render-cost-analysis",
+     "target": "profiling-workflow",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "profiling-workflow",
+     "target": "performance-budget",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "virtualization",
+     "target": "windowing",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "use-transition",
+     "target": "use-deferred-value",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "splitting-context",
+     "target": "context-re-render-storm",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "memoization",
+     "target": "memo-boundary-complexity",
+     "type": "prerequisite_of"
+    },
+    {
+     "source": "render-phase",
+     "target": "commit-phase",
+     "type": "part_of"
+    },
+    {
+     "source": "commit-chart",
+     "target": "react-devtools-profiler",
+     "type": "part_of"
+    },
+    {
+     "source": "flame-graph",
+     "target": "react-devtools-profiler",
+     "type": "part_of"
+    },
+    {
+     "source": "render-cost-analysis",
+     "target": "react-devtools-profiler",
+     "type": "part_of"
+    },
+    {
+     "source": "windowing",
+     "target": "virtualization",
+     "type": "part_of"
+    },
+    {
+     "source": "lifting-content-up",
+     "target": "moving-state-down",
+     "type": "related_to"
+    },
+    {
+     "source": "use-transition",
+     "target": "virtualization",
+     "type": "related_to"
+    },
+    {
+     "source": "use-transition",
+     "target": "performance-budget",
+     "type": "related_to"
+    },
+    {
+     "source": "profiling-workflow",
+     "target": "memo-boundary-complexity",
+     "type": "related_to"
+    },
+    {
+     "source": "splitting-context",
+     "target": "use-callback",
+     "type": "related_to"
+    },
+    {
+     "source": "inline-objects-and-functions",
+     "target": "shallow-equality",
+     "type": "related_to"
+    }
+   ]
+  }
+ },
+ "reviewed_at": "2026-10-08T05:08:35.822077+00:00"
+}
