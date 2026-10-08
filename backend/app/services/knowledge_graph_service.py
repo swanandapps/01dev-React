@@ -17,6 +17,7 @@ Two collections:
 """
 
 import asyncio
+import re
 from typing import List
 
 from app.services.llm import llm
@@ -79,15 +80,31 @@ async def get_prerequisites(course_id: str, concept: str) -> List[str]:
     return [r["source"] for r in rels if r.get("type") == "prerequisite_of" and r.get("target") == concept]
 
 
-async def find_course_for_concept(concept: str) -> str | None:
+async def enrolled_slugs(student_id: str) -> list[str]:
+    """Slugs of the courses this student owns, in enrollment order."""
+    from app.services import catalog_service, enrollment_service  # local: keep this module's imports light
+    by_id = {c.get("id"): c.get("slug") for c in catalog_service.all_courses()}
+    return [by_id[c["id"]] for c in await enrollment_service.get_enrolled_courses(student_id) if c.get("id") in by_id]
+
+
+async def find_course_for_concept(concept: str, student_id: str | None = None) -> str | None:
     """Reverse lookup: which course this concept tag belongs to. concept_performance
     rows are global (not course-scoped — see skill_graph_service's note on this), so
     a caller that only has a concept name (no course_id) needs this to reach the
-    course-scoped prerequisite graph at all."""
-    for c in await store.list_all(CONCEPTS):
-        if c.get("name") == concept:
-            return c.get("course_id")
-    return None
+    course-scoped prerequisite graph at all. A name taught in several courses
+    (event-loop: JavaScript Deep Dive and Product Engineering) resolves to one the
+    student is enrolled in, so the prerequisites read are from their course."""
+    matches = [c.get("course_id") for c in await store.list_all(CONCEPTS)
+               if c.get("name") == concept and c.get("course_id")]
+    if len(matches) > 1 and student_id:
+        owned = set(await enrolled_slugs(student_id))
+        return next((m for m in matches if m in owned), matches[0])
+    return matches[0] if matches else None
+
+
+def _chapter_no(concept_doc: dict) -> int:
+    m = re.match(r"\s*Chapter\s+(\d+)", concept_doc.get("chapter") or "")
+    return int(m.group(1)) if m else 99
 
 
 async def _build(course_id: str) -> None:

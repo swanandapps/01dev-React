@@ -75,6 +75,9 @@ async def get_strengths_weaknesses(user_id: str) -> dict:
     }
 
 
+NOT_YET_LIMIT = 12   # per course, in teaching order
+
+
 async def get_strengths_report(student_id: str) -> dict:
     """Strengths/weaknesses, each weakness enriched with its course and its
     prerequisites' accuracy (from the course knowledge graph) — so the tutor can
@@ -84,17 +87,30 @@ async def get_strengths_report(student_id: str) -> dict:
 
     enriched_weaknesses = []
     for w in data["weaknesses"]:
-        course_id = await knowledge_graph_service.find_course_for_concept(w["concept"])
+        course_id = await knowledge_graph_service.find_course_for_concept(w["concept"], student_id)
         prerequisites = []
         if course_id:
             view = await skill_graph_service.get_prerequisite_view(student_id, course_id, w["concept"])
             prerequisites = view["prerequisites"]
         enriched_weaknesses.append({**w, "course_id": course_id, "prerequisites": prerequisites})
 
+    # What they haven't touched yet in each course they own, in teaching order, so "what haven't I
+    # practised?" is answered from the graph instead of guessed.
+    tried = {p["concept"] for p in await store.query("concept_performance", "user_id", student_id)
+             if p.get("attempts", 0) > 0}
+    not_yet = {}
+    for slug in await knowledge_graph_service.enrolled_slugs(student_id):
+        nodes = sorted(await store.query("concepts", "course_id", slug),
+                       key=lambda c: (knowledge_graph_service._chapter_no(c), c.get("name", "")))
+        names = [c["name"] for c in nodes if c.get("name") not in tried]
+        if names:
+            not_yet[slug] = names[:NOT_YET_LIMIT]
+
     return {
         "strengths": data["strengths"],
         "weaknesses": enriched_weaknesses,
         "concepts_attempted": data["concepts_attempted"],
+        "not_yet_practised": not_yet,
     }
 
 

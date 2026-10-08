@@ -85,6 +85,13 @@ async def build_chapter(slug: str, ci: int, chapter: str, tags: list[str], lectu
     return out
 
 
+def order_by_lecture(questions: list[dict], catalog_course: dict) -> list[dict]:
+    """Teaching order (course outline), so practice for a new student starts at the beginning; stable within a
+    lecture. Ids don't change."""
+    pos = {t: i for i, t in enumerate(t for ch in catalog_course["chapters"] for t in ch["subchapters"])}
+    return sorted(questions, key=lambda q: pos.get(q.get("lecture"), len(pos)))
+
+
 def _finalize(slug: str, raw: list[dict]) -> list[dict]:
     out = []
     for i, q in enumerate(raw, 1):
@@ -139,7 +146,7 @@ async def main() -> None:
     for slug, g in preview["courses"].items():
         old = demo_banks.get(slug, {}).get("questions", [])
         new = [q for key in sorted(k for k in partial if k.startswith(slug + ":")) for q in partial[key]]
-        banks[slug] = {"course_id": slug, "course_title": g["title"], "questions": old + _finalize(slug, new),
+        banks[slug] = {"course_id": slug, "course_title": g["title"], "questions": order_by_lecture(old + _finalize(slug, new), catalog[slug]),
                        "model": GEN_MODEL, "generated_at": datetime.now(timezone.utc).isoformat()}
     (FULL / "question_banks.json").write_text(json.dumps(banks, indent=1, ensure_ascii=False) + "\n")
     print(f"wrote {FULL / 'question_banks.json'}: {sum(len(b['questions']) for b in banks.values())} questions")

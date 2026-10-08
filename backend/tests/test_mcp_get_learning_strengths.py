@@ -14,7 +14,7 @@ async def test_get_learning_strengths_enriches_weaknesses_with_prerequisites(mon
             "concepts_attempted": 2,
         }
 
-    async def fake_find_course_for_concept(concept):
+    async def fake_find_course_for_concept(concept, student_id=None):
         assert concept == "class-syntax-sugar"
         return "javascript-deep-dive"
 
@@ -53,7 +53,7 @@ async def test_get_learning_strengths_skips_prereq_lookup_when_concept_has_no_co
             "concepts_attempted": 1,
         }
 
-    async def fake_find_course_for_concept(concept):
+    async def fake_find_course_for_concept(concept, student_id=None):
         return None
 
     monkeypatch.setattr(journey_service, "get_strengths_weaknesses", fake_get_strengths_weaknesses)
