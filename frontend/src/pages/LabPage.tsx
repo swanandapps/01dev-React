@@ -22,6 +22,8 @@ export default function LabPage() {
 
   useEffect(() => {
     if (!isUserLoggedIn || !studentId) { setLoaded(true); return; }
+    // Signed in (or sign-in just restored): wait for topics before choosing which Lab to show.
+    setLoaded(false);
     getLabTopics().then(setData).catch(() => setData(null)).finally(() => setLoaded(true));
     Promise.all([getCourses(), getEnrollment(studentId)])
       .then(([all, owned]) => {
@@ -56,8 +58,8 @@ export default function LabPage() {
       <div className="max-w-6xl mx-auto px-5 sm:px-8 pt-24 pb-16 flex flex-col gap-10">
         <section className="flex flex-col gap-2">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-zinc-50">Your Lab</h1>
-          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl">
-            {hasTopics
+          <p className="text-base sm:text-lg text-zinc-400 max-w-3xl min-h-[3.5rem]">
+            {!loaded ? "" : hasTopics
               ? "The topics worth your time right now, picked from how you're doing in your courses. Pick one and work on it."
               : "Practise what you're learning: quizzes, flashcards and study plans from your lectures, notes or a PDF."}
           </p>
@@ -143,7 +145,7 @@ export default function LabPage() {
           </section>
         ))}
 
-        <section className="flex flex-col gap-5">
+        {loaded && <section className="flex flex-col gap-5">
           {hasTopics && !ownOpen ? (
             <div className="flex flex-wrap items-center gap-4 bg-zinc-900 border border-dashed border-zinc-700 rounded-2xl px-5 py-4">
               <div className="flex-1 min-w-[240px]">
@@ -167,7 +169,7 @@ export default function LabPage() {
                          courses={courses} chrome={false} />
             </div>
           )}
-        </section>
+        </section>}
       </div>
     </div>
   );

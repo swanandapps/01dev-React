@@ -86,6 +86,17 @@ export function recordLectureView(lectureTitle: string): void {
   }
 }
 
+// The last lecture opened in the player, for the dashboard's "Pick up where you left off".
+export interface LastLecture { courseId: number; courseTitle: string; chapter: number; sub: number; title: string }
+
+export function recordLastLecture(l: LastLecture): void {
+  try { localStorage.setItem("last_lecture", JSON.stringify(l)); } catch { /* ignore */ }
+}
+
+export function lastLecture(): LastLecture | null {
+  try { return JSON.parse(localStorage.getItem("last_lecture") || "null"); } catch { return null; }
+}
+
 // Lectures this browser has opened (by title), for the player's course outline progress.
 export function viewedLectures(): Set<string> {
   try {
@@ -198,6 +209,21 @@ export async function startTopicQuiz(courseSlug: string, chapter: number): Promi
   });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);
   return res.json();
+}
+
+// Ask page chips: what the student might ask next (best-effort; [] on any problem).
+export async function getFollowups(question: string, answer: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/ai/followups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ question, answer }),
+    });
+    if (!res.ok) return [];
+    return (await res.json()).suggestions ?? [];
+  } catch {
+    return [];
+  }
 }
 
 // The player tutor's "take me to …" (find_moment): sent once, right before "done".

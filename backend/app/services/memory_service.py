@@ -14,23 +14,48 @@ locally). Two collections:
 GDPR: erase() removes everything stored for a student (right-to-erasure).
 """
 import os
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.retrieval.understand import about_the_screen
 from app.services import pii
 from app.services.store import store
 
 _PROFILE = "student_profile"
 _TURNS = "student_turns"
 _MAX_TOPICS = 8
+MAX_PREFERENCES_CHARS = 500
+
+
+# Replies that carry no topic of their own: "yes", "ok thanks", "got it".
+_FILLER = re.compile(r"^\W*(yes|yeah|yep|yup|no|nope|ok|okay|sure|thanks|thank you|ok thanks|cool|nice|great|"
+                     r"got it|hmm+|right|done|go on|continue|more)\W*$", re.IGNORECASE)
+
+
+def topic_label(question: str, lecture_title: Optional[str] = None, cited: Optional[dict] = None) -> Optional[str]:
+    """What the student was working on, for the memory's topic list — never their raw filler. In the player
+    it's the lecture; on Ask, the lecture the answer cited; otherwise the question if it names something.
+    None means there's nothing worth remembering."""
+    if lecture_title:
+        return lecture_title
+    if cited and cited.get("lecture_title"):
+        course = cited.get("course_title")
+        return f"{cited['lecture_title']} ({course})" if course else cited["lecture_title"]
+    q = (question or "").strip()
+    if not q or _FILLER.match(q) or about_the_screen(q):
+        return None
+    return q[:80]
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-async def record_turn(student_id: str, course_slug: str, question: str, answer: str) -> None:
-    """Persist one exchange and fold it into the student's running profile.
+async def record_turn(student_id: str, course_slug: str, question: str, answer: str,
+                      topic: Optional[str] = None) -> None:
+    """Persist one exchange and fold it into the student's running profile. `topic` is what the exchange was
+    about (see topic_label); without one it's worked out from the question, and filler adds no topic.
 
     PII is scrubbed here too — the storage choke point — so nothing personal is ever
     written to the store regardless of caller. Idempotent with the request-entry scrub.
@@ -49,8 +74,11 @@ async def record_turn(student_id: str, course_slug: str, question: str, answer: 
 
     prof = await store.get(_PROFILE, student_id) or {"first_seen": ts, "turn_count": 0, "topics": []}
     topics = list(prof.get("topics", []))
-    topics.append(question[:80])
+    label = topic or topic_label(question)
+    if label and (not topics or topics[-1] != label):
+        topics.append(label)
     await store.set(_PROFILE, student_id, {
+        **prof,                       # keep fields this function doesn't own (learning_preferences)
         "student_id": student_id,
         "first_seen": prof.get("first_seen", ts),
         "last_seen": ts,
@@ -72,20 +100,44 @@ async def get_profile(student_id: str) -> Optional[dict]:
     return await store.get(_PROFILE, student_id)
 
 
+async def get_learning_preferences(student_id: str) -> str:
+    """How this student likes to learn: one short paragraph, "" when none."""
+    prof = await store.get(_PROFILE, student_id) or {}
+    return prof.get("learning_preferences", "")
+
+
+async def set_learning_preferences(student_id: str, summary: str) -> str:
+    """Replace the student's learning-preferences paragraph (the tutor sends the whole updated paragraph, old and
+    new merged). PII-scrubbed and capped like everything else stored here. Returns what was saved."""
+    text, _ = pii.scrub(" ".join((summary or "").split()))
+    text = text[:MAX_PREFERENCES_CHARS].strip()
+    ts = _now()
+    prof = await store.get(_PROFILE, student_id) or {"student_id": student_id, "first_seen": ts,
+                                                      "turn_count": 0, "topics": []}
+    await store.set(_PROFILE, student_id, {**prof, "learning_preferences": text, "preferences_updated_at": ts})
+    return text
+
+
 async def memory_context(student_id: str, course_slug: str) -> str:
-    """A compact memory block injected into the system prompt so the tutor
-    'remembers' the student. Empty string for a first-time learner."""
+    """A compact memory block injected into the system prompt so the tutor 'remembers' the student: how they
+    like to learn (always, when set) and what they've explored (returning learners). Empty for a new student."""
     prof = await store.get(_PROFILE, student_id)
-    if not prof or not prof.get("turn_count"):
+    if not prof:
         return ""
-    topics = prof.get("topics", [])
-    lines = "\n".join(f"- {t}" for t in topics[-5:])
-    return (
-        "=== STUDENT MEMORY (returning learner) ===\n"
-        f"You have helped this student across {prof['turn_count']} prior exchange(s). "
-        "Build on what they've already explored. "
-        "If they revisit something, acknowledge it. Recently they asked you about:\n" + lines
-    )
+    parts = []
+    if prof.get("learning_preferences"):
+        parts.append("=== HOW THIS STUDENT LIKES TO LEARN (they told you; follow it in every answer) ===\n"
+                     + prof["learning_preferences"])
+    if prof.get("turn_count"):
+        topics = prof.get("topics", [])
+        lines = "\n".join(f"- {t}" for t in topics[-5:])
+        parts.append(
+            "=== STUDENT MEMORY (returning learner) ===\n"
+            f"You have helped this student across {prof['turn_count']} prior exchange(s). "
+            "Build on what they've already explored. "
+            "If they revisit something, acknowledge it. Recently they asked you about:\n" + lines
+        )
+    return "\n\n".join(parts)
 
 
 async def search_history(student_id: str, query: str, top_k: int = 3) -> list[dict]:

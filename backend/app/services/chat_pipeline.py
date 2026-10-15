@@ -12,7 +12,8 @@ from typing import AsyncIterator, Optional
 
 from app.grounding.loader import read_grounding_prompt
 from app.retrieval.understand import is_explicit_navigation
-from app.services import audit_service, context_builder, journey_service, memory_service, pii, tutor_agent
+from app.services import (audit_service, context_builder, journey_service, memory_service, pii,
+                          preference_capture, tutor_agent)
 from app.services.course_lookup import (_norm, ChatScope, CourseLookup, LookupCase, course_lookup, render_facts,
                                         to_cards)
 from app.services.llm import GEN_MODEL
@@ -115,8 +116,13 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
                   "allow_search": lookup.case != LookupCase.IN_LECTURE}
                  if req.scope.in_player else {})
     try:
+        # The saved learning preference rides on the current message too: a block deep in a long system prompt
+        # lost to the player's own rules in a live check. The stored question stays the student's own words.
+        prefs = await memory_service.get_learning_preferences(req.student_id)
+        agent_question = (f"{question}\n\n[How I like to learn, saved earlier: {prefs} Please explain that way.]"
+                          if prefs else question)
         async with contextlib.aclosing(tutor_agent.stream_answer(
-                system_prompt=system, history=history, question=question,
+                system_prompt=system, history=history, question=agent_question,
                 student_id=req.student_id, model=model, **player_kw)) as stream:
             async for event in stream:
                 if event["type"] == "token":
@@ -142,7 +148,10 @@ async def chat_turn(req: TurnRequest, *, model: Optional[object] = None) -> Asyn
         # The client replaces its card list on each sources event, so send the full deduped list.
         yield _sources(cards + extra)
     try:
-        await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer))
+        cited = (cards + extra)[0] if (cards + extra) else None
+        topic = memory_service.topic_label(question, req.scope.lecture_title, cited)
+        await memory_service.record_turn(req.student_id, req.memory_slug, question, "".join(answer), topic=topic)
+        preference_capture.capture_in_background(req.student_id, question)
     except Exception as e:  # noqa: BLE001 — never fail the answer over memory persistence
         print(f"[chat_turn] record_turn failed: {e!r}")
     if moment and req.scope.in_player and is_explicit_navigation(question):

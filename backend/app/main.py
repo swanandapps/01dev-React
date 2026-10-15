@@ -10,7 +10,7 @@ from typing import Optional
 import hashlib
 
 import razorpay
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ from app.services import (
     skill_graph_service, catalog_index, catalog_service,
 )
 from app.services.otel import get_tracer, init_tracing
-from app.services import course_lookup, lab_topics, lecture_context, quick_quiz_service
+from app.services import course_lookup, followups, lab_topics, lecture_context, quick_quiz_service
 from app.retrieval import titles as title_index
 from app.services.course_lookup import ChatScope, _norm as norm_title
 from app.auth import current_student
@@ -230,14 +230,19 @@ async def quick_quiz(req: QuickQuizRequest, student_id: str = Depends(current_st
 
 
 @app.post("/api/ai/quick-quiz/{quiz_id}/submit")
-async def quick_quiz_submit(quiz_id: str, req: QuickQuizSubmit, student_id: str = Depends(current_student)):
-    """Grade on the server, record it like any course quiz (dashboard, weak concepts, recommendations), reveal."""
+async def quick_quiz_submit(quiz_id: str, req: QuickQuizSubmit, background: BackgroundTasks,
+                            student_id: str = Depends(current_student)):
+    """Grade on the server and reveal at once; record it like any course quiz (dashboard, weak concepts,
+    recommendations) after the reply, since that part takes seconds."""
     try:
-        return await quick_quiz_service.submit(student_id, quiz_id, req.answers)
+        result, fresh = await quick_quiz_service.submit(student_id, quiz_id, req.answers)
     except quick_quiz_service.QuizNotFound:
         raise HTTPException(status_code=404, detail="Quiz not found")
     except quick_quiz_service.BadAnswers:
         raise HTTPException(status_code=400, detail="Answer every question")
+    if fresh:
+        background.add_task(quick_quiz_service.record, student_id, quiz_id)
+    return result
 
 
 @app.get("/api/ai/lab/topics")
@@ -263,6 +268,17 @@ async def lab_topic_quiz(req: TopicQuizRequest, student_id: str = Depends(curren
     if quiz is None:
         raise HTTPException(status_code=404, detail="No lectures to practise in this topic")
     return quiz
+
+
+class FollowupsRequest(BaseModel):
+    question: str
+    answer: str
+
+
+@app.post("/api/ai/followups")
+async def ask_followups(req: FollowupsRequest, student_id: str = Depends(current_student)):
+    """Ask page: up to 3 follow-up questions for the chips under an answer (best-effort, empty on any problem)."""
+    return {"suggestions": await followups.suggest(req.question, req.answer)}
 
 
 @app.post("/api/ai/tutor/stream")

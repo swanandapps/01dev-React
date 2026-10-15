@@ -106,7 +106,7 @@ async def test_practise_this_topic_asks_about_the_lectures_that_need_work_and_ta
         _ans("5.3 - Summary So Far", True), _ans("5.1 - Prototype, a Hero Turned Villain", False)])])
     asked = []
 
-    def gen(document, objective, n):
+    def gen(document, objective, n, concepts=None):
         asked.append(document)
         return [{"question": f"Q on {document}?", "options": ["a", "b", "c", "d"], "correctIndex": 0,
                  "explanation": "e", "hint": "h", "concept": "k"} for _ in range(n)]

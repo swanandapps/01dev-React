@@ -12,8 +12,9 @@ def wired(monkeypatch):
         calls["audit"].append(kw)
     async def memory_context(*a):
         return ""
-    async def record_turn(student_id, slug, q, a):
+    async def record_turn(student_id, slug, q, a, topic=None):
         calls["recorded"].append((student_id, slug, q, a))
+        calls["topic"] = topic
     async def weak(*a):
         return []
     async def lookup(question, student_id, scope=cl.ChatScope(), history=()):
