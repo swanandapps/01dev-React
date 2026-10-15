@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the01.dev System Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink:#1b2330; --ink-2:#47536a; --ink-3:#6b7891;
+    --ground:#faf9f7; --surface:#ffffff; --rule:#dfdcd6; --rule-soft:#ebe8e2;
+    --banner:#232a3a; --banner-ink:#f4f3f0;
+    --blue-bg:#dbe5f5;  --blue-br:#8ba6d0;  --blue-ink:#24405f;
+    --green-bg:#d9ece0; --green-br:#86b79c; --green-ink:#1f4a34;
+    --amber-bg:#faedd2; --amber-br:#d5b177; --amber-ink:#63471a;
+    --violet-bg:#e2ddf2;--violet-br:#a396cf;--violet-ink:#3b3067;
+    --rose-bg:#f6dfe0;  --rose-br:#ce9498;  --rose-ink:#6a2b30;
+    --slate-bg:#e6e8ec; --slate-br:#a6adba; --slate-ink:#333d4e;
+    --warn:#8a4b12; --warn-bg:#fbf0e2;
+    --good:#2b6046; --good-bg:#e4f0e8;
+    --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink:#e8e9ec; --ink-2:#b3bbc9; --ink-3:#8a94a6;
+      --ground:#14181f; --surface:#1b2029; --rule:#333b49; --rule-soft:#262d38;
+      --banner:#0f1319; --banner-ink:#eceef2;
+      --blue-bg:#1d2c42;  --blue-br:#456595;  --blue-ink:#bdd2ef;
+      --green-bg:#17301f; --green-br:#46795b; --green-ink:#b6dcc4;
+      --amber-bg:#352712; --amber-br:#8a6a34; --amber-ink:#f0d3a2;
+      --violet-bg:#241f3c;--violet-br:#6355a0;--violet-ink:#cdc4ee;
+      --rose-bg:#351d20;  --rose-br:#8e5a5f;  --rose-ink:#eec3c6;
+      --slate-bg:#222833; --slate-br:#4d5768; --slate-ink:#c3cad6;
+      --warn:#e0a86a; --warn-bg:#2d2213; --good:#89c7a5; --good-bg:#17291f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink:#e8e9ec; --ink-2:#b3bbc9; --ink-3:#8a94a6;
+    --ground:#14181f; --surface:#1b2029; --rule:#333b49; --rule-soft:#262d38;
+    --banner:#0f1319; --banner-ink:#eceef2;
+    --blue-bg:#1d2c42;  --blue-br:#456595;  --blue-ink:#bdd2ef;
+    --green-bg:#17301f; --green-br:#46795b; --green-ink:#b6dcc4;
+    --amber-bg:#352712; --amber-br:#8a6a34; --amber-ink:#f0d3a2;
+    --violet-bg:#241f3c;--violet-br:#6355a0;--violet-ink:#cdc4ee;
+    --rose-bg:#351d20;  --rose-br:#8e5a5f;  --rose-ink:#eec3c6;
+    --slate-bg:#222833; --slate-br:#4d5768; --slate-ink:#c3cad6;
+    --warn:#e0a86a; --warn-bg:#2d2213; --good:#89c7a5; --good-bg:#17291f;
+  }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans);
+         font-size:15px; line-height:1.62; margin:0; }
+  .page { max-width:62rem; margin:0 auto; padding-inline:16px; padding-block:2.5rem 4rem; }
+  .cover { padding-block:3rem 2rem; border-bottom:1px solid var(--rule); margin-bottom:2.5rem; }
+  .cover h1 { font-size:clamp(2.4rem,7vw,3.6rem); line-height:1.04; margin:0 0 .6rem;
+              letter-spacing:-.025em; font-weight:700; text-wrap:balance; }
+  .cover .sub { font-size:1.15rem; color:var(--ink-2); margin:0 0 1.6rem; }
+  .cover .meta { font-size:.8rem; color:var(--ink-3); letter-spacing:.04em;
+                 text-transform:uppercase; margin:0 0 1rem; }
+  .cover p.lede { max-width:58ch; color:var(--ink-2); margin:0; }
+  .chapter { margin-top:3.5rem; }
+  .chapter > h2 { background:var(--banner); color:var(--banner-ink);
+    font-size:clamp(1.3rem,3.4vw,1.75rem); font-weight:600; letter-spacing:-.01em;
+    margin:0; padding:1.1rem 1.2rem; border-radius:3px; text-wrap:balance; }
+  .recall { border:1px solid var(--rule); border-left:3px solid var(--ink-3);
+    background:var(--surface); padding:.85rem 1.1rem; margin:1.1rem 0 2rem;
+    font-size:.92rem; color:var(--ink-2); }
+  .recall b { color:var(--ink); }
+  h3 { font-size:1.22rem; margin:2.6rem 0 1rem; font-weight:600; letter-spacing:-.01em; text-wrap:balance; }
+  h4 { font-size:.8rem; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-2);
+       margin:2rem 0 .9rem; font-weight:600; }
+  p { max-width:68ch; } p,ul,ol { margin:0 0 1rem; }
+  ul,ol { padding-left:1.15rem; max-width:68ch; } li { margin-bottom:.4rem; }
+  code,.m { font-family:var(--mono); font-size:.855em; background:var(--rule-soft);
+            padding:.08em .35em; border-radius:3px; color:var(--ink); overflow-wrap:anywhere; }
+  .fig { margin:1.4rem 0 1.8rem; }
+  .fig-t { font-size:.78rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+           color:var(--ink-2); margin-bottom:.85rem; }
+  .fig-n { font-size:.84rem; color:var(--ink-3); margin-top:.7rem; max-width:68ch; }
+  .chain { display:flex; align-items:stretch; gap:.5rem; flex-wrap:wrap; }
+  .chain > .node { flex:1 1 8.5rem; }
+  .arr { display:flex; align-items:center; justify-content:center; color:var(--ink-3);
+         font-size:1.1rem; flex:0 0 auto; padding:0 .1rem; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:.6rem; }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr)); gap:.6rem; }
+  .node { border:1px solid var(--slate-br); background:var(--slate-bg); color:var(--slate-ink);
+          border-radius:4px; padding:.7rem .8rem; }
+  .node .h { font-weight:600; font-size:.9rem; display:block; margin-bottom:.2rem; }
+  .node .d { font-size:.8rem; line-height:1.45; display:block; opacity:.92; }
+  .node .d .m { background:rgba(127,127,127,.16); }
+  .n-blue{background:var(--blue-bg);border-color:var(--blue-br);color:var(--blue-ink);}
+  .n-green{background:var(--green-bg);border-color:var(--green-br);color:var(--green-ink);}
+  .n-amber{background:var(--amber-bg);border-color:var(--amber-br);color:var(--amber-ink);}
+  .n-violet{background:var(--violet-bg);border-color:var(--violet-br);color:var(--violet-ink);}
+  .n-rose{background:var(--rose-bg);border-color:var(--rose-br);color:var(--rose-ink);}
+  .box { border:1px solid var(--slate-br); border-radius:5px; padding:.8rem; background:var(--slate-bg); }
+  .box > .lbl { font-weight:600; font-size:.86rem; color:var(--slate-ink); display:block; margin-bottom:.3rem; }
+  .box > .sub { font-size:.8rem; color:var(--slate-ink); opacity:.9; display:block; margin-bottom:.6rem; }
+  .box .box { margin-top:.5rem; }
+  .b-blue{background:var(--blue-bg);border-color:var(--blue-br);}
+  .b-blue>.lbl,.b-blue>.sub{color:var(--blue-ink);}
+  .b-green{background:var(--green-bg);border-color:var(--green-br);}
+  .b-green>.lbl,.b-green>.sub{color:var(--green-ink);}
+  .b-amber{background:var(--amber-bg);border-color:var(--amber-br);}
+  .b-amber>.lbl,.b-amber>.sub{color:var(--amber-ink);}
+  .steps { display:grid; gap:.55rem; }
+  .step { border:1px solid var(--rule); background:var(--surface); border-radius:4px; padding:.75rem .9rem; }
+  .step > .st { font-weight:600; font-size:.9rem; margin-bottom:.35rem; display:block; }
+  .step > .st i { font-style:normal; color:var(--ink-3); font-family:var(--mono); font-size:.85em; margin-right:.5rem; }
+  .step .d { font-size:.85rem; color:var(--ink-2); display:block; }
+  .pair { display:grid; grid-template-columns:repeat(auto-fit,minmax(14rem,1fr)); gap:.5rem; margin-top:.5rem; }
+  .tw { overflow-x:auto; margin:1.2rem 0 1.6rem; }
+  table { border-collapse:collapse; width:100%; font-size:.88rem; min-width:30rem; }
+  th { background:var(--banner); color:var(--banner-ink); text-align:left; font-weight:600;
+       padding:.6rem .75rem; font-size:.8rem; letter-spacing:.03em; }
+  td { padding:.6rem .75rem; border-bottom:1px solid var(--rule-soft); vertical-align:top; color:var(--ink-2); }
+  td:first-child { color:var(--ink); font-weight:500; }
+  tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--rule-soft) 45%,transparent); }
+  .call { border:1px solid var(--rule); background:var(--surface); border-left:3px solid var(--ink-3);
+          padding:.8rem 1rem; margin:1.2rem 0; font-size:.92rem; color:var(--ink-2); }
+  .call b,.call strong { color:var(--ink); }
+  .call.warn { border-left-color:var(--warn); background:var(--warn-bg); color:var(--warn); }
+  .call.warn b { color:var(--warn); }
+  .call.good { border-left-color:var(--good); background:var(--good-bg); color:var(--good); }
+  .call.good b { color:var(--good); }
+  .tag { display:inline-block; font-size:.68rem; font-weight:600; letter-spacing:.07em;
+         text-transform:uppercase; padding:.12em .5em; border-radius:3px; vertical-align:.12em; }
+  .t-live { background:var(--good-bg); color:var(--good); border:1px solid currentColor; }
+  .t-next { background:var(--warn-bg); color:var(--warn); border:1px solid currentColor; }
+  .foot { margin-top:4rem; padding-top:1.2rem; border-top:1px solid var(--rule);
+          font-size:.82rem; color:var(--ink-3); }
+  @media (max-width:560px) { .chain { flex-direction:column; } .arr { transform:rotate(90deg); padding:.1rem 0; } }
+  @media print { body { background:#fff; } .chapter { break-before:page; }
+                 .fig,.step,.tw,.call { break-inside:avoid; } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none!important; transition:none!important; } }
+</style>
+
+
+<style>
+  html, body { background:#ffffff !important; }
+  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; font-size:10.5pt; }
+  @page { size:A4; margin:14mm 13mm 16mm; }
+  .page { max-width:none; padding-inline:0; padding-block:0 0; }
+  .cover { padding-block:0 1.6rem; }
+  .chapter { break-before:page; margin-top:0; }
+  .cover + .chapter { break-before:auto; }
+  .fig,.step,.tw,.call,.box,.node { break-inside:avoid; }
+  h3,h4 { break-after:avoid; }
+  table { min-width:0; } .tw { overflow-x:visible; }
+  a { color:inherit; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="cover">
+    <p class="meta">System reference · September 2026</p>
+    <h1>the01.dev</h1>
+    <p class="sub">How the platform is built and how a request moves through it</p>
+    <p class="lede">A personalised learning platform: students buy courses, ask a tutor grounded in
+      lecture transcripts, take adaptive quizzes, and turn their own notes into study material.
+      This describes the system as it stands — read each diagram first and use the text to recover
+      the decision or boundary behind it. Every claim was read from the code.</p>
+  </header>
+
+  <!-- ══ 1 ══ -->
+  <section class="chapter">
+    <h2>Chapter 1 — The system</h2>
+    <div class="recall"><b>Recall structure: WHAT → WHERE → WHAT TALKS TO WHAT.</b>
+      Three deployables, one Postgres, and one agent runtime that executes our tool code inside its own process.</div>
+
+    <div class="tw"><table>
+      <thead><tr><th style="width:28%">Question</th><th>Answer</th></tr></thead>
+      <tbody>
+        <tr><td>Product</td><td>Paid courses, an AI tutor grounded in lecture transcripts, adaptive quizzing, and a pipeline that turns a student's own notes into study material</td></tr>
+        <tr><td>Users</td><td>Self-directed developers; one tenant, real paying accounts via Razorpay</td></tr>
+        <tr><td>Governing constraint</td><td>Answer <em>any</em> technical question, but cite only what retrieval can ground — and never invent enrolment, progress or billing facts</td></tr>
+        <tr><td>Tutor path</td><td>FastAPI → Hermes agent runtime over OpenAI-compatible HTTP → MCP tools → Neon Postgres + pgvector</td></tr>
+        <tr><td>Content pipeline</td><td>“Lab” — a LangGraph run producing quiz, flashcards, summary and study plan from typed notes or a PDF</td></tr>
+        <tr><td>Identity</td><td>Firebase Auth. The student key everywhere is the Firebase <strong>UID</strong>, not the email</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Production topology</h3>
+    <div class="fig">
+      <div class="fig-t">Three deployables, and one runs our code inside another process</div>
+      <div class="chain">
+        <div class="node n-blue"><span class="h">Browser</span><span class="d">React 19 + Vite on Netlify<br>Firebase auth</span></div>
+        <span class="arr">→</span>
+        <div class="node n-green"><span class="h">Backend</span><span class="d">FastAPI on Railway<br>single uvicorn worker</span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">Hermes</span><span class="d">Agent runtime on Railway<br>port <span class="m">8642</span></span></div>
+        <span class="arr">→</span>
+        <div class="node n-violet"><span class="h">OpenAI</span><span class="d"><span class="m">gpt-4.1-mini</span><br>inference + embeddings</span></div>
+      </div>
+      <div class="grid3" style="margin-top:.6rem">
+        <div class="node n-rose"><span class="h">Neon Postgres</span><span class="d">One <span class="m">docs</span> jsonb table + <span class="m">rag_chunks</span> (pgvector). System of record.</span></div>
+        <div class="node n-rose"><span class="h">MCP subprocess</span><span class="d">Hermes spawns <span class="m">the01dev_tools.py</span> over stdio — our code, its process.</span></div>
+        <div class="node"><span class="h">Firebase</span><span class="d">Auth and file storage only. No product state lives here.</span></div>
+      </div>
+    </div>
+
+    <div class="tw"><table>
+      <thead><tr><th style="width:22%">Deployable</th><th style="width:36%">Host and build</th><th>Redeploy when</th></tr></thead>
+      <tbody>
+        <tr><td>Backend</td><td>Railway, Nixpacks, Python 3.11.9 pinned in <span class="m">runtime.txt</span></td><td>any backend change</td></tr>
+        <tr><td>Hermes runtime</td><td>Railway, Dockerfile pinning the agent to an exact upstream commit</td><td>the profile, <span class="m">SOUL.md</span>, <em>or</em> <span class="m">the01dev_tools.py</span> changes</td></tr>
+        <tr><td>Frontend</td><td>Netlify, Vite build</td><td>any frontend change</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="call warn"><b>The coupling with no test.</b> The MCP tool module is baked into the Hermes image
+      at build time. Change a tool, deploy only the backend, and every test still passes while Hermes keeps
+      running the old code. Two services, one artifact.</div>
+  </section>
+
+  <!-- ══ 2 ══ -->
+  <section class="chapter">
+    <h2>Chapter 2 — How a question is answered</h2>
+    <div class="recall"><b>Recall structure: GATE → CLASSIFY → SHORT-CIRCUIT → STREAM → RECONCILE.</b>
+      Every component in the tutor path belongs to one of these five responsibilities.</div>
+
+    <p>A student asks <em>“What are cgroups and namespaces in Linux?”</em> — a topic no course covers.
+      The system answers it, cites nothing it cannot ground, and claims no enrolment that does not exist.</p>
+
+    <div class="fig">
+      <div class="fig-t">One question: what changes at every boundary</div>
+      <div class="steps">
+        <div class="step"><span class="st"><i>1</i>Browser — the untrusted request</span>
+          <span class="d"><span class="m">POST /api/hermes/chat</span> carries the question, the course slug and
+          <span class="m">student_id</span> (the Firebase UID from the signed-in session).</span>
+          <div class="pair">
+            <div class="node n-blue"><span class="h">Client supplies</span><span class="d">question · course_slug · student_id</span></div>
+            <div class="node n-amber"><span class="h">Client never supplies</span><span class="d">entitlement · mastery · citations · billing</span></div>
+          </div>
+        </div>
+        <div class="step"><span class="st"><i>2</i>Access gate, then one PII choke point</span>
+          <span class="d">Entitlement is checked server-side, then <span class="m">pii.scrub()</span> runs — deliberately a
+          single choke point rather than scattered redaction, so there is one place to audit before anything leaves.</span></div>
+        <div class="step"><span class="st"><i>3</i>Deterministic intent classification</span>
+          <span class="d"><span class="m">classify()</span> is regex, not a model:
+          <span class="m">COURSE_QUESTION</span> · <span class="m">QUIZ_GENERATE</span> · <span class="m">OUT_OF_SCOPE</span>.
+          A second embedding check catches smalltalk by cosine similarity and runs <strong>observe-only</strong> —
+          it logs what it would have blocked without acting.</span></div>
+        <div class="step"><span class="st"><i>4</i>Short-circuit before spending a model call</span>
+          <span class="d">Only <span class="m">QUIZ_GENERATE</span> and <span class="m">OUT_OF_SCOPE</span> short-circuit,
+          fake-streaming a hand-off in the same SSE shape the client already parses, so the UI needs no special case.
+          Everything else — including the Linux question — goes to the agent.</span></div>
+        <div class="step"><span class="st"><i>5</i>Stream through the agent runtime</span>
+          <span class="d"><span class="m">hermes_client.stream_chat()</span> posts to Hermes's
+          <span class="m">/v1/chat/completions</span> and relays SSE tokens to the browser. Hermes resolves every
+          tool call internally; the backend sees tokens and side-effects, never tool traffic.</span></div>
+        <div class="step"><span class="st"><i>6</i>Reconcile citations out of band</span>
+          <span class="d">Since the backend cannot observe <span class="m">search_course_content</span>, the MCP tool
+          writes its source cards to <span class="m">chat_citations/{student_id}</span>. The route clears that key
+          <em>before</em> the turn, reads it back <em>after</em> the stream, and emits a second
+          <span class="m">sources</span> event.</span></div>
+      </div>
+    </div>
+
+    <div class="call"><b>Clear-before, read-after.</b> Clickable citations look like a frontend feature.
+      They are not: the agent resolves tools in its own process, so the backend has no hook on retrieval.
+      The side channel is keyed by student and cleared at the start of each turn, so one answer's sources
+      can never leak into the next.</div>
+
+    <h3>The agent boundary</h3>
+    <div class="fig">
+      <div class="fig-t">The main architectural fact of this system</div>
+      <div class="box b-blue">
+        <span class="lbl">Backend — FastAPI, single worker</span>
+        <span class="sub">Owns entitlement, PII scrub, intent routing, the SSE relay, the database</span>
+        <div class="box b-green">
+          <span class="lbl">Hermes agent runtime — separate service, port 8642</span>
+          <span class="sub">Owns the reasoning loop, tool selection and execution. Auth: bearer <span class="m">HERMES_API_KEY</span></span>
+          <div class="box b-amber">
+            <span class="lbl">MCP subprocess — <span class="m">the01dev_tools.py</span> over stdio</span>
+            <span class="sub">Ten tools with real database reach. Writes side-effects the backend reads afterwards.</span>
+          </div>
+        </div>
+      </div>
+      <div class="fig-n">The backend cannot observe the middle layer's decisions. Anything it must know has to be
+        written somewhere it can read — which is why citations use a store key rather than a return value.</div>
+    </div>
+  </section>
+
+  <!-- ══ 3 ══ -->
+  <section class="chapter">
+    <h2>Chapter 3 — Grounding, citation and the tool surface</h2>
+    <div class="recall"><b>Recall structure: RETRIEVE → GROUND → CITE → RESTRICT.</b>
+      Retrieval supplies evidence, citation makes it checkable, and the toolset bounds what the agent can do at all.</div>
+
+    <div class="fig">
+      <div class="fig-t">Retrieval path</div>
+      <div class="chain">
+        <div class="node n-blue"><span class="h">Question</span><span class="d">scrubbed text</span></div>
+        <span class="arr">→</span>
+        <div class="node n-green"><span class="h">Embed</span><span class="d"><span class="m">text-embedding-3-small</span></span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">pgvector search</span><span class="d"><span class="m">rag_chunks</span> · cosine</span></div>
+        <span class="arr">→</span>
+        <div class="node n-violet"><span class="h">Source cards</span><span class="d">lecture + span, persisted for the turn</span></div>
+      </div>
+      <div class="fig-n">The corpus is loaded from a static seed file of lecture transcripts. There is no ingestion
+        endpoint — adding a course means shipping data, not calling an API.</div>
+    </div>
+
+    <h3>The rule that makes the tutor useful</h3>
+    <p><strong>Answer everything, cite only what you can ground.</strong> The course is an enrichment, never a gate.
+      The agent searches course content first; when it finds something it grounds the answer and cites the lecture,
+      and when it does not it answers from general knowledge while being clear the answer is not course-cited.
+      A student learning React still hits a Linux question at 1am, and refusing it is the wrong product.</p>
+
+    <div class="call"><b>The one thing it must refuse.</b> Not topics — <em>facts it cannot know</em>.
+      Payment and billing state have no tool behind them, so the agent hands off rather than guesses.
+      The distinction is “unknowable”, not “off-syllabus”.</div>
+
+    <h3>Tool surface</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:34%">MCP tool</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">search_course_content</span></td><td>Retrieval over lecture transcripts; also writes the turn's citation cards</td></tr>
+        <tr><td><span class="m">answer_question</span></td><td>Grounded answer composition</td></tr>
+        <tr><td><span class="m">generate_quiz</span></td><td>Quiz from arbitrary text</td></tr>
+        <tr><td><span class="m">generate_notes</span></td><td>Notes from arbitrary text</td></tr>
+        <tr><td><span class="m">search_history</span></td><td>Cross-session recall over the student's past turns</td></tr>
+        <tr><td><span class="m">get_concept_confidence</span></td><td>Mastery for one concept</td></tr>
+        <tr><td><span class="m">get_learning_strengths</span></td><td>Strongest and weakest concepts, course-agnostic</td></tr>
+        <tr><td><span class="m">get_learning_metrics</span></td><td>Streak, quiz count, average score</td></tr>
+        <tr><td><span class="m">get_enrolled_courses</span></td><td>Entitlement, read from Postgres</td></tr>
+        <tr><td><span class="m">record_skill_observation</span></td><td>Writes an observed concept result into the learner model</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="call good"><b>Least privilege, and what it bought.</b> The Hermes profile pins
+      <span class="m">platform_toolsets.api_server: [memory]</span>. Without that entry the OpenAI-compatible
+      endpoint falls back to the runtime's default toolset, which grants terminal execution, arbitrary file
+      read/write and browser automation over plain HTTP behind one shared key. Restricting it also cut prompt
+      tokens from roughly 30k to 8k per request, because far fewer tool schemas ship with every call —
+      the safety fix paid for itself in cost and latency.</div>
+  </section>
+
+  <!-- ══ 4 ══ -->
+  <section class="chapter">
+    <h2>Chapter 4 — Lab: the content pipeline</h2>
+    <div class="recall"><b>Recall structure: INGEST → SELECT → FAN OUT → PERSIST → QUIZ.</b>
+      One LangGraph run; artifacts finish before the long-lived interactive part begins.</div>
+
+    <p>The governing product principle: <em>students should not have to adapt to a hard-coded concept schema —
+      they learn what they want, and it is the platform's job to keep track of it.</em></p>
+
+    <div class="fig">
+      <div class="fig-t">One graph, artifacts sequenced ahead of the quiz tail</div>
+      <div class="chain">
+        <div class="node n-blue"><span class="h">Ingest</span><span class="d">typed notes or PDF<br>caps 200k chars · 10 MB</span></div>
+        <span class="arr">→</span>
+        <div class="node n-green"><span class="h">Select</span><span class="d">any subset of four<br>the selection <em>is</em> the approval</span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">Fan out</span><span class="d"><span class="m">Send</span> → flashcards · summary · study plan, in parallel</span></div>
+        <span class="arr">→</span>
+        <div class="node n-violet"><span class="h">Join &amp; persist</span><span class="d">artifacts saved by the route</span></div>
+        <span class="arr">→</span>
+        <div class="node n-rose"><span class="h">Quiz tail</span><span class="d"><span class="m">interrupt()</span> at objectives, then per objective</span></div>
+      </div>
+    </div>
+
+    <div class="tw"><table>
+      <thead><tr><th style="width:26%">Selection</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td>Quiz only</td><td>Fan-out is an empty passthrough; suspends at objectives approval</td></tr>
+        <tr><td>Artifacts only</td><td>Runs to completion, returns artifacts, no lesson created</td></tr>
+        <tr><td>All four</td><td>Artifacts persist first, then the quiz begins in the same response</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="call"><b>Why artifacts are sequenced, not a sibling branch.</b> If the quiz branch interrupts in
+      the same superstep as the generators, whether finished artifacts are durable at suspend time depends on the
+      framework's pending-write semantics. Sequencing removes the question: work the student already earned is
+      saved before anything long-lived starts.</div>
+
+    <div class="call warn"><b>No approval gate on artifacts, by design.</b> The student already ticked the boxes.
+      Human-in-the-loop earns its place on the quiz's objectives plan — reviewing what you will be tested on is
+      real value — not on confirming what you just asked for.</div>
+  </section>
+
+  <!-- ══ 5 ══ -->
+  <section class="chapter">
+    <h2>Chapter 5 — The learner model</h2>
+    <div class="recall"><b>Recall structure: OBSERVE → SCORE → READ BACK.</b>
+      Quizzes and chat observations write mastery; agent tools read it back so the tutor can speak to it.</div>
+
+    <div class="fig">
+      <div class="fig-t">Two quiz systems, deliberately separate</div>
+      <div class="grid2">
+        <div class="node n-green"><span class="h">Course quiz — adaptive</span><span class="d">Pre-authored bank scoped to a purchased course. Selects by accuracy band, resurfaces on a 3-day spaced interval, writes <span class="m">concept_performance</span> keyed <span class="m">user__concept</span> and a per-answer <span class="m">quiz_sessions</span> row.</span></div>
+        <div class="node n-amber"><span class="h">Lab quiz — ad hoc</span><span class="d">Generated from whatever the student brought, with hints and a Socratic tutor. Interactive, but does <strong>not</strong> write mastery.</span></div>
+      </div>
+      <div class="fig-n">They are different products: one measures progress against a syllabus, the other helps a
+        student study anything. Keeping the write path separate is what stops ad-hoc concept names fragmenting
+        the graph.</div>
+    </div>
+
+    <h3>Mastery and how it is read back</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:30%">Signal</th><th>Written by</th><th>Read by</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">concept_performance</span></td><td>Adaptive quiz grading; <span class="m">record_skill_observation</span> from chat</td><td><span class="m">get_concept_confidence</span>, <span class="m">get_learning_strengths</span></td></tr>
+        <tr><td><span class="m">quiz_sessions</span></td><td>Adaptive quiz, one row per session with per-answer detail</td><td>Streak, quiz count and average score via <span class="m">get_learning_metrics</span></td></tr>
+        <tr><td><span class="m">concepts</span> / <span class="m">relationships</span></td><td>Knowledge-graph service at course ingest</td><td>Prerequisite reasoning, strengths with graph context</td></tr>
+        <tr><td><span class="m">student_turns</span> / <span class="m">student_profile</span></td><td>Memory service, every chat turn</td><td><span class="m">search_history</span> for cross-session recall</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>The open concept space <span class="tag t-next">next</span></h3>
+    <p>Self-study does not yet count toward mastery. The design that closes it is a single resolver every concept
+      write passes through, so a student's own material lands in the same graph as course material:</p>
+    <div class="fig">
+      <div class="chain">
+        <div class="node n-blue"><span class="h">1 · slugify</span><span class="d">“React.memo” → <span class="m">react-memo</span></span></div>
+        <span class="arr">→</span>
+        <div class="node n-green"><span class="h">2 · exact slug</span><span class="d">free — no model call</span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">3 · embedding</span><span class="d">cosine ≥ <strong>0.64</strong> → merge</span></div>
+        <span class="arr">→</span>
+        <div class="node n-violet"><span class="h">4 · create</span><span class="d">no match → new concept node</span></div>
+      </div>
+      <div class="fig-n">Notes on closures merge onto the existing course concept and move real course mastery.
+        Notes on Kubernetes, which no course covers, create a node. The graph grows to fit the student.</div>
+    </div>
+
+    <div class="call"><b>Where 0.64 comes from.</b> Measured across 31 pairs: true matches cluster at
+      <strong>0.709–0.755</strong>, false matches cap at <strong>0.578</strong>. The band between is empty and
+      0.13 wide; 0.64 is its midpoint. Short concept names do not score like sentences — even
+      <span class="m">React.memo</span> against <span class="m">react-memo</span> only reaches 0.755, so a
+      high threshold merges nothing. Expect it to rise as the pool grows: with 9 concepts there are 9 chances
+      to draw a spurious high score, with 500 there are 500. It is a starting point with a monitoring plan,
+      not a constant.</div>
+  </section>
+
+  <!-- ══ 6 ══ -->
+  <section class="chapter">
+    <h2>Chapter 6 — Data and storage</h2>
+    <div class="recall"><b>Recall structure: ONE TABLE → MANY COLLECTIONS → UPSERT SEMANTICS.</b>
+      A document store built on Postgres, plus one real vector table.</div>
+
+    <div class="fig">
+      <div class="fig-t">The store abstraction picks a backend once, at import</div>
+      <div class="chain">
+        <div class="node n-green"><span class="h">Postgres</span><span class="d">if <span class="m">DATABASE_URL</span> is set — production</span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">Firestore</span><span class="d">if Firebase credentials are present</span></div>
+        <span class="arr">→</span>
+        <div class="node n-rose"><span class="h">In-memory</span><span class="d">otherwise — this is what tests get</span></div>
+      </div>
+      <div class="fig-n">First match wins. The in-memory fallback is the reason a test suite can be entirely green
+        while a database-specific bug sits in the code — see chapter 7.</div>
+    </div>
+
+    <p>Every collection lives in one table: <span class="m">docs(collection, doc_id, data jsonb)</span> with a
+      composite primary key on <span class="m">(collection, doc_id)</span>. Every write is therefore an
+      <strong>upsert</strong> — a doc id that is not unique silently overwrites. Embeddings live separately in
+      <span class="m">rag_chunks</span> with pgvector.</p>
+
+    <div class="tw"><table>
+      <thead><tr><th style="width:30%">Collection</th><th>Holds</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">enrollments</span></td><td>Purchased courses per student — the entitlement source of record</td></tr>
+        <tr><td><span class="m">concept_performance</span></td><td>Mastery per concept, keyed <span class="m">user__concept</span> <em>(learner model)</em></td></tr>
+        <tr><td><span class="m">quiz_sessions</span></td><td>One row per completed session with per-answer detail <em>(learner model)</em></td></tr>
+        <tr><td><span class="m">adaptive_sessions</span></td><td>In-flight adaptive quiz state</td></tr>
+        <tr><td><span class="m">questions</span></td><td>Pre-authored course question bank</td></tr>
+        <tr><td><span class="m">concepts</span> · <span class="m">relationships</span></td><td>Knowledge-graph nodes and prerequisite edges</td></tr>
+        <tr><td><span class="m">student_turns</span> · <span class="m">student_profile</span></td><td>Chat history and derived profile; turns carry a full-text index</td></tr>
+        <tr><td><span class="m">chat_citations</span></td><td>The per-turn citation side channel</td></tr>
+        <tr><td><span class="m">lab_artifacts</span></td><td>Generated flashcards, summaries and study plans</td></tr>
+        <tr><td><span class="m">audit_log</span></td><td>Per-turn records for reconstructing a past answer</td></tr>
+        <tr><td><span class="m">recommendations</span> · <span class="m">study_guides</span></td><td>Derived guidance surfaces</td></tr>
+        <tr><td><span class="m">rag_chunks</span></td><td>Transcript chunks + embeddings (its own pgvector table, not in <span class="m">docs</span>)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="call warn"><b>Doc ids are the integrity mechanism.</b> Because every write upserts, an id that
+      is not scoped to the student overwrites another student's row with no error. Mastery is keyed
+      <span class="m">user__concept</span> for exactly this reason — and changing how a concept is spelled changes
+      its id, which is why concept names are normalised on the write path and existing rows are never rewritten.</div>
+  </section>
+
+  <!-- ══ 7 ══ -->
+  <section class="chapter">
+    <h2>Chapter 7 — Operating it</h2>
+    <div class="recall"><b>Recall structure: ONE WORKER → BLOCKING IS THE RISK → VERIFY WHAT SHIPPED.</b>
+      The constraints that hold in this system, and the two rules that keep it up.</div>
+
+    <div class="fig">
+      <div class="fig-t">Everything below shares one uvicorn worker</div>
+      <div class="grid3">
+        <div class="node n-blue"><span class="h">SSE chat streams</span><span class="d">long-lived, one per active student</span></div>
+        <div class="node n-green"><span class="h">RAG search</span><span class="d">embed + pgvector query</span></div>
+        <div class="node n-amber"><span class="h">Lab generation</span><span class="d">several model calls per run</span></div>
+        <div class="node n-violet"><span class="h">PDF parsing</span><span class="d">CPU-bound — routed off the loop</span></div>
+        <div class="node n-rose"><span class="h">Payments</span><span class="d">Razorpay callbacks</span></div>
+        <div class="node"><span class="h">Health checks</span><span class="d">Railway polls these</span></div>
+      </div>
+      <div class="fig-n">This is why blocking work is the first-order risk: a synchronous PDF parse would stall the
+        health check and every open chat stream at once. It runs in a threadpool for exactly that reason.</div>
+    </div>
+
+    <div class="call warn"><b>Rule 1 — never bridge async work with <span class="m">asyncio.run()</span>.</b>
+      The asyncpg pool is created once per process and is bound to the event loop that created it.
+      <span class="m">asyncio.run()</span> makes a <em>new</em> loop, so the cached pool is then used from a foreign
+      one and fails with <span class="m">InterfaceError: cannot perform operation: another operation is in
+      progress</span>. Tests cannot see this: without <span class="m">DATABASE_URL</span> they use the in-memory
+      store, where the same write is a dict assignment. Do the I/O in the async route, or hand it to a threadpool —
+      never spin a second loop.</div>
+
+    <div class="call warn"><b>Rule 2 — a local frontend build cannot see Netlify's env vars.</b>
+      <span class="m">.env.local</span> is gitignored and site-level variables only apply to builds Netlify runs
+      itself, so a local <span class="m">npm run build</span> falls through to the in-code default and bakes
+      <span class="m">http://localhost:8080</span> into the bundle — for the API, Lab <em>and</em> payments.
+      It typechecks, builds and loads; every server call then fails in the visitor's browser.
+      Pass the variables on the build command, and afterwards grep the <em>built bundle</em> for its API base.
+      Checking that a bundle lacks some old string proves nothing about what it points at.</div>
+
+    <div class="tw"><table>
+      <thead><tr><th style="width:32%">Known limit</th><th>State and reasoning</th></tr></thead>
+      <tbody>
+        <tr><td>In-memory graph checkpoints</td><td>A redeploy loses in-flight Lab sessions — an upload and an unapproved plan. Never past work: artifacts persist as the run joins. A Postgres checkpointer is a drop-in upgrade when this hurts.</td></tr>
+        <tr><td>No eviction on the doc cache</td><td>Uploaded text is held for the process lifetime, bounded by the 200k-char and 10 MB caps rather than a TTL.</td></tr>
+        <tr><td>Chunked uploads bypass the size check</td><td>The pre-read rejection reads <span class="m">Content-Length</span>; a chunked body with no such header still materialises before the post-read check. A fast path for honest clients, not a bound.</td></tr>
+        <tr><td>Library reads trust a client-supplied id</td><td>An unauthenticated read of another student's generated material. Consistent with the app's existing pattern; wants a product decision about auth across all these routes.</td></tr>
+        <tr><td>Admin gate is open when unset</td><td><span class="m">require_admin_key</span> allows the request if the env var is missing, so the key must actually be set in the environment.</td></tr>
+        <tr><td>SOUL hash reads a stale path</td><td><span class="m">audit_service.py:17</span> resolves the prompt file through an old home-relative path, so its integrity hash returns <span class="m">"unknown"</span>. The audit trail records the turn correctly but cannot prove which prompt version produced it.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ══ 8 ══ -->
+  <section class="chapter">
+    <h2>Chapter 8 — Talking about it</h2>
+    <div class="recall"><b>Recall structure: SYSTEM → FLOW → WHY → LIMIT.</b>
+      The order for turning this reference into a spoken answer.</div>
+
+    <h3>What exists, and what is next</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:40%">Capability</th><th style="width:16%">State</th><th>Boundary</th></tr></thead>
+      <tbody>
+        <tr><td>Grounded tutor with clickable citations</td><td><span class="tag t-live">Live</span></td><td>Corpus is a static seed file; no ingestion endpoint</td></tr>
+        <tr><td>Adaptive course quiz writing mastery</td><td><span class="tag t-live">Live</span></td><td>Course-scoped question bank</td></tr>
+        <tr><td>Lab — quiz, flashcards, summary, study plan</td><td><span class="tag t-live">Live</span></td><td>Artifacts persist; the quiz does not feed mastery</td></tr>
+        <tr><td>Entitlement in Postgres</td><td><span class="tag t-live">Live</span></td><td>Firebase keeps auth and storage only</td></tr>
+        <tr><td>Chat observations into the learner model</td><td><span class="tag t-live">Live</span></td><td>Via <span class="m">record_skill_observation</span></td></tr>
+        <tr><td>Concept resolver · open concept space</td><td><span class="tag t-next">Next</span></td><td>Threshold measured at 0.64</td></tr>
+        <tr><td>Lab quizzes writing mastery</td><td><span class="tag t-next">Next</span></td><td>Held back until the resolver exists, to avoid fragmenting concepts</td></tr>
+        <tr><td>“Why is this my strong topic?”</td><td><span class="tag t-next">Next</span></td><td>Reads per-answer history to explain a score</td></tr>
+        <tr><td>Course ingestion pipeline</td><td><span class="tag t-next">Next</span></td><td>Seed file is the current mechanism</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Say it precisely</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:28%">Claim</th><th style="width:36%">Say it precisely</th><th>Do not imply</th></tr></thead>
+      <tbody>
+        <tr><td>“Answers any technical question”</td><td>Answers from general knowledge; cites only what retrieval grounds</td><td>That the corpus covers those topics</td></tr>
+        <tr><td>“Personalised learning”</td><td>Mastery per concept from course quizzes and chat observations, read back by agent tools</td><td>That self-study already feeds it</td></tr>
+        <tr><td>“Agentic”</td><td>A fixed workflow with an agent runtime resolving a restricted toolset</td><td>Autonomous planning, or an agent that can ship anything</td></tr>
+        <tr><td>“Threshold of 0.64”</td><td>Midpoint of an empty band measured across 31 pairs</td><td>A tuned or learned parameter</td></tr>
+        <tr><td>“Audit trail”</td><td>Per-turn records built for reconstruction</td><td>Certified compliance — and the prompt hash is currently broken</td></tr>
+        <tr><td>“Microservices”</td><td>Three deployables over one Postgres, with one build-time coupling</td><td>A service mesh</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Why this stack</h3>
+    <div class="tw"><table>
+      <thead><tr><th style="width:38%">Question</th><th>Answer</th></tr></thead>
+      <tbody>
+        <tr><td>Why an agent runtime, not a plain model loop?</td><td>Tool-calling, memory and the reasoning loop come built. The cost is that tool execution happens where the backend cannot see it, which is what forced the citation side channel</td></tr>
+        <tr><td>Why regex intent routing, not an LLM router?</td><td>Three outcomes, zero latency, fully inspectable — and it only isolates the two cases that must not reach the model</td></tr>
+        <tr><td>Why one jsonb table, not a schema?</td><td>The domain is still moving; a composite primary key gives upsert semantics for free. A deliberate trade against query power</td></tr>
+        <tr><td>Why Postgres for entitlement when Firebase is there?</td><td>Entitlement joins against progress and the learner model. Firebase keeps what it is good at — auth and file storage</td></tr>
+        <tr><td>Why LangGraph for Lab?</td><td>The quiz needs human-in-the-loop interrupts and resumable state. That is the framework's job; the fan-out is incidental</td></tr>
+        <tr><td>Why sequence artifacts before the quiz?</td><td>Durability at suspend time stops being a question, and finished work is never held hostage by a long-lived tail</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>If something breaks</h3>
+    <ol>
+      <li><strong>Bound the impact.</strong> Who is affected, and is a rollback faster than a fix?</li>
+      <li><strong>Trace one request.</strong> Browser → route → intent → agent → tool → store → response.</li>
+      <li><strong>Find the first abnormal boundary.</strong> Do not guess from the symptom the UI shows.</li>
+      <li><strong>Reproduce against the real dependency.</strong> A green suite proves nothing about the database when tests swap it for a dict.</li>
+      <li><strong>Add a guard you watched fail.</strong> Break the code, see the test fail, revert. Only then does it count.</li>
+    </ol>
+
+    <h3>Final recall</h3>
+    <div class="fig">
+      <div class="chain">
+        <div class="node n-blue"><span class="h">Gate</span><span class="d">entitlement + PII scrub</span></div>
+        <span class="arr">→</span>
+        <div class="node n-green"><span class="h">Route</span><span class="d">regex intent</span></div>
+        <span class="arr">→</span>
+        <div class="node n-amber"><span class="h">Agent</span><span class="d">Hermes + restricted MCP</span></div>
+        <span class="arr">→</span>
+        <div class="node n-violet"><span class="h">Ground</span><span class="d">pgvector + citations</span></div>
+        <span class="arr">→</span>
+        <div class="node n-rose"><span class="h">Record</span><span class="d">mastery + audit</span></div>
+      </div>
+      <div class="chain" style="margin-top:.6rem">
+        <div class="node"><span class="h">Learn</span><span class="d">adaptive quiz</span></div>
+        <span class="arr">→</span>
+        <div class="node"><span class="h">Create</span><span class="d">Lab fan-out</span></div>
+        <span class="arr">→</span>
+        <div class="node"><span class="h">Persist</span><span class="d">one jsonb table</span></div>
+        <span class="arr">→</span>
+        <div class="node"><span class="h">Ship</span><span class="d">three deployables</span></div>
+        <span class="arr">→</span>
+        <div class="node"><span class="h">Verify</span><span class="d">in a browser</span></div>
+      </div>
+    </div>
+
+    <h4>Spoken summary</h4>
+    <ul>
+      <li>the01.dev is a personalised learning platform: paid courses, a tutor grounded in lecture transcripts, adaptive quizzing, and a pipeline that turns a student's own notes into study material.</li>
+      <li>A question is gated for entitlement, scrubbed once, routed by deterministic regex, and streamed through an agent runtime resolving a deliberately restricted toolset.</li>
+      <li>Citations return through a side channel, because the agent resolves tools where the backend cannot observe them — cleared before each turn so one answer's sources never leak into the next.</li>
+      <li>The course is an enrichment, not a gate: answer everything, cite only what retrieval grounds, refuse only what the system genuinely cannot know.</li>
+      <li>Lab is one LangGraph run whose artifacts are sequenced ahead of the interactive quiz tail, so finished work survives a suspend.</li>
+      <li>Everything persists to one jsonb table where every write is an upsert, which makes doc-id scoping the integrity mechanism.</li>
+    </ul>
+
+    <div class="call"><b>One thing per chapter:</b> three deployables with one build-time coupling (1),
+      the agent boundary (2), answer everything and cite what you can ground (3), artifacts before the quiz tail (4),
+      two quiz systems kept separate on purpose (5), every write is an upsert (6), one worker and blocking is the
+      risk (7).</div>
+  </section>
+
+  <p class="foot">Current as of September 2026, read from the code on <span class="m">main</span>.</p>
+
+</div>
+
+</body>
+</html>

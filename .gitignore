@@ -13,3 +13,14 @@ __pycache__/
 
 # Local Netlify folder
 .netlify
+
+# local-only: browser automation logs, scratch, interview prep, secrets
+.playwright-mcp/
+.superpowers/
+.claude/
+raw_output.txt
+INTERVIEW*
+RESUME*
+.env.*
+!.env.example
+*.pem
